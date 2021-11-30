@@ -4,12 +4,12 @@ import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Utils.requireNonEmpty;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +66,7 @@ public final class QueryBuilder {
         	}
         }
         if(Stream.of(columns).anyMatch(Column::isAggregated)) {
-        	var agColumns = Stream.of(columns).filter(not(Column::isAggregated)).toArray(Column[]::new);
+        	var agColumns = Stream.of(columns).filter(groupByColumnsFilter()).toArray(Column[]::new);
         	if(agColumns.length == 0) {
         		throw new IllegalArgumentException("groupby expected");
         	}
@@ -90,6 +90,11 @@ public final class QueryBuilder {
     	return Stream.of(columns)
     			.map(c-> c.toSql(table))
     			.collect(joining(", "));
+    }
+    
+    private static final Predicate<Column> groupByColumnsFilter(){
+    	
+    	return c-> !c.isAggregated() && !c.isConstant();
     }
 
 }

@@ -21,6 +21,11 @@ public final class ConstantColumn<T> implements Column {
 	public String getMappedName() {
 		return name;
 	}
+	
+	@Override
+	public boolean isConstant() {
+		return true;
+	}
 
 	@Override
 	public String toSql(Table table) {

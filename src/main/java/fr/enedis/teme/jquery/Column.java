@@ -11,6 +11,10 @@ public interface Column {
 	default boolean isAggregated() {
 		return false;
 	}
+	
+	default boolean isConstant() {
+		return false;
+	}
 
 	// filters
     default NullFilter isNull(){
