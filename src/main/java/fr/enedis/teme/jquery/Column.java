@@ -43,6 +43,10 @@ public interface Column {
     	return new IntervalFilter<>(this, min, max);
     }
     
+    default <T> IntervalFilter<T> interval(T min, boolean orMinEquals, T max, boolean orMaxEquals){
+    	return new IntervalFilter<>(this, min, orMinEquals, max, orMaxEquals);
+    }
+    
     default <T> IntervalFilter<T> greaterThan(T min){
     	return new IntervalFilter<>(this, min, null);
     }
