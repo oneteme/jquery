@@ -7,6 +7,7 @@ import static java.util.Optional.ofNullable;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import lombok.Getter;
 
@@ -63,4 +64,11 @@ public final class IntervalFilter<T> implements Filter {
 				.map(s-> s+"?")
 				.orElse(null);
 	}
+	
+
+	@Deprecated
+	public IntervalFilter<String> asVarChar(){
+		return new IntervalFilter<>(column, min == null ? null : min.toString(), orMinEquals, max == null ? null : max.toString(), orMaxEquals);
+	}
+
 }

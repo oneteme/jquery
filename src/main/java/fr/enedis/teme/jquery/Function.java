@@ -10,10 +10,9 @@ public interface Function {
 		
 	boolean isAggregation();
 
-	default boolean isColumnRequired() {
+	default boolean requiredColumn() {
 		return true;
 	}
-	
 	
 	default String toSql(Table table, Column column) {
 		return getColumnName() + "(" + requireNonNull(column).toSql(table) + ")";

@@ -10,4 +10,10 @@ public interface Table {
 	
 	String getColumnName(Column column);
 	
+	//partition table
+	//TODO : wait table create
+	default String getTableName(Integer year) {
+		return getTableName();// + "_" + year;
+	}
+	
 }

@@ -8,12 +8,14 @@ import static java.util.Optional.ofNullable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import lombok.Getter;
 
+@Getter
 public final class InFilter<T> implements Filter {
 
-	@Getter	
 	private final Column column;
 	private final T[] values; //all types
 	private final boolean invert;
@@ -50,6 +52,12 @@ public final class InFilter<T> implements Filter {
 				.map(Arrays::asList)
 				.map(Collection.class::cast)
 				.orElseGet(Collections::emptyList);
+	}
+	
+	@Deprecated(forRemoval = true, since = "0.0.1") //TODO create new table
+	public InFilter<String> asVarChar(){
+		return new InFilter<>(column, invert, values == null ? null :
+				Stream.of(values).map(Object::toString).toArray(String[]::new));
 	}
 
 }

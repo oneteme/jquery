@@ -10,7 +10,7 @@ public enum DBFunction implements Function {
 	COUNT {
 		
 		@Override
-		public boolean isColumnRequired() {
+		public boolean requiredColumn() {
 			return false;
 		}
 		

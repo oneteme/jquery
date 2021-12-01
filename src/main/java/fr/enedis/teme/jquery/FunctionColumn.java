@@ -13,20 +13,15 @@ public final class FunctionColumn implements Column {
 
 	public FunctionColumn(Function function, Column column) {
 		this.function = requireNonNull(function);
-		this.column = function.isColumnRequired() ? requireNonNull(column) : column;
+		this.column = function.requiredColumn() 
+				? requireNonNull(column, ()-> function.getColumnName() + " require non null column") 
+				: column;
 	}
 
 	@Override
 	public String getMappedName() {
 		return ofNullable(column)
 				.map(Column::getMappedName)
-				.orElseGet(function::getMappedName);
-	}
-	
-	@Override
-	public String getColumnName(Table table) {
-		return ofNullable(column)
-				.map(c-> c.getColumnName(table))
 				.orElseGet(function::getMappedName);
 	}
 	

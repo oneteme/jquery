@@ -2,31 +2,19 @@ package fr.enedis.teme.jquery;
 
 import static java.util.Objects.requireNonNull;
 
+import lombok.Getter;
+
+@Getter
 public final class ConstantColumn<T> implements Column {
 		
 	private final T value;
-	private final String name;
+	private final String mappedName;
 	
-	public ConstantColumn(T value, String name) {
+	public ConstantColumn(T value, String mappedName) {
 		this.value = value;
-		this.name = requireNonNull(name);
-	}
-
-	@Override
-	public String getColumnName(Table table) {
-		return name;
-	}
-
-	@Override
-	public String getMappedName() {
-		return name;
+		this.mappedName = requireNonNull(mappedName);
 	}
 	
-	@Override
-	public boolean isConstant() {
-		return true;
-	}
-
 	@Override
 	public String toSql(Table table) {
 		

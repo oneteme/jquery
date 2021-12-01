@@ -4,15 +4,9 @@ public interface Column {
 
 	String getMappedName();
 	
-	String getColumnName(Table table);
-	
 	String toSql(Table table);
 	
 	default boolean isAggregated() {
-		return false;
-	}
-	
-	default boolean isConstant() {
 		return false;
 	}
 
@@ -42,6 +36,10 @@ public interface Column {
     }
 
     default <T> IntervalFilter<T> between(T min, T max){
+    	return new IntervalFilter<>(this, min, true, max, true);
+    }
+
+    default <T> IntervalFilter<T> strictBetween(T min, T max){
     	return new IntervalFilter<>(this, min, max);
     }
     
