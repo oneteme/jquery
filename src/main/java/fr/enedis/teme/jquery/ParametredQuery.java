@@ -35,14 +35,4 @@ public class ParametredQuery {
         }
         return model;
 	}
-	
-	public static final ParametredQuery union(Collection<ParametredQuery> queries) {
-		if(requireNonNull(queries).isEmpty()) {
-			throw new IllegalArgumentException("empty list");
-		}
-		//check columns
-		String  query = queries.stream().map(ParametredQuery::getQuery).collect(Collectors.joining(" UNION "));
-		Object[] args = queries.stream().flatMap(q-> Stream.of(q.getParams())).toArray();
-		return new ParametredQuery(query, queries.iterator().next().getColumns(), args);
-	}
 }

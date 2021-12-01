@@ -9,6 +9,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 
 import java.time.YearMonth;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
@@ -119,7 +120,7 @@ public final class QueryBuilder {
 						e.getKey());
 			})
 			.collect(Collectors.toList());
-		return ParametredQuery.union(queries);
+		return union(queries);
 	}
 	
 	private static ParametredQuery build(Table table, Column[] columns, Filter[] filters, Integer year){//nullable
@@ -151,6 +152,17 @@ public final class QueryBuilder {
         }
         log.info("query built in {} ms", System.currentTimeMillis() - bg);
         return new ParametredQuery(q.toString(), columns, args.toArray());
+	}
+	
+	//TD impl. collector
+	private static final ParametredQuery union(Collection<ParametredQuery> queries) {
+		if(requireNonNull(queries).isEmpty()) {
+			throw new IllegalArgumentException("empty list");
+		}
+		//check columns ?
+		String  query = queries.stream().map(ParametredQuery::getQuery).collect(joining(" UNION "));
+		Object[] args = queries.stream().flatMap(o-> Stream.of(o.getParams())).toArray();
+		return new ParametredQuery(query, queries.iterator().next().getColumns(), args);
 	}
 	
     private static final String joinColumns(Table table, Column[] columns) {
