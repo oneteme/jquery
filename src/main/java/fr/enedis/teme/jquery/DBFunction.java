@@ -27,7 +27,7 @@ public enum DBFunction implements Function {
 
 	SUM, MIN, MAX,
 
-	TRIM(false), ABS(false);
+	TRIM(false), ABS(false), UPPER(false), LOWER(false);
 	
 	private final boolean aggregation;
 	
