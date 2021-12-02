@@ -13,8 +13,8 @@ public final class Utils {
 
 	public static <T> T[] requireNonEmpty(T[] c, String name){
 		
-		if(isEmpty(requireNonNull(c))) {
-			throw new IllegalArgumentException(name + " canot be empty");
+		if(requireNonNull(c).length == 0) {
+			throw new IllegalArgumentException(name + " cannot be empty");
 		}
 		return c;
 	}
@@ -33,6 +33,14 @@ public final class Utils {
         }
         return "(" + s + ")";
     }
+
+	public static DBColumn[] concat(DBColumn[] c1, DBColumn[] c2) {
+		return concat(c1, c2, DBColumn[]::new);
+	}
+	
+	public static DBFilter[] concat(DBFilter[] c1, DBFilter[] c2) {
+		return concat(c1, c2, DBFilter[]::new);
+	}
 
 	public static <T> T[] concat(T[] c1, T[] c2, IntFunction<T[]> fn) {
 		//warn ArrayStoreException : cannot merge (enum, class)

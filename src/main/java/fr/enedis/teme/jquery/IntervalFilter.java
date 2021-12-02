@@ -9,20 +9,20 @@ import java.util.List;
 
 import lombok.Getter;
 
-public final class IntervalFilter<T> implements Filter {
+@Getter
+public final class IntervalFilter<T> implements DBFilter {
 
-	@Getter
-	private final Column column;
+	private final DBColumn column;
 	private final T min; //int, long, double, date, timestamp
 	private final boolean orMinEquals;
 	private final T max;
 	private final boolean orMaxEquals;
 
-	public IntervalFilter(Column column, T min, T max) {
+	public IntervalFilter(DBColumn column, T min, T max) {
 		this(column, min, false, max, false);
 	}
 	
-	public IntervalFilter(Column column, T min, boolean orMinEquals, T max, boolean orMaxEquals) {
+	public IntervalFilter(DBColumn column, T min, boolean orMinEquals, T max, boolean orMaxEquals) {
 		this.column = requireNonNull(column);
 		if(min == null && max == null) {
 			throw new IllegalArgumentException("min == max == null");
@@ -34,7 +34,7 @@ public final class IntervalFilter<T> implements Filter {
 	}
 	
 	@Override
-	public String toSql(Table table) {
+	public String toSql(DBTable table) {
 		var cn = column.toSql(table);
 		var c1 = strictOrEqual(cn, ">", orMinEquals, min);
 		var c2 = strictOrEqual(cn, "<", orMaxEquals, max);

@@ -2,10 +2,8 @@ package fr.enedis.teme.jquery;
 
 import java.util.Collection;
 
-public interface Filter {
+public interface DBFilter extends DBObject<DBTable> {
 	
 	Collection<Object> args();
-	
-	String toSql(Table table);
 
 }

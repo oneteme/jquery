@@ -5,22 +5,22 @@ import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
 
-public final class NullFilter implements Filter {
+public final class NullFilter implements DBFilter {
 
-	private final Column column;
+	private final DBColumn column;
 	private final boolean invert;
 
-	public NullFilter(Column column, boolean invert) {
+	public NullFilter(DBColumn column, boolean invert) {
 		this.column = requireNonNull(column);
 		this.invert = invert;
 	}
 
-	public NullFilter(Column column) {
+	public NullFilter(DBColumn column) {
 		this(column, false);
 	}
 
 	@Override
-	public String toSql(Table table) {
+	public String toSql(DBTable table) {
 		var v = column.toSql(table) + " IS";
 		if (invert) {
 			v += " NOT";

@@ -1,48 +1,32 @@
 package fr.enedis.teme.jquery;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import static java.util.Objects.requireNonNull;
 
-@Getter
-@RequiredArgsConstructor
-public enum DBFunction implements Function {
-
-	COUNT {
-		
-		@Override
-		public boolean requiredColumn() {
-			return false;
-		}
-		
-		@Override
-		public String getMappedName() {
-			return "nb"; //optional column
-		}
-		
-		@Override
-		public String toSql(Table table, Column column) {
-			return column == null ? "COUNT(*)" : super.toSql(table, column);
-		}
-	},
-
-	SUM, MIN, MAX,
-
-	TRIM(false), ABS(false), UPPER(false), LOWER(false);
+public interface DBFunction extends DBObject<String> {
 	
-	private final boolean aggregation;
+	String getFunctionName();
+		
+	default boolean isAggregation() {
+		return false;
+	}
 	
-	private DBFunction() {
-		this.aggregation = true; //true as default 
+	default String getMappedName() {
+		return getFunctionName().toLowerCase();
 	}
 	
 	@Override
-	public String getColumnName() {
-		return name();
+	default String toSql(String columnName) {
+		var v = requireNonNull(columnName, ()-> getFunctionName() + " require non null column");
+		return getFunctionName() + "(" + v + ")";
 	}
 	
-	@Override
-	public String getMappedName() {
-		return name().toLowerCase();
+	//FunctionColumn
+	default FunctionColumn of(DBColumn column) {
+		return new FunctionColumn(this, column);
+	}
+
+	default FunctionColumn ofAll() {
+		return new FunctionColumn(this, null);
 	}
 
 }

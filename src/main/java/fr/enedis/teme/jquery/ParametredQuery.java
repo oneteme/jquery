@@ -11,10 +11,10 @@ import lombok.Getter;
 public class ParametredQuery {
 	
 	private final String query;
-	private Column[] columns;
+	private DBColumn[] columns;
 	private final Object[] params;
 	
-	public ParametredQuery(String query, Column[] columns, Object... params) {
+	public ParametredQuery(String query, DBColumn[] columns, Object... params) {
 		this.query = requireNonNull(query);
 		this.columns = columns;
 		this.params = params;

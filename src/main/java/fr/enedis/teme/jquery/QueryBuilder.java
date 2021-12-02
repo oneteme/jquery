@@ -1,10 +1,10 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.ExpressionColumn.staticColumn;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Utils.requireNonEmpty;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -23,35 +23,34 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public final class QueryBuilder {
 	
-	private Table table;
-	private Column[] columns;
-	private Filter[] filters;
+	private DBTable table;
+	private DBColumn[] columns;
+	private DBFilter[] filters;
 
-	public QueryBuilder selectAll(Table table) {
+	public QueryBuilder selectAll(DBTable table) {
 		return select(table, table.getColumns());
 	}
 	
-	public QueryBuilder select(Table table, Column... columns) {
+	public QueryBuilder select(DBTable table, DBColumn... columns) {
 		this.table = table;
 		return columns(columns);
 	}
 
-	private QueryBuilder columns(Column... columns) {
-		this.columns = concat(this.columns, columns, Column[]::new);
+	private QueryBuilder columns(DBColumn... columns) {
+		this.columns = concat(this.columns, columns);
 		return this;
 	}
 	
-	public QueryBuilder groupBy(Column... columns) {
-		this.columns = concat(this.columns, columns, Column[]::new);
-		return this;
+	public QueryBuilder groupBy(DBColumn... columns) {
+		return columns(columns);
 	}
 
-	public QueryBuilder where(Filter... filters){
-		this.filters = concat(this.filters, filters, Filter[]::new);
+	public QueryBuilder where(DBFilter... filters){
+		this.filters = concat(this.filters, filters);
 		return this;
 	}
 	
-	public QueryBuilder having(Filter... filters){
+	public QueryBuilder having(DBFilter... filters){
 		return where(filters);
 	}
 
@@ -116,18 +115,18 @@ public final class QueryBuilder {
 		}
 		var queries = map.entrySet().stream()
 			.map(e-> {
-				var ftrs = new Filter[]{partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)).asVarChar()}; //TD to int
-				var cols = new Column[]{partition.getColumn(), new ConstantColumn<>(e.getKey(), "revisionYear")}; //add year rev. when multiple values
+				var ftrs = new DBFilter[]{partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)).asVarChar()}; //TD to int
+				var cols = new DBColumn[]{partition.getColumn(), staticColumn(e.getKey(), "revisionYear")}; //add year rev. when multiple values
 				return build(table, 
-						concat(this.columns, cols, Column[]::new), 
-						concat(this.filters, ftrs, Filter[]::new), 
+						concat(this.columns, cols), 
+						concat(this.filters, ftrs), 
 						e.getKey());
 			})
 			.collect(toList());
 		return join(queries);
 	}
 	
-	private static ParametredQuery build(Table table, Column[] columns, Filter[] filters, Integer year){//year: nullable
+	private static ParametredQuery build(DBTable table, DBColumn[] columns, DBFilter[] filters, Integer year){//year: nullable
 
     	var bg = System.currentTimeMillis();
     	
@@ -136,9 +135,9 @@ public final class QueryBuilder {
 
         var q = new StringBuilder("SELECT ")
         		.append(joinColumns(table, columns))
-        		.append(" FROM " + ofNullable(year).map(table::getTableName).orElseGet(table::getTableName)); //TD replace by getTableName(year)
+        		.append(" FROM " + table.toSql(null, year)); //TD replace by getTableName(year)
         
-        var filter = concat(table.getClauses(), filters, Filter[]::new);
+        var filter = concat(table.getClauses(), filters);
         var args = new LinkedList<>();
         if(!isEmpty(filter)) {
         	q = q.append(" WHERE 1=1");
@@ -147,8 +146,8 @@ public final class QueryBuilder {
                 args.addAll(f.args());
         	}
         }
-        if(Stream.of(columns).anyMatch(Column::isAggregated)) {
-        	var gc = Stream.of(columns).filter(DBColumn.class::isInstance).toArray(Column[]::new);
+        if(Stream.of(columns).anyMatch(DBColumn::isAggregated)) {
+        	var gc = Stream.of(columns).filter(TableColumn.class::isInstance).toArray(DBColumn[]::new);
         	if(gc.length == 0) {
         		throw new IllegalArgumentException("groupby expected");
         	}
@@ -169,7 +168,7 @@ public final class QueryBuilder {
 		return new ParametredQuery(query, queries.iterator().next().getColumns(), args);
 	}
 	
-    private static final String joinColumns(Table table, Column[] columns) {
+    private static final String joinColumns(DBTable table, DBColumn[] columns) {
     	
     	return Stream.of(columns)
     			.map(c-> c.toSql(table))

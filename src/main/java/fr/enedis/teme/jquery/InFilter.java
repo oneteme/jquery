@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Utils.nArgs;
+import static fr.enedis.teme.jquery.Utils.requireNonEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
@@ -11,24 +11,21 @@ import java.util.stream.Stream;
 import lombok.Getter;
 
 @Getter
-public final class InFilter<T> implements Filter {
+public final class InFilter<T> implements DBFilter {
 
-	private final Column column;
+	private final DBColumn column;
 	private final T[] values; //all types
 	private final boolean invert;
 
 	@SafeVarargs
-	public InFilter(Column column, boolean invert, T... values) {
+	public InFilter(DBColumn column, boolean invert, T... values) {
 		this.column = requireNonNull(column);
-		if(isEmpty(values)) {
-			throw new IllegalArgumentException("empty values");
-		}
+		this.values = requireNonEmpty(values, "filter values");
 		this.invert = invert;
-		this.values = values;
 	}
 	
 	@Override
-	public String toSql(Table table) {
+	public String toSql(DBTable table) {
 		String inValues;
 		if(values.length == 1) {
 			inValues = (invert ? "<>" : "=") + "?";
