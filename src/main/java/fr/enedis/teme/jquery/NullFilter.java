@@ -15,10 +15,6 @@ public final class NullFilter implements DBFilter {
 		this.invert = invert;
 	}
 
-	public NullFilter(DBColumn column) {
-		this(column, false);
-	}
-
 	@Override
 	public String toSql(DBTable table) {
 		var v = column.toSql(table) + " IS";
@@ -32,4 +28,5 @@ public final class NullFilter implements DBFilter {
 	public Collection<Object> args() {
 		return emptyList(); // no args
 	}
+	
 }

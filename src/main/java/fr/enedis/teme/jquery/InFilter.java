@@ -25,6 +25,11 @@ public final class InFilter<T> implements DBFilter {
 	}
 	
 	@Override
+	public Collection<Object> args() {
+		return asList(values);
+	}
+	
+	@Override
 	public String toSql(DBTable table) {
 		String inValues;
 		if(values.length == 1) {
@@ -37,11 +42,6 @@ public final class InFilter<T> implements DBFilter {
 			}
 		}
 		return column.toSql(table) + inValues;
-	}
-	
-	@Override
-	public Collection<Object> args() {
-		return asList(values);
 	}
 	
 	@Deprecated(forRemoval = true, since = "0.0.1") //TODO create new table

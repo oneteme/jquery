@@ -10,7 +10,7 @@ public interface DBColumn extends DBObject<DBTable> {
 
 	// filters
     default NullFilter isNull(){
-    	return new NullFilter(this);
+    	return new NullFilter(this, false);
     }
     
     default NullFilter isNotNull(){
