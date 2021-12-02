@@ -35,4 +35,10 @@ public final class FunctionColumn implements Column {
 		return function.isAggregation();
 	}
 	
+	@Override
+	public String toString() {
+		
+		return function.toString() + "(" + (column == null ? "*" : column.toString()) + ")";
+	}
+	
 }

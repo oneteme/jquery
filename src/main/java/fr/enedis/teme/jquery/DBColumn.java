@@ -10,5 +10,4 @@ public interface DBColumn extends Column {
 		return ofNullable(name)
 			.orElseThrow(()-> new IllegalArgumentException(this + " not in " + table));
 	}
-
 }

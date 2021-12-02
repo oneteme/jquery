@@ -23,4 +23,9 @@ public final class ExpressionColumn implements Column {
 		return expression;
 	}
 
+	@Override
+	public String toString() {
+		return toSql(null) + " AS " + mappedName;
+	}
+
 }

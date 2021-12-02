@@ -22,5 +22,10 @@ public final class ConstantColumn<T> implements Column {
 				? value.toString()
 				: "'" + value.toString() + "'";
 	}
+	
+	@Override
+	public String toString() {
+		return toSql(null) + " AS " + mappedName;
+	}
 
 }

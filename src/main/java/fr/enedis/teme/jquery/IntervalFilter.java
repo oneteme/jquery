@@ -1,6 +1,5 @@
 package fr.enedis.teme.jquery;
 
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
@@ -25,6 +24,9 @@ public final class IntervalFilter<T> implements Filter {
 	
 	public IntervalFilter(Column column, T min, boolean orMinEquals, T max, boolean orMaxEquals) {
 		this.column = requireNonNull(column);
+		if(min == null && max == null) {
+			throw new IllegalArgumentException("min == max == null");
+		}
 		this.min = min;
 		this.orMinEquals = orMinEquals;
 		this.max = max;
@@ -33,9 +35,6 @@ public final class IntervalFilter<T> implements Filter {
 	
 	@Override
 	public String toSql(Table table) {
-		if(min == null && max == null) {
-			return "";
-		}
 		var cn = column.toSql(table);
 		var c1 = strictOrEqual(cn, ">", orMinEquals, min);
 		var c2 = strictOrEqual(cn, "<", orMaxEquals, max);
@@ -47,9 +46,6 @@ public final class IntervalFilter<T> implements Filter {
 	
 	@Override
 	public Collection<Object> args() {
-		if(min == null && max == null) {
-			return emptyList();
-		}
 		List<Object> list = new LinkedList<>();
 		ofNullable(min).ifPresent(list::add);
 		ofNullable(max).ifPresent(list::add);

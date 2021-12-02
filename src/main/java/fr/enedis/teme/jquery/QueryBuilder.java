@@ -7,13 +7,13 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
 import java.time.YearMonth;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
@@ -33,10 +33,14 @@ public final class QueryBuilder {
 	
 	public QueryBuilder select(Table table, Column... columns) {
 		this.table = table;
+		return columns(columns);
+	}
+
+	private QueryBuilder columns(Column... columns) {
 		this.columns = concat(this.columns, columns, Column[]::new);
 		return this;
 	}
-
+	
 	public QueryBuilder groupBy(Column... columns) {
 		this.columns = concat(this.columns, columns, Column[]::new);
 		return this;
@@ -102,28 +106,28 @@ public final class QueryBuilder {
 			return build(table, columns, filters, null);
 		}
 		var map = Stream.of(partition.getValues()).collect(groupingBy(YearMonth::getYear));
-		if(map.size() == 1) {//one table
+		if(map.size() == 1) {//one table reference
 			var e = map.entrySet().iterator().next();
 			where(partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)).asVarChar()); //TD to int
-			if(e.getValue().size() > 1) {
-				this.columns = concat(this.columns, new Column[]{partition.getColumn()}, Column[]::new);
+			if(e.getValue().size() > 1) {//add month rev. when multiple values
+				columns(partition.getColumn());
 			}
 			return build(table, columns, filters, e.getKey());
 		}
 		var queries = map.entrySet().stream()
-			.map(e->{
-				var ftrs = new Filter[]{partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)).asVarChar()};
-				var cols = new Column[]{partition.getColumn(), new ConstantColumn<>(e.getKey(), "revisionYear")};
+			.map(e-> {
+				var ftrs = new Filter[]{partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)).asVarChar()}; //TD to int
+				var cols = new Column[]{partition.getColumn(), new ConstantColumn<>(e.getKey(), "revisionYear")}; //add year rev. when multiple values
 				return build(table, 
 						concat(this.columns, cols, Column[]::new), 
 						concat(this.filters, ftrs, Filter[]::new), 
 						e.getKey());
 			})
-			.collect(Collectors.toList());
-		return union(queries);
+			.collect(toList());
+		return join(queries);
 	}
 	
-	private static ParametredQuery build(Table table, Column[] columns, Filter[] filters, Integer year){//nullable
+	private static ParametredQuery build(Table table, Column[] columns, Filter[] filters, Integer year){//year: nullable
 
     	var bg = System.currentTimeMillis();
     	
@@ -155,9 +159,9 @@ public final class QueryBuilder {
 	}
 	
 	//TD impl. collector
-	private static final ParametredQuery union(Collection<ParametredQuery> queries) {
+	private static final ParametredQuery join(Collection<ParametredQuery> queries) {
 		if(requireNonNull(queries).isEmpty()) {
-			throw new IllegalArgumentException("empty list");
+			throw new IllegalArgumentException("empty list"); //should never happen
 		}
 		//check columns ?
 		String  query = queries.stream().map(ParametredQuery::getQuery).collect(joining(" UNION "));

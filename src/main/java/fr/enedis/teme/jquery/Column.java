@@ -39,10 +39,6 @@ public interface Column {
     	return new IntervalFilter<>(this, min, true, max, true);
     }
 
-    default <T> IntervalFilter<T> strictBetween(T min, T max){
-    	return new IntervalFilter<>(this, min, max);
-    }
-    
     default <T> IntervalFilter<T> interval(T min, boolean orMinEquals, T max, boolean orMaxEquals){
     	return new IntervalFilter<>(this, min, orMinEquals, max, orMaxEquals);
     }
