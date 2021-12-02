@@ -3,6 +3,7 @@ package fr.enedis.teme.jquery;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -13,9 +14,7 @@ public final class Utils {
 
 	public static <T> T[] requireNonEmpty(T[] c, String name){
 		
-		if(requireNonNull(c).length == 0) {
-			throw new IllegalArgumentException(name + " cannot be empty");
-		}
+		illegalArgumentIf(requireNonNull(c).length == 0, ()-> name + " cannot be empty");
 		return c;
 	}
 
@@ -24,9 +23,7 @@ public final class Utils {
     }
 
 	public static String nArgs(int nb){
-        if(nb < 1){
-            throw new IllegalArgumentException("n < 1");
-        }
+		illegalArgumentIf(nb < 1, "n < 1");
         var s = "?";
         if(nb > 1){
             s += ",?".repeat(nb - 1);
@@ -56,4 +53,13 @@ public final class Utils {
 		return null;
 	}
 
+	public static void illegalArgumentIf(boolean test, String msg) {
+		illegalArgumentIf(test, ()-> msg);
+	}
+
+	public static void illegalArgumentIf(boolean test, Supplier<String> supplier) {
+		if(test) {
+			throw new IllegalArgumentException(supplier.get());
+		}
+	}
 }

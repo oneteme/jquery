@@ -18,7 +18,7 @@ public interface DBTable extends DBObject<String> {
 	}
 	
 	//partition table
-	default String toSql(String schema, Integer year) {
+	default String toSql(String schema, int year) {
 		return toSql(schema);// + "_" + year; //TODO : wait table create
 	}
 	
