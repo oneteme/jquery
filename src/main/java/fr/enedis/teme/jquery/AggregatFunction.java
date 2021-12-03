@@ -10,7 +10,7 @@ public enum AggregatFunction implements DBFunction {
 			return super.toSql(requireNonNullElse(columnName, "*"));
 		}
 	}, 
-	SUM, MIN, MAX;
+	SUM, AVG, MIN, MAX;
 	
 	@Override
 	public String getFunctionName() {

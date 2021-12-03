@@ -19,9 +19,10 @@ public final class FunctionColumn implements DBColumn {
 
 	@Override
 	public String getMappedName() {
-		return ofNullable(column)
+		return function.getMappedName() + ofNullable(column)
 				.map(DBColumn::getMappedName)
-				.orElseGet(function::getMappedName);
+				.map("_"::concat)
+				.orElse("");
 	}
 	
 	@Override
