@@ -9,7 +9,7 @@ public enum AggregatFunction implements DBFunction {
 		public String toSql(String columnName) {
 			return super.toSql(requireNonNullElse(columnName, "*"));
 		}
-	},
+	}, 
 	SUM, MIN, MAX;
 	
 	@Override

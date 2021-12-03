@@ -3,7 +3,7 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.ExpressionColumn.staticColumn;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
-import static fr.enedis.teme.jquery.Utils.requireNonEmpty;
+import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
@@ -110,7 +110,7 @@ public final class QueryBuilder {
 	
 	public ParametredQuery build(InFilter<YearMonth> partition){
 
-		if(partition == null || isEmpty(partition.getValues())) {
+		if(partition == null || Utils.isEmpty(partition.getValues())) {
 			return build(schema, table, columns, filters, null);
 		}
 		var map = Stream.of(partition.getValues()).collect(groupingBy(YearMonth::getYear));
@@ -138,7 +138,7 @@ public final class QueryBuilder {
 	private static ParametredQuery build(String schema, DBTable table, DBColumn[] columns, DBFilter[] filters, Integer year){//year: nullable
     	
     	requireNonNull(table);
-    	requireNonEmpty(columns, "columns");
+    	requireNonEmpty(columns);
 
         var q = new StringBuilder("SELECT ")
         		.append(joinColumns(table, columns))
@@ -154,8 +154,9 @@ public final class QueryBuilder {
         	}
         }
         if(Stream.of(columns).anyMatch(DBColumn::isAggregated)) {
-        	var gc = Stream.of(columns).filter(TableColumn.class::isInstance).toArray(DBColumn[]::new);
-        	requireNonEmpty(gc, "groupby columns");
+        	var gc = requireNonEmpty(Stream.of(columns)
+        			.filter(TableColumn.class::isInstance)
+        			.toArray(DBColumn[]::new));
         	q = q.append(" GROUP BY " + joinColumns(table, gc));
         }
         return new ParametredQuery(q.toString(), columns, args.toArray());
@@ -163,13 +164,12 @@ public final class QueryBuilder {
 	
 	//TD impl. collector
 	private static final ParametredQuery join(Collection<ParametredQuery> queries) {
-		if(requireNonNull(queries).isEmpty()) {
-			throw new IllegalArgumentException("empty list"); //should never happen
-		}
+		requireNonEmpty(queries);
 		//check columns ?
-		String  query = queries.stream().map(ParametredQuery::getQuery).collect(joining(" UNION "));
-		Object[] args = queries.stream().flatMap(o-> Stream.of(o.getParams())).toArray();
-		return new ParametredQuery(query, queries.iterator().next().getColumns(), args);
+		return new ParametredQuery(
+				queries.stream().map(ParametredQuery::getQuery).collect(joining(" UNION ")), 
+				queries.iterator().next().getColumns(), 
+				queries.stream().flatMap(o-> Stream.of(o.getParams())).toArray());
 	}
 	
     private static final String joinColumns(DBTable table, DBColumn[] columns) {

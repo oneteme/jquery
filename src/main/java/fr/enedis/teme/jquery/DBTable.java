@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-import static java.util.Optional.ofNullable;
+import static fr.enedis.teme.jquery.Utils.mapNullableOrEmpty;
 
 public interface DBTable extends DBObject<String> {
 	
@@ -14,7 +14,7 @@ public interface DBTable extends DBObject<String> {
 	
 	@Override
 	default String toSql(String schema) {
-		return ofNullable(schema).map(v-> v+".").orElse("") + getTableName();
+		return mapNullableOrEmpty(schema, v-> v+".") + getTableName();
 	}
 	
 	//partition table

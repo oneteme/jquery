@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static java.util.Objects.requireNonNull;
+import static fr.enedis.teme.jquery.Validation.requireNonBlank;
+import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -15,8 +16,8 @@ public class ParametredQuery {
 	private final Object[] params;
 	
 	public ParametredQuery(String query, DBColumn[] columns, Object... params) {
-		this.query = requireNonNull(query);
-		this.columns = columns;
+		this.query = requireNonBlank(query);
+		this.columns = requireNonEmpty(columns);
 		this.params = params;
 	}
 

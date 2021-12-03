@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Utils.illegalArgumentIf;
+import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
+import static fr.enedis.teme.jquery.Utils.mapNullableOrNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
@@ -33,14 +34,6 @@ public final class IntervalFilter<T> implements DBFilter {
 	}
 	
 	@Override
-	public Collection<Object> args() {
-		List<Object> list = new LinkedList<>();
-		ofNullable(min).ifPresent(list::add);
-		ofNullable(max).ifPresent(list::add);
-		return list;
-	}
-
-	@Override
 	public String toSql(DBTable table) {
 		var cn = column.toSql(table);
 		var c1 = strictOrEqual(cn, ">", orMinEquals, min);
@@ -50,7 +43,15 @@ public final class IntervalFilter<T> implements DBFilter {
 		}
 		return c1 == null ? c2 : c1;
 	}
-	
+
+	@Override
+	public Collection<Object> args() {
+		List<Object> list = new LinkedList<>();
+		ofNullable(min).ifPresent(list::add);
+		ofNullable(max).ifPresent(list::add);
+		return list;
+	}
+
 	private static String strictOrEqual(String cn, String op, boolean orEquals, Object vl) {
 		return ofNullable(vl)
 				.map(s-> cn + op)
@@ -58,11 +59,12 @@ public final class IntervalFilter<T> implements DBFilter {
 				.map(s-> s+"?")
 				.orElse(null);
 	}
-
 	
 	@Deprecated
 	public IntervalFilter<String> asVarChar(){
-		return new IntervalFilter<>(column, min == null ? null : min.toString(), orMinEquals, max == null ? null : max.toString(), orMaxEquals);
+		return new IntervalFilter<>(column, 
+				mapNullableOrNull(min, Object::toString), orMinEquals, 
+				mapNullableOrNull(max, Object::toString), orMaxEquals);
 	}
 
 }

@@ -1,9 +1,10 @@
 package fr.enedis.teme.jquery;
 
-import static java.util.Objects.requireNonNull;
+import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
+import static java.util.Optional.ofNullable;
 
+import java.util.function.Function;
 import java.util.function.IntFunction;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -12,16 +13,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Utils {
 
-	public static <T> T[] requireNonEmpty(T[] c, String name){
-		
-		illegalArgumentIf(requireNonNull(c).length == 0, ()-> name + " cannot be empty");
-		return c;
+	public static <T> boolean isEmpty(T[] a) {
+		return a == null || a.length == 0;
 	}
 
-    public static <T> boolean isEmpty(T[] a) {
-    	return a == null || a.length == 0;
-    }
-
+	public static boolean isEmpty(String str) {
+		return str == null || str.isEmpty();
+	}
+	
 	public static String nArgs(int nb){
 		illegalArgumentIf(nb < 1, "n < 1");
         var s = "?";
@@ -53,13 +52,11 @@ public final class Utils {
 		return null;
 	}
 
-	public static void illegalArgumentIf(boolean test, String msg) {
-		illegalArgumentIf(test, ()-> msg);
+	public static <T, R> R mapNullableOrNull(T o, Function<T, R> fn) {
+		return ofNullable(o).map(fn).orElse(null);
 	}
 
-	public static void illegalArgumentIf(boolean test, Supplier<String> supplier) {
-		if(test) {
-			throw new IllegalArgumentException(supplier.get());
-		}
+	public static <T> String mapNullableOrEmpty(T o, Function<T, String> fn) {
+		return ofNullable(o).map(fn).orElse("");
 	}
 }

@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-import static java.util.Objects.requireNonNull;
+import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 public interface DBFunction extends DBObject<String> {
 	
@@ -16,8 +16,7 @@ public interface DBFunction extends DBObject<String> {
 	
 	@Override
 	default String toSql(String columnName) {
-		var v = requireNonNull(columnName, ()-> getFunctionName() + " require non null column");
-		return getFunctionName() + "(" + v + ")";
+		return getFunctionName() + "(" + requireNonBlank(columnName) + ")";
 	}
 	
 	//FunctionColumn

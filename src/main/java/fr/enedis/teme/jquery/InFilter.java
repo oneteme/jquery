@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Utils.nArgs;
-import static fr.enedis.teme.jquery.Utils.requireNonEmpty;
+import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
@@ -20,13 +20,8 @@ public final class InFilter<T> implements DBFilter {
 	@SafeVarargs
 	public InFilter(DBColumn column, boolean invert, T... values) {
 		this.column = requireNonNull(column);
-		this.values = requireNonEmpty(values, "filter values");
+		this.values = requireNonEmpty(values);
 		this.invert = invert;
-	}
-	
-	@Override
-	public Collection<Object> args() {
-		return asList(values);
 	}
 	
 	@Override
@@ -42,6 +37,11 @@ public final class InFilter<T> implements DBFilter {
 			}
 		}
 		return column.toSql(table) + inValues;
+	}
+	
+	@Override
+	public Collection<Object> args() {
+		return asList(values);
 	}
 	
 	@Deprecated(forRemoval = true, since = "0.0.1") //TODO create new table

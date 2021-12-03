@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Utils.illegalArgumentIf;
+import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
+import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 import static java.util.Objects.requireNonNull;
 
 import lombok.AccessLevel;
@@ -29,13 +30,21 @@ public final class ExpressionColumn<T> implements DBColumn {
 	}
 	
 	public static ExpressionColumn<String> expressionColumn(String expression, String mappedName) {
-		illegalArgumentIf(requireNonNull(expression).contains(","), //TD use regex
-				()-> "expression contains multi columns : " + expression);
-		return new ExpressionColumn<>(expression, requireNonNull(mappedName), false);
+		
+		return new ExpressionColumn<>(
+				requireValidExpression(expression), 
+				requireNonBlank(mappedName), false);
 	}
 	
 	public static <T> ExpressionColumn<T> staticColumn(T expression, String mappedName) {
-		return new ExpressionColumn<>(requireNonNull(expression), requireNonNull(mappedName), true);
+		return new ExpressionColumn<>(
+				requireNonNull(expression), 
+				requireNonBlank(mappedName), true);
 	}
 
+	private static String requireValidExpression(String expression) {
+		illegalArgumentIf(requireNonBlank(expression).contains(","), //TD use regex
+				()-> "expression use multiple columns : " + expression);
+		return expression;
+	}
 }
