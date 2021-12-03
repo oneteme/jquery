@@ -10,6 +10,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.time.YearMonth;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -73,6 +74,7 @@ public final class QueryBuilder {
 		var query = build(partition);
 		log.info("query built in {} ms", System.currentTimeMillis() - bg);
 		var rows = fn.apply(query);
+        log.info("query parameters : {}", Arrays.toString(query.getParams()));
 		log.info("{} rows in {} ms", rows.size(), System.currentTimeMillis() - bg);
 		return rows;
 	}
@@ -116,7 +118,7 @@ public final class QueryBuilder {
 		var map = Stream.of(partition.getValues()).collect(groupingBy(YearMonth::getYear));
 		if(map.size() == 1) {//one table reference
 			var e = map.entrySet().iterator().next();
-			where(partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)).asVarChar()); //TD to int
+			where(partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
 			if(e.getValue().size() > 1) {//add month rev. when multiple values
 				columns(partition.getColumn());
 			}
@@ -124,7 +126,7 @@ public final class QueryBuilder {
 		}
 		var queries = map.entrySet().stream()
 			.map(e-> {
-				var ftrs = new DBFilter[]{partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)).asVarChar()}; //TD to int
+				var ftrs = new DBFilter[]{partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
 				var cols = new DBColumn[]{partition.getColumn(), staticColumn(e.getKey(), "revisionYear")}; //add year rev. when multiple values
 				return build(schema, table, 
 						concat(this.columns, cols), 

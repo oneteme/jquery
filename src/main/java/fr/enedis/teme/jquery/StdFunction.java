@@ -7,7 +7,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum StdFunction implements DBFunction {
 
-	ABS, TRIM, UPPER, LOWER;
+	ABS, TRIM, LENGTH, UPPER, LOWER;
 	
 	@Override
 	public String getFunctionName() {
