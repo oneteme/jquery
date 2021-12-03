@@ -17,11 +17,11 @@ public interface DBColumn extends DBObject<DBTable> {
     	return new NullFilter(this, true);
     }
 	
-    default <T> InFilter<T> same(T value){
+    default <T> InFilter<T> equal(T value){
     	return new InFilter<>(this, false, value);
     }
     
-    default <T> InFilter<T> notSame(T value){
+    default <T> InFilter<T> notEqual(T value){
     	return new InFilter<>(this, true, value);
     }
 
