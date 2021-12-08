@@ -43,13 +43,7 @@ public final class Utils {
 		if(c1 != null && c2 != null) {
 			return Stream.concat(Stream.of(c1), Stream.of(c2)).toArray(fn);
 		}
-		if(c1 != null) {
-			return c1;
-		}
-		if(c2 != null) {
-			return c2;
-		}
-		return null;
+		return c1 == null ? c2 : c1;
 	}
 
 	public static <T, R> R mapNullableOrNull(T o, Function<T, R> fn) {

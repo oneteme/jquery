@@ -15,6 +15,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
@@ -44,6 +45,11 @@ public final class QueryBuilder {
 		return columns(columns);
 	}
 
+	public QueryBuilder columns(boolean condition, Supplier<DBColumn> column) {
+		
+		return condition ? columns(column.get()) : this;
+	}
+
 	private QueryBuilder columns(DBColumn... columns) {
 		this.columns = concat(this.columns, columns);
 		return this;
@@ -58,9 +64,13 @@ public final class QueryBuilder {
 		return this;
 	}
 	
-	public QueryBuilder having(DBFilter... filters){
-		return where(filters);
+	public QueryBuilder where(boolean condition, Supplier<DBFilter> filter){
+		return condition ? where(filter.get()) : this;
 	}
+	
+//	public QueryBuilder having(DBFilter... filters){
+//		return where(filters);
+//	}
 
 	public List<DynamicModel> execute(Function<ParametredQuery, List<DynamicModel>> fn) {
 		
@@ -156,10 +166,12 @@ public final class QueryBuilder {
         	}
         }
         if(Stream.of(columns).anyMatch(DBColumn::isAggregated)) {
-        	var gc = requireNonEmpty(Stream.of(columns)
+        	var gc = Stream.of(columns)
         			.filter(TableColumn.class::isInstance)
-        			.toArray(DBColumn[]::new));
-        	q = q.append(" GROUP BY " + joinColumns(table, gc));
+        			.toArray(DBColumn[]::new);
+        	if(gc.length > 0) {
+        		q = q.append(" GROUP BY " + joinColumns(table, gc));
+        	}
         }
         return new ParametredQuery(q.toString(), columns, args.toArray());
 	}

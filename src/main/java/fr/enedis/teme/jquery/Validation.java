@@ -23,7 +23,7 @@ public final class Validation {
 	}
 	
 	public static <T> Collection<T> requireNonEmpty(Collection<T> c){
-		illegalArgumentIf(requireNonNull(c).isEmpty(), ()-> "empty array");
+		illegalArgumentIf(requireNonNull(c).isEmpty(), ()-> "empty collection");
 		return c;
 	}
 	

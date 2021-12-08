@@ -37,7 +37,6 @@ public final class FunctionColumn implements DBColumn {
 	
 	@Override
 	public String toString() {
-		
 		return function.toSql(mapNullableOrNull(column, DBColumn::getMappedName));
 	}
 	

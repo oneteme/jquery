@@ -6,7 +6,6 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 
 import java.util.Collection;
-import java.util.stream.Stream;
 
 import lombok.Getter;
 
@@ -43,11 +42,4 @@ public final class InFilter<T> implements DBFilter {
 	public Collection<Object> args() {
 		return asList(values);
 	}
-	
-	@Deprecated(forRemoval = true, since = "0.0.1") //TODO create new table
-	public InFilter<String> asVarChar(){
-		return new InFilter<>(column, invert, values == null ? null :
-				Stream.of(values).map(Object::toString).toArray(String[]::new));
-	}
-
 }

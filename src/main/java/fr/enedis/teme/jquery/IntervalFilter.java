@@ -1,7 +1,6 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
-import static fr.enedis.teme.jquery.Utils.mapNullableOrNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 
@@ -59,12 +58,4 @@ public final class IntervalFilter<T> implements DBFilter {
 				.map(s-> s+"?")
 				.orElse(null);
 	}
-	
-	@Deprecated
-	public IntervalFilter<String> asVarChar(){
-		return new IntervalFilter<>(column, 
-				mapNullableOrNull(min, Object::toString), orMinEquals, 
-				mapNullableOrNull(max, Object::toString), orMaxEquals);
-	}
-
 }
