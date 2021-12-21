@@ -12,6 +12,8 @@ public interface DBTable extends DBObject<String> {
 	
 	String getColumnName(DBColumn column);
 	
+	DBColumn getRevisionColumn();
+	
 	@Override
 	default String toSql(String schema) {
 		return mapNullableOrEmpty(schema, v-> v+".") + getTableName();

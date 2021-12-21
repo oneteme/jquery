@@ -20,24 +20,38 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@RequiredArgsConstructor
+@NoArgsConstructor
 public final class QueryBuilder {
 	
-	private final String schema;
+	private String schema;
 	private DBTable table;
 	private DBColumn[] columns;
 	private DBFilter[] filters;
-	
-	public QueryBuilder() {
-		this(null);
+	private Function<DBTable, YearMonth[]> partitionFn;
+			
+	public QueryBuilder(QueryParam param) {
+		columns(param.getColumns());
+		where(param.getFilters());
+		partition(param.getPartitionFn());
 	}
-
+	
+	public QueryBuilder selectAll(String schema, DBTable table) {
+		this.schema = schema;
+		return select(table, table.getColumns());
+	}
+	
 	public QueryBuilder selectAll(DBTable table) {
 		return select(table, table.getColumns());
+	}
+
+	public QueryBuilder select(String schema, DBTable table, DBColumn... columns) {
+		this.schema = schema;
+		this.table = table;
+		return columns(columns);
 	}
 	
 	public QueryBuilder select(DBTable table, DBColumn... columns) {
@@ -50,7 +64,7 @@ public final class QueryBuilder {
 		return condition ? columns(column.get()) : this;
 	}
 
-	private QueryBuilder columns(DBColumn... columns) {
+	public QueryBuilder columns(DBColumn... columns) {
 		this.columns = concat(this.columns, columns);
 		return this;
 	}
@@ -68,35 +82,14 @@ public final class QueryBuilder {
 		return condition ? where(filter.get()) : this;
 	}
 	
-//	public QueryBuilder having(DBFilter... filters){
-//		return where(filters);
-//	}
-
-	public List<DynamicModel> execute(Function<ParametredQuery, List<DynamicModel>> fn) {
-		
-		return execute(null, fn);
-	}
-	
-	public List<DynamicModel> execute(InFilter<YearMonth> partition, Function<ParametredQuery, List<DynamicModel>> fn) {
-
-		requireNonNull(fn);
-		var bg = System.currentTimeMillis();
-		var query = build(partition);
-		log.info("query built in {} ms", System.currentTimeMillis() - bg);
-		var rows = fn.apply(query);
-        log.info("query parameters : {}", Arrays.toString(query.getParams()));
-		log.info("{} rows in {} ms", rows.size(), System.currentTimeMillis() - bg);
-		return rows;
+	public QueryBuilder partition(Function<DBTable, YearMonth[]> partitionFn){
+		this.partitionFn = partitionFn;
+		return this;
 	}
 
 	public List<DynamicModel> execute(DataSource ds){
 		
-		return execute(null, ds);
-	}
-	
-	public List<DynamicModel> execute(InFilter<YearMonth> partition, DataSource ds){
-		
-		return execute(partition, q-> {
+		return execute(q-> {
 			List<DynamicModel> res;
 			try(var cn = ds.getConnection()){
 				try(var ps = cn.prepareStatement(q.getQuery())){
@@ -120,24 +113,41 @@ public final class QueryBuilder {
 		});
 	}
 	
-	public ParametredQuery build(InFilter<YearMonth> partition){
+	public List<DynamicModel> execute(Function<ParametredQuery, List<DynamicModel>> fn) {
 
-		if(partition == null || Utils.isEmpty(partition.getValues())) {
+		requireNonNull(fn);
+		var bg = System.currentTimeMillis();
+		var query = build();
+		log.info("query built in {} ms", System.currentTimeMillis() - bg);
+		var rows = fn.apply(query);
+        log.info("query parameters : {}", Arrays.toString(query.getParams()));
+		log.info("{} rows in {} ms", rows.size(), System.currentTimeMillis() - bg);
+		return rows;
+	}
+	
+	
+	public ParametredQuery build(){
+		
+		if(partitionFn == null) {
 			return build(schema, table, columns, filters, null);
 		}
-		var map = Stream.of(partition.getValues()).collect(groupingBy(YearMonth::getYear));
+		var ymList = partitionFn.apply(table);
+		if(isEmpty(ymList)) {
+			return build(schema, table, columns, filters, null);
+		}
+		var map = Stream.of(ymList).collect(groupingBy(YearMonth::getYear));
 		if(map.size() == 1) {//one table reference
 			var e = map.entrySet().iterator().next();
-			where(partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
+			where(table.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
 			if(e.getValue().size() > 1) {//add month rev. when multiple values
-				columns(partition.getColumn());
+				columns(table.getRevisionColumn());
 			}
 			return build(schema, table, columns, filters, e.getKey());
 		}
 		var queries = map.entrySet().stream()
 			.map(e-> {
-				var ftrs = new DBFilter[]{partition.getColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
-				var cols = new DBColumn[]{partition.getColumn(), staticColumn(e.getKey(), "revisionYear")}; //add year rev. when multiple values
+				var ftrs = new DBFilter[]{table.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
+				var cols = new DBColumn[]{table.getRevisionColumn(), staticColumn(e.getKey(), "revisionYear")}; //add year rev. when multiple values
 				return build(schema, table, 
 						concat(this.columns, cols), 
 						concat(this.filters, ftrs), 
