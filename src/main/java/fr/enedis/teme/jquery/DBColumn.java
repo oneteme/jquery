@@ -1,5 +1,8 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.IntervalCaseExpression.intervals;
+import static fr.enedis.teme.jquery.ValuesCaseExpression.values;
+
 public interface DBColumn extends DBObject<DBTable> {
 
 	String getMappedName();
@@ -57,4 +60,15 @@ public interface DBColumn extends DBObject<DBTable> {
     	return new IntervalFilter<>(this, null, false, max, true);
     }
 
+    default IntervalCaseExpression caseIntervals(int... value){
+    	return intervals(this, value);
+    }
+
+    default IntervalCaseExpression caseIntervals(double... value){
+    	return intervals(this, value);
+    }
+    
+    default <T> ValuesCaseExpression<T> caseValues(CaseExpressionBuilder<T> cb){
+    	return values(this, cb);
+    }
 }

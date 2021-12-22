@@ -8,4 +8,8 @@ public interface TableColumn extends DBColumn {
 	default String toSql(DBTable table) {
 		return requireNonBlank(requireNonNull(table).getColumnName(this));
 	}
+	
+	default String groupAlias(DBTable table) {
+		return toSql(table);
+	}
 }

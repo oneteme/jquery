@@ -17,6 +17,10 @@ public final class Utils {
 		return a == null || a.length == 0;
 	}
 	
+	public static boolean isEmpty(double[] a) {
+		return a == null || a.length == 0;
+	}
+	
 	public static <T> boolean isEmpty(T[] a) {
 		return a == null || a.length == 0;
 	}

@@ -59,11 +59,6 @@ public final class QueryBuilder {
 		return columns(columns);
 	}
 
-	public QueryBuilder columns(boolean condition, Supplier<DBColumn> column) {
-		
-		return condition ? columns(column.get()) : this;
-	}
-
 	public QueryBuilder columns(DBColumn... columns) {
 		this.columns = concat(this.columns, columns);
 		return this;
@@ -71,6 +66,11 @@ public final class QueryBuilder {
 	
 	public QueryBuilder groupBy(DBColumn... columns) {
 		return columns(columns);
+	}
+
+	public QueryBuilder groupBy(boolean condition, Supplier<DBColumn> column) {
+		
+		return condition ? columns(column.get()) : this;
 	}
 
 	public QueryBuilder where(DBFilter... filters){
@@ -178,9 +178,10 @@ public final class QueryBuilder {
         if(Stream.of(columns).anyMatch(DBColumn::isAggregated)) {
         	var gc = Stream.of(columns)
         			.filter(TableColumn.class::isInstance)
-        			.toArray(DBColumn[]::new);
+        			.map(c-> ((TableColumn)c).groupAlias(table))
+        			.toArray(String[]::new);
         	if(gc.length > 0) {
-        		q = q.append(" GROUP BY " + joinColumns(table, gc));
+        		q = q.append(" GROUP BY " + String.join(",", gc));
         	}
         }
         return new ParametredQuery(q.toString(), columns, args.toArray());
