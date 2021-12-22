@@ -33,10 +33,10 @@ public final class QueryBuilder {
 	private DBFilter[] filters;
 	private Function<DBTable, YearMonth[]> partitionFn;
 			
-	public QueryBuilder(QueryParam param) {
-		columns(param.getColumns());
-		where(param.getFilters());
-		partition(param.getPartitionFn());
+	public QueryBuilder(RequestVariable rv) {
+		columns(rv.getColumns());
+		where(rv.getFilters());
+		partition(rv.getPartitionFn());
 	}
 	
 	public QueryBuilder selectAll(String schema, DBTable table) {

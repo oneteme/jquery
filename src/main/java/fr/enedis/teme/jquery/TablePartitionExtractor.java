@@ -66,19 +66,19 @@ public final class TablePartitionExtractor {
 	
 	private List<YearMonth> tableMonths(DBTable table) {
 		
-		List<String> l = new LinkedList<>();
+		List<String> nName = new LinkedList<>();
 		try(ResultSet rs = ds.getConnection().getMetaData().getTables(null, null, table.getTableName()+"_20__", null)){
 			while(rs.next()) {
 				var tn = rs.getString("TABLE_NAME");
 				if(tn.matches(table.getTableName() + "_20[0-9]{2}")) { // strict pattern
-					l.add(tn);
+					nName.add(tn);
 				}
 			}
 		}
 		catch(SQLException e) {
 			throw new PartitionExtractException(table + " : cannot extract table partition years : ", e);
 		}
-		return tableMonths(table, l);
+		return tableMonths(table, nName);
 	}
 	
 	private List<YearMonth> tableMonths(DBTable table, List<String> tableName) {

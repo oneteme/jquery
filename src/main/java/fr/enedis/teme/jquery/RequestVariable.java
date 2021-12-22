@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public final class QueryParam {
+public final class RequestVariable {
 	
 	private final DBColumn[] columns;
 	private final DBFilter[] filters;
