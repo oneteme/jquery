@@ -21,7 +21,7 @@ public final class CaseExpressionBuilder<T> {
 	private String defaultValue;
 	
 	@SuppressWarnings("unchecked")
-	public CaseExpressionBuilder<T> append(String title, T... values) {
+	public CaseExpressionBuilder<T> when(String title, T... values) {
 		cases.add(entry(requireNonNull(title), requireNonEmpty(values)));
 		return this;
 	}
@@ -31,13 +31,13 @@ public final class CaseExpressionBuilder<T> {
 		return this;
 	}
 	
-	public static CaseExpressionBuilder<Integer> when(String title, Integer... values) {
+	public static CaseExpressionBuilder<Integer> caseWhen(String title, Integer... values) {
 		return new CaseExpressionBuilder<>(new LinkedList<Entry<String, Integer[]>>(), Integer.class)
-				.append(title, values);
+				.when(title, values);
 	}
 	
-	public static CaseExpressionBuilder<String> when(String title, String... values) {
+	public static CaseExpressionBuilder<String> caseWhen(String title, String... values) {
 		return new CaseExpressionBuilder<>(new LinkedList<Entry<String, String[]>>(), String.class)
-				.append(title, values);
+				.when(title, values);
 	}
 }
