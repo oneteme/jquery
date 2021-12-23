@@ -3,7 +3,7 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.ConstantColumn.staticColumn;
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
-public interface DBFunction extends DBObject<String> {
+public interface DBExpression extends DBObject<String> {
 	
 	String getFunctionName();
 		

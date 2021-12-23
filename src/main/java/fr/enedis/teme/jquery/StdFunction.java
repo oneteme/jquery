@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public enum StdFunction implements DBFunction {
+public enum StdFunction implements DBExpression {
 
 	ABS, TRIM, LENGTH, UPPER, LOWER;
 	

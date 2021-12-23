@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public abstract class CaseExpressionColumn implements DBFunction {
+public abstract class CaseExpression implements DBExpression {
 	
 	protected abstract String caseExpression(String columnName);
 

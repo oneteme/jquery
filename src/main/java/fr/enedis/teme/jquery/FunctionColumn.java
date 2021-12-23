@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 public final class FunctionColumn implements DBColumn {
 
 	@NonNull
-	private final DBFunction function;
+	private final DBExpression function;
 	@NonNull
 	private final DBColumn column;
 	private final String mappedName; // nullable

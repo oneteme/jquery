@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public final class IntervalCaseExpression extends CaseExpressionColumn {
+public final class IntervalCaseExpression extends CaseExpression {
 
 	private final Number[] values;
 	
@@ -35,7 +35,6 @@ public final class IntervalCaseExpression extends CaseExpressionColumn {
 		return new IntervalCaseExpression(
 				DoubleStream.of(requireNonEmpty(serie)).sorted().mapToObj(c-> c).toArray(Double[]::new));
 	}
-	
 	
 	private static String lessThanQuery(String cn, Object val) {
 		return whenThen(cn + "<" + val, "lt_" + val);

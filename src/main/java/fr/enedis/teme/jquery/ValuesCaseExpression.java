@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public final class ValuesCaseExpression<T> extends CaseExpressionColumn {
+public final class ValuesCaseExpression<T> extends CaseExpression {
 	
 	private final CaseExpressionBuilder<T> cb;
 
