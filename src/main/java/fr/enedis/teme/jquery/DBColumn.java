@@ -1,24 +1,32 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.IntervalCaseExpression.intervals;
-import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 import static fr.enedis.teme.jquery.ValuesCaseExpression.values;
-import static java.util.Objects.requireNonNull;
+
+import lombok.NonNull;
 
 public interface DBColumn extends DBObject<DBTable> {
 
 	String getMappedName();
-	
-	default String toSql(DBTable table) {
-		return requireNonBlank(requireNonNull(table).getColumnName(this));
+
+	default String toSql(@NonNull DBTable table) {
+		return table.getColumnName(this);
 	}
 	
 	default boolean isAggregated() {
 		return false;
 	}
 	
+	default boolean isExpression() {
+		return false;
+	}
+	
+	default boolean isConstant() {
+		return false;
+	}
+	
 	default String getAlias(DBTable table) {
-		return null;
+		return toSql(table);
 	}
 
 	// filters
@@ -70,15 +78,29 @@ public interface DBColumn extends DBObject<DBTable> {
     	return new IntervalFilter<>(this, null, false, max, true);
     }
 
+	// function columns
+    
     default FunctionColumn caseIntervals(int... value){
     	return new FunctionColumn(intervals(value), this, null);
+    }
+
+    default FunctionColumn caseIntervals(String mappedName, int... value){
+    	return new FunctionColumn(intervals(value), this, mappedName);
     }
 
     default FunctionColumn caseIntervals(double... value){
     	return new FunctionColumn(intervals(value), this, null);
     }
+
+    default FunctionColumn caseIntervals(String mappedName, double... value){
+    	return new FunctionColumn(intervals(value), this, mappedName);
+    }
     
     default <T> FunctionColumn caseValues(CaseExpressionBuilder<T> cb){
     	return new FunctionColumn(values(cb), this, null);
+    }
+
+    default <T> FunctionColumn caseValues(String mappedName, CaseExpressionBuilder<T> cb){
+    	return new FunctionColumn(values(cb), this, mappedName);
     }
 }

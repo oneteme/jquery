@@ -1,9 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
-import static java.util.Optional.ofNullable;
 
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
@@ -54,10 +52,6 @@ public final class Utils {
 		return c1 == null ? c2 : c1;
 	}
 
-	public static <T> String mapNullableOrEmpty(T o, Function<T, String> fn) {
-		return ofNullable(o).map(fn).orElse("");
-	}
-	
 	public static String sqlString(Object o) {
 		return "'" + o.toString() + "'";
 	}

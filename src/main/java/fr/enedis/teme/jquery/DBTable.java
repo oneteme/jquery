@@ -1,6 +1,8 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Utils.mapNullableOrEmpty;
+import static java.util.Optional.ofNullable;
+
+import lombok.NonNull;
 
 public interface DBTable extends DBObject<String> {
 	
@@ -10,13 +12,15 @@ public interface DBTable extends DBObject<String> {
 	
 	DBFilter[] getClauses();
 	
-	String getColumnName(DBColumn column);
+	String getColumnName(@NonNull DBColumn column);
 	
 	DBColumn getRevisionColumn();
 	
 	@Override
 	default String toSql(String schema) {
-		return mapNullableOrEmpty(schema, v-> v+".") + getTableName();
+		return ofNullable(schema)
+				.map(v-> v+".")
+				.orElse("") + getTableName();
 	}
 	
 	//partition table

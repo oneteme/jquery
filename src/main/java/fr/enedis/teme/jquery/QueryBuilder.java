@@ -5,7 +5,6 @@ import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
@@ -149,7 +148,7 @@ public final class QueryBuilder {
 		var queries = map.entrySet().stream()
 			.map(e-> {
 				var ftrs = new DBFilter[]{table.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
-				var cols = new DBColumn[]{table.getRevisionColumn(), staticColumn(e.getKey(), "revisionYear")}; //add year rev. when multiple values
+				var cols = new DBColumn[]{table.getRevisionColumn(), staticColumn("revisionYear", e.getKey())}; //add year rev. when multiple values
 				return build(schema, table, 
 						concat(this.columns, cols), 
 						concat(this.filters, ftrs), 
@@ -165,22 +164,22 @@ public final class QueryBuilder {
     	requireNonEmpty(columns);
 
         var q = new StringBuilder("SELECT ")
-        		.append(joinColumns(table, columns))
+        		.append(selectColumns(table, columns))
         		.append(" FROM " + (year == null ? table.toSql(schema) : table.toSql(schema, year)));
         
         var filter = concat(table.getClauses(), filters);
         var args = new LinkedList<>();
         if(!isEmpty(filter)) {
-        	q = q.append(" WHERE 1=1");
-        	for(var f : filter) {
-        		q = q.append(" AND ").append(f.toSql(table));
-                args.addAll(f.args());
-        	}
+        	q = q.append(" WHERE ")
+    			.append(Stream.of(filter).map(f-> {
+        			 args.addAll(f.args());
+        			return f.toSql(table);
+        		}).collect(joining(" AND ")));
         }
         if(Stream.of(columns).anyMatch(DBColumn::isAggregated)) {
         	var gc = Stream.of(columns)
-        			.filter(not(DBColumn::isAggregated).and(not(ConstantColumn.class::isInstance)))
-        			.map(c-> ofNullable(c.getAlias(table)).orElseGet(()-> c.toSql(table)))
+        			.filter(not(DBColumn::isAggregated).and(not(DBColumn::isConstant)))
+        			.map(c-> c.getAlias(table))
         			.toArray(String[]::new);
         	if(gc.length > 0) {
         		q = q.append(" GROUP BY " + String.join(",", gc));
@@ -199,10 +198,10 @@ public final class QueryBuilder {
 				queries.stream().flatMap(o-> Stream.of(o.getParams())).toArray());
 	}
 	
-    private static final String joinColumns(DBTable table, DBColumn[] columns) {
+    private static final String selectColumns(DBTable table, DBColumn[] columns) {
     	
     	return Stream.of(columns)
-    			.map(c-> c.toSql(table) + ofNullable(c.getAlias(table)).map(" AS "::concat).orElse(""))
+    			.map(c-> c.toSql(table) + (c.isConstant() || c.isExpression() ? " AS " + c.getAlias(table) : ""))
     			.collect(joining(", "));
     }
 }

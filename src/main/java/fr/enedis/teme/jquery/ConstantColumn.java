@@ -2,7 +2,6 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Utils.sqlString;
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
-import static java.util.Objects.requireNonNull;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -14,15 +13,30 @@ import lombok.RequiredArgsConstructor;
 public final class ConstantColumn<T> implements DBColumn {
 	
 	@NonNull
-	private final T expression;
-	@NonNull
 	private final String mappedName;
+	private final T expression; //nullable
 
 	@Override
 	public String toSql(DBTable table) {
-		return expression instanceof Number 
-			? expression.toString() 
+		if(expression == null) {
+			return "null";
+		}
+		if(expression instanceof Number) {
+			return expression.toString();
+		}
+		return "*".equals(expression) 
+			? expression.toString()
 			: sqlString(expression.toString());
+	}
+	
+	@Override
+	public boolean isExpression() {
+		return true;
+	}
+	
+	@Override
+	public boolean isConstant() {
+		return true;
 	}
 	
 	@Override
@@ -35,9 +49,7 @@ public final class ConstantColumn<T> implements DBColumn {
 		return toSql(null);
 	}
 	
-	public static <T> ConstantColumn<T> staticColumn(T expression, String mappedName) {
-		return new ConstantColumn<>(
-				requireNonNull(expression), 
-				requireNonBlank(mappedName));
+	public static <T> ConstantColumn<T> staticColumn(String mappedName, T expression) {
+		return new ConstantColumn<>(requireNonBlank(mappedName), expression);
 	}
 }

@@ -1,6 +1,5 @@
 package fr.enedis.teme.jquery;
 
-import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElseGet;
 
 import lombok.Getter;
@@ -18,23 +17,28 @@ public final class FunctionColumn implements DBColumn {
 	private final String mappedName; // nullable
 
 	@Override
-	public String getMappedName() {
-		return requireNonNullElseGet(mappedName, ()-> function.mappedName(column.getMappedName()));
-	}
-	
-	@Override
-	public String getAlias(DBTable table) {
-		return function.mappedName(column.toSql(requireNonNull(table)));
-	}
-	
-	@Override
-	public String toSql(DBTable table) {
-		return function.toSql(column.toSql(requireNonNull(table)));
+	public String toSql(@NonNull DBTable table) {
+		return function.toSql(column.toSql(table));
 	}
 	
 	@Override
 	public boolean isAggregated() {
 		return function.isAggregation();
+	}
+
+	@Override
+	public boolean isExpression() {
+		return true;
+	}
+
+	@Override
+	public String getAlias(@NonNull DBTable table) {
+		return function.mappedName(column.getAlias(table));
+	}
+	
+	@Override
+	public String getMappedName() {
+		return requireNonNullElseGet(mappedName, ()-> function.mappedName(column.getMappedName()));
 	}
 	
 	@Override

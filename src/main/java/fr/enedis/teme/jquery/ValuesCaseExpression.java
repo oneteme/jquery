@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Utils.isEmpty;
+import static fr.enedis.teme.jquery.Utils.sqlString;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
@@ -36,7 +37,7 @@ public final class ValuesCaseExpression<T> extends CaseExpression {
 				.collect(joining(" ")));
 		}
 		if(!isEmpty(cb.getDefaultValue())) {
-			sb.append(" ELSE " + cb.getDefaultValue());
+			sb.append(" ELSE " + sqlString(cb.getDefaultValue()));
 		}
 		return sb.toString();
 	}

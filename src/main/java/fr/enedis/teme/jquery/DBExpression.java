@@ -30,11 +30,11 @@ public interface DBExpression extends DBObject<String> {
 	}
 
 	default FunctionColumn ofAll(String mappedName) {
-		return new FunctionColumn(this, staticColumn("", "*"), mappedName);
+		return new FunctionColumn(this, staticColumn("all", "*"), mappedName);
 	}
 
 	default FunctionColumn ofAll() {
-		return new FunctionColumn(this, staticColumn("", "*"), null);
+		return new FunctionColumn(this, staticColumn("all", "*"), null);
 	}
 
 }
