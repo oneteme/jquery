@@ -1,33 +1,35 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Utils.mapNullableOrNull;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
+import static java.util.Objects.requireNonNullElseGet;
 
 import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public final class FunctionColumn implements DBColumn {
-	
-	private final DBFunction function;
-	private final DBColumn column; // nullable
 
-	public FunctionColumn(DBFunction function, DBColumn column) {
-		this.function = requireNonNull(function);
-		this.column = column;
-	}
+	@NonNull
+	private final DBFunction function;
+	@NonNull
+	private final DBColumn column;
+	private final String mappedName; // nullable
 
 	@Override
 	public String getMappedName() {
-		return function.getMappedName() + ofNullable(column)
-				.map(DBColumn::getMappedName)
-				.map("_"::concat)
-				.orElse("");
+		return requireNonNullElseGet(mappedName, ()-> function.mappedName(column.getMappedName()));
+	}
+	
+	@Override
+	public String getAlias(DBTable table) {
+		return function.mappedName(column.toSql(requireNonNull(table)));
 	}
 	
 	@Override
 	public String toSql(DBTable table) {
-		return function.toSql(mapNullableOrNull(column, c-> c.toSql(table)));
+		return function.toSql(column.toSql(requireNonNull(table)));
 	}
 	
 	@Override
@@ -37,7 +39,7 @@ public final class FunctionColumn implements DBColumn {
 	
 	@Override
 	public String toString() {
-		return function.toSql(mapNullableOrNull(column, DBColumn::getMappedName));
+		return function.toSql(getMappedName());
 	}
 	
 }

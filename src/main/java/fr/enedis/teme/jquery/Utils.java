@@ -54,11 +54,11 @@ public final class Utils {
 		return c1 == null ? c2 : c1;
 	}
 
-	public static <T, R> R mapNullableOrNull(T o, Function<T, R> fn) {
-		return ofNullable(o).map(fn).orElse(null);
-	}
-
 	public static <T> String mapNullableOrEmpty(T o, Function<T, String> fn) {
 		return ofNullable(o).map(fn).orElse("");
+	}
+	
+	public static String sqlString(Object o) {
+		return "'" + o.toString() + "'";
 	}
 }

@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.ConstantColumn.staticColumn;
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 public interface DBFunction extends DBObject<String> {
@@ -10,8 +11,8 @@ public interface DBFunction extends DBObject<String> {
 		return false;
 	}
 	
-	default String getMappedName() {
-		return getFunctionName().toLowerCase();
+	default String mappedName(String columnName) {
+		return getFunctionName().toLowerCase() + "_" + requireNonBlank(columnName);
 	}
 	
 	@Override
@@ -20,12 +21,20 @@ public interface DBFunction extends DBObject<String> {
 	}
 	
 	//FunctionColumn
+	default FunctionColumn of(DBColumn column, String mappedName) {
+		return new FunctionColumn(this, column, mappedName);
+	}
+	
 	default FunctionColumn of(DBColumn column) {
-		return new FunctionColumn(this, column);
+		return new FunctionColumn(this, column, null);
+	}
+
+	default FunctionColumn ofAll(String mappedName) {
+		return new FunctionColumn(this, staticColumn("", "*"), mappedName);
 	}
 
 	default FunctionColumn ofAll() {
-		return new FunctionColumn(this, null);
+		return new FunctionColumn(this, staticColumn("", "*"), null);
 	}
 
 }

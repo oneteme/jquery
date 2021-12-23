@@ -8,24 +8,21 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public final class ValuesCaseExpression<T> extends CaseExpressionColumn {
 	
 	private final CaseExpressionBuilder<T> cb;
-	
-	private ValuesCaseExpression(DBColumn column, CaseExpressionBuilder<T> choice) {
-		super(column);
-		this.cb = choice;
-	}
 
 	@Override
-	protected String toSql(String columnName) {
+	protected String caseExpression(String columnName) {
 		
 		int nv = cb.getCases().stream().mapToInt(o-> o.getValue().length).max().orElseThrow();
 		Function<T, String> fn = Number.class.isAssignableFrom(cb.getType())
 				? Object::toString 
-				: o-> "'" + o.toString() + "'";
+				: Utils::sqlString;
 		StringBuilder sb;
 		if(nv == 1) {//one value
 			sb = new StringBuilder(columnName + " ")
@@ -44,8 +41,8 @@ public final class ValuesCaseExpression<T> extends CaseExpressionColumn {
 		return sb.toString();
 	}
 	
-	public static <T> ValuesCaseExpression<T> values(DBColumn column, CaseExpressionBuilder<T> choice) {
-		return new ValuesCaseExpression<>(requireNonNull(column), requireNonNull(choice));
+	public static <T> ValuesCaseExpression<T> values(CaseExpressionBuilder<T> choice) {
+		return new ValuesCaseExpression<>(requireNonNull(choice));
 	}
 	
 }

@@ -1,14 +1,24 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.IntervalCaseExpression.intervals;
+import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 import static fr.enedis.teme.jquery.ValuesCaseExpression.values;
+import static java.util.Objects.requireNonNull;
 
 public interface DBColumn extends DBObject<DBTable> {
 
 	String getMappedName();
 	
+	default String toSql(DBTable table) {
+		return requireNonBlank(requireNonNull(table).getColumnName(this));
+	}
+	
 	default boolean isAggregated() {
 		return false;
+	}
+	
+	default String getAlias(DBTable table) {
+		return null;
 	}
 
 	// filters
@@ -60,15 +70,15 @@ public interface DBColumn extends DBObject<DBTable> {
     	return new IntervalFilter<>(this, null, false, max, true);
     }
 
-    default IntervalCaseExpression caseIntervals(int... value){
-    	return intervals(this, value);
+    default FunctionColumn caseIntervals(int... value){
+    	return new FunctionColumn(intervals(value), this, null);
     }
 
-    default IntervalCaseExpression caseIntervals(double... value){
-    	return intervals(this, value);
+    default FunctionColumn caseIntervals(double... value){
+    	return new FunctionColumn(intervals(value), this, null);
     }
     
-    default <T> ValuesCaseExpression<T> caseValues(CaseExpressionBuilder<T> cb){
-    	return values(this, cb);
+    default <T> FunctionColumn caseValues(CaseExpressionBuilder<T> cb){
+    	return new FunctionColumn(values(cb), this, null);
     }
 }

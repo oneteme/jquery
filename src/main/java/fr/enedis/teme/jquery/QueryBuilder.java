@@ -1,10 +1,12 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ExpressionColumn.staticColumn;
+import static fr.enedis.teme.jquery.ConstantColumn.staticColumn;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -177,8 +179,8 @@ public final class QueryBuilder {
         }
         if(Stream.of(columns).anyMatch(DBColumn::isAggregated)) {
         	var gc = Stream.of(columns)
-        			.filter(TableColumn.class::isInstance)
-        			.map(c-> ((TableColumn)c).groupAlias(table))
+        			.filter(not(DBColumn::isAggregated).and(not(ConstantColumn.class::isInstance)))
+        			.map(c-> ofNullable(c.getAlias(table)).orElseGet(()-> c.toSql(table)))
         			.toArray(String[]::new);
         	if(gc.length > 0) {
         		q = q.append(" GROUP BY " + String.join(",", gc));
@@ -200,8 +202,7 @@ public final class QueryBuilder {
     private static final String joinColumns(DBTable table, DBColumn[] columns) {
     	
     	return Stream.of(columns)
-    			.map(c-> c.toSql(table))
+    			.map(c-> c.toSql(table) + ofNullable(c.getAlias(table)).map(" AS "::concat).orElse(""))
     			.collect(joining(", "));
     }
-    
 }

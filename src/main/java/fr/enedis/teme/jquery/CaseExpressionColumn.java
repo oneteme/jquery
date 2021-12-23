@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static java.util.Objects.requireNonNull;
+import static fr.enedis.teme.jquery.Utils.sqlString;
+import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -8,30 +9,23 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public abstract class CaseExpressionColumn implements TableColumn {
+public abstract class CaseExpressionColumn implements DBFunction {
+	
+	protected abstract String caseExpression(String columnName);
 
-	private final DBColumn column;
-
 	@Override
-	public final String groupAlias(DBTable table) {
-		return "case_" + requireNonNull(table).getColumnName(column);
+	public String getFunctionName() {
+		return "case";
 	}
 	
 	@Override
-	public final String getMappedName() {
-		return column.getMappedName();
-	}
-	
-	@Override
-	public final String toSql(DBTable table) {
+	public final String toSql(String columnName) {
 		
-		return "CASE " + toSql(column.toSql(table)) + " END AS " + groupAlias(table);
+		return "CASE " + caseExpression(requireNonBlank(columnName)) + " END";
 	}
 	
-	protected abstract String toSql(String columnName);
-	
-	protected static String whenThen(String expression, String tag) {
+	protected static String whenThen(String expression, String label) {
 		
-		return "WHEN " + expression + " THEN '"+ tag+"'";
+		return "WHEN " + expression + " THEN " + sqlString(label);
 	}
 }

@@ -1,25 +1,21 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
-import static java.util.Objects.requireNonNull;
 
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 @Getter
+@RequiredArgsConstructor
 public final class IntervalCaseExpression extends CaseExpressionColumn {
 
 	private final Number[] values;
 	
-	private IntervalCaseExpression(DBColumn column, Number[] values) {
-		super(column);
-		this.values = values;
-	}
-	
 	@Override
-	protected String toSql(String columnName) {
+	protected String caseExpression(String columnName) {
 
 		var sb = new StringBuilder(lessThanQuery(columnName, values[0]));
 		for(int i=0; i<values.length-1; i++) {
@@ -28,17 +24,15 @@ public final class IntervalCaseExpression extends CaseExpressionColumn {
 		return sb.append(" "+greaterThanQuery(columnName, values[values.length-1])).toString();
 	}
 	
-	public static IntervalCaseExpression intervals(DBColumn column, int... serie) {
+	public static IntervalCaseExpression intervals(int... serie) {
 		
 		return new IntervalCaseExpression(
-				requireNonNull(column), 
 				IntStream.of(requireNonEmpty(serie)).sorted().mapToObj(c-> c).toArray(Integer[]::new));
 	}
 	
-	public static IntervalCaseExpression intervals(DBColumn column, double... serie) {
+	public static IntervalCaseExpression intervals(double... serie) {
 		
 		return new IntervalCaseExpression(
-				requireNonNull(column), 
 				DoubleStream.of(requireNonEmpty(serie)).sorted().mapToObj(c-> c).toArray(Double[]::new));
 	}
 	
