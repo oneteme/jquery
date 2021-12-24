@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ConstantColumn.staticColumn;
+import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
@@ -40,15 +40,6 @@ public final class QueryBuilder {
 		partition(rv.getPartitionFn());
 	}
 	
-	public QueryBuilder selectAll(String schema, DBTable table) {
-		this.schema = schema;
-		return select(table, table.getColumns());
-	}
-	
-	public QueryBuilder selectAll(DBTable table) {
-		return select(table, table.getColumns());
-	}
-
 	public QueryBuilder select(String schema, DBTable table, DBColumn... columns) {
 		this.schema = schema;
 		this.table = table;
@@ -167,11 +158,10 @@ public final class QueryBuilder {
         		.append(selectColumns(table, columns))
         		.append(" FROM " + (year == null ? table.toSql(schema) : table.toSql(schema, year)));
         
-        var filter = concat(table.getClauses(), filters);
         var args = new LinkedList<>();
-        if(!isEmpty(filter)) {
+        if(!isEmpty(filters)) {
         	q = q.append(" WHERE ")
-    			.append(Stream.of(filter).map(f-> {
+    			.append(Stream.of(filters).map(f-> {
         			 args.addAll(f.args());
         			return f.toSql(table);
         		}).collect(joining(" AND ")));
@@ -179,7 +169,7 @@ public final class QueryBuilder {
         if(Stream.of(columns).anyMatch(DBColumn::isAggregated)) {
         	var gc = Stream.of(columns)
         			.filter(not(DBColumn::isAggregated).and(not(DBColumn::isConstant)))
-        			.map(c-> c.getAlias(table))
+        			.map(c-> c.sqlAlias(table))
         			.toArray(String[]::new);
         	if(gc.length > 0) {
         		q = q.append(" GROUP BY " + String.join(",", gc));
@@ -201,7 +191,7 @@ public final class QueryBuilder {
     private static final String selectColumns(DBTable table, DBColumn[] columns) {
     	
     	return Stream.of(columns)
-    			.map(c-> c.toSql(table) + (c.isConstant() || c.isExpression() ? " AS " + c.getAlias(table) : ""))
+    			.map(c-> c.toSql(table) + (c.isConstant() || c.isExpression() ? " AS " + c.sqlAlias(table) : ""))
     			.collect(joining(", "));
     }
 }

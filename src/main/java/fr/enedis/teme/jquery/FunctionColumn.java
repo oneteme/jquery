@@ -17,7 +17,7 @@ public final class FunctionColumn implements DBColumn {
 	private final String mappedName; // nullable
 
 	@Override
-	public String toSql(@NonNull DBTable table) {
+	public String toSql(DBTable table) {
 		return function.toSql(column.toSql(table));
 	}
 	
@@ -32,8 +32,8 @@ public final class FunctionColumn implements DBColumn {
 	}
 
 	@Override
-	public String getAlias(@NonNull DBTable table) {
-		return function.mappedName(column.getAlias(table));
+	public String sqlAlias(@NonNull DBTable table) {
+		return function.mappedName(column.sqlAlias(table));
 	}
 	
 	@Override

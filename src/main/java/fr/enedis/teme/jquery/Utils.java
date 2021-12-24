@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
+import static java.util.Objects.requireNonNull;
 
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
@@ -26,6 +27,10 @@ public final class Utils {
 	public static boolean isEmpty(String str) {
 		return str == null || str.isEmpty();
 	}
+
+	public static boolean isBlank(String str) {
+		return str == null || str.isBlank();
+	}
 	
 	public static String nArgs(int nb){
 		illegalArgumentIf(nb < 1, "n < 1");
@@ -47,7 +52,7 @@ public final class Utils {
 	public static <T> T[] concat(T[] c1, T[] c2, IntFunction<T[]> fn) {
 		//warn ArrayStoreException : cannot merge (enum, class)
 		if(c1 != null && c2 != null) {
-			return Stream.concat(Stream.of(c1), Stream.of(c2)).toArray(fn);
+			return Stream.concat(Stream.of(c1), Stream.of(c2)).toArray(requireNonNull(fn));
 		}
 		return c1 == null ? c2 : c1;
 	}

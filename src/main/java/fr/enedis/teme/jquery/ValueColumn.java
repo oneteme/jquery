@@ -10,9 +10,8 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ConstantColumn<T> implements DBColumn {
+public final class ValueColumn<T> implements DBColumn {
 	
-	@NonNull
 	private final String mappedName;
 	private final T expression; //nullable
 
@@ -21,27 +20,20 @@ public final class ConstantColumn<T> implements DBColumn {
 		if(expression == null) {
 			return "null";
 		}
-		if(expression instanceof Number) {
+		if(expression instanceof Number || "*".equals(expression)) {
 			return expression.toString();
 		}
-		return "*".equals(expression) 
-			? expression.toString()
-			: sqlString(expression.toString());
+		return sqlString(expression.toString());
 	}
 	
 	@Override
-	public boolean isExpression() {
-		return true;
+	public String sqlAlias(DBTable table) {
+		return mappedName;
 	}
 	
 	@Override
 	public boolean isConstant() {
 		return true;
-	}
-	
-	@Override
-	public String getAlias(DBTable table) {
-		return mappedName;
 	}
 
 	@Override
@@ -49,7 +41,7 @@ public final class ConstantColumn<T> implements DBColumn {
 		return toSql(null);
 	}
 	
-	public static <T> ConstantColumn<T> staticColumn(String mappedName, T expression) {
-		return new ConstantColumn<>(requireNonBlank(mappedName), expression);
+	public static <T> ValueColumn<T> staticColumn(@NonNull String mappedName, T expression) {
+		return new ValueColumn<>(requireNonBlank(mappedName), expression);
 	}
 }

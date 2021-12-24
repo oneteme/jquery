@@ -14,18 +14,16 @@ public abstract class CaseExpression implements DBExpression {
 	protected abstract String caseExpression(String columnName);
 
 	@Override
+	public final String toSql(String columnName) {
+		return "CASE " + caseExpression(requireNonBlank(columnName)) + " END";
+	}
+
+	@Override
 	public String getFunctionName() {
 		return "case";
 	}
 	
-	@Override
-	public final String toSql(String columnName) {
-		
-		return "CASE " + caseExpression(requireNonBlank(columnName)) + " END";
-	}
-	
 	protected static String whenThen(String expression, String label) {
-		
 		return "WHEN " + expression + " THEN " + sqlString(label);
 	}
 }

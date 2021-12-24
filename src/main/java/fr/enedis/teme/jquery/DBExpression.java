@@ -1,23 +1,23 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ConstantColumn.staticColumn;
+import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 public interface DBExpression extends DBObject<String> {
 	
 	String getFunctionName();
-		
-	default boolean isAggregation() {
-		return false;
+	
+	@Override
+	default String toSql(String columnName) {
+		return getFunctionName().toUpperCase() + "(" + requireNonBlank(columnName) + ")";
 	}
 	
 	default String mappedName(String columnName) {
 		return getFunctionName().toLowerCase() + "_" + requireNonBlank(columnName);
 	}
-	
-	@Override
-	default String toSql(String columnName) {
-		return getFunctionName() + "(" + requireNonBlank(columnName) + ")";
+
+	default boolean isAggregation() {
+		return false;
 	}
 	
 	//FunctionColumn

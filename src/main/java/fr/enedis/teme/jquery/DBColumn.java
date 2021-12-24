@@ -13,6 +13,10 @@ public interface DBColumn extends DBObject<DBTable> {
 		return table.getColumnName(this);
 	}
 	
+	default String sqlAlias(@NonNull DBTable table) {
+		return table.getColumnName(this);
+	}
+	
 	default boolean isAggregated() {
 		return false;
 	}
@@ -23,10 +27,6 @@ public interface DBColumn extends DBObject<DBTable> {
 	
 	default boolean isConstant() {
 		return false;
-	}
-	
-	default String getAlias(DBTable table) {
-		return toSql(table);
 	}
 
 	// filters
