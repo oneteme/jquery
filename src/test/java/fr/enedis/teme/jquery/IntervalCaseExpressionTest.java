@@ -1,13 +1,11 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.IntervalCaseExpression.intervals;
-import static java.util.Arrays.asList;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.api.Test;
@@ -19,20 +17,20 @@ class IntervalCaseExpressionTest {
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testToSql(List<Number> serie, String columnName, String sql) {
-		assertEquals(sql, intervals(serie.stream()).toSql(columnName));
+	void testToSql(Object serie, String columnName, String sql) {
+		assertEquals(sql, create(serie).toSql(columnName));
 	}
 	
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testGetFunctionName(List<Number> serie) {
-		assertEquals("case", intervals(serie.stream()).getFunctionName());
+	void testGetFunctionName(Object serie) {
+		assertEquals("case", create(serie).getFunctionName());
 	}
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testMappedName(List<Number> serie, String columnName) {
-		var ce = intervals(serie.stream());
+	void testMappedName(Object serie, String columnName) {
+		var ce = create(serie);
 		assertEquals("case_" + columnName, ce.mappedName(columnName));
 		assertThrows(NullPointerException.class, ()-> ce.mappedName(null));
 		assertThrows(IllegalArgumentException.class, ()-> ce.mappedName(""));
@@ -40,14 +38,14 @@ class IntervalCaseExpressionTest {
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testIsAggregation(List<Number> serie) {
-		assertFalse(intervals(serie.stream()).isAggregation());
+	void testIsAggregation(Object serie) {
+		assertFalse(create(serie).isAggregation());
 	}
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testGetValues(List<Number> serie) {//100% coverage
-		assertArrayEquals(serie.toArray(), intervals(serie.stream()).getValues());
+	void testGetValues(Object serie, String columnName, String sql, Number[] values) {//100% coverage
+		assertArrayEquals(values, create(serie).getValues());
 	}
 	
 	@Test
@@ -60,9 +58,23 @@ class IntervalCaseExpressionTest {
 
 	private static Stream<Arguments> caseProvider() {
 	    return Stream.of(
-    		Arguments.of(asList(1,2), "column", "CASE WHEN column<1 THEN 'lt_1' WHEN column>=1 AND column<2 THEN 'bt_1_2' WHEN column>=2 THEN 'gt_2' END"),
-    		Arguments.of(asList(.12), "trim_column", "CASE WHEN trim_column<0.12 THEN 'lt_0.12' WHEN trim_column>=0.12 THEN 'gt_0.12' END")
+    		Arguments.of(new int[]{1,2}, "column", 
+    				"CASE WHEN column<1 THEN 'lt_1' WHEN column>=1 AND column<2 THEN 'bt_1_2' WHEN column>=2 THEN 'gt_2' END", 
+    				new Number[] {1,2}), //int 
+    		Arguments.of(new double[]{.12}, "trim_column", "CASE WHEN trim_column<0.12 THEN 'lt_0.12' WHEN trim_column>=0.12 THEN 'gt_0.12' END", 
+    				new Number[] {.12}), //double
+    		Arguments.of(new double[]{.77, .01, .12}, "index", "CASE WHEN index<0.01 THEN 'lt_0.01' WHEN index>=0.01 AND index<0.12 THEN 'bt_0.01_0.12' WHEN index>=0.12 AND index<0.77 THEN 'bt_0.12_0.77' WHEN index>=0.77 THEN 'gt_0.77' END", 
+    				new Number[] {.01, .12, .77})//unordered array 
 	    );
 	}
 
+	private static IntervalCaseExpression create(Object o) {
+		if(int[].class.isInstance(o)) {
+			return intervals((int[])o);
+		}
+		if(double[].class.isInstance(o)) {
+			return intervals((double[])o);
+		}
+		throw new UnsupportedOperationException();
+	}
 }

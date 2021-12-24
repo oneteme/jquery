@@ -36,7 +36,7 @@ public final class IntervalCaseExpression extends CaseExpression {
 		return intervals(DoubleStream.of(requireNonEmpty(serie)).mapToObj(c-> c));
 	}
 
-	static IntervalCaseExpression intervals(Stream<Number> values) {
+	private static IntervalCaseExpression intervals(Stream<Number> values) {
 		
 		return new IntervalCaseExpression(values.sorted().toArray(Number[]::new));
 	}
