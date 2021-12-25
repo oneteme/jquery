@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-enum BinaryOperator {
+enum LogicalOperator {
 	
 	AND, OR;
 	

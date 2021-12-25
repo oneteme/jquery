@@ -46,12 +46,6 @@ class ValueColumnTest {
 		assertEquals(mappedName, staticColumn(mappedName, expression).getMappedName());
 	}
 
-	@ParameterizedTest
-	@MethodSource("caseProvider")
-	void testGetExpression(String mappedName, Object expression) {// 100% coverage
-		assertEquals(expression, staticColumn(mappedName, expression).getExpression());
-	}
-
 	@Test
 	void testStaticColumn() {
 		assertThrows(NullPointerException.class, ()-> staticColumn(null, null));

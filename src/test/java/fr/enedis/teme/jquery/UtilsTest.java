@@ -3,15 +3,11 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
-import static fr.enedis.teme.jquery.Utils.nArgs;
-import static fr.enedis.teme.jquery.Utils.sqlString;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.time.LocalDate;
 import java.util.function.IntFunction;
 
 import org.junit.jupiter.api.Test;

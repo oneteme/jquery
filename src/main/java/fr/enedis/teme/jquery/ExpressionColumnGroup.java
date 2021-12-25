@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.BinaryOperator.AND;
-import static fr.enedis.teme.jquery.BinaryOperator.OR;
+import static fr.enedis.teme.jquery.LogicalOperator.AND;
+import static fr.enedis.teme.jquery.LogicalOperator.OR;
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static java.util.stream.Collectors.joining;
 
@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class ExpressionColumnGroup implements DBFilter {
 	
-	private final BinaryOperator operator;
+	private final LogicalOperator operator;
 	private final ExpressionColumn[] expression;
 	private final String tagname; //nullable
 

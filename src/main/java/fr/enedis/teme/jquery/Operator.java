@@ -11,7 +11,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 enum Operator {
 	
-	LT("<"), LE("<="), GT(">"), GE(">="), EQ("="), NE("<>"), 
+	EQ("="), NE("<>"), LT("<"), LE("<="), GT(">"), GE(">="), 
 	IS_NULL, IS_NOT_NULL, LIKE, NOT_LIKE, IN, NOT_IN;
 	
 	private static final String ARG = "?";
@@ -37,6 +37,11 @@ enum Operator {
 			return fn + "(" + values + ")";
 		}
 		throw new UnsupportedOperationException();
+	}
+	
+	@Override
+	public String toString() {
+		return sign == null ? name().replace("_", " ") : sign;
 	}
 
 	private static String nParameter(int n){

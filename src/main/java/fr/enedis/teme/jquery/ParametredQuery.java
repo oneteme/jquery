@@ -12,7 +12,7 @@ import lombok.Getter;
 public final class ParametredQuery {
 	
 	private final String query;
-	private DBColumn[] columns;
+	private final DBColumn[] columns;
 	private final Object[] params;
 	
 	public ParametredQuery(String query, DBColumn[] columns, Object... params) {
