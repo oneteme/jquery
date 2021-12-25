@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static java.util.Objects.requireNonNullElseGet;
 
 import lombok.Getter;
@@ -8,7 +9,7 @@ import lombok.NonNull;
 public final class FunctionColumn implements DBColumn {
 
 	@Getter
-	private final String mappedName; // nullable
+	private final String mappedName;
 	private final DBColumn column;
 	private final DBFunction function;
 	
@@ -40,6 +41,6 @@ public final class FunctionColumn implements DBColumn {
 		
 	@Override
 	public String toString() {
-		return function.sql(getMappedName());
+		return sql(mockTable());
 	}
 }

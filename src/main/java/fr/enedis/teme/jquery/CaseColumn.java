@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ExpressionColumnGroup.and;
 import static fr.enedis.teme.jquery.SqlStringBuilder.constantString;
 import static fr.enedis.teme.jquery.Utils.isBlank;
@@ -22,7 +23,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class CaseColumn implements DBColumn {
+public final class CaseColumn implements DBColumn {
 
 	@Getter
 	private final String mappedName;
@@ -31,7 +32,8 @@ public class CaseColumn implements DBColumn {
 	
 	@Override
 	public String sql(DBTable table) {
-		return new SqlStringBuilder(filters.size() * 50).append("CASE ")
+		return new SqlStringBuilder(filters.size() * 50)
+				.append("CASE ")
 				.append(filters.stream()
 					.map(f-> "WHEN " + f.sql(table) + " THEN " + constantString(f.tag(table)))
 					.collect(joining(" "))) //optimize
@@ -40,13 +42,18 @@ public class CaseColumn implements DBColumn {
 	}
 
 	@Override
-	public String tag(@NonNull DBTable table) {
+	public String tag(DBTable table) {
 		return mappedName;
 	}
 	
 	@Override
 	public boolean isExpression() {
 		return true;
+	}
+	
+	@Override
+	public String toString() {
+		return sql(mockTable());
 	}
 
 	public static CaseColumn betweenIntervals(@NonNull DBColumn column, @NonNull Number... serie) {

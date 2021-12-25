@@ -31,12 +31,12 @@ public final class OperationExpression<T> implements DBExpression {
 
 	@NonNull
 	private final Operator operator;
-	private final T value;//nullable
+	private final T value; //nullable
 	private final boolean dynamic;
 	
 	@Override
 	public String sql(String cn) {
-		return cn + operator.toSql(value, dynamic);
+		return cn + operator.sql(value, dynamic);
 	}
 
 	@Override
@@ -49,7 +49,7 @@ public final class OperationExpression<T> implements DBExpression {
 
 	@Override
 	public String toString() {
-		return operator.toSql(value, true);
+		return sql("");
 	}
 	
 	public static final <T> OperationExpression<T> lessThan(boolean dynamic, @NonNull T value) {
@@ -68,7 +68,7 @@ public final class OperationExpression<T> implements DBExpression {
 		return new OperationExpression<>(GE, value, dynamic);
 	}
 
-	public static final <T> OperationExpression<T> equal(boolean dynamic, @NonNull T value) {
+	public static final <T> OperationExpression<T> equals(boolean dynamic, @NonNull T value) {
 		return new OperationExpression<>(EQ, value, dynamic);
 	}
 

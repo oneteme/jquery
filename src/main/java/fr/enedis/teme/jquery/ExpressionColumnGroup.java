@@ -2,6 +2,7 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.BinaryOperator.AND;
 import static fr.enedis.teme.jquery.BinaryOperator.OR;
+import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static java.util.stream.Collectors.joining;
 
 import java.util.stream.Stream;
@@ -10,7 +11,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public class ExpressionColumnGroup implements DBFilter {
+public final class ExpressionColumnGroup implements DBFilter {
 	
 	private final BinaryOperator operator;
 	private final ExpressionColumn[] expression;
@@ -35,9 +36,7 @@ public class ExpressionColumnGroup implements DBFilter {
 	
 	@Override
 	public String toString() {
-		return Stream.of(expression)
-				.map(ExpressionColumn::toString)
-				.collect(joining(operator.toString()));
+		return sql(mockTable());
 	}
 
 	public static ExpressionColumnGroup and(@NonNull ExpressionColumn... expressions) {

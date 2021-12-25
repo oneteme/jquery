@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
 @SuppressWarnings("serial")
-public class PartitionExtractException extends RuntimeException {
+public final class PartitionExtractException extends RuntimeException {
 
 	public PartitionExtractException(String message) {
 		super(message);

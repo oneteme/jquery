@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public class GenericColumn implements DBColumn {
+public final class GenericColumn implements DBColumn {
 
 	static final DBColumn c1 = new GenericColumn("someCode");
 	static final DBColumn c2 = new GenericColumn("someName");

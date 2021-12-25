@@ -26,4 +26,24 @@ public interface DBTable extends DBObject<String> {
 	default String toSql(String schema, int year) {
 		return sql(schema) + "_" + year;
 	}
+	
+	static DBTable mockTable() {
+		return new DBTable() {
+
+			@Override
+			public String getTableName() {
+				return "${table}";
+			}
+			
+			@Override
+			public DBColumn getRevisionColumn() {
+				return null;
+			}
+			
+			@Override
+			public String getColumnName(DBColumn column) {
+				return "${"+ column.getMappedName() +"}";
+			}
+		}; 
+	}
 }

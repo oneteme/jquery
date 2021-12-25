@@ -7,6 +7,8 @@ public interface DBFunction extends DBObject<String> {
 	
 	String getFunctionName();
 	
+	boolean isAggregate();
+	
 	@Override
 	default String sql(String columnName) {
 		return getFunctionName().toUpperCase() + "(" + requireNonBlank(columnName) + ")";
@@ -17,9 +19,6 @@ public interface DBFunction extends DBObject<String> {
 		return getFunctionName().toLowerCase() + "_" + requireNonBlank(columnName);
 	}
 
-	default boolean isAggregate() {
-		return false;
-	}
 	
 	//FunctionColumn
 	default FunctionColumn of(DBColumn column, String mappedName) {

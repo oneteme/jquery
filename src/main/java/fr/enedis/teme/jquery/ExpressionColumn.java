@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static java.util.Objects.requireNonNullElseGet;
 
 import java.util.stream.Stream;
@@ -39,7 +40,7 @@ public final class ExpressionColumn implements DBFilter {
 	
 	@Override
 	public String toString() {
-		return expression.sql(column.getMappedName());
+		return sql(mockTable());
 	}
 	
 }

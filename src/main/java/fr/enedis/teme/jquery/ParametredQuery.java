@@ -9,7 +9,7 @@ import java.sql.SQLException;
 import lombok.Getter;
 
 @Getter
-public class ParametredQuery {
+public final class ParametredQuery {
 	
 	private final String query;
 	private DBColumn[] columns;

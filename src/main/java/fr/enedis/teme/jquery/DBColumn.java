@@ -2,7 +2,6 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.CaseColumn.betweenIntervals;
 import static fr.enedis.teme.jquery.CaseColumn.inValues;
-import static fr.enedis.teme.jquery.OperationExpression.equal;
 import static fr.enedis.teme.jquery.OperationExpression.greaterOrEquals;
 import static fr.enedis.teme.jquery.OperationExpression.greaterThan;
 import static fr.enedis.teme.jquery.OperationExpression.in;
@@ -52,7 +51,7 @@ public interface DBColumn extends DBObject<DBTable> {
     }
 	
     default ExpressionColumn equalFilter(Object value){
-    	return new ExpressionColumn(this, equal(true, value));
+    	return new ExpressionColumn(this, OperationExpression.equals(true, value));
     }
     
     default ExpressionColumn notEqualFilter(Object value){
@@ -93,7 +92,7 @@ public interface DBColumn extends DBObject<DBTable> {
     }
 	
     default ExpressionColumn equalExpression(String tagname, Object value){
-    	return new ExpressionColumn(this, equal(false,value), tagname);
+    	return new ExpressionColumn(this, OperationExpression.equals(false,value), tagname);
     }
     
     default ExpressionColumn notEqualExpression(String tagname, Object value){

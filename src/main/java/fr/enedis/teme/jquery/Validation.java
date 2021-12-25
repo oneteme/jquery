@@ -11,25 +11,13 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Validation {
 	
-	private static final String EMPTY_ARRAY = "empty array";
-
     public static String requireNonBlank(String obj) {
 		illegalArgumentIf(requireNonNull(obj).isBlank(), "empty string");
 		return obj;
 	}
 
 	public static <T> T[] requireNonEmpty(T[] arr){
-		illegalArgumentIf(requireNonNull(arr).length == 0, EMPTY_ARRAY);
-		return arr;
-	}
-	
-	public static int[] requireNonEmpty(int[] arr){
-		illegalArgumentIf(requireNonNull(arr).length == 0, EMPTY_ARRAY);
-		return arr;
-	}
-
-	public static double[] requireNonEmpty(double[] arr){
-		illegalArgumentIf(requireNonNull(arr).length == 0, EMPTY_ARRAY);
+		illegalArgumentIf(requireNonNull(arr).length == 0, "empty array");
 		return arr;
 	}
 	

@@ -19,32 +19,10 @@ import org.junit.jupiter.api.Test;
 class UtilsTest {
 
 	@Test
-	void testIsEmptyIntArray() {
-	 	assertTrue(isEmpty((int[])null));
-	 	assertTrue(isEmpty(new int[]{}));
-	 	assertFalse(isEmpty(new int[]{1}));
-	}
-
-	@Test
-	void testIsEmptyDoubleArray() {
-	 	assertTrue(isEmpty((double[])null));
-	 	assertTrue(isEmpty(new double[]{}));
-	 	assertFalse(isEmpty(new double[]{.1}));
-	}
-
-	@Test
 	void testIsEmptyTArray() {
 	 	assertTrue(isEmpty((String[])null));
 	 	assertTrue(isEmpty(new String[]{}));
 	 	assertFalse(isEmpty(new String[]{""}));
-	}
-
-	@Test
-	void testIsEmptyString() {
-	 	assertTrue(isEmpty((String)null));
-	 	assertTrue(isEmpty(""));
-	 	assertFalse(isEmpty(" "));
-	 	assertFalse(isEmpty("A"));
 	}
 
 	@Test
@@ -53,15 +31,6 @@ class UtilsTest {
 	 	assertTrue(isBlank(""));
 	 	assertTrue(isBlank(" "));
 	 	assertFalse(isBlank("A"));
-	}
-
-	@Test
-	void testNArgs() {
-		assertEquals("(?)", nArgs(1));
-		assertEquals("(?,?)", nArgs(2));
-		assertEquals("(?,?,?,?,?)", nArgs(5));
-		assertThrows(IllegalArgumentException.class, ()-> nArgs(0));
-		assertThrows(IllegalArgumentException.class, ()-> nArgs(-1));
 	}
 
 	@Test
@@ -87,14 +56,6 @@ class UtilsTest {
 		assertArrayEquals(array("1","2","3","4","5"), concat(a1, a2, fn));
 		assertThrows(NullPointerException.class, ()-> concat(a1, a2, null));
 	}
-
-	@Test
-	void testSqlString() {
-		assertEquals("'0'", constantString(0));
-		assertEquals("'A'", constantString("A"));
-		assertEquals("'2020-01-01'", constantString(LocalDate.of(2020, 1, 1)));
-	}
-
 	private static String[] array(String... arr) {
 		return arr;
 	}
