@@ -1,46 +1,67 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.GenericColumn.c1;
+import static fr.enedis.teme.jquery.GenericColumn.c2;
+import static fr.enedis.teme.jquery.GenericColumn.c3;
+import static fr.enedis.teme.jquery.GenericColumn.c4;
+import static fr.enedis.teme.jquery.GenericTable.c1_name;
+import static fr.enedis.teme.jquery.GenericTable.c2_name;
+import static fr.enedis.teme.jquery.GenericTable.c3_name;
+import static fr.enedis.teme.jquery.GenericTable.c4_name;
+import static fr.enedis.teme.jquery.GenericTable.tab1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-import java.util.Map;
+import java.util.stream.Stream;
 
-import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class DBColumnTest {
 	
-	private final DBColumn column = new GenericColumn("objField");
-	private final DBTable table = new GenericTable("", Map.of(column, "tab_column"), null);
-
-	@Test
-	void testToSql() {
-		assertEquals("tab_column", column.toSql(table));
-		assertNotEquals(column.getMappedName(), column.toSql(table));
-		assertThrows(NullPointerException.class, ()-> column.toSql(null));
+	@ParameterizedTest
+	@MethodSource("caseProvider")
+	void testToSql(DBColumn column, DBTable table, String sql) {
+		assertEquals(sql, column.sql(table));
+		assertNotEquals(column.getMappedName(), column.sql(table));
+		assertThrows(NullPointerException.class, ()-> column.sql(null));
 	}
-
-	@Test
-	void testSqlAlias() {
-		assertEquals("tab_column", column.sqlAlias(table));
-		assertNotEquals(column.getMappedName(), column.sqlAlias(table));
-		assertThrows(NullPointerException.class, ()-> column.sqlAlias(null));
+	
+	@ParameterizedTest
+	@MethodSource("caseProvider")
+	void testSqlAlias(DBColumn column, DBTable table, String sql) {
+		assertEquals(sql, column.tag(table));
+		assertNotEquals(column.getMappedName(), column.tag(table));
+		assertThrows(NullPointerException.class, ()-> column.tag(null));
 	}
-
-	@Test
-	void testIsAggregated() {
-		assertFalse(column.isAggregated());
+	
+	@ParameterizedTest
+	@MethodSource("caseProvider")
+	void testIsAggregated(DBColumn column) {
+		assertFalse(column.isAggregation());
 	}
-
-	@Test
-	void testIsExpression() {
+	
+	@ParameterizedTest
+	@MethodSource("caseProvider")
+	void testIsExpression(DBColumn column) {
 		assertFalse(column.isExpression());
 	}
-
-	@Test
-	void testIsConstant() {
+	
+	@ParameterizedTest
+	@MethodSource("caseProvider")
+	void testIsConstant(DBColumn column) {
 		assertFalse(column.isConstant());
 	}
 
+	private static Stream<Arguments> caseProvider() {
+	    return Stream.of(
+	    		Arguments.of(c1, tab1, c1_name),
+	    		Arguments.of(c2, tab1, c2_name),
+	    		Arguments.of(c3, tab1, c3_name),
+	    		Arguments.of(c4, tab1, c4_name)
+	    	);
+	}
 }

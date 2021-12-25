@@ -2,6 +2,8 @@ package fr.enedis.teme.jquery;
 
 public interface DBObject<T> {
 	
-	String toSql(T obj);
+	String sql(T obj);
+
+	String tag(T table);
 
 }

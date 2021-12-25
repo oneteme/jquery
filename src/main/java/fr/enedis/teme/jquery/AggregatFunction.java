@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-public enum AggregatFunction implements DBExpression {
+public enum AggregatFunction implements DBFunction {
 	
 	COUNT, SUM, AVG, MIN, MAX;
 	
@@ -10,7 +10,7 @@ public enum AggregatFunction implements DBExpression {
 	}
 	
 	@Override
-	public boolean isAggregation() {
+	public boolean isAggregate() {
 		return true;
 	}
 

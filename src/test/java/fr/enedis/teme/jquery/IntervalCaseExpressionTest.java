@@ -18,7 +18,7 @@ class IntervalCaseExpressionTest {
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testToSql(Object serie, String columnName, String sql) {
-		assertEquals(sql, create(serie).toSql(columnName));
+		assertEquals(sql, create(serie).sql(columnName));
 	}
 	
 	@ParameterizedTest
@@ -31,15 +31,15 @@ class IntervalCaseExpressionTest {
 	@MethodSource("caseProvider")
 	void testMappedName(Object serie, String columnName) {
 		var ce = create(serie);
-		assertEquals("case_" + columnName, ce.mappedName(columnName));
-		assertThrows(NullPointerException.class, ()-> ce.mappedName(null));
-		assertThrows(IllegalArgumentException.class, ()-> ce.mappedName(""));
+		assertEquals("case_" + columnName, ce.tag(columnName));
+		assertThrows(NullPointerException.class, ()-> ce.tag(null));
+		assertThrows(IllegalArgumentException.class, ()-> ce.tag(""));
 	}
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testIsAggregation(Object serie) {
-		assertFalse(create(serie).isAggregation());
+		assertFalse(create(serie).isAggregate());
 	}
 
 	@ParameterizedTest

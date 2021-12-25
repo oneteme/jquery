@@ -18,7 +18,7 @@ class ValuesCaseExpressionTest {
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testToSql(CaseExpressionBuilder<?> eb, String columnName, String sql) {
-		assertEquals(sql, values(eb).toSql(columnName));
+		assertEquals(sql, values(eb).sql(columnName));
 	}
 	
 	@ParameterizedTest
@@ -31,15 +31,15 @@ class ValuesCaseExpressionTest {
 	@MethodSource("caseProvider")
 	void testMappedName(CaseExpressionBuilder<?> eb, String columnName) {
 		var ce = values(eb);
-		assertEquals("case_" + columnName, ce.mappedName(columnName));
-		assertThrows(NullPointerException.class, ()-> ce.mappedName(null));
-		assertThrows(IllegalArgumentException.class, ()-> ce.mappedName(""));
+		assertEquals("case_" + columnName, ce.tag(columnName));
+		assertThrows(NullPointerException.class, ()-> ce.tag(null));
+		assertThrows(IllegalArgumentException.class, ()-> ce.tag(""));
 	}
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testIsAggregation(CaseExpressionBuilder<?> eb) {
-		assertFalse(values(eb).isAggregation());
+		assertFalse(values(eb).isAggregate());
 	}
 
 	@ParameterizedTest
@@ -63,7 +63,5 @@ class ValuesCaseExpressionTest {
     				"trim_column", "CASE WHEN trim_column IN('RENAULT', 'PEUGEOT') THEN 'FRA' WHEN trim_column IN('AUDI', 'OPEL', 'BMW') THEN 'GER' WHEN trim_column IN('FORD') THEN 'USA' ELSE 'others' END")
 	    );
 	}
-
-
 
 }

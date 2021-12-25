@@ -19,13 +19,13 @@ class ValueColumnTest {
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testToSql(String mappedName, Object expression, DBTable table, String sql) {
-		assertEquals(sql, staticColumn(mappedName, expression).toSql(table));
+		assertEquals(sql, staticColumn(mappedName, expression).sql(table));
 	}
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testGetAlias(String mappedName, Object expression, DBTable table, String sql) {
-		assertEquals(mappedName, staticColumn(mappedName, expression).sqlAlias(table));
+		assertEquals(mappedName, staticColumn(mappedName, expression).tag(table));
 	}
 
 	@ParameterizedTest

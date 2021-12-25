@@ -90,9 +90,9 @@ class UtilsTest {
 
 	@Test
 	void testSqlString() {
-		assertEquals("'0'", sqlString(0));
-		assertEquals("'A'", sqlString("A"));
-		assertEquals("'2020-01-01'", sqlString(LocalDate.of(2020, 1, 1)));
+		assertEquals("'0'", constantString(0));
+		assertEquals("'A'", constantString("A"));
+		assertEquals("'2020-01-01'", constantString(LocalDate.of(2020, 1, 1)));
 	}
 
 	private static String[] array(String... arr) {

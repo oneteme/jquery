@@ -1,6 +1,5 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
 import static java.util.Objects.requireNonNull;
 
 import java.util.function.IntFunction;
@@ -31,15 +30,6 @@ public final class Utils {
 	public static boolean isBlank(String str) {
 		return str == null || str.isBlank();
 	}
-	
-	public static String nArgs(int nb){
-		illegalArgumentIf(nb < 1, "n < 1");
-        var s = "?";
-        if(nb > 1){
-            s += ",?".repeat(nb - 1);
-        }
-        return "(" + s + ")";
-    }
 
 	public static DBColumn[] concat(DBColumn[] c1, DBColumn[] c2) {
 		return concat(c1, c2, DBColumn[]::new);
@@ -57,7 +47,4 @@ public final class Utils {
 		return c1 == null ? c2 : c1;
 	}
 
-	public static String sqlString(Object o) {
-		return "'" + o.toString() + "'";
-	}
 }

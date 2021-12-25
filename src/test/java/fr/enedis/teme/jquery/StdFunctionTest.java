@@ -12,28 +12,28 @@ class StdFunctionTest {
 	@ParameterizedTest
 	@EnumSource(StdFunction.class)
 	void testGetFunctionName(StdFunction fn) {
-		assertEquals(fn.name(), fn.getFunctionName(), "functionName=enum::name");
+		assertEquals(fn.name(), fn.getFunctionName());
 	}
 
 	@ParameterizedTest
 	@EnumSource(StdFunction.class)
 	void testIsAggregation(StdFunction fn) {
-		assertFalse(fn.isAggregation(), "iAggregation=false");
+		assertFalse(fn.isAggregate());
 	}
 
 	@ParameterizedTest
 	@EnumSource(StdFunction.class)
 	void testMappedName(StdFunction fn) {
-		assertEquals(fn.name().toLowerCase() + "_column", fn.mappedName("column"));
-		assertThrows(NullPointerException.class, ()-> fn.mappedName(null));
-		assertThrows(IllegalArgumentException.class, ()-> fn.mappedName(""));
+		assertEquals(fn.name().toLowerCase() + "_column", fn.tag("column"));
+		assertThrows(NullPointerException.class, ()-> fn.tag(null));
+		assertThrows(IllegalArgumentException.class, ()-> fn.tag(""));
 	}
 	
 	@ParameterizedTest
 	@EnumSource(StdFunction.class)
 	void testToSql(StdFunction fn) {
-		assertEquals(fn.name().toUpperCase() + "(column)", fn.toSql("column"));
-		assertThrows(NullPointerException.class, ()-> fn.toSql(null));
-		assertThrows(IllegalArgumentException.class, ()-> fn.toSql(""));
+		assertEquals(fn.name().toUpperCase() + "(column)", fn.sql("column"));
+		assertThrows(NullPointerException.class, ()-> fn.sql(null));
+		assertThrows(IllegalArgumentException.class, ()-> fn.sql(""));
 	}
 }

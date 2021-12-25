@@ -1,9 +1,9 @@
 package fr.enedis.teme.jquery;
 
-import java.util.Collection;
+import java.util.stream.Stream;
 
 public interface DBFilter extends DBObject<DBTable> {
 	
-	Collection<Object> args();
+	Stream<Object> args();
 
 }

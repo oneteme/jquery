@@ -1,9 +1,9 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
+import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
@@ -17,6 +17,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
@@ -130,7 +131,7 @@ public final class QueryBuilder {
 		var map = Stream.of(ymList).collect(groupingBy(YearMonth::getYear));
 		if(map.size() == 1) {//one table reference
 			var e = map.entrySet().iterator().next();
-			where(table.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
+			where(table.getRevisionColumn().inFilter(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
 			if(e.getValue().size() > 1) {//add month rev. when multiple values
 				columns(table.getRevisionColumn());
 			}
@@ -138,7 +139,7 @@ public final class QueryBuilder {
 		}
 		var queries = map.entrySet().stream()
 			.map(e-> {
-				var ftrs = new DBFilter[]{table.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
+				var ftrs = new DBFilter[]{table.getRevisionColumn().inFilter(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
 				var cols = new DBColumn[]{table.getRevisionColumn(), staticColumn("revisionYear", e.getKey())}; //add year rev. when multiple values
 				return build(schema, table, 
 						concat(this.columns, cols), 
@@ -156,20 +157,20 @@ public final class QueryBuilder {
 
         var q = new StringBuilder("SELECT ")
         		.append(selectColumns(table, columns))
-        		.append(" FROM " + (year == null ? table.toSql(schema) : table.toSql(schema, year)));
+        		.append(" FROM " + (year == null ? table.sql(schema) : table.toSql(schema, year)));
         
         var args = new LinkedList<>();
         if(!isEmpty(filters)) {
         	q = q.append(" WHERE ")
     			.append(Stream.of(filters).map(f-> {
-        			 args.addAll(f.args());
-        			return f.toSql(table);
+        			 args.addAll(f.args().collect(toList()));
+        			return f.sql(table);
         		}).collect(joining(" AND ")));
         }
-        if(Stream.of(columns).anyMatch(DBColumn::isAggregated)) {
+        if(Stream.of(columns).anyMatch(DBColumn::isAggregation)) {
         	var gc = Stream.of(columns)
-        			.filter(not(DBColumn::isAggregated).and(not(DBColumn::isConstant)))
-        			.map(c-> c.sqlAlias(table))
+        			.filter(not(DBColumn::isAggregation).and(not(DBColumn::isConstant)))
+        			.map(c-> c.tag(table))
         			.toArray(String[]::new);
         	if(gc.length > 0) {
         		q = q.append(" GROUP BY " + String.join(",", gc));
@@ -191,7 +192,7 @@ public final class QueryBuilder {
     private static final String selectColumns(DBTable table, DBColumn[] columns) {
     	
     	return Stream.of(columns)
-    			.map(c-> c.toSql(table) + (c.isConstant() || c.isExpression() ? " AS " + c.sqlAlias(table) : ""))
+    			.map(c-> c.sql(table) + (c.isConstant() || c.isExpression() ? " AS " + c.tag(table) : ""))
     			.collect(joining(", "));
     }
 }

@@ -83,7 +83,7 @@ public final class TablePartitionExtractor {
 	
 	private List<YearMonth> tableMonths(DBTable table, List<String> tableName) {
 		
-		var rc = table.getRevisionColumn().toSql(table);
+		var rc = table.getRevisionColumn().sql(table);
 		var query = tableName.stream()
 			.map(tn-> "SELECT DISTINCT " + rc + ", " + tn.substring(tn.length()-4) + " FROM " + tn)
 			.collect(Collectors.joining("; "));

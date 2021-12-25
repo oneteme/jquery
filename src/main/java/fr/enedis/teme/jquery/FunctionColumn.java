@@ -4,46 +4,42 @@ import static java.util.Objects.requireNonNullElseGet;
 
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
-@Getter
-@RequiredArgsConstructor
 public final class FunctionColumn implements DBColumn {
 
-	@NonNull
-	private final DBExpression function;
-	@NonNull
-	private final DBColumn column;
+	@Getter
 	private final String mappedName; // nullable
+	private final DBColumn column;
+	private final DBFunction function;
+	
+	public FunctionColumn(@NonNull DBColumn column, @NonNull DBFunction function, String mappedName) {
+		this.column = column;
+		this.function = function;
+		this.mappedName = requireNonNullElseGet(mappedName, ()-> function.tag(column.getMappedName()));
+	}
 
 	@Override
-	public String toSql(DBTable table) {
-		return function.toSql(column.toSql(table));
+	public String sql(DBTable table) {
+		return function.sql(column.sql(table));
 	}
 	
 	@Override
-	public boolean isAggregated() {
-		return function.isAggregation();
+	public String tag(DBTable table) {
+		return function.tag(column.tag(table));
+	}
+	
+	@Override
+	public boolean isAggregation() {
+		return function.isAggregate();
 	}
 
 	@Override
 	public boolean isExpression() {
 		return true;
 	}
-
-	@Override
-	public String sqlAlias(@NonNull DBTable table) {
-		return function.mappedName(column.sqlAlias(table));
-	}
-	
-	@Override
-	public String getMappedName() {
-		return requireNonNullElseGet(mappedName, ()-> function.mappedName(column.getMappedName()));
-	}
-	
+		
 	@Override
 	public String toString() {
-		return function.toSql(getMappedName());
+		return function.sql(getMappedName());
 	}
-	
 }
