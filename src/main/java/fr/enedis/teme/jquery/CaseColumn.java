@@ -2,7 +2,8 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ExpressionColumnGroup.and;
-import static fr.enedis.teme.jquery.SqlStringBuilder.constantString;
+import static fr.enedis.teme.jquery.ParameterHolder.formatString;
+import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
@@ -31,14 +32,14 @@ public final class CaseColumn implements DBColumn {
 	private final String defaultTag;
 	
 	@Override
-	public String sql(DBTable table) {
-		return new SqlStringBuilder(filters.size() * 50)
+	public String sql(DBTable table, ParameterHolder pc) {
+		return pc.staticMode(()-> new SqlStringBuilder(filters.size() * 50) //force static values
 				.append("CASE ")
 				.append(filters.stream()
-					.map(f-> "WHEN " + f.sql(table) + " THEN " + constantString(f.tag(table)))
-					.collect(joining(" "))) //optimize
-				.appendIf(!isBlank(defaultTag), ()-> " ELSE " + constantString(defaultTag))
-				.append(" END").toString();
+					.map(f-> "WHEN " + f.sql(table, pc) + " THEN " + formatString(f.tag(table)))
+					.collect(joining(" "))) //optimize SQL 
+				.appendIf(!isBlank(defaultTag), ()-> " ELSE " + formatString(defaultTag))
+				.append(" END").toString());
 	}
 
 	@Override
@@ -53,7 +54,7 @@ public final class CaseColumn implements DBColumn {
 	
 	@Override
 	public String toString() {
-		return sql(mockTable());
+		return sql(mockTable(), staticSql());
 	}
 
 	public static CaseColumn betweenIntervals(@NonNull DBColumn column, @NonNull Number... serie) {

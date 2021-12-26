@@ -2,8 +2,6 @@ package fr.enedis.teme.jquery;
 
 import java.util.function.Supplier;
 
-import lombok.NonNull;
-
 final class SqlStringBuilder {
 	
 	private final StringBuilder sb;
@@ -15,11 +13,6 @@ final class SqlStringBuilder {
 	public SqlStringBuilder(String v) { //buffer++
 		this.sb = new StringBuilder(v.length() + 50).append(v);
 	}
-
-	public SqlStringBuilder append(String s) {
-		sb.append(s);
-		return this;
-	}
 	
 	public SqlStringBuilder appendIf(boolean condition, Supplier<String> sup) {
 		return condition ? append(sup.get()) : this;
@@ -28,22 +21,15 @@ final class SqlStringBuilder {
 	public SqlStringBuilder appendIf(boolean condition, Supplier<String> sup, Supplier<String> orSup) {
 		return append(condition ? sup.get() : orSup.get());
 	}
+
+	public SqlStringBuilder append(String s) {
+		sb.append(s);
+		return this;
+	}
 	
 	@Override
 	public String toString() {
 		return sb.toString();
-	}
-	
-	public static String toSqlString(Object o) {
-		if(o == null) {
-			return "null";
-		}
-		return o instanceof Number || o.getClass().isPrimitive()
-				? o.toString() 
-				: constantString(o);
-	}
-	public static String constantString(@NonNull Object o) {
-		return "'" + o + "'";
 	}
 	
 }

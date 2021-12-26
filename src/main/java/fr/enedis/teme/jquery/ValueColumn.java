@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.SqlStringBuilder.toSqlString;
+import static fr.enedis.teme.jquery.ParameterHolder.formatValue;
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 import lombok.AccessLevel;
@@ -13,11 +13,11 @@ public final class ValueColumn<T> implements DBColumn {
 
 	@Getter
 	private final String mappedName;
-	private final T value; //nullable
+	private final T value;//nullable
 
 	@Override
-	public String sql(DBTable table) {//see count(*) 
-		return "*".equals(value) ? value.toString() : toSqlString(value);
+	public String sql(DBTable table, ParameterHolder ph) {//see count(*) 
+		return "*".equals(value) ? value.toString() : formatValue(value);
 	}
 	
 	@Override
@@ -32,7 +32,7 @@ public final class ValueColumn<T> implements DBColumn {
 
 	@Override
 	public String toString() {
-		return sql(null);
+		return sql(null, null);
 	}
 	
 	public static <T> ValueColumn<T> staticColumn(@NonNull String mappedName, T expression) {

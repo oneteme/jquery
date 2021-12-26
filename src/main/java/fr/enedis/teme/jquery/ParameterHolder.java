@@ -1,0 +1,122 @@
+package fr.enedis.teme.jquery;
+
+import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
+import static fr.enedis.teme.jquery.Validation.illegalArgumentIfNot;
+import static java.lang.reflect.Array.getLength;
+
+import java.lang.reflect.Array;
+import java.util.Collection;
+import java.util.LinkedList;
+import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public final class ParameterHolder {
+
+	private static final String ARG = "?";
+	
+	private static final ParameterHolder STATIC_INSTANCE = new ParameterHolder(null, false);
+	
+	@Getter
+	private final Collection<Object> args;
+	private final boolean ps;
+	private boolean dynamic;
+	
+	public String appendNullableParameter(Object o) {
+		return o == null ? appendNull() : appendParameter(o);
+	}
+
+	public String appendParameter(@NonNull Object o) {
+		illegalArgumentIf(o.getClass().isArray(), "array value");
+		if(ps && dynamic) {
+			args.add(o);
+			return ARG;
+		}
+		return formatValue(o);
+	}
+
+	public String appendNullableString(Object o) {
+		return o == null ? appendNull() : appendString(o);
+	}
+	
+	public String appendString(@NonNull Object o) {
+		illegalArgumentIfNot(o instanceof String, "not string");
+		if(ps && dynamic) {
+			args.add(o);
+			return ARG;
+		}
+		return formatString(o); 
+	}
+	
+	public String appendArray(@NonNull Object o) {
+		illegalArgumentIf(!o.getClass().isArray(), "not array");
+		if(ps && dynamic) {
+			forEach(o, args::add);
+			return nParameter(getLength(o));
+		}
+		var sb = new LinkedList<>();
+		Function<Object, String> fn = arrayFormatter(o);
+		forEach(o, v-> sb.add(fn.apply(v)));
+		return String.join(",", sb.toArray(String[]::new));
+	}
+	
+	private String appendNull() {
+		if(ps && dynamic) {
+			args.add(null);
+			return ARG;
+		}
+		return "null";
+	}
+
+	public String staticMode(Supplier<String> supp) {
+		this.dynamic = false;
+		var v = supp.get();
+		this.dynamic = true;
+		return v;
+	}
+	
+	static void forEach(Object o, Consumer<Object> cons) {
+		for(var i=0; i<getLength(o); i++) {
+			cons.accept(Array.get(o, i));
+		}
+	}
+
+	static String nParameter(int n){
+        return n == 1 ? ARG : ARG + ",?".repeat(n-1);
+    }
+
+	static String formatValue(Object o) {
+		if(o == null) {
+			return "null";
+		}
+		if(o instanceof Number || o.getClass().isPrimitive()) {
+			return o.toString();
+		}
+		return formatString(o);
+	}
+	
+	static String formatString(Object o) {
+		return "'" + o + "'";
+	}
+
+	static Function<Object, String> arrayFormatter(Object arr) {
+		var type = arr.getClass().getComponentType();
+		return Number.class.isAssignableFrom(type) || type.isPrimitive()
+				? Object::toString
+				: ParameterHolder::formatString;
+	}
+	
+	public static ParameterHolder staticSql() {
+		return STATIC_INSTANCE;
+	}
+	
+	public static ParameterHolder parametredSql() {
+		return new ParameterHolder(new LinkedList<>(), true);
+	}
+}

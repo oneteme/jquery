@@ -18,13 +18,13 @@ class ValueColumnTest {
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testToSql(String mappedName, Object expression, DBTable table, String sql) {
+	void testSql(String mappedName, Object expression, DBTable table, String sql) {
 		assertEquals(sql, staticColumn(mappedName, expression).sql(table));
 	}
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testGetAlias(String mappedName, Object expression, DBTable table, String sql) {
+	void testTag(String mappedName, Object expression, DBTable table, String sql) {
 		assertEquals(mappedName, staticColumn(mappedName, expression).tag(table));
 	}
 
@@ -45,7 +45,16 @@ class ValueColumnTest {
 	void testGetMappedName(String mappedName, Object expression) {// 100% coverage
 		assertEquals(mappedName, staticColumn(mappedName, expression).getMappedName());
 	}
+	
 
+	@ParameterizedTest
+	@MethodSource("caseProvider")
+	void testToString(String mappedName, Object expression, DBTable table, String sql) {
+		assertEquals(sql, staticColumn(mappedName, expression).toString());
+	}
+
+	
+	
 	@Test
 	void testStaticColumn() {
 		assertThrows(NullPointerException.class, ()-> staticColumn(null, null));

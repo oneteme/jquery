@@ -12,17 +12,7 @@ import static fr.enedis.teme.jquery.Operator.LT;
 import static fr.enedis.teme.jquery.Operator.NE;
 import static fr.enedis.teme.jquery.Operator.NOT_IN;
 import static fr.enedis.teme.jquery.Operator.NOT_LIKE;
-import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
-import static java.lang.reflect.Array.getLength;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Stream.empty;
-
-import java.lang.reflect.Array;
-import java.util.stream.DoubleStream;
-import java.util.stream.IntStream;
-import java.util.stream.LongStream;
-import java.util.stream.Stream;
+import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
 
 import lombok.AccessLevel;
 import lombok.NonNull;
@@ -33,109 +23,66 @@ public final class OperationExpression<T> implements DBExpression {
 
 	@NonNull
 	private final Operator operator;
-	private final T value; //nullable
-	private final boolean dynamic;
+	private final T value;//nullable
 	
 	@Override
-	public String sql(String cn) {
-		return cn + operator.sql(value, dynamic);
-	}
-
-	@Override
-	public Stream<Object> args() {
-		if(dynamic && value != null) {
-			return isArray(value) ? stream(value) : Stream.of(value);
-		}
-		return empty();
+	public String sql(String cn, ParameterHolder arg) {
+		return cn + operator.sql(value, arg);
 	}
 
 	@Override
 	public String toString() {
-		return sql("");
+		return sql("", staticSql());
 	}
 	
-	public static final <T> OperationExpression<T> lessThan(boolean dynamic, @NonNull T value) {
-		return new OperationExpression<>(LT, value, dynamic);
+	public static final <T> OperationExpression<T> lessThan(@NonNull T value) {
+		return new OperationExpression<>(LT, value);
 	}
 
-	public static final <T> OperationExpression<T> lessOrEquals(boolean dynamic, @NonNull T value) {
-		return new OperationExpression<>(LE, value, dynamic);
+	public static final <T> OperationExpression<T> lessOrEquals(@NonNull T value) {
+		return new OperationExpression<>(LE, value);
 	}
 
-	public static final <T> OperationExpression<T> greaterThan(boolean dynamic, @NonNull T value) {
-		return new OperationExpression<>(GT, value, dynamic);
+	public static final <T> OperationExpression<T> greaterThan(@NonNull T value) {
+		return new OperationExpression<>(GT, value);
 	}
 
-	public static final <T> OperationExpression<T> greaterOrEquals(boolean dynamic, @NonNull T value) {
-		return new OperationExpression<>(GE, value, dynamic);
+	public static final <T> OperationExpression<T> greaterOrEquals(@NonNull T value) {
+		return new OperationExpression<>(GE, value);
 	}
 
-	public static final <T> OperationExpression<T> equals(boolean dynamic, @NonNull T value) {
-		return new OperationExpression<>(EQ, value, dynamic);
+	public static final <T> OperationExpression<T> equal(T value) {
+		return new OperationExpression<>(EQ, value);
 	}
 
-	public static final <T> OperationExpression<T> notEquals(boolean dynamic, @NonNull T value) {
-		return new OperationExpression<>(NE, value, dynamic);
+	public static final <T> OperationExpression<T> notEquals(T value) {
+		return new OperationExpression<>(NE, value);
 	}
 
-	public static final OperationExpression<String> like(boolean dynamic, @NonNull String value) {
-		return new OperationExpression<>(LIKE, value, dynamic);
+	public static final OperationExpression<String> like(@NonNull String value) {
+		return new OperationExpression<>(LIKE, value);
 	}
 
-	public static final OperationExpression<String> notLike(boolean dynamic, @NonNull String value) {
-		return new OperationExpression<>(NOT_LIKE, value, dynamic);
+	public static final OperationExpression<String> notLike(@NonNull String value) {
+		return new OperationExpression<>(NOT_LIKE, value);
 	}
 	
 	public static final OperationExpression<Void> isNull() {
-		return  new OperationExpression<>(IS_NULL, null, false);
+		return  new OperationExpression<>(IS_NULL, null);
 	}
 
 	public static final OperationExpression<Void> isNotNull() {
-		return  new OperationExpression<>(IS_NOT_NULL, null, false);
+		return  new OperationExpression<>(IS_NOT_NULL, null);
 	}
 
 	@SafeVarargs
-	public static final <T> OperationExpression<T[]> in(boolean dynamic, @NonNull T... value) {
-		return new OperationExpression<>(IN, value, dynamic);
+	public static final <T> OperationExpression<T[]> in(@NonNull T... value) {
+		return new OperationExpression<>(IN, value);
 	}
 
 	@SafeVarargs
-	public static final <T> OperationExpression<T[]> notIn(boolean dynamic, @NonNull T... value) {
-		return new OperationExpression<>(NOT_IN, value, dynamic);
-	}
-
-	static String join(Object o) {
-		return stream(o)
-				.map(Number.class.isAssignableFrom(o.getClass().getComponentType()) || o.getClass().getComponentType().isPrimitive()
-					? Object::toString
-					: SqlStringBuilder::constantString)
-				.collect(joining(","));
-	}
-	
-	private static Stream<Object> stream(Object o) {
-		var type = requireNonNull(o).getClass();
-		illegalArgumentIf(!type.isArray(), ()-> o + " not array"); //collection case  ?
-		illegalArgumentIf(getLength(o) == 0, "empty array");
-		var ct = type.getComponentType();
-		if(ct.isPrimitive()) {
-			if(int.class.equals(ct)) {
-				return  IntStream.of((int[])o).mapToObj(c-> c);
-			}
-			else if(long.class.equals(ct)) {
-				return  LongStream.of((long[])o).mapToObj(c-> c);
-			}
-			else if(double.class.equals(ct)) {
-				return  DoubleStream.of((double[])o).mapToObj(c-> c);
-			}
-			else {				
-				throw new UnsupportedOperationException();
-			}
-		}
-		return Stream.of((Object[])o);
-	}
-	
-	private static boolean isArray(Object o) {
-		return o.getClass().isArray();
+	public static final <T> OperationExpression<T[]> notIn(@NonNull T... value) {
+		return new OperationExpression<>(NOT_IN, value);
 	}
 	
 }

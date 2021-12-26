@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
+import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
 import static java.util.Objects.requireNonNullElseGet;
 
 import lombok.Getter;
@@ -20,8 +21,8 @@ public final class FunctionColumn implements DBColumn {
 	}
 
 	@Override
-	public String sql(DBTable table) {
-		return function.sql(column.sql(table));
+	public String sql(DBTable table, ParameterHolder ph) {
+		return function.sql(column.sql(table, ph), ph);
 	}
 	
 	@Override
@@ -41,6 +42,6 @@ public final class FunctionColumn implements DBColumn {
 		
 	@Override
 	public String toString() {
-		return sql(mockTable());
+		return sql(mockTable(), staticSql());
 	}
 }

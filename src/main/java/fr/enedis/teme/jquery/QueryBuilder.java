@@ -153,18 +153,18 @@ public final class QueryBuilder {
     	
     	requireNonNull(table);
     	requireNonEmpty(columns);
+    	
+    	var ph = ParameterHolder.parametredSql();
 
         var q = new StringBuilder("SELECT ")
-        		.append(selectColumns(table, columns))
-        		.append(" FROM " + (year == null ? table.sql(schema) : table.toSql(schema, year)));
+        		.append(selectColumns(table, columns, ph))
+        		.append(" FROM " + (year == null ? table.sql(schema, ph) : table.toSql(schema, year, ph)));
         
-        var args = new LinkedList<>();
         if(!isEmpty(filters)) {
         	q = q.append(" WHERE ")
-    			.append(Stream.of(filters).map(f-> {
-        			 args.addAll(f.args().collect(toList()));
-        			return f.sql(table);
-        		}).collect(joining(" AND ")));
+    			.append(Stream.of(filters)
+    			.map(f-> f.sql(table, ph))
+    			.collect(joining(" AND ")));
         }
         if(Stream.of(columns).anyMatch(DBColumn::isAggregation)) {
         	var gc = Stream.of(columns)
@@ -175,7 +175,7 @@ public final class QueryBuilder {
         		q = q.append(" GROUP BY " + String.join(",", gc));
         	}
         }
-        return new ParametredQuery(q.toString(), columns, args.toArray());
+        return new ParametredQuery(q.toString(), columns, ph.getArgs().toArray());
 	}
 	
 	//TD impl. collector
@@ -188,10 +188,10 @@ public final class QueryBuilder {
 				queries.stream().flatMap(o-> Stream.of(o.getParams())).toArray());
 	}
 	
-    private static final String selectColumns(DBTable table, DBColumn[] columns) {
+    private static final String selectColumns(DBTable table, DBColumn[] columns, ParameterHolder ph) {
     	
     	return Stream.of(columns)
-    			.map(c-> c.sql(table) + (c.isConstant() || c.isExpression() ? " AS " + c.tag(table) : ""))
+    			.map(c-> c.sql(table, ph) + (c.isConstant() || c.isExpression() ? " AS " + c.tag(table) : ""))
     			.collect(joining(", "));
     }
 }

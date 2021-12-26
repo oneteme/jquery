@@ -1,8 +1,9 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.LogicalOperator.OR;
-import static fr.enedis.teme.jquery.DBTable.mockTable;
+import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
 import static java.util.stream.Collectors.joining;
 
 import java.util.stream.Stream;
@@ -18,9 +19,9 @@ public final class ExpressionColumnGroup implements DBFilter {
 	private final String tagname; //nullable
 
 	@Override
-	public String sql(DBTable obj) {
+	public String sql(DBTable obj, ParameterHolder ph) {
 		return Stream.of(expression)
-				.map(e-> e.sql(obj))
+				.map(e-> e.sql(obj, ph))
 				.collect(joining(operator.toString()));
 	}
 	
@@ -30,13 +31,8 @@ public final class ExpressionColumnGroup implements DBFilter {
 	}
 
 	@Override
-	public Stream<Object> args() {
-		return Stream.of(expression).flatMap(ExpressionColumn::args);
-	}
-	
-	@Override
 	public String toString() {
-		return sql(mockTable());
+		return sql(mockTable(), staticSql());
 	}
 
 	public static ExpressionColumnGroup and(@NonNull ExpressionColumn... expressions) {

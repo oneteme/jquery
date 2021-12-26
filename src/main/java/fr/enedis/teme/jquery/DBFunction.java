@@ -10,7 +10,7 @@ public interface DBFunction extends DBObject<String> {
 	boolean isAggregate();
 	
 	@Override
-	default String sql(String columnName) {
+	default String sql(String columnName, ParameterHolder ph) {
 		return getFunctionName().toUpperCase() + "(" + requireNonBlank(columnName) + ")";
 	}
 

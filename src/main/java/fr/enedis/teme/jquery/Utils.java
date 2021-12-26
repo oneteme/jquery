@@ -1,7 +1,5 @@
 package fr.enedis.teme.jquery;
 
-import static java.util.Objects.requireNonNull;
-
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
@@ -28,16 +26,12 @@ public final class Utils {
 		return concat(c1, c2, DBFilter[]::new);
 	}
 
-	public static <T> T[] concat(T[] c1, T[] c2, IntFunction<T[]> fn) {
+	public static <T> T[] concat(T[] c1, T[] c2, @NonNull IntFunction<T[]> fn) {
 		//warn ArrayStoreException : cannot merge (enum, class)
 		if(c1 != null && c2 != null) {
-			return Stream.concat(Stream.of(c1), Stream.of(c2)).toArray(requireNonNull(fn));
+			return Stream.concat(Stream.of(c1), Stream.of(c2)).toArray(fn);
 		}
 		return c1 == null ? c2 : c1;
 	}
-
-	public static boolean isArray(@NonNull Object o) {
-		return o.getClass().isArray();
-	}
-
+	
 }

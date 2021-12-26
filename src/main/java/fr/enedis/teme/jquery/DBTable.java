@@ -11,7 +11,7 @@ public interface DBTable extends DBObject<String> {
 	DBColumn getRevisionColumn();
 	
 	@Override
-	default String sql(String schema) {
+	default String sql(String schema, ParameterHolder ph) {
 		return isBlank(schema) 
 				? getTableName() 
 				: schema + "." + getTableName();
@@ -23,8 +23,8 @@ public interface DBTable extends DBObject<String> {
 	}
 	
 	//partition table
-	default String toSql(String schema, int year) {
-		return sql(schema) + "_" + year;
+	default String toSql(String schema, int year, ParameterHolder ph) {
+		return sql(schema, ph) + "_" + year;
 	}
 	
 	static DBTable mockTable() {
