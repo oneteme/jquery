@@ -7,6 +7,7 @@ import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Utils {
@@ -33,6 +34,10 @@ public final class Utils {
 			return Stream.concat(Stream.of(c1), Stream.of(c2)).toArray(requireNonNull(fn));
 		}
 		return c1 == null ? c2 : c1;
+	}
+
+	public static boolean isArray(@NonNull Object o) {
+		return o.getClass().isArray();
 	}
 
 }

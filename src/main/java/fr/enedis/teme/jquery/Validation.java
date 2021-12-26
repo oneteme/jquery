@@ -31,9 +31,21 @@ public final class Validation {
 			throw new IllegalArgumentException(requireNonNull(msg));
 		}
 	}
+	
+	public static void illegalArgumentIfNot(boolean test, String msg) {
+		if(!test) {
+			throw new IllegalArgumentException(requireNonNull(msg));
+		}
+	}
 
 	public static void illegalArgumentIf(boolean test, Supplier<String> supplier) {
 		if(test) {
+			throw new IllegalArgumentException(requireNonNull(supplier).get());
+		}
+	}
+
+	public static void illegalArgumentIfNot(boolean test, Supplier<String> supplier) {
+		if(!test) {
 			throw new IllegalArgumentException(requireNonNull(supplier).get());
 		}
 	}

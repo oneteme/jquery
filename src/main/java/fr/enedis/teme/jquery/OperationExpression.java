@@ -13,10 +13,12 @@ import static fr.enedis.teme.jquery.Operator.NE;
 import static fr.enedis.teme.jquery.Operator.NOT_IN;
 import static fr.enedis.teme.jquery.Operator.NOT_LIKE;
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
+import static java.lang.reflect.Array.getLength;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Stream.empty;
 
+import java.lang.reflect.Array;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -104,7 +106,7 @@ public final class OperationExpression<T> implements DBExpression {
 
 	static String join(Object o) {
 		return stream(o)
-				.map(Number.class.isAssignableFrom(o.getClass().getComponentType())
+				.map(Number.class.isAssignableFrom(o.getClass().getComponentType()) || o.getClass().getComponentType().isPrimitive()
 					? Object::toString
 					: SqlStringBuilder::constantString)
 				.collect(joining(","));
@@ -112,7 +114,8 @@ public final class OperationExpression<T> implements DBExpression {
 	
 	private static Stream<Object> stream(Object o) {
 		var type = requireNonNull(o).getClass();
-		illegalArgumentIf(!type.isArray(), o + " not array"); //collection case  ?
+		illegalArgumentIf(!type.isArray(), ()-> o + " not array"); //collection case  ?
+		illegalArgumentIf(getLength(o) == 0, "empty array");
 		var ct = type.getComponentType();
 		if(ct.isPrimitive()) {
 			if(int.class.equals(ct)) {
