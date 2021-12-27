@@ -20,39 +20,38 @@ class ValueColumnTest {
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testSql(String mappedName, Object expression, DBTable table, String sql) {
-		assertEquals(sql, staticColumn(mappedName, expression).sql(table, null));
+	void testSql(ValueColumn<?> column, String sql) {
+		assertEquals(sql, column.sql(null, null));
 	}
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testTag(String mappedName, Object expression, DBTable table, String sql) {
-		assertEquals(mappedName, staticColumn(mappedName, expression).tag(table));
+	void testTag(ValueColumn<?> column, String tag) {
+		assertTrue(column.tag(null).matches("field[1-5]"));
 	}
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testIsConstant(String mappedName, Object expression) {
-		assertTrue(staticColumn(mappedName, expression).isConstant());
-	}
-
-	@ParameterizedTest
-	@MethodSource("caseProvider")
-	void testIsExpression(String mappedName, Object expression) {
-		assertFalse(staticColumn(mappedName, expression).isExpression());
+	void testIsConstant(ValueColumn<?> column) {
+		assertTrue(column.isConstant());
 	}
 
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testGetMappedName(String mappedName, Object expression) {// 100% coverage
-		assertEquals(mappedName, staticColumn(mappedName, expression).getTagName());
+	void testIsExpression(ValueColumn<?> column) {
+		assertFalse(column.isExpression());
 	}
 	
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testToString(String mappedName, Object expression, DBTable table, String sql) {
-		assertEquals(sql, staticColumn(mappedName, expression).toString());
+	void testToString(ValueColumn<?> column, String value) {
+		assertEquals(value, column.toString());
 	}
 
+	@Test
+	void testStaticColumn() {
+		assertThrows(NullPointerException.class, ()-> staticColumn(null, null));
+	}
+	
 	@ParameterizedTest
 	@EmptySource
 	@ValueSource(strings = {" ", "*", "$column", "column>3"})
@@ -60,19 +59,14 @@ class ValueColumnTest {
 		assertThrows(IllegalArgumentException.class, ()-> staticColumn(tagName, null));
 	}
 	
-	@Test
-	void testStaticColumn() {
-		assertThrows(IllegalArgumentException.class, ()-> staticColumn(null, null));
-	}
-	
 	private static Stream<Arguments> caseProvider() {
 	    return Stream.of(
     		//same results with null table
-    		Arguments.of("field1", null, null, "null"),
-    		Arguments.of("field2", "*", null, "*"),
-    		Arguments.of("field3", 123, null, "123"),
-    		Arguments.of("field4", "123", null, "'123'"),
-    		Arguments.of("field5", LocalDate.of(2022, 1, 1), null, "'2022-01-01'")
+    		Arguments.of(staticColumn("field1", null), "null"),
+    		Arguments.of(staticColumn("field2", "*"), "*"),
+    		Arguments.of(staticColumn("field3", 123), "123"),
+    		Arguments.of(staticColumn("field4", "123"), "'123'"),
+    		Arguments.of(staticColumn("field5", LocalDate.of(2022, 1, 1)), "'2022-01-01'")
 	    );
 	}
 

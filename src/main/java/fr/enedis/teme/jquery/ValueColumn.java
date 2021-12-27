@@ -2,17 +2,14 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.ParameterHolder.formatValue;
 import static fr.enedis.teme.jquery.Validation.requireLegalVariable;
-import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ValueColumn<T> implements DBColumn {
 
-	@Getter
 	private final String tagName;
 	private final T value;//nullable
 
