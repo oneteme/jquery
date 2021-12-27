@@ -1,9 +1,9 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
-import static fr.enedis.teme.jquery.ExpressionColumnGroup.and;
+import static fr.enedis.teme.jquery.ColumnFilterGroup.and;
 import static fr.enedis.teme.jquery.ParameterHolder.formatString;
-import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
+import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static fr.enedis.teme.jquery.Taggable.genericTag;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
@@ -54,7 +54,7 @@ public final class CaseColumn implements DBColumn {
 	
 	@Override
 	public String toString() {
-		return sql(mockTable(), staticSql());
+		return sql(mockTable(), addWithValue());
 	}
 
 	public static CaseColumn betweenIntervals(@NonNull DBColumn column, @NonNull Number... serie) {

@@ -2,16 +2,18 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.CaseColumn.betweenIntervals;
 import static fr.enedis.teme.jquery.CaseColumn.inValues;
-import static fr.enedis.teme.jquery.OperationExpression.equal;
-import static fr.enedis.teme.jquery.OperationExpression.greaterOrEquals;
-import static fr.enedis.teme.jquery.OperationExpression.greaterThan;
-import static fr.enedis.teme.jquery.OperationExpression.in;
-import static fr.enedis.teme.jquery.OperationExpression.isNotNull;
-import static fr.enedis.teme.jquery.OperationExpression.isNull;
-import static fr.enedis.teme.jquery.OperationExpression.lessOrEquals;
-import static fr.enedis.teme.jquery.OperationExpression.lessThan;
-import static fr.enedis.teme.jquery.OperationExpression.notEquals;
-import static fr.enedis.teme.jquery.OperationExpression.notIn;
+import static fr.enedis.teme.jquery.OperatorExpression.equal;
+import static fr.enedis.teme.jquery.OperatorExpression.greaterOrEquals;
+import static fr.enedis.teme.jquery.OperatorExpression.greaterThan;
+import static fr.enedis.teme.jquery.OperatorExpression.in;
+import static fr.enedis.teme.jquery.OperatorExpression.isNotNull;
+import static fr.enedis.teme.jquery.OperatorExpression.isNull;
+import static fr.enedis.teme.jquery.OperatorExpression.lessOrEquals;
+import static fr.enedis.teme.jquery.OperatorExpression.lessThan;
+import static fr.enedis.teme.jquery.OperatorExpression.like;
+import static fr.enedis.teme.jquery.OperatorExpression.notEquals;
+import static fr.enedis.teme.jquery.OperatorExpression.notIn;
+import static fr.enedis.teme.jquery.OperatorExpression.notLike;
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 import java.util.Map.Entry;
@@ -45,45 +47,53 @@ public interface DBColumn extends DBObject<DBTable>, Taggable<DBTable> {
 	}
 	
 	
-	// filters
-    default ExpressionColumn nullFilter(){
-    	return new ExpressionColumn(this, isNull());
+	// filters	
+    default ColumnFilter equalFilter(Object value){
+    	return new ColumnFilter(this, equal(value));
     }
     
-    default ExpressionColumn notNullFilter(){
-    	return new ExpressionColumn(this, isNotNull());
-    }
-	
-    default ExpressionColumn equalFilter(Object value){
-    	return new ExpressionColumn(this, equal(value));
+    default ColumnFilter notEqualFilter(Object value){
+    	return new ColumnFilter(this, notEquals(value));
     }
     
-    default ExpressionColumn notEqualFilter(Object value){
-    	return new ExpressionColumn(this, notEquals(value));
+    default ColumnFilter greaterThanExpression(Object min){
+    	return new ColumnFilter(this, greaterThan(min));
     }
 
-    default <T> ExpressionColumn inFilter(@SuppressWarnings("unchecked") T... values){
-    	return new ExpressionColumn(this, in(values));
+    default ColumnFilter greaterOrEqualFilter(Object min){
+    	return new ColumnFilter(this, greaterOrEquals(min));
     }
     
-    default <T> ExpressionColumn notInFilter(@SuppressWarnings("unchecked") T... values){
-    	return new ExpressionColumn(this, notIn(values));
+    default ColumnFilter lessThanFilter(Object max){
+    	return new ColumnFilter(this, lessThan(max));
     }
     
-    default ExpressionColumn greaterThanFilter(Object min){
-    	return new ExpressionColumn(this, greaterThan(min));
+    default ColumnFilter lessOrEqualFilter(Object max){
+    	return new ColumnFilter(this, lessOrEquals(max));
     }
 
-    default  ExpressionColumn greaterOrEqualFilter(Object min){
-    	return new ExpressionColumn(this, greaterOrEquals(min));
+	default ColumnFilter likeFilter(String value) {
+		return new ColumnFilter(this, like(value));
+	}
+
+	default ColumnFilter notLikeFilter(String value) {
+		return new ColumnFilter(this, notLike(value));
+	}
+
+    default <T> ColumnFilter inFilter(@SuppressWarnings("unchecked") T... values){
+    	return new ColumnFilter(this, in(values));
     }
     
-    default  ExpressionColumn lessThanFilter(Object max){
-    	return new ExpressionColumn(this, lessThan(max));
+    default <T> ColumnFilter notInFilter(@SuppressWarnings("unchecked") T... values){
+    	return new ColumnFilter(this, notIn(values));
+    }
+
+    default ColumnFilter nullFilter(){
+    	return new ColumnFilter(this, isNull());
     }
     
-    default  ExpressionColumn lessOrEqualFilter(Object max){
-    	return new ExpressionColumn(this, lessOrEquals(max));
+    default ColumnFilter notNullFilter(){
+    	return new ColumnFilter(this, isNotNull());
     }
 
 	// case column

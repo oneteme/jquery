@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
+import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
+import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -12,14 +13,15 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class OperatorTest implements ExpressionProvider {
 	
-	private final ParameterHolder STAT = staticSql();
-	private final ParameterHolder DYNC = staticSql();
+	private final ParameterHolder STAT = addWithValue();
+	private final ParameterHolder DYNC = parametrized();
 	private final LocalDate date = LocalDate.now();
 	
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testSql(Operator op, String sql, Object arg, ParameterHolder ph) {
-		assertEquals(sql, op.sql(arg, ph));
+	void testSql(Operator op, Object arg, String[] sql) {
+		assertEquals(sql[0], op.sql(arg, DYNC));
+		assertEquals(sql[1], op.sql(arg, STAT));
 	}
 
 	@ParameterizedTest()

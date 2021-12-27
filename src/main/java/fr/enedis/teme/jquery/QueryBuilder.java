@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ParameterHolder.parametredSql;
+import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
@@ -131,7 +131,7 @@ public final class QueryBuilder {
     	requireNonNull(table);
     	requireNonEmpty(columns);
     	
-    	var ph = parametredSql();
+    	var ph = parametrized();
 
         var q = new StringBuilder(1000).append("SELECT ")
         		.append(Stream.of(columns)

@@ -115,11 +115,11 @@ public final class ParameterHolder {
 				: ParameterHolder::formatString;
 	}
 	
-	public static ParameterHolder staticSql() {
+	public static ParameterHolder addWithValue() {
 		return STATIC_INSTANCE;
 	}
 	
-	public static ParameterHolder parametredSql() {
+	public static ParameterHolder parametrized() {
 		return new ParameterHolder(new LinkedList<>(), true, true);
 	}
 }

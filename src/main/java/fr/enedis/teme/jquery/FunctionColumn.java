@@ -2,7 +2,7 @@ package fr.enedis.teme.jquery;
 
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
-import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
+import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static fr.enedis.teme.jquery.Taggable.genericTag;
 
 import lombok.NonNull;
@@ -38,6 +38,6 @@ public final class FunctionColumn implements DBColumn {
 		
 	@Override
 	public String toString() {
-		return sql(mockTable(), staticSql());
+		return sql(mockTable(), addWithValue());
 	}
 }

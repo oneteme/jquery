@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.Helper.array;
 import static fr.enedis.teme.jquery.Operator.EQ;
 import static fr.enedis.teme.jquery.Operator.GE;
 import static fr.enedis.teme.jquery.Operator.GT;
@@ -12,9 +13,9 @@ import static fr.enedis.teme.jquery.Operator.LT;
 import static fr.enedis.teme.jquery.Operator.NE;
 import static fr.enedis.teme.jquery.Operator.NOT_IN;
 import static fr.enedis.teme.jquery.Operator.NOT_LIKE;
-import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
 import static java.lang.String.format;
 import static java.util.function.Function.identity;
+import static org.junit.jupiter.params.provider.Arguments.of;
 
 import java.time.LocalDate;
 import java.util.EnumMap;
@@ -24,71 +25,48 @@ import java.util.stream.Stream;
 import org.junit.jupiter.params.provider.Arguments;
 
 public abstract interface ExpressionProvider {
-
-	static final Map<Operator, String> enumMap = enumMap();
-	
-	
-	static Stream<Arguments> caseProviderValuesOnly(){
-		return caseProvider().filter(a-> a.get()[3] == staticSql());
-	}
-
+		
 	static Stream<Arguments> caseProvider() {
-		return Stream.of(
-				signCaseProvider(),
-				likeCases(),
-				inCases(),
-				nullCases())
+		return Stream.of(signCaseProvider(),likeCases(),inCases(), nullCases())
 				.flatMap(identity());
 	}
 
 	static Stream<Arguments> signCaseProvider() {
-		var ph = ParameterHolder.parametredSql();
 		return Stream.of(EQ, NE, LT, LE, GT, GE).flatMap(op->{
 			var exp = enumMap.get(op);
 			return Stream.of(
-					Arguments.of(op, exp + "null", null, staticSql()), //int
-					Arguments.of(op, exp + "?", 	null, ph),
-					Arguments.of(op, exp + "1", 1, staticSql()), //int
-					Arguments.of(op, exp + "?", 1, ph),
-					Arguments.of(op, exp + "'0'", "0", staticSql()), //string
-					Arguments.of(op, exp + "?", "0", ph),
-					Arguments.of(op, exp + "'2020-01-01'", LocalDate.of(2020, 1, 1), staticSql()), //date
-					Arguments.of(op, exp + "?", LocalDate.of(2020, 1, 1), ph));
+				of(op, null, array(exp + "?", exp + "null")), //null
+				of(op,    1, array(exp + "?", exp + "1")), //int
+				of(op,  "0", array(exp + "?", exp + "'0'")), //string
+				of(op, date, array(exp + "?", exp + "'"+date+"'"))); //date
 		});
 	}
 
 	static Stream<Arguments> likeCases() {
-		var ph = ParameterHolder.parametredSql();
 		return Stream.of(LIKE, NOT_LIKE).flatMap(op->{
-			var exp = " " + enumMap.get(op);
+			var exp = " " + enumMap.get(op) + " ";
 			return Stream.of(
-					Arguments.of(op, exp + " '1'", "1", staticSql()), //int
-					Arguments.of(op, exp + " ?", "'1'", ph),
-					Arguments.of(op, exp + " '%test%'", "%test%", staticSql()), //int
-					Arguments.of(op, exp + " ?", "%test%", ph));
+				of(op,   "123", array(exp + "?", exp + "'123'")),
+				of(op, "%expr", array(exp + "?", exp + "'%expr'")),
+				of(op, "val__", array(exp + "?", exp + "'val__'")));
 		});                          
 	}                                
                                      
                                      
 	static Stream<Arguments> inCases() {
-		var ph = ParameterHolder.parametredSql();
 		return Stream.of(IN, NOT_IN).flatMap(op->{
 			var exp = " " + enumMap.get(op) + "(%s)";
 			return Stream.of(
-					Arguments.of(op, format(exp, "1,2,3"), new int[] {1,2,3}, staticSql()),
-					Arguments.of(op, format(exp, "?,?,?"), new int[] {1,2,3}, ph),
-					Arguments.of(op, format(exp, "'1','2','3'"), new String[] {"1","2","3"}, staticSql()),
-					Arguments.of(op, format(exp, "?,?,?"), new String[] {"1","2","3"}, ph));
+				of(op,  new int[]{1,2,3,4,5}, array(format(exp, "?,?,?,?,?"), format(exp, "1,2,3,4,5"))),
+				of(op, new String[]{"1","2"}, array(format(exp, "?,?"),       format(exp, "'1','2'"))),
+				of(op, new LocalDate[]{date}, array(format(exp, "?"),         format(exp, "'"+date+"'"))));
 		});
 	}
 
 	static Stream<Arguments> nullCases() {
-		var ph = ParameterHolder.parametredSql();
 		return Stream.of(IS_NULL, IS_NOT_NULL).flatMap(op->{
 			var exp = " " + enumMap.get(op);
-			return Stream.of(
-				Arguments.of(op, exp, null, staticSql()),
-				Arguments.of(op, exp, null, ph));
+			return Stream.of(of(op, null, array(exp, exp)));
 		});
 	}
 	
@@ -108,5 +86,8 @@ public abstract interface ExpressionProvider {
 		map.put(IS_NOT_NULL, "IS NOT NULL");
 		return map;
 	}
+
+	static final LocalDate date = LocalDate.now();
+	static final Map<Operator, String> enumMap = enumMap();
 
 }

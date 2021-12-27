@@ -26,4 +26,9 @@ final class Helper {
 		}
 	}
 
+	static String[] array(String... arr) {
+		return arr;
+	}
+	
+	
 }
