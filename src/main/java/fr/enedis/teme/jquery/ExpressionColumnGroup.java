@@ -4,6 +4,7 @@ import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.LogicalOperator.OR;
 import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
+import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.stream.Collectors.joining;
 
 import java.util.stream.Stream;
@@ -16,7 +17,6 @@ public final class ExpressionColumnGroup implements DBFilter {
 	
 	private final LogicalOperator operator;
 	private final ExpressionColumn[] expression;
-	private final String tagname; //nullable
 
 	@Override
 	public String sql(DBTable obj, ParameterHolder ph) {
@@ -25,10 +25,6 @@ public final class ExpressionColumnGroup implements DBFilter {
 				.collect(joining(operator.toString()));
 	}
 	
-	@Override
-	public String tag(DBTable table) {
-		return tagname;
-	}
 
 	@Override
 	public String toString() {
@@ -36,20 +32,12 @@ public final class ExpressionColumnGroup implements DBFilter {
 	}
 
 	public static ExpressionColumnGroup and(@NonNull ExpressionColumn... expressions) {
-		return and(null, expressions);
-	}
-	
-	public static ExpressionColumnGroup and(String mappedName, @NonNull ExpressionColumn... expressions) {
-		return new ExpressionColumnGroup(AND, expressions, mappedName);
+		return new ExpressionColumnGroup(AND, requireNonEmpty(expressions));
 	}
 
 	public static ExpressionColumnGroup or(@NonNull ExpressionColumn... expressions) {
 		
-		return or(null, expressions);
-	}
-	public static ExpressionColumnGroup or(String mappedName, @NonNull ExpressionColumn... expressions) {
-		
-		return new ExpressionColumnGroup(OR, expressions, mappedName);
+		return new ExpressionColumnGroup(OR, requireNonEmpty(expressions));
 	}
 
 }

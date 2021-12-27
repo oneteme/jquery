@@ -16,27 +16,26 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map.Entry;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CaseColumn implements DBColumn {
 
-	@Getter
-	private final String mappedName;
-	private final Collection<DBFilter> filters;
+	private final Collection<NamedFilter> filters;
 	private final String defaultTag;
+	private final Function<DBTable, String> tagFn;
 	
 	@Override
 	public String sql(DBTable table, ParameterHolder pc) {
 		return pc.staticMode(()-> new SqlStringBuilder(filters.size() * 50) //force static values
 				.append("CASE ")
 				.append(filters.stream()
-					.map(f-> "WHEN " + f.sql(table, pc) + " THEN " + formatString(f.tag(table)))
+					.map(f-> f.sql(table, pc))
 					.collect(joining(" "))) //optimize SQL 
 				.appendIf(!isBlank(defaultTag), ()-> " ELSE " + formatString(defaultTag))
 				.append(" END").toString());
@@ -44,7 +43,7 @@ public final class CaseColumn implements DBColumn {
 
 	@Override
 	public String tag(DBTable table) {
-		return mappedName;
+		return tagFn.apply(table);
 	}
 	
 	@Override
@@ -58,48 +57,37 @@ public final class CaseColumn implements DBColumn {
 	}
 
 	public static CaseColumn betweenIntervals(@NonNull DBColumn column, @NonNull Number... serie) {
-		
-		return betweenIntervals(column, null, serie);
-	}
-	
-	public static CaseColumn betweenIntervals(@NonNull DBColumn column, String mappedName, @NonNull Number... serie) {
 		sort(requireNonEmpty(serie)); //must be sorted
-		var filters = new ArrayList<DBFilter>(serie.length+1);
-		filters.add(column.lessThanExpression("lt_"+serie[0], serie[0]));
+		var filters = new ArrayList<NamedFilter>(serie.length+1);
+		filters.add(column.lessThanFilter(serie[0]).as("lt_"+serie[0]));
 		for(var i=0; i<serie.length-1; i++) {
-			filters.add(and("bt_"+serie[i]+"_"+serie[i+1],
-					column.greaterOrEqualExpression(null, serie[i]),
-					column.lessThanExpression(null, serie[i+1]))
-			);
+			filters.add(and(
+					column.greaterOrEqualFilter(serie[i]),
+					column.lessThanFilter(serie[i+1]))
+					.as("bt_"+serie[i]+"_"+serie[i+1]));
 		}
-		filters.add(column.greaterOrEqualExpression("gt_"+serie[0], serie[serie.length-1]));
-		return new CaseColumn(toMappedName(mappedName, column), unmodifiableCollection(filters), null);
+		filters.add(column.greaterOrEqualFilter(serie[serie.length-1]).as("gt_"+serie[serie.length-1]));
+		return new CaseColumn(unmodifiableCollection(filters), null, tagFunction(column));
 	}
 
 	@SafeVarargs
-	public static <T> CaseColumn inValues(@NonNull DBColumn column, Entry<String, T[]>... values) { //map should contains defaultValue
-		return inValues(column, null, values);
-	}
-	
-	@SafeVarargs
-	public static <T> CaseColumn inValues(@NonNull DBColumn column, String mappedName, Entry<String, T[]>... values) { //map should contains defaultValue
+	public static <T> CaseColumn inValues(@NonNull DBColumn column, @NonNull Entry<String, T[]>... values) { //map should contains defaultValue
 		requireNonEmpty(values);
 		var filters = Stream.of(values)
 			.filter(e-> e.getValue().length > 0)
 			.map(e-> e.getValue().length == 1
-						? column.equalExpression(e.getKey(), e.getValue()[0])
-						: column.inExpression(e.getKey(), e.getValue()))
+						? column.equalFilter(e.getValue()[0]).as(e.getKey())
+						: column.inFilter(e.getValue()).as(e.getKey()))
 			.collect(toList());
 		var defaultValue = Stream.of(values)
 				.filter(e-> isEmpty(e.getValue()))
 				.findAny().map(Entry::getKey)
 				.orElse(null);
-		return new CaseColumn(toMappedName(mappedName, column), unmodifiableCollection(filters), defaultValue);
+		return new CaseColumn(unmodifiableCollection(filters), defaultValue, tagFunction(column));
 	}
 	
-	private static String toMappedName(String mappedName, DBColumn column) {
-		
-		return isBlank(mappedName) ? "case_" + column.getMappedName() : mappedName;
+	private static Function<DBTable, String> tagFunction(DBColumn column) {
+		return t-> Taggable.genericTag("case", column, t);
 	}
 	
 	@SafeVarargs

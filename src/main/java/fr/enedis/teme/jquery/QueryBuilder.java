@@ -1,11 +1,11 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.ParameterHolder.parametredSql;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -13,7 +13,6 @@ import static java.util.stream.Collectors.toList;
 import java.time.YearMonth;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -80,29 +79,7 @@ public final class QueryBuilder {
 	}
 
 	public List<DynamicModel> execute(DataSource ds){
-		
-		return execute(q-> {
-			List<DynamicModel> res;
-			try(var cn = ds.getConnection()){
-				try(var ps = cn.prepareStatement(q.getQuery())){
-					if(q.getColumns() != null) {
-						for(var i=0; i<q.getColumns().length; i++) {
-							ps.setObject(i+1, q.getColumns()[i]);
-						}						
-					}
-					try(var rs = ps.executeQuery()){
-						res = new LinkedList<>();
-						while(rs.next()) {
-							res.add(q.map(rs));
-						}
-					}
-				}
-			}
-			catch(Exception e) {
-				throw new RuntimeException(e);
-			}
-			return res;
-		});
+		return execute(q-> q.execute(ds));
 	}
 	
 	public List<DynamicModel> execute(Function<ParametredQuery, List<DynamicModel>> fn) {
@@ -154,28 +131,35 @@ public final class QueryBuilder {
     	requireNonNull(table);
     	requireNonEmpty(columns);
     	
-    	var ph = ParameterHolder.parametredSql();
+    	var ph = parametredSql();
 
-        var q = new StringBuilder("SELECT ")
-        		.append(selectColumns(table, columns, ph))
+        var q = new StringBuilder(1000).append("SELECT ")
+        		.append(Stream.of(columns)
+            			.map(c-> c.sql(table, ph) + " AS " + c.tag(table))
+            			.collect(joining(", ")))
         		.append(" FROM " + (year == null ? table.sql(schema, ph) : table.toSql(schema, year, ph)));
-        
         if(!isEmpty(filters)) {
         	q = q.append(" WHERE ")
     			.append(Stream.of(filters)
-    			.map(f-> f.sql(table, ph))
-    			.collect(joining(" AND ")));
+	    			.map(f-> f.sql(table, ph))
+	    			.collect(joining(" AND ")));
         }
         if(Stream.of(columns).anyMatch(DBColumn::isAggregation)) {
         	var gc = Stream.of(columns)
-        			.filter(not(DBColumn::isAggregation).and(not(DBColumn::isConstant)))
+        			.filter(QueryBuilder::groupable)
         			.map(c-> c.tag(table))
         			.toArray(String[]::new);
         	if(gc.length > 0) {
         		q = q.append(" GROUP BY " + String.join(",", gc));
         	}
         }
-        return new ParametredQuery(q.toString(), columns, ph.getArgs().toArray());
+        return new ParametredQuery(q.toString(), outputFormat(table, columns), ph.getArgs().toArray());
+	}
+	
+	private static String[] outputFormat(DBTable table, DBColumn[] columns) {
+		return Stream.of(columns)
+			.map(c-> c.tag(table))
+			.toArray(String[]::new);
 	}
 	
 	//TD impl. collector
@@ -183,15 +167,12 @@ public final class QueryBuilder {
 		requireNonEmpty(queries);
 		//check columns ?
 		return new ParametredQuery(
-				queries.stream().map(ParametredQuery::getQuery).collect(joining(" UNION ")), 
-				queries.iterator().next().getColumns(), 
+				queries.stream().map(ParametredQuery::getQuery).collect(joining(" UNION ")),
+				queries.iterator().next().getColumnNames(),
 				queries.stream().flatMap(o-> Stream.of(o.getParams())).toArray());
 	}
 	
-    private static final String selectColumns(DBTable table, DBColumn[] columns, ParameterHolder ph) {
-    	
-    	return Stream.of(columns)
-    			.map(c-> c.sql(table, ph) + (c.isConstant() || c.isExpression() ? " AS " + c.tag(table) : ""))
-    			.collect(joining(", "));
-    }
+	private static boolean groupable(DBColumn column) {
+		return !column.isAggregation() && !column.isConstant();
+	}
 }

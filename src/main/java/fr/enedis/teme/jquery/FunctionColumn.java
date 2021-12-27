@@ -2,23 +2,17 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
-import static java.util.Objects.requireNonNullElseGet;
 
-import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
+@RequiredArgsConstructor
 public final class FunctionColumn implements DBColumn {
 
-	@Getter
-	private final String mappedName;
+	@NonNull
 	private final DBColumn column;
+	@NonNull
 	private final DBFunction function;
-	
-	public FunctionColumn(@NonNull DBColumn column, @NonNull DBFunction function, String mappedName) {
-		this.column = column;
-		this.function = function;
-		this.mappedName = requireNonNullElseGet(mappedName, ()-> function.tag(column.getMappedName()));
-	}
 
 	@Override
 	public String sql(DBTable table, ParameterHolder ph) {
@@ -27,7 +21,7 @@ public final class FunctionColumn implements DBColumn {
 	
 	@Override
 	public String tag(DBTable table) {
-		return function.tag(column.tag(table));
+		return Taggable.genericTag(function.getFunctionName().toLowerCase(), column, table);
 	}
 	
 	@Override

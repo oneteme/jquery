@@ -16,11 +16,6 @@ public interface DBTable extends DBObject<String> {
 				? getTableName() 
 				: schema + "." + getTableName();
 	}
-
-	@Override //tag not used here
-	default String tag(String table) {
-		return null;
-	}
 	
 	//partition table
 	default String toSql(String schema, int year, ParameterHolder ph) {
@@ -36,13 +31,13 @@ public interface DBTable extends DBObject<String> {
 			}
 			
 			@Override
-			public DBColumn getRevisionColumn() {
-				return null;
+			public String getColumnName(DBColumn column) {
+				return "${column}";
 			}
 			
 			@Override
-			public String getColumnName(DBColumn column) {
-				return "${"+ column.getMappedName() +"}";
+			public DBColumn getRevisionColumn() {
+				return null;
 			}
 		}; 
 	}

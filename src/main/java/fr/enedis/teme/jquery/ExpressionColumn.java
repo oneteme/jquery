@@ -2,7 +2,6 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
-import static java.util.Objects.requireNonNullElseGet;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -14,22 +13,10 @@ public final class ExpressionColumn implements DBFilter {
 	private final DBColumn column;
 	@NonNull
 	private final DBExpression expression;
-	private final String tagname;
-
-	public ExpressionColumn(@NonNull DBColumn column, @NonNull DBExpression expression) {
-		this.column = column;
-		this.expression = expression;
-		this.tagname = null; //used in case expression
-	}
 
 	@Override
 	public String sql(DBTable table, ParameterHolder ph) {
 		return expression.sql(column.sql(table, ph), ph);
-	}
-	
-	@Override
-	public String tag(DBTable table) {
-		return requireNonNullElseGet(tagname, ()-> "case_" + column.tag(table));
 	}
 	
 	@Override

@@ -13,28 +13,14 @@ public interface DBFunction extends DBObject<String> {
 	default String sql(String columnName, ParameterHolder ph) {
 		return getFunctionName().toUpperCase() + "(" + requireNonBlank(columnName) + ")";
 	}
-
-	@Override
-	default String tag(String columnName) {
-		return getFunctionName().toLowerCase() + "_" + requireNonBlank(columnName);
-	}
-
 	
 	//FunctionColumn
-	default FunctionColumn of(DBColumn column, String mappedName) {
-		return new FunctionColumn(column, this, mappedName);
+	default FunctionColumn of(DBColumn column) {
+		return new FunctionColumn(column, this);
 	}
 	
-	default FunctionColumn of(DBColumn column) {
-		return new FunctionColumn(column, this, null);
-	}
-
-	default FunctionColumn ofAll(String mappedName) {
-		return new FunctionColumn(staticColumn("all", "*"), this, mappedName);
-	}
-
 	default FunctionColumn ofAll() {
-		return new FunctionColumn(staticColumn("all", "*"), this, null);
+		return new FunctionColumn(staticColumn("all", "*"), this);
 	}
 
 }
