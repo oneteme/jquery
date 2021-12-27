@@ -1,7 +1,8 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
-import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
+
+import lombok.NonNull;
 
 public interface DBFunction extends DBObject<String> {
 	
@@ -15,12 +16,8 @@ public interface DBFunction extends DBObject<String> {
 	}
 	
 	//FunctionColumn
-	default FunctionColumn of(DBColumn column) {
+	default FunctionColumn of(@NonNull DBColumn column) {
 		return new FunctionColumn(column, this);
 	}
 	
-	default FunctionColumn ofAll() {
-		return new FunctionColumn(staticColumn("all", "*"), this);
-	}
-
 }

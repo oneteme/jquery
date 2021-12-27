@@ -16,8 +16,9 @@ class UtilsTest {
 
 	@Test
 	void testIsEmptyArray() {
-	 	assertTrue(isEmpty((String[])null));
+	 	assertTrue(isEmpty((Object[])null));
 	 	assertTrue(isEmpty(new String[]{}));
+	 	assertFalse(isEmpty(new Object[]{null}));
 	 	assertFalse(isEmpty(new String[]{""}));
 	}
 
@@ -26,7 +27,7 @@ class UtilsTest {
 	 	assertTrue(isBlank((String)null));
 	 	assertTrue(isBlank(""));
 	 	assertTrue(isBlank(" "));
-	 	assertFalse(isBlank("A"));
+	 	assertFalse(isBlank(" A "));
 	}
 
 	@Test
