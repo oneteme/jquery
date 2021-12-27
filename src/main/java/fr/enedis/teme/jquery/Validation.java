@@ -9,10 +9,15 @@ import lombok.NonNull;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Validation {
+    
+    public static String requireLegalVariable(String s) {
+    	illegalArgumentIf(!requireNonBlank(s).matches("\\w+"), ()-> "illegal variable name : " + s);
+		return s;
+	}
 	
-    public static String requireNonBlank(@NonNull String obj) {
-		illegalArgumentIf(obj.isBlank(), "empty string");
-		return obj;
+    public static String requireNonBlank(@NonNull String s) {
+		illegalArgumentIf(s.isBlank(), "empty string");
+		return s;
 	}
 
 	public static <T> T[] requireNonEmpty(@NonNull T[] arr){

@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.ParameterHolder.formatValue;
+import static fr.enedis.teme.jquery.Validation.requireLegalVariable;
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 import lombok.AccessLevel;
@@ -36,6 +37,6 @@ public final class ValueColumn<T> implements DBColumn {
 	}
 	
 	public static <T> ValueColumn<T> staticColumn(@NonNull String tagName, T expression) {
-		return new ValueColumn<>(requireNonBlank(tagName), expression);
+		return new ValueColumn<>(requireLegalVariable(tagName), expression); //requireLegalVariable
 	}
 }
