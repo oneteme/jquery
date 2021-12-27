@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 class UtilsTest {
 
 	@Test
-	void testIsEmptyTArray() {
+	void testIsEmptyArray() {
 	 	assertTrue(isEmpty((String[])null));
 	 	assertTrue(isEmpty(new String[]{}));
 	 	assertFalse(isEmpty(new String[]{""}));

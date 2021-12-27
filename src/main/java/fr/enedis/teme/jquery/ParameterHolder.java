@@ -12,16 +12,16 @@ import java.util.function.Function;
 import java.util.function.Supplier;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ParameterHolder {
 
 	private static final String ARG = "?";
 	
-	private static final ParameterHolder STATIC_INSTANCE = new ParameterHolder(null, false);
+	private static final ParameterHolder STATIC_INSTANCE = new ParameterHolder(null, false, false);
 	
 	@Getter
 	private final Collection<Object> args;
@@ -56,6 +56,7 @@ public final class ParameterHolder {
 	
 	public String appendArray(@NonNull Object o) {
 		illegalArgumentIf(!o.getClass().isArray(), "not array");
+		illegalArgumentIf(getLength(o) == 0, "not array");
 		if(ps && dynamic) {
 			forEach(o, args::add);
 			return nParameter(getLength(o));
@@ -117,6 +118,6 @@ public final class ParameterHolder {
 	}
 	
 	public static ParameterHolder parametredSql() {
-		return new ParameterHolder(new LinkedList<>(), true);
+		return new ParameterHolder(new LinkedList<>(), true, true);
 	}
 }

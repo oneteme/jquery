@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
 public final class ValueColumn<T> implements DBColumn {
 
 	@Getter
-	private final String mappedName;
+	private final String tagName;
 	private final T value;//nullable
 
 	@Override
@@ -22,7 +22,7 @@ public final class ValueColumn<T> implements DBColumn {
 	
 	@Override
 	public String tag(DBTable table) {
-		return mappedName;
+		return tagName;
 	}
 	
 	@Override
@@ -35,7 +35,7 @@ public final class ValueColumn<T> implements DBColumn {
 		return sql(null, null);
 	}
 	
-	public static <T> ValueColumn<T> staticColumn(@NonNull String mappedName, T expression) {
-		return new ValueColumn<>(requireNonBlank(mappedName), expression);
+	public static <T> ValueColumn<T> staticColumn(@NonNull String tagName, T expression) {
+		return new ValueColumn<>(requireNonBlank(tagName), expression);
 	}
 }

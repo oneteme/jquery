@@ -11,7 +11,6 @@ import static fr.enedis.teme.jquery.GenericTable.c4_name;
 import static fr.enedis.teme.jquery.GenericTable.tab1;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import java.util.stream.Stream;
@@ -25,16 +24,14 @@ class DBColumnTest {
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testToSql(DBColumn column, DBTable table, String sql) {
-		assertEquals(sql, column.sql(table));
-		assertNotEquals(column.getMappedName(), column.sql(table));
-		assertThrows(NullPointerException.class, ()-> column.sql(null));
+		assertEquals(sql, column.sql(table, null));
+		assertThrows(NullPointerException.class, ()-> column.sql(null, null));
 	}
 	
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testSqlAlias(DBColumn column, DBTable table, String sql) {
 		assertEquals(sql, column.tag(table));
-		assertNotEquals(column.getMappedName(), column.tag(table));
 		assertThrows(NullPointerException.class, ()-> column.tag(null));
 	}
 	
