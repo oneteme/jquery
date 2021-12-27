@@ -18,7 +18,7 @@ import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class OperationExpression<T> implements DBExpression {
 
 	@NonNull
@@ -76,13 +76,13 @@ public final class OperationExpression<T> implements DBExpression {
 	}
 
 	@SafeVarargs
-	public static final <T> OperationExpression<T[]> in(@NonNull T... value) {
-		return new OperationExpression<>(IN, value);
+	public static final <T> OperationExpression<T[]> in(@NonNull T... values) {
+		return new OperationExpression<>(IN, values);
 	}
 
 	@SafeVarargs
-	public static final <T> OperationExpression<T[]> notIn(@NonNull T... value) {
-		return new OperationExpression<>(NOT_IN, value);
+	public static final <T> OperationExpression<T[]> notIn(@NonNull T... values) {
+		return new OperationExpression<>(NOT_IN, values);
 	}
 	
 }

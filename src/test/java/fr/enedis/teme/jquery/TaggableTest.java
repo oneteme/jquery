@@ -2,8 +2,10 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.GenericColumn.c1;
 import static fr.enedis.teme.jquery.GenericTable.tab1;
-import static fr.enedis.teme.jquery.Taggable.*;
-import static org.junit.jupiter.api.Assertions.*;
+import static fr.enedis.teme.jquery.Taggable.genericTag;
+import static fr.enedis.teme.jquery.Taggable.snakeToCamelCase;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

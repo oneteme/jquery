@@ -3,6 +3,7 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIfNot;
 import static java.lang.reflect.Array.getLength;
+import static java.util.stream.IntStream.range;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -83,9 +84,10 @@ public final class ParameterHolder {
 	}
 	
 	static void forEach(Object o, Consumer<Object> cons) {
-		for(var i=0; i<getLength(o); i++) {
-			cons.accept(Array.get(o, i));
-		}
+		
+		range(0, getLength(o))
+			.mapToObj(i-> Array.get(o, i))
+			.forEach(cons);
 	}
 
 	static String nParameter(int n){

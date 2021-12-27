@@ -1,9 +1,9 @@
 package fr.enedis.teme.jquery;
 
 
-import static fr.enedis.teme.jquery.Taggable.genericTag;
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
+import static fr.enedis.teme.jquery.Taggable.genericTag;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

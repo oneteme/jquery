@@ -1,10 +1,10 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Taggable.genericTag;
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ExpressionColumnGroup.and;
 import static fr.enedis.teme.jquery.ParameterHolder.formatString;
 import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
+import static fr.enedis.teme.jquery.Taggable.genericTag;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;

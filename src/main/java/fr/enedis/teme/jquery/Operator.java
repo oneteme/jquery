@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Validation.illegalArgumentIfNot;
+import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
 
 import lombok.RequiredArgsConstructor;
 
@@ -22,12 +22,12 @@ enum Operator {
 		}
 		var fn = " " + toString();
 		if(this == LIKE || this == NOT_LIKE) { 
-			return fn + " " + arg.appendString(o); //varchar
+			return fn + " " + arg.appendString(o); //String only
 		}
 		if(this == IN || this == NOT_IN) {
 			return fn + "(" + arg.appendArray(o) + ")";
 		}
-		illegalArgumentIfNot(o == null, ()-> "unexpected param " + o);
+		illegalArgumentIf(o != null, ()-> "unexpected param " + o);
 		return fn;
 	}
 	
