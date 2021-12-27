@@ -12,13 +12,14 @@ public interface Taggable<T> {
 	
 	static String genericTag(String prefix, @NonNull DBColumn column, @NonNull DBTable table) {
 		var v = column.tag(table);
-		return camelCase(isBlank(prefix) ? v : prefix + "_" + v);
+		return snakeToCamelCase(isBlank(prefix) ? v : prefix + "_" + v);
 	}
 
-	static String camelCase(@NonNull String columnName) {
+	static String snakeToCamelCase(String columnName) {
 		var arr = columnName.toLowerCase().split("_");
+		arr[0] = arr[0].toLowerCase();
 		for(var i=1; i<arr.length; i++) {
-			arr[i] = toUpperCase(arr[i].charAt(0)) + arr[i].substring(1);
+			arr[i] = toUpperCase(arr[i].charAt(0)) + arr[i].substring(1).toLowerCase();
 		}
 		return join("", arr);
 	}

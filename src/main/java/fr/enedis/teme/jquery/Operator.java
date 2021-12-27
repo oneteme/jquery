@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 enum Operator {
 	
 	EQ("="), NE("<>"), LT("<"), LE("<="), GT(">"), GE(">="), 
-	IS_NULL, IS_NOT_NULL, LIKE, NOT_LIKE, IN, NOT_IN;
+	LIKE, NOT_LIKE, IN, NOT_IN, IS_NULL, IS_NOT_NULL;
 	
 	private final String sign;
 
@@ -21,17 +21,14 @@ enum Operator {
 			return sign + arg.appendNullableParameter(o);
 		}
 		var fn = " " + toString();
-		if(this == IS_NULL || this == IS_NOT_NULL) {
-			illegalArgumentIfNot(o == null, ()-> "unexpected param " + o);
-			return fn;
-		}
 		if(this == LIKE || this == NOT_LIKE) { 
 			return fn + " " + arg.appendString(o); //varchar
 		}
 		if(this == IN || this == NOT_IN) {
 			return fn + "(" + arg.appendArray(o) + ")";
 		}
-		throw new IllegalStateException();
+		illegalArgumentIfNot(o == null, ()-> "unexpected param " + o);
+		return fn;
 	}
 	
 	@Override

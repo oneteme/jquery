@@ -13,7 +13,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 class OperatorTest {
-	
+
 	@ParameterizedTest()
 	@EnumSource(value = Operator.class, names = {"EQ", "NE", "LT", "LE", "GT", "GE"})
 	void testSqlSign(Operator e) {

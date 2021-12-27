@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.Taggable.genericTag;
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ExpressionColumnGroup.and;
 import static fr.enedis.teme.jquery.ParameterHolder.formatString;
@@ -87,7 +88,7 @@ public final class CaseColumn implements DBColumn {
 	}
 	
 	private static Function<DBTable, String> tagFunction(DBColumn column) {
-		return t-> Taggable.genericTag("case", column, t);
+		return t-> genericTag("case", column, t);
 	}
 	
 	@SafeVarargs

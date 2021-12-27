@@ -25,7 +25,6 @@ public final class ExpressionColumnGroup implements DBFilter {
 				.collect(joining(operator.toString()));
 	}
 	
-
 	@Override
 	public String toString() {
 		return sql(mockTable(), staticSql());

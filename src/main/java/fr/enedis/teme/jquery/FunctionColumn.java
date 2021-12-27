@@ -1,5 +1,7 @@
 package fr.enedis.teme.jquery;
 
+
+import static fr.enedis.teme.jquery.Taggable.genericTag;
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ParameterHolder.staticSql;
 
@@ -21,7 +23,7 @@ public final class FunctionColumn implements DBColumn {
 	
 	@Override
 	public String tag(DBTable table) {
-		return Taggable.genericTag(function.getFunctionName().toLowerCase(), column, table);
+		return genericTag(function.getFunctionName().toLowerCase(), column, table);
 	}
 	
 	@Override
