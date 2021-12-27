@@ -13,7 +13,7 @@ public final class NamedColumn implements DBColumn {
 	
 	@Override
 	public String sql(DBTable table, ParameterHolder arg) {
-		return column.sql(table, arg);// + " AS " + formatString(name);
+		return column.sql(table, arg);
 	}
 	
 	@Override

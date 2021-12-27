@@ -1,8 +1,5 @@
 package fr.enedis.teme.jquery;
 
-import static java.lang.Character.toUpperCase;
-import static java.lang.String.join;
-
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 

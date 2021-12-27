@@ -17,7 +17,7 @@ public final class ParametredQuery {
 	
 	@NonNull
 	private final String query;
-	private final String[] columnNames; //postgre case 
+	private final String[] columnNames;
 	private final Object[] params;
 	
 	public List<DynamicModel> execute(DataSource ds){
@@ -53,8 +53,8 @@ public final class ParametredQuery {
         return results;
 	}
 	
-	@Deprecated //postgre insensitive case 
-	private static String[] columnNames(ResultSet rs) throws SQLException {
+	//not used => PG insensitive column case 
+	static String[] columnNames(ResultSet rs) throws SQLException {
 		var n = rs.getMetaData().getColumnCount();
 		var names = new String[n];
 		for(var i=0; i<n; i++) {
