@@ -1,7 +1,12 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.GenericColumn.*;
+import static fr.enedis.teme.jquery.GenericColumn.c1;
+import static fr.enedis.teme.jquery.GenericColumn.c2;
+import static fr.enedis.teme.jquery.GenericColumn.c3;
+import static fr.enedis.teme.jquery.GenericColumn.c4;
 import static fr.enedis.teme.jquery.Helper.array;
+import static fr.enedis.teme.jquery.LogicalOperator.AND;
+import static fr.enedis.teme.jquery.LogicalOperator.OR;
 import static fr.enedis.teme.jquery.Operator.EQ;
 import static fr.enedis.teme.jquery.Operator.GE;
 import static fr.enedis.teme.jquery.Operator.GT;
@@ -16,26 +21,50 @@ import static fr.enedis.teme.jquery.Operator.NOT_IN;
 import static fr.enedis.teme.jquery.Operator.NOT_LIKE;
 import static java.lang.String.format;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
 import static org.junit.jupiter.params.provider.Arguments.of;
 
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.Random;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.provider.Arguments;
 
 public abstract interface DataProvider {
 	
+	static Stream<Arguments> filterGroupCaseProvider() {
+		var rand = new Random();
+		var list = operationCaseProvider().collect(toList());
+		return IntStream.range(1, 5)
+			.mapToObj(n->{
+				var exList = new ArrayList<DBFilter>();
+				var coList = new ArrayList<DBColumn>();
+				var sqList = IntStream.range(0, 2).mapToObj(i-> new ArrayList<String>(n)).collect(toList());
+				for(int i=0; i<n; i++) {
+					var arg = list.get(rand.nextInt(list.size()));
+					var col = COLUMNS[rand.nextInt(4)];
+					coList.add(col);
+					exList.add(new ColumnFilter(col, new OperatorExpression<>((Operator)arg.get()[0], arg.get()[1])));
+					String[] sql = (String[]) arg.get()[2];
+					sqList.get(0).add(sql[0]);
+					sqList.get(1).add(sql[1]);
+				}
+				return of(new ColumnFilterGroup(rand.nextBoolean() ? AND : OR, exList.toArray(DBFilter[]::new)),
+						coList.toArray(DBColumn[]::new),
+						sqList.stream().map(c-> c.toArray(String[]::new)).toArray(String[][]::new));
+			});
+	}
+	
 	static Stream<Arguments> filterCaseProvider() {
-		var cols = new DBColumn[] {c1,c2,c3,c4};
 		var rand = new Random();
 		return operationCaseProvider()
 			.map(a->
-				of(new ColumnFilter(cols[rand.nextInt(4)], new OperatorExpression<>((Operator)a.get()[0], a.get()[1])), a.get()[2]));
+				of(new ColumnFilter(COLUMNS[rand.nextInt(4)], new OperatorExpression<>((Operator)a.get()[0], a.get()[1])), a.get()[2]));
 	}
-		
 
 	static Stream<Arguments> expressionCaseProvider() {
 		return operationCaseProvider()
@@ -103,6 +132,8 @@ public abstract interface DataProvider {
 		map.put(IS_NOT_NULL, "IS NOT NULL");
 		return map;
 	}
+
+	DBColumn[] COLUMNS = {c1,c2,c3,c4};
 
 	static final LocalDate date = LocalDate.now();
 	static final Map<Operator, String> enumMap = enumMap();

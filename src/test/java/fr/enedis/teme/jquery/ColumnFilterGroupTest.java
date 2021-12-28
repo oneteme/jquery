@@ -1,36 +1,47 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.GenericTable.tab1;
+import static fr.enedis.teme.jquery.Helper.fieldValue;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
-import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.joining;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 
-import java.time.LocalDate;
-import java.util.stream.Stream;
+import java.util.stream.IntStream;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.MethodSource;
 
 class ColumnFilterGroupTest implements DataProvider {
 
-	private final ParameterHolder VAL = addWithValue();
-	private final ParameterHolder PRM = parametrized();
-	private final LocalDate date = LocalDate.of(2020,1,1);
-	
-	@Test
-	void testSql() {
+	private final ParameterHolder STAT = addWithValue();
+	private final ParameterHolder DYNC = parametrized();
+
+	@ParameterizedTest
+	@MethodSource("filterGroupCaseProvider")
+	void testSql(ColumnFilterGroup filter, DBColumn[] columns, String[][] sql) {
+		LogicalOperator op = (LogicalOperator) fieldValue("operator", filter);
+		assertEquals(join(op, columns, sql[0]), filter.sql(tab1, DYNC));
+		assertEquals(join(op, columns, sql[1]), filter.sql(tab1, STAT));
 	}
 
-	void testToString() {
-		
+	@ParameterizedTest
+	@MethodSource("filterGroupCaseProvider")
+	void testToString(ColumnFilterGroup filter, DBColumn[] columns, String[][] sql) {
+		LogicalOperator op = (LogicalOperator) fieldValue("operator", filter);
+		assertEquals(join(op, sql[1]), filter.toString());
 	}
 	
-	static Stream<Arguments> randomCaseProvider() {
-		var list = DataProvider.operationCaseProvider().collect(toList());
-//		IntStream.range(0, 3).mapToObj(n->{
-//			shuffle(list);
-//			return Arguments.of(list.su)
-//		});
-		return null;
+	private static String join(LogicalOperator op, DBColumn[] columns, String[] sql) {
+		return IntStream.range(0, columns.length)
+			.mapToObj(i-> tab1.getColumnName(columns[i])+sql[i])
+			.collect(joining(" " + op.name() + " "));
+	}
+
+	private static String join(LogicalOperator op, String[] sql) {
+		return IntStream.range(0, sql.length)
+			.mapToObj(i-> "${column}"+sql[i])
+			.collect(joining(" " + op.name() + " "));
 	}
 
 }

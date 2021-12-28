@@ -20,7 +20,7 @@ class ColumnFilterTest implements DataProvider {
 
 	@ParameterizedTest
 	@MethodSource("filterCaseProvider")
-	void testSql(DBFilter filter, String[] sql) {
+	void testSql(ColumnFilter filter, String[] sql) {
 		DBColumn c = (DBColumn) fieldValue("column", filter);
 		assertEquals(tab1.getColumnName(c)+sql[0], filter.sql(tab1, DYNC));
 		assertEquals(tab1.getColumnName(c)+sql[1], filter.sql(tab1, STAT));

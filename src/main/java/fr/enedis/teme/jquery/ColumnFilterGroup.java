@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
 public final class ColumnFilterGroup implements DBFilter {
 	
 	private final LogicalOperator operator;
-	private final ColumnFilter[] expression;
+	private final DBFilter[] expression;
 
 	@Override
 	public String sql(DBTable obj, ParameterHolder ph) {
