@@ -11,14 +11,14 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class OperatorTest implements ExpressionProvider {
+class OperatorTest implements DataProvider {
 	
 	private final ParameterHolder STAT = addWithValue();
 	private final ParameterHolder DYNC = parametrized();
 	private final LocalDate date = LocalDate.now();
 	
 	@ParameterizedTest
-	@MethodSource("caseProvider")
+	@MethodSource("operationCaseProvider")
 	void testSql(Operator op, Object arg, String[] sql) {
 		assertEquals(sql[0], op.sql(arg, DYNC));
 		assertEquals(sql[1], op.sql(arg, STAT));

@@ -95,6 +95,10 @@ public interface DBColumn extends DBObject<DBTable>, Taggable<DBTable> {
     default ColumnFilter notNullFilter(){
     	return new ColumnFilter(this, isNotNull());
     }
+    
+    default <T> ColumnFilter filter(OperatorExpression<T> exp){
+    	return new ColumnFilter(this, exp);
+    }
 
 	// case column
     default CaseColumn caseIntervals(Integer... values){

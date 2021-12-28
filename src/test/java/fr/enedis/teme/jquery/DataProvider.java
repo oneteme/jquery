@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.GenericColumn.*;
 import static fr.enedis.teme.jquery.Helper.array;
 import static fr.enedis.teme.jquery.Operator.EQ;
 import static fr.enedis.teme.jquery.Operator.GE;
@@ -20,13 +21,29 @@ import static org.junit.jupiter.params.provider.Arguments.of;
 import java.time.LocalDate;
 import java.util.EnumMap;
 import java.util.Map;
+import java.util.Random;
 import java.util.stream.Stream;
 
 import org.junit.jupiter.params.provider.Arguments;
 
-public abstract interface ExpressionProvider {
+public abstract interface DataProvider {
+	
+	static Stream<Arguments> filterCaseProvider() {
+		var cols = new DBColumn[] {c1,c2,c3,c4};
+		var rand = new Random();
+		return operationCaseProvider()
+			.map(a->
+				of(new ColumnFilter(cols[rand.nextInt(4)], new OperatorExpression<>((Operator)a.get()[0], a.get()[1])), a.get()[2]));
+	}
 		
-	static Stream<Arguments> caseProvider() {
+
+	static Stream<Arguments> expressionCaseProvider() {
+		return operationCaseProvider()
+			.map(a-> 
+				of(new OperatorExpression<>((Operator)a.get()[0], a.get()[1]), a.get()[2]));
+	}
+		
+	static Stream<Arguments> operationCaseProvider() {
 		return Stream.of(signCaseProvider(),likeCases(),inCases(), nullCases())
 				.flatMap(identity());
 	}
@@ -57,9 +74,9 @@ public abstract interface ExpressionProvider {
 		return Stream.of(IN, NOT_IN).flatMap(op->{
 			var exp = " " + enumMap.get(op) + "(%s)";
 			return Stream.of(
-				of(op,  new int[]{1,2,3,4,5}, array(format(exp, "?,?,?,?,?"), format(exp, "1,2,3,4,5"))),
-				of(op, new String[]{"1","2"}, array(format(exp, "?,?"),       format(exp, "'1','2'"))),
-				of(op, new LocalDate[]{date}, array(format(exp, "?"),         format(exp, "'"+date+"'"))));
+				of(op,  new int[]{1,2,3,4,5}, array(format(exp, "?,?,?,?,?"), format(exp, "1,2,3,4,5"))), //int  array
+				of(op, new String[]{"1","2"}, array(format(exp, "?,?"),       format(exp, "'1','2'"))), //string array
+				of(op, new LocalDate[]{date}, array(format(exp, "?"),         format(exp, "'"+date+"'")))); //date array
 		});
 	}
 

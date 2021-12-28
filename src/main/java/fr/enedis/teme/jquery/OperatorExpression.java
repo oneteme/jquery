@@ -63,6 +63,16 @@ public final class OperatorExpression<T> implements DBExpression {
 		return new OperatorExpression<>(LIKE, value);
 	}
 
+	@SafeVarargs
+	public static final <T> OperatorExpression<T[]> in(@NonNull T... values) {
+		return new OperatorExpression<>(IN, values);
+	}
+
+	@SafeVarargs
+	public static final <T> OperatorExpression<T[]> notIn(@NonNull T... values) {
+		return new OperatorExpression<>(NOT_IN, values);
+	}
+
 	public static final OperatorExpression<String> notLike(@NonNull String value) {
 		return new OperatorExpression<>(NOT_LIKE, value);
 	}
@@ -73,16 +83,6 @@ public final class OperatorExpression<T> implements DBExpression {
 
 	public static final OperatorExpression<Void> isNotNull() {
 		return  new OperatorExpression<>(IS_NOT_NULL, null);
-	}
-
-	@SafeVarargs
-	public static final <T> OperatorExpression<T[]> in(@NonNull T... values) {
-		return new OperatorExpression<>(IN, values);
-	}
-
-	@SafeVarargs
-	public static final <T> OperatorExpression<T[]> notIn(@NonNull T... values) {
-		return new OperatorExpression<>(NOT_IN, values);
 	}
 	
 }

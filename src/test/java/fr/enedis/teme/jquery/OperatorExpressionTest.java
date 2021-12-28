@@ -9,22 +9,21 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-class OperatorExpressionTest implements ExpressionProvider {
+class OperatorExpressionTest implements DataProvider {
 
 	private final ParameterHolder STAT = addWithValue();
 	private final ParameterHolder DYNC = parametrized();
 
 	@ParameterizedTest
-	@MethodSource("caseProvider")
-	void testSql(Operator op, Object arg, String[] sql) {
-		assertEquals(c1_name+sql[0], new OperatorExpression<>(op, arg).sql(c1_name, DYNC));
-		assertEquals(c2_name+sql[1], new OperatorExpression<>(op, arg).sql(c2_name, STAT));
+	@MethodSource("expressionCaseProvider")
+	void testSql(OperatorExpression<?> exp, String[] sql) {
+		assertEquals(c1_name+sql[0], exp.sql(c1_name, DYNC));
+		assertEquals(c2_name+sql[1], exp.sql(c2_name, STAT));
 	}
 	
 	@ParameterizedTest
-	@MethodSource("caseProvider")
-	void testString(Operator op, Object arg, String[] sql) {
-		assertEquals(sql[1], new OperatorExpression<>(op, arg).toString());
-	}
-	
+	@MethodSource("expressionCaseProvider")
+	void testString(OperatorExpression<?> exp, String[] sql) {
+		assertEquals(sql[1], exp.toString());
+	}	
 }
