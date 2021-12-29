@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Comparator.reverseOrder;
-import static java.util.Objects.requireNonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -12,52 +12,40 @@ import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
 import lombok.AccessLevel;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class TablePartitionExtractor {
+public final class TablePartitionExtractor implements BiPredicate<DBTable, YearMonth> {
 	
 	private final DataSource ds;
 	private final DBTable[] tables;
-	private Map<DBTable, List<YearMonth>> cache;
+	private final DBColumn revColumn;
+	private Map<DBTable, List<YearMonth>> cache = emptyMap();
 	
-	public YearMonth lastRevision(DBTable table) {
-		var revs = requireTablePartition(table);
-		return revs.get(0); //list already sorted desc.
-	}
-
-	public YearMonth firstRevision(DBTable table) {
-		var revs = requireTablePartition(table);
-		return revs.get(revs.size()-1); //list already sorted desc.
-	}
-	
-	public YearMonth lastRevisionBetween(DBTable table, YearMonth min, YearMonth max) {
-		var revs = requireTablePartition(table);
-		return revs.stream()
-				.filter(v-> v.compareTo(min) >=0 && v.compareTo(max) <=0)
-				.findFirst() //list already sorted desc.
-				.orElseThrow(()-> new PartitionExtractException(table + ": empty table partition between [" + min + ", " + max + "]"));
-	}
-	
-	private List<YearMonth> requireTablePartition(DBTable table) {
+	@Override
+	public boolean test(DBTable table, YearMonth ym) {
 		var revs = fetch(false).get(table);
 		if(revs == null || revs.isEmpty()) {
-			throw new PartitionExtractException(table + ": empty table partition");
+			return true; //force true => cannot fetch data
 		}
-		return revs;
+		//sorted already
+		return revs.get(0).compareTo(ym) >= 0 && 
+				revs.get(revs.size()-1).compareTo(ym) <= 0;
 	}
 
 	private Map<DBTable, List<YearMonth>> fetch(boolean refresh) {
 		synchronized (ds) {
-			if(cache == null || refresh) {
+			if(cache.isEmpty() || refresh) {
 				cache = Stream.of(tables).collect(toUnmodifiableMap(identity(), this::tableMonths));
 			}
 			return cache;
@@ -76,14 +64,14 @@ public final class TablePartitionExtractor {
 			}
 		}
 		catch(SQLException e) {
-			throw new PartitionExtractException(table + " : cannot extract table partition years : ", e);
+			log.warn(table + " : cannot fetch table revision", e);
 		}
 		return tableMonths(table, nName);
 	}
 	
 	private List<YearMonth> tableMonths(DBTable table, List<String> tableName) {
 		
-		var rc = table.getRevisionColumn().sql(table, null);
+		var rc = revColumn.sql(table, null);
 		var query = tableName.stream()
 			.map(tn-> "SELECT DISTINCT " + rc + ", " + tn.substring(tn.length()-4) + " FROM " + tn)
 			.collect(Collectors.joining("; "));
@@ -105,14 +93,13 @@ public final class TablePartitionExtractor {
 			}
 		}
 		catch(SQLException e) {
-			throw new PartitionExtractException(table + " : cannot extract table partition months : ", e);
+			log.warn(table + " : cannot fetch table month revision", e);
 		}
 		return months.stream().sorted(reverseOrder()).collect(toList()); //sort desc.
 	}
 	
-	public static TablePartitionExtractor extract(DataSource ds, DBTable... tables) {
+	public static TablePartitionExtractor revisionAssert(@NonNull DataSource ds, @NonNull DBColumn revColumn, @NonNull DBTable... tables) {
 		
-		return new TablePartitionExtractor(requireNonNull(ds), requireNonNull(tables));
+		return new TablePartitionExtractor(ds, tables, revColumn);
 	}
-
 }
