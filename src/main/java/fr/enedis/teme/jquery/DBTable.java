@@ -8,6 +8,8 @@ public interface DBTable extends DBObject<String> {
 	
 	String getColumnName(DBColumn column);
 	
+	DBColumn[] columns();
+	
 	DBColumn getRevisionColumn();
 	
 	@Override
@@ -36,8 +38,13 @@ public interface DBTable extends DBObject<String> {
 			}
 			
 			@Override
+			public DBColumn[] columns() {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
 			public DBColumn getRevisionColumn() {
-				return null;
+				throw new UnsupportedOperationException();
 			}
 		}; 
 	}

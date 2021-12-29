@@ -31,5 +31,10 @@ final class GenericTable implements DBTable {
 	public String getColumnName(DBColumn column) {
 		return columnMap.get(column);
 	}
+	
+	 @Override
+	public DBColumn[] columns() {
+		return columnMap.keySet().toArray(DBColumn[]::new);
+	}
 
 }

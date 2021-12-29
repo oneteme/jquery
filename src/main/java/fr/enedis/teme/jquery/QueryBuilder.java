@@ -50,6 +50,11 @@ public final class QueryBuilder {
 		return columns(columns);
 	}
 
+	public QueryBuilder selectAll(DBTable table) {
+		this.table = table;
+		return columns(table.columns());
+	}
+
 	public QueryBuilder columns(DBColumn... columns) {
 		this.columns = concat(this.columns, columns);
 		return this;
