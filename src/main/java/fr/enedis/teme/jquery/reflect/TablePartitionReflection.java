@@ -24,7 +24,7 @@ import java.util.stream.Stream;
 import javax.sql.DataSource;
 
 import fr.enedis.teme.jquery.DBTable;
-import fr.enedis.teme.jquery.web.YearPartitionTable;
+import fr.enedis.teme.jquery.YearPartitionTable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 

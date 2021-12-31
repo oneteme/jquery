@@ -22,6 +22,7 @@ import fr.enedis.teme.jquery.DBTable;
 import fr.enedis.teme.jquery.PartitionedRequestQuery;
 import fr.enedis.teme.jquery.RequestQuery;
 import fr.enedis.teme.jquery.TableColumn;
+import fr.enedis.teme.jquery.YearPartitionTable;
 import fr.enedis.teme.jquery.web.RequestQueryParam.Mode;
 import lombok.RequiredArgsConstructor;
 

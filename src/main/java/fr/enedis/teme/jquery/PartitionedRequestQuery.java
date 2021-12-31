@@ -12,7 +12,6 @@ import java.time.YearMonth;
 import java.util.Collection;
 import java.util.stream.Stream;
 
-import fr.enedis.teme.jquery.web.YearPartitionTable;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor

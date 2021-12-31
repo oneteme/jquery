@@ -41,6 +41,13 @@ class ValueColumnTest {
 		assertFalse(column.isExpression());
 	}
 	
+
+	@ParameterizedTest
+	@MethodSource("caseProvider")
+	void testIsAggregatio(ValueColumn<?> column) {
+		assertFalse(column.isAggregation());
+	}
+	
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testToString(ValueColumn<?> column, String value) {
