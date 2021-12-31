@@ -1,10 +1,10 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ColumnFilterGroup.and;
-import static fr.enedis.teme.jquery.ParameterHolder.formatString;
+import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
-import static fr.enedis.teme.jquery.Taggable.genericTag;
+import static fr.enedis.teme.jquery.ParameterHolder.formatString;
+import static fr.enedis.teme.jquery.Taggable.prefix;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
@@ -17,7 +17,7 @@ import static java.util.stream.Collectors.toList;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map.Entry;
-import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -29,7 +29,7 @@ public final class CaseColumn implements DBColumn {
 
 	private final Collection<NamedFilter> filters;
 	private final String defaultTag;
-	private final Function<DBTable, String> tagFn;
+	private final Supplier<String> tagFn;
 	
 	@Override
 	public String sql(DBTable table, ParameterHolder pc) {
@@ -43,13 +43,23 @@ public final class CaseColumn implements DBColumn {
 	}
 
 	@Override
-	public String tag(DBTable table) {
-		return tagFn.apply(table);
+	public String getTag() {
+		return tagFn.get();
 	}
 	
 	@Override
 	public boolean isExpression() {
 		return true;
+	}
+	
+	@Override
+	public boolean isAggregation() {
+		return false;
+	}
+	
+	@Override
+	public boolean isConstant() {
+		return false;
 	}
 	
 	@Override
@@ -87,8 +97,8 @@ public final class CaseColumn implements DBColumn {
 		return new CaseColumn(unmodifiableCollection(filters), defaultValue, tagFunction(column));
 	}
 	
-	private static Function<DBTable, String> tagFunction(DBColumn column) {
-		return t-> genericTag("case", column, t);
+	private static Supplier<String> tagFunction(DBColumn column) {
+		return ()-> prefix("case", column);
 	}
 	
 	@SafeVarargs

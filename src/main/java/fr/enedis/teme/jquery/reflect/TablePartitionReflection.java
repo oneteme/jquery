@@ -1,9 +1,11 @@
-package fr.enedis.teme.jquery;
+package fr.enedis.teme.jquery.reflect;
 
+import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Comparator.reverseOrder;
 import static java.util.concurrent.Executors.newScheduledThreadPool;
-import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableMap;
@@ -21,24 +23,24 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
+import fr.enedis.teme.jquery.DBTable;
+import fr.enedis.teme.jquery.web.YearPartitionTable;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-public final class TablePartitionScanner implements BiPredicate<DBTable, YearMonth> {
+public final class TablePartitionReflection implements BiPredicate<DBTable, YearMonth> {
 	
 	private final DataSource ds;
-	private final DBTable[] tables;
-	private final DBColumn revColumn;
+	private final YearPartitionTable[] tables;
 	private final Future<?> sync;
 	private Map<DBTable, List<YearMonth>> cache = emptyMap();
 
-	public TablePartitionScanner(DataSource ds, DBTable[] tables, DBColumn revColumn, int refreshDelay) {
+	public TablePartitionReflection(DataSource ds, YearPartitionTable[] tables, int refreshDelay) {
 		this.ds = ds;
 		this.tables = tables;
-		this.revColumn = revColumn;
-		this.sync = newScheduledThreadPool(1)
-				.scheduleWithFixedDelay(()-> this.fetch(true), 1, refreshDelay, MINUTES); //fetch every hour
+		this.sync = newScheduledThreadPool(1).scheduleWithFixedDelay(
+				()-> this.fetch(true), 1, refreshDelay, SECONDS); //fetch every hour
 	}
 	
 	@Override
@@ -55,32 +57,37 @@ public final class TablePartitionScanner implements BiPredicate<DBTable, YearMon
 	private Map<DBTable, List<YearMonth>> fetch(boolean refresh) {
 		synchronized (ds) {
 			if(cache.isEmpty() || refresh) {
+				var t = currentTimeMillis();
 				cache = Stream.of(tables).collect(toUnmodifiableMap(identity(), this::tableMonths));
+				log.info("{} table scanned in {}", cache.values().stream()
+							.mapToInt(v->(int)v.stream().mapToInt(YearMonth::getYear).distinct().count())
+							.sum(), currentTimeMillis() - t);
 			}
 			return cache;
 		}		
 	}
 	
-	private List<YearMonth> tableMonths(DBTable table) {
+	private List<YearMonth> tableMonths(YearPartitionTable table) {
 		
-		List<String> nName = new LinkedList<>();
 		try(ResultSet rs = ds.getConnection().getMetaData().getTables(null, null, table.getTableName()+"_20__", null)){
+			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
 				var tn = rs.getString("TABLE_NAME");
 				if(tn.matches(table.getTableName() + "_20[0-9]{2}")) { // strict pattern
 					nName.add(tn);
 				}
 			}
+			return tableMonths(table, nName);
 		}
 		catch(SQLException e) {
 			log.warn(table + " : cannot fetch table revision", e);
+			return emptyList();
 		}
-		return tableMonths(table, nName);
 	}
 	
-	private List<YearMonth> tableMonths(DBTable table, List<String> tableName) {
+	private List<YearMonth> tableMonths(YearPartitionTable table, List<String> tableName) {
 		
-		var rc = revColumn.sql(table, null);
+		var rc = table.getRevisionColumn().sql(table, null);
 		var query = tableName.stream()
 			.map(tn-> "SELECT DISTINCT " + rc + ", " + tn.substring(tn.length()-4) + " FROM " + tn)
 			.collect(Collectors.joining("; "));
@@ -107,11 +114,11 @@ public final class TablePartitionScanner implements BiPredicate<DBTable, YearMon
 		return months.stream().sorted(reverseOrder()).collect(toList()); //sort desc.
 	}
 	
-	public static TablePartitionScanner revisionScanner(int scanDelay, @NonNull DataSource ds, @NonNull DBColumn revColumn, @NonNull DBTable... tables) {
-		return new TablePartitionScanner(ds, tables, revColumn, scanDelay);
+	public static TablePartitionReflection revisionScanner(int scanDelay, @NonNull DataSource ds, @NonNull YearPartitionTable... tables) {
+		return new TablePartitionReflection(ds, tables, scanDelay);
 	}
 	
-	public static TablePartitionScanner revisionScanner(@NonNull DataSource ds, @NonNull DBColumn revColumn, @NonNull DBTable... tables) {
-		return new TablePartitionScanner(ds, tables, revColumn, 60);
+	public static TablePartitionReflection revisionScanner(@NonNull DataSource ds, @NonNull YearPartitionTable... tables) {
+		return new TablePartitionReflection(ds, tables, 3600);
 	}
 }

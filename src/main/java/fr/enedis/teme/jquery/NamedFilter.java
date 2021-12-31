@@ -6,7 +6,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class NamedFilter implements DBFilter, Taggable<DBTable> {
+public final class NamedFilter implements DBFilter, Taggable {
 	
 	@NonNull
 	private final String name;
@@ -19,7 +19,7 @@ public final class NamedFilter implements DBFilter, Taggable<DBTable> {
 	}
 	
 	@Override
-	public String tag(DBTable table) {
+	public String getTag() {
 		return name;
 	}
 

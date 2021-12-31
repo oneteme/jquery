@@ -27,7 +27,7 @@ class ValueColumnTest {
 	@ParameterizedTest
 	@MethodSource("caseProvider")
 	void testTag(ValueColumn<?> column, String tag) {
-		assertTrue(column.tag(null).matches("field[1-5]"));
+		assertTrue(column.getTag().matches("field[1-5]"));
 	}
 	@ParameterizedTest
 	@MethodSource("caseProvider")

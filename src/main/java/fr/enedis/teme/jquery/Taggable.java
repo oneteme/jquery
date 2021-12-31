@@ -6,12 +6,12 @@ import static java.lang.String.join;
 
 import lombok.NonNull;
 
-public interface Taggable<T> {
+public interface Taggable {
 
-	String tag(T o);
+	String getTag();
 	
-	static String genericTag(String prefix, @NonNull DBColumn column, @NonNull DBTable table) {
-		var v = column.tag(table);
+	static String prefix(String prefix, @NonNull Taggable column) {
+		var v = column.getTag();
 		return snakeToCamelCase(isBlank(prefix) ? v : prefix + "_" + v);
 	}
 

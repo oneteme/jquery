@@ -1,8 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.GenericColumn.c1;
-import static fr.enedis.teme.jquery.GenericTable.tab1;
-import static fr.enedis.teme.jquery.Taggable.genericTag;
+import static fr.enedis.teme.jquery.Taggable.prefix;
 import static fr.enedis.teme.jquery.Taggable.snakeToCamelCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -15,11 +14,10 @@ class TaggableTest {
 
 	@Test
 	void testGenericTag() {
-		assertThrows(NullPointerException.class, ()-> genericTag(null, null, null));
-		assertThrows(NullPointerException.class, ()-> genericTag(null, null, tab1));
-		assertThrows(NullPointerException.class, ()-> genericTag(null, c1, null));
-		assertEquals("someId", genericTag(null, c1, tab1));
-		assertEquals("testSomeId", genericTag("test", c1, tab1));
+		assertThrows(NullPointerException.class, ()-> prefix(null, null));
+		assertThrows(NullPointerException.class, ()-> prefix("", null));
+		assertEquals("somecode", prefix(null, c1)); //TODO camel case bug
+		assertEquals("testSomecode", prefix("test", c1));
 	}
 	
 	@ParameterizedTest

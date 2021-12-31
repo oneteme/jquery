@@ -6,22 +6,21 @@ public interface DBTable extends DBObject<String> {
 	
 	String getTableName();
 	
-	String getColumnName(DBColumn column);
-	
-	DBColumn[] columns();
-	
-	DBColumn getRevisionColumn();
-	
+	String dbColumnName(DBColumn column);
+
+	TableColumn[] columns();
+
 	@Override
 	default String sql(String schema, ParameterHolder ph) {
 		return isBlank(schema) 
 				? getTableName() 
 				: schema + "." + getTableName();
 	}
-	
-	//partition table
-	default String toSql(String schema, int year, ParameterHolder ph) {
-		return sql(schema, ph) + "_" + year;
+
+	default String sql(String schema, String suffix, ParameterHolder ph) {
+		return isBlank(suffix) 
+				? sql(schema, ph)
+				: sql(schema, ph) + "_" + suffix;
 	}
 	
 	static DBTable mockTable() {
@@ -33,17 +32,12 @@ public interface DBTable extends DBObject<String> {
 			}
 			
 			@Override
-			public String getColumnName(DBColumn column) {
-				return "${column}";
+			public String dbColumnName(DBColumn column) {
+				return column.getTag();
 			}
 			
 			@Override
-			public DBColumn[] columns() {
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public DBColumn getRevisionColumn() {
+			public TableColumn[] columns() {
 				throw new UnsupportedOperationException();
 			}
 		}; 

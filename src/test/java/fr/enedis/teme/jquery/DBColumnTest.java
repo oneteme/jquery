@@ -30,13 +30,6 @@ class DBColumnTest {
 	
 	@ParameterizedTest
 	@MethodSource("caseProvider")
-	void testSqlAlias(DBColumn column, DBTable table, String sql) {
-		assertEquals(sql, column.tag(table));
-		assertThrows(NullPointerException.class, ()-> column.tag(null));
-	}
-	
-	@ParameterizedTest
-	@MethodSource("caseProvider")
 	void testIsAggregated(DBColumn column) {
 		assertFalse(column.isAggregation());
 	}

@@ -17,8 +17,23 @@ public final class NamedColumn implements DBColumn {
 	}
 	
 	@Override
-	public String tag(DBTable table) {
+	public String getTag() {
 		return name;
+	}
+
+	@Override
+	public boolean isExpression() {
+		return column.isExpression();
+	}
+
+	@Override
+	public boolean isAggregation() {
+		return column.isAggregation();
+	}
+
+	@Override
+	public boolean isConstant() {
+		return column.isConstant();
 	}
 	
 	@Override

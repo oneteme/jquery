@@ -14,38 +14,20 @@ import static fr.enedis.teme.jquery.OperatorExpression.like;
 import static fr.enedis.teme.jquery.OperatorExpression.notEquals;
 import static fr.enedis.teme.jquery.OperatorExpression.notIn;
 import static fr.enedis.teme.jquery.OperatorExpression.notLike;
-import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
 import java.util.Map.Entry;
 
-public interface DBColumn extends DBObject<DBTable>, Taggable<DBTable> {
-
-	@Override
-	default String sql(DBTable table, ParameterHolder arg) {
-		return requireNonBlank(table.getColumnName(this));
-	}
-
-	@Override
-	default String tag(DBTable table) {
-		return requireNonBlank(table.getColumnName(this));
-	}
+public interface DBColumn extends DBObject<DBTable>, Taggable {
 	
-	default boolean isExpression() {
-		return false;
-	}
+	boolean isExpression();
 	
-	default boolean isAggregation() {
-		return false;
-	}
+	boolean isAggregation();
 	
-	default boolean isConstant() {
-		return false;
-	}
+	boolean isConstant();
 
 	default NamedColumn as(String name) {
 		return new NamedColumn(name, this);
 	}
-	
 	
 	// filters	
     default ColumnFilter equalFilter(Object value){

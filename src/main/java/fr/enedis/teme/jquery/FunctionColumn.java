@@ -3,7 +3,7 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
-import static fr.enedis.teme.jquery.Taggable.genericTag;
+import static fr.enedis.teme.jquery.Taggable.prefix;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -22,18 +22,23 @@ public final class FunctionColumn implements DBColumn {
 	}
 	
 	@Override
-	public String tag(DBTable table) {
-		return genericTag(function.getFunctionName().toLowerCase(), column, table);
+	public String getTag() {
+		return prefix(function.getFunctionName().toLowerCase(), column);
 	}
 	
+	@Override
+	public boolean isExpression() {
+		return true;
+	}
+
 	@Override
 	public boolean isAggregation() {
 		return function.isAggregate();
 	}
 
 	@Override
-	public boolean isExpression() {
-		return true;
+	public boolean isConstant() {
+		return false;
 	}
 		
 	@Override

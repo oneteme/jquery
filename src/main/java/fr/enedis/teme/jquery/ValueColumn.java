@@ -19,8 +19,18 @@ public final class ValueColumn<T> implements DBColumn {
 	}
 	
 	@Override
-	public String tag(DBTable table) {
+	public String getTag() {
 		return tagName;
+	}
+	
+	@Override
+	public boolean isAggregation() {
+		return false;
+	}
+	
+	@Override
+	public boolean isExpression() {
+		return false;
 	}
 	
 	@Override

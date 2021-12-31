@@ -28,13 +28,13 @@ final class GenericTable implements DBTable {
 	private final DBColumn revisionColumn;
 	
 	@Override
-	public String getColumnName(DBColumn column) {
+	public String dbColumnName(DBColumn column) {
 		return columnMap.get(column);
 	}
 	
 	 @Override
-	public DBColumn[] columns() {
-		return columnMap.keySet().toArray(DBColumn[]::new);
+	public TableColumn[] columns() {
+		return columnMap.keySet().toArray(TableColumn[]::new);
 	}
 
 }

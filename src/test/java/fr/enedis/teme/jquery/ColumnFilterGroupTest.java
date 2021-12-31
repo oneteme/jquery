@@ -34,7 +34,7 @@ class ColumnFilterGroupTest implements DataProvider {
 	
 	private static String join(LogicalOperator op, DBColumn[] columns, String[] sql) {
 		return IntStream.range(0, columns.length)
-			.mapToObj(i-> tab1.getColumnName(columns[i])+sql[i])
+			.mapToObj(i-> tab1.dbColumnName(columns[i])+sql[i])
 			.collect(joining(" " + op.name() + " "));
 	}
 
