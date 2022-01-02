@@ -12,7 +12,7 @@ public interface Taggable {
 	
 	static String prefix(String prefix, @NonNull Taggable column) {
 		var v = column.getTag();
-		return snakeToCamelCase(isBlank(prefix) ? v : prefix + "_" + v);
+		return isBlank(prefix) ? v : snakeToCamelCase(prefix) + capitalize(v);
 	}
 
 	static String snakeToCamelCase(String columnName) {
@@ -22,5 +22,9 @@ public interface Taggable {
 			arr[i] = toUpperCase(arr[i].charAt(0)) + arr[i].substring(1).toLowerCase();
 		}
 		return join("", arr);
+	}
+	
+	static String capitalize(String value) {
+		return toUpperCase(value.charAt(0)) + value.substring(1);
 	}
 }

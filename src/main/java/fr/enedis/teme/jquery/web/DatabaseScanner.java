@@ -48,7 +48,7 @@ public final class DatabaseScanner {
 		var meta = new HashMap<String, TableMetadata>(types.size() * 10); //avg
 		for(var t : types) {
 			if(YearPartitionTable.class.isAssignableFrom(t)) {
-				var enums = (YearPartitionTable[])t.getEnumConstants();
+				var enums = (YearPartitionTable[]) t.getEnumConstants();
 				for(var e : enums) {
 					var names = tableNames(e);
 					var nRevs = names.stream().mapToInt(n-> parseInt(n.substring(n.length()-4))).toArray();
@@ -56,7 +56,7 @@ public final class DatabaseScanner {
 				}
 			}
 			else {
-				var enums = (DBTable[])t.getEnumConstants();
+				var enums = (DBTable[]) t.getEnumConstants();
 				for(var e : enums) {
 					meta.put(e.getTableName(), new TableMetadata(null, unmodifiableMap(columnMetadata(e, e.getTableName()))));
 				}
