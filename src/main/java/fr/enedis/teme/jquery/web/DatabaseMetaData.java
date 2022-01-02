@@ -38,7 +38,7 @@ public final class DatabaseMetaData {
 				}//else ok
 			}
 			else {
-				log.warn(table.getTableName() + " : table partitions not found.");
+				log.error("table partitions not found for " + table.getTableName());
 			}
 			return ym;
 		}
@@ -58,7 +58,7 @@ public final class DatabaseMetaData {
 				}
 			}
 		}
-		log.warn(table.getTableName() + "." + table.dbColumnName(column) + " : column metadata not found.");
+		log.error("column metadata not found for : " + table.getTableName() + "." + table.dbColumnName(column));
 		return value;
 	}
 
@@ -81,7 +81,7 @@ public final class DatabaseMetaData {
 				return list.toArray();
 			}
 		}
-		log.warn(table.getTableName() + "." + table.dbColumnName(column) + " : column metadata not found.");
+		log.error("column metadata not found for : " + table.getTableName() + "." + table.dbColumnName(column));
 		return values;
 	}
 	
