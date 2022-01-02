@@ -1,9 +1,11 @@
 package fr.enedis.teme.jquery.web;
 
+import static fr.enedis.teme.jquery.reflect.DatabaseScanner.metadata;
 import static fr.enedis.teme.jquery.web.InvalidParameterValueException.invalidParameterValueException;
 import static fr.enedis.teme.jquery.web.MissingParameterException.missingParameterException;
 import static fr.enedis.teme.jquery.web.RequestQueryParam.Mode.INCLUDE;
 import static fr.enedis.teme.jquery.web.ResourceAccessDeniedException.tableAccessDeniedException;
+import static fr.enedis.teme.jquery.web.ResourceNotFoundException.columnNotFoundException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.tableNotFoundException;
 import static java.time.Month.DECEMBER;
 import static java.util.Optional.ofNullable;
@@ -31,16 +33,16 @@ public final class RequestQueryParamResolver {
 	
 	public RequestQuery requestQuery(RequestQueryParam ant, Map<String, String[]> parameterMap, Supplier<String> requestURIFn) {
 		
-		RequestQuery rq = YearPartitionTable.class.isAssignableFrom(ant.value())
-				? new PartitionedRequestQuery(parseRevision(ant.revisionParameter(), parameterMap)) //must use partitions
-				: new RequestQuery();
 		var table = parseTable(ant.names(), ant.mode(), ant.value(), requestURIFn);
+		RequestQuery rq = YearPartitionTable.class.isAssignableFrom(ant.value())
+				? new PartitionedRequestQuery(parseRevision(ant.revisionParameter(), parameterMap, table)) //must use partitions
+				: new RequestQuery();
 		return rq.select(table)
 				.columns(ant.columns(), ()-> parseColumns(ant.columnParameter(), table.columns(), parameterMap))
-				.filters(ant.filters(), ()-> parseFilters(table.columns(), parameterMap));
+				.filters(ant.filters(), ()-> parseFilters(table.columns(), parameterMap, table));
 	}
 	
-	public static YearMonth[] parseRevision(String parameterName, Map<String, String[]> parameterMap) {
+	public static YearMonth[] parseRevision(String parameterName, Map<String, String[]> parameterMap, DBTable table) {
 
     	var revisions = flatArray(parameterMap.get(parameterName));
     	if(revisions == null || revisions.length == 0) {
@@ -48,6 +50,7 @@ public final class RequestQueryParamResolver {
     	}
     	return Stream.of(revisions)
     			.map(RequestQueryParamResolver::parseYearMonth)
+    			.map(r-> metadata().requireRevision(table, r))
     			.toArray(YearMonth[]::new);
     }
 	
@@ -84,13 +87,13 @@ public final class RequestQueryParamResolver {
 			.map(p->{
 				var column = colMap.get(toEnumName(p));
 				if(column == null) {
-					throw tableNotFoundException(p);
+					throw columnNotFoundException(p);
 				}
 				return column;
 			}).toArray(TableColumn[]::new);
 	}
 	
-	public static DBFilter[] parseFilters(TableColumn[] columns, Map<String, String[]> parameterMap) {
+	public static DBFilter[] parseFilters(TableColumn[] columns, Map<String, String[]> parameterMap, DBTable table) {
 		
 		var colMap = Stream.of(columns).collect(toMap(TableColumn::name, identity()));
 		var filters = new LinkedList<DBFilter>();
@@ -98,7 +101,9 @@ public final class RequestQueryParamResolver {
  			var name = toEnumName(p.getKey());
  			 ofNullable(colMap.get(name)).ifPresent(c->{
  				var values = flatArray(p.getValue()); //check types before
-				filters.add(values.length == 1 ? c.equalFilter(values[0]) : c.inFilter(values));
+				filters.add(values.length == 1 
+						? c.equalFilter(metadata().typedValue(table, c, values[0])) 
+						: c.inFilter(metadata().typedValues(table, c, values)));
  			});
 		});
 		return filters.toArray(DBFilter[]::new);
