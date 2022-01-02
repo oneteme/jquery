@@ -8,11 +8,11 @@ public final class ResourceAccessDeniedException extends JQueryRuntimeException 
 	}
 	
 	static ResourceNotFoundException tableAccessDeniedException(String name) {
-		return new ResourceNotFoundException("'" + name + "' table access denied");
+		return new ResourceNotFoundException("access denied for table '" + name + "'");
 	}
 	
 	static ResourceNotFoundException columnAccessDeniedException(String name) {
-		return new ResourceNotFoundException("'" + name + "' column access denied");
+		return new ResourceNotFoundException("access denied for column '" + name + "'");
 	}
 	
 }

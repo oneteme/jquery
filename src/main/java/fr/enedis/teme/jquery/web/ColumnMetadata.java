@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @EqualsAndHashCode(of = {"dbType", "length"})
 @RequiredArgsConstructor 
-class ColumnMetadata {
+final class ColumnMetadata {
 
 	private final int dbType;
 	private final int length;
@@ -38,7 +38,7 @@ class ColumnMetadata {
 		case TINYINT  : return Byte::parseByte;
 		case DATE     : return v-> Date.valueOf(LocalDate.parse(v)); //TD check
 		case TIMESTAMP: return v-> Timestamp.from(Instant.parse(v)); //TD check
-		default: throw new UnsupportedOperationException();
+		default       : throw new UnsupportedOperationException();
 		}
 	}
 

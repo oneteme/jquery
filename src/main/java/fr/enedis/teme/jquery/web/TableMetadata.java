@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor 
-class TableMetadata {
+final class TableMetadata {
 	
 	private final int[] revisions;
 	private final Map<String, ColumnMetadata> columns;

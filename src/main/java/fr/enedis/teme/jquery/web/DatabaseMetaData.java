@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery.web;
 
-import static fr.enedis.teme.jquery.web.InvalidParameterValueException.invalidParameterValueException;
+import static fr.enedis.teme.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.tableNotFoundException;
 import static java.util.Collections.emptyMap;
 
@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @ToString
 @NoArgsConstructor
-public class DatabaseMetaData {
+public final class DatabaseMetaData {
 	
 	private Map<String, TableMetadata> tables = emptyMap();
 	

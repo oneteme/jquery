@@ -1,8 +1,8 @@
 package fr.enedis.teme.jquery.web;
 
 import static fr.enedis.teme.jquery.web.DatabaseScanner.metadata;
-import static fr.enedis.teme.jquery.web.InvalidParameterValueException.invalidParameterValueException;
-import static fr.enedis.teme.jquery.web.MissingParameterException.missingParameterException;
+import static fr.enedis.teme.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
+import static fr.enedis.teme.jquery.web.ParameterRequiredException.missingParameterException;
 import static fr.enedis.teme.jquery.web.RequestQueryParam.Mode.INCLUDE;
 import static fr.enedis.teme.jquery.web.ResourceAccessDeniedException.tableAccessDeniedException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.columnNotFoundException;
