@@ -19,7 +19,7 @@ public interface Taggable {
 		var arr = columnName.toLowerCase().split("_");
 		arr[0] = arr[0].toLowerCase();
 		for(var i=1; i<arr.length; i++) {
-			arr[i] = toUpperCase(arr[i].charAt(0)) + arr[i].substring(1).toLowerCase();
+			arr[i] = capitalize(arr[i].toLowerCase());
 		}
 		return join("", arr);
 	}
