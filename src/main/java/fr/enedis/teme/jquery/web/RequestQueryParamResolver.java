@@ -44,11 +44,11 @@ public final class RequestQueryParamResolver {
 	
 	public static YearMonth[] parseRevision(String parameterName, Map<String, String[]> parameterMap, DBTable table) {
 
-    	var revisions = flatArray(parameterMap.get(parameterName));
-    	if(revisions == null || revisions.length == 0) {
-    		throw missingParameterException(parameterName);
-    	}
-    	return Stream.of(revisions)
+		var rev = parameterMap.get(parameterName);
+		if(rev == null || rev.length == 0) {
+			throw missingParameterException(parameterName);
+		}
+    	return Stream.of(flatArray(rev))
     			.map(RequestQueryParamResolver::parseYearMonth)
     			.map(r-> metadata().requireRevision(table, r))
     			.toArray(YearMonth[]::new);
