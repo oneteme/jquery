@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery.web;
 
-import static fr.enedis.teme.jquery.reflect.DatabaseScanner.metadata;
+import static fr.enedis.teme.jquery.web.DatabaseScanner.metadata;
 import static fr.enedis.teme.jquery.web.InvalidParameterValueException.invalidParameterValueException;
 import static fr.enedis.teme.jquery.web.MissingParameterException.missingParameterException;
 import static fr.enedis.teme.jquery.web.RequestQueryParam.Mode.INCLUDE;

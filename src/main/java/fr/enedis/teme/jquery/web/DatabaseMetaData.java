@@ -1,37 +1,48 @@
-package fr.enedis.teme.jquery.reflect;
+package fr.enedis.teme.jquery.web;
 
 import static fr.enedis.teme.jquery.web.InvalidParameterValueException.invalidParameterValueException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.tableNotFoundException;
+import static java.util.Collections.emptyMap;
 
 import java.time.YearMonth;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.IntStream;
 
 import fr.enedis.teme.jquery.DBTable;
 import fr.enedis.teme.jquery.TableColumn;
+import fr.enedis.teme.jquery.YearPartitionTable;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @ToString
 @NoArgsConstructor
 public class DatabaseMetaData {
 	
-	private Map<String, TableMetadata> tables = Collections.emptyMap();
+	private Map<String, TableMetadata> tables = emptyMap();
 	
 	void setTables(@NonNull Map<String, TableMetadata> tables){
 		this.tables = tables;
 	}
 	
 	public YearMonth requireRevision(DBTable table, YearMonth ym) {
-		var meta = tables.get(table.getTableName());
-		if(meta != null && IntStream.of(meta.getRevisions()).noneMatch(v-> v == ym.getYear())) {
-			throw tableNotFoundException(table.sql(null, ""+ym.getYear(), null));
+		if(table instanceof YearPartitionTable) {
+			var meta = tables.get(table.getTableName());
+			if(meta != null) {
+				if(IntStream.of(meta.getRevisions()).noneMatch(v-> v == ym.getYear())) {
+					throw tableNotFoundException(table.sql(null, ""+ym.getYear(), null));
+				}//else ok
+			}
+			else {
+				log.warn(table.getTableName() + " : table partitions not found.");
+			}
+			return ym;
 		}
-		return ym;
+		throw new UnsupportedOperationException("");
 	}
 
 	public Object typedValue(DBTable table, TableColumn column, String value) {
@@ -40,13 +51,14 @@ public class DatabaseMetaData {
 			var cm = tm.getColumns().get(table.dbColumnName(column));
 			if(cm != null) {
 				try {
-					return cm.parseValue(value);
+					return cm.parser().apply(value);
 				}
 				catch(Exception e) {
 					throw invalidParameterValueException(value, e);
 				}
 			}
 		}
+		log.warn(table.getTableName() + "." + table.dbColumnName(column) + " : column metadata not found.");
 		return value;
 	}
 
@@ -56,10 +68,11 @@ public class DatabaseMetaData {
 		if(tm != null) {
 			var cm = tm.getColumns().get(table.dbColumnName(column));
 			if(cm != null) {
+				var fn = cm.parser();
 				List<Object> list = new ArrayList<>(values.length);
 				for(String value: values) {
 					try {
-						list.add(cm.parseValue(value));
+						list.add(fn.apply(value));
 					}
 					catch(Exception e) {
 						throw invalidParameterValueException(value, e);
@@ -68,7 +81,9 @@ public class DatabaseMetaData {
 				return list.toArray();
 			}
 		}
+		log.warn(table.getTableName() + "." + table.dbColumnName(column) + " : column metadata not found.");
 		return values;
 	}
+	
 	//max size check
 }

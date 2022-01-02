@@ -1,10 +1,12 @@
-package fr.enedis.teme.jquery.reflect;
+package fr.enedis.teme.jquery.web;
 
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Comparator.reverseOrder;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toSet;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -47,16 +49,16 @@ public final class DatabaseScanner {
 		for(var t : types) {
 			if(YearPartitionTable.class.isAssignableFrom(t)) {
 				var enums = (YearPartitionTable[])t.getEnumConstants();
-				for(var e: enums) {
+				for(var e : enums) {
 					var names = tableNames(e);
 					var nRevs = names.stream().mapToInt(n-> parseInt(n.substring(n.length()-4))).toArray();
-					meta.put(e.getTableName(), new TableMetadata(nRevs, columnMetadata(e, names)));
+					meta.put(e.getTableName(), new TableMetadata(nRevs, unmodifiableMap(columnMetadata(e, names))));
 				}
 			}
 			else {
 				var enums = (DBTable[])t.getEnumConstants();
-				for(var e: enums) {
-					meta.put(e.getTableName(), new TableMetadata(null, columnMetadata(e, e.getTableName())));
+				for(var e : enums) {
+					meta.put(e.getTableName(), new TableMetadata(null, unmodifiableMap(columnMetadata(e, e.getTableName()))));
 				}
 			}
 		}
@@ -76,7 +78,7 @@ public final class DatabaseScanner {
 			return nName;
 		}
 		catch(SQLException e) {
-			log.warn(table + " : cannot fetch table revision", e);
+			log.error(table + " : cannot fetch table revision", e);
 			return emptyList();
 		}
 	}
@@ -89,11 +91,11 @@ public final class DatabaseScanner {
 					if(p.equals(n)) {
 						return n;
 					}
-					throw new RuntimeException("mismtach partition");
+					throw new RuntimeException("mismtach partition"); //break
 				}).orElse(null);
 		}
 		catch(RuntimeException e) {
-			return null;
+			return emptyMap();
 		}
 	}
 	
@@ -102,20 +104,24 @@ public final class DatabaseScanner {
 		try(var cn = ds.getConnection()){
 			var map = new HashMap<String, ColumnMetadata>(table.columns().length);
 			try(var rs = cn.getMetaData().getColumns(null, null, tablename, null)){
+				var columns = Stream.of(table.columns()).map(table::dbColumnName).collect(toSet());
 				while(rs.next()) {
 					var name = rs.getString("COLUMN_NAME");
-					if(Stream.of(table.columns()).anyMatch(c-> table.dbColumnName(c).equals(name))) {
+					if(columns.contains(name)) {
 						map.put(name, new ColumnMetadata(
 								rs.getInt("DATA_TYPE"), 
 								rs.getInt("COLUMN_SIZE")));
 					}
 				}
 			}
-			return unmodifiableMap(map);
+			return map;
 		} catch (SQLException e) {
-			throw new RuntimeException(e);
+			log.error(table + " : cannot fetch table columns", e);
+			return emptyMap();
 		}
 	}
+	
+	//can check 
 	
 	@SuppressWarnings("unused")
 	private static YearMonth[] tableMonths(YearPartitionTable table, List<String> tableNames) {

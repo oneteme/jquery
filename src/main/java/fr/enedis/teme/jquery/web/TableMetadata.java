@@ -1,4 +1,4 @@
-package fr.enedis.teme.jquery.reflect;
+package fr.enedis.teme.jquery.web;
 
 import java.util.Arrays;
 import java.util.Map;
