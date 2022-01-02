@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery.web;
 
+import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.web.DatabaseScanner.metadata;
 import static fr.enedis.teme.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
 import static fr.enedis.teme.jquery.web.ParameterRequiredException.missingParameterException;
@@ -38,7 +39,7 @@ public final class RequestQueryParamResolver {
 				? new PartitionedRequestQuery(parseRevision(ant.revisionParameter(), parameterMap, table)) //must use partitions
 				: new RequestQuery();
 		return rq.select(table)
-				.columns(ant.columns(), ()-> parseColumns(ant.columnParameter(), table.columns(), parameterMap))
+				.columns(ant.columns(), ()-> parseColumns(ant.columnParameter(), false, table.columns(), parameterMap))
 				.filters(ant.filters(), ()-> parseFilters(table.columns(), parameterMap, table));
 	}
 	
@@ -76,11 +77,14 @@ public final class RequestQueryParamResolver {
 		return table;
 	}
 	
-	public static TableColumn[] parseColumns(String parameterName, TableColumn[] columns, Map<String, String[]> parameterMap) {
+	public static TableColumn[] parseColumns(String parameterName, boolean required, TableColumn[] columns, Map<String, String[]> parameterMap) {
 
 		var cols = parameterMap.get(parameterName);
-		if(cols == null || cols.length == 0) {
-			return columns;
+		if(cols == null || cols.length == 0 || isBlank(cols[0])) {
+			if(!required) {
+				return columns;
+			}
+			throw missingParameterException(parameterName);
 		}
 		var colMap = Stream.of(columns).collect(toMap(TableColumn::name, identity()));
 		return flatStream(cols)
