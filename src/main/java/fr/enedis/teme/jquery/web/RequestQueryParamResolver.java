@@ -8,6 +8,7 @@ import static fr.enedis.teme.jquery.web.RequestQueryParam.Mode.INCLUDE;
 import static fr.enedis.teme.jquery.web.ResourceAccessDeniedException.tableAccessDeniedException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.columnNotFoundException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.tableNotFoundException;
+import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
@@ -39,7 +40,7 @@ public final class RequestQueryParamResolver {
 				? new PartitionedRequestQuery(parseRevision(ant.revisionParameter(), parameterMap, table)) //must use partitions
 				: new RequestQuery();
 		return rq.select(table)
-				.columns(ant.columns(), ()-> parseColumns(ant.columnParameter(), false, table.columns(), parameterMap))
+				.columns(ant.columns(), ()-> parseColumns(ant.columnParameter(), table.columns(), parameterMap, table::columns))
 				.filters(ant.filters(), ()-> parseFilters(table.columns(), parameterMap, table));
 	}
 	
@@ -77,14 +78,30 @@ public final class RequestQueryParamResolver {
 		return table;
 	}
 	
-	public static TableColumn[] parseColumns(String parameterName, boolean required, TableColumn[] columns, Map<String, String[]> parameterMap) {
+	public static TableColumn parseColumn(String parameterName, TableColumn[] columns, Map<String, String[]> parameterMap, Supplier<String> orElseGet) {
+
+		var cols = parameterMap.get(parameterName);
+		String column;
+		if(cols == null || cols.length == 0 || isBlank(cols[0])) {
+			column = orElseGet.get();
+		}
+		else if(cols.length == 1 && !cols[0].contains(",")) {
+			column = toEnumName(cols[0]);
+		}
+		else {
+			throw invalidParameterValueException(join(", ", cols));
+		}
+		return Stream.of(columns)
+				.filter(e-> e.name().equals(column))
+				.findAny()
+				.orElseThrow(()-> columnNotFoundException(cols[0]));
+	}
+	
+	public static TableColumn[] parseColumns(String parameterName, TableColumn[] columns, Map<String, String[]> parameterMap, Supplier<TableColumn[]> orElseGet) {
 
 		var cols = parameterMap.get(parameterName);
 		if(cols == null || cols.length == 0 || isBlank(cols[0])) {
-			if(!required) {
-				return columns;
-			}
-			throw missingParameterException(parameterName);
+			return orElseGet.get();
 		}
 		var colMap = Stream.of(columns).collect(toMap(TableColumn::name, identity()));
 		return flatStream(cols)
