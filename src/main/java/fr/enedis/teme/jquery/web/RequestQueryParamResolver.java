@@ -12,6 +12,7 @@ import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 
 import java.time.Year;
@@ -101,7 +102,14 @@ public final class RequestQueryParamResolver {
 
 		var cols = parameterMap.get(parameterName);
 		if(cols == null || cols.length == 0 || isBlank(cols[0])) {
-			return orElseGet.get();
+			var dc = Stream.of(columns).collect(toList());
+			var rs = orElseGet.get();
+			for(var o : rs) {
+				if(!dc.contains(o)) {
+					throw columnNotFoundException(o.name());
+				}
+			}
+			return rs;
 		}
 		var colMap = Stream.of(columns).collect(toMap(TableColumn::name, identity()));
 		return flatStream(cols)

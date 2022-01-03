@@ -1,5 +1,7 @@
 package fr.enedis.teme.jquery.web;
 
+import lombok.NonNull;
+
 @SuppressWarnings("serial")
 public final class ParameterRequiredException extends JQueryRuntimeException {
 
@@ -7,7 +9,7 @@ public final class ParameterRequiredException extends JQueryRuntimeException {
 		super(message);
 	}
 	
-	public static ParameterRequiredException missingParameterException(String name) {
+	public static ParameterRequiredException missingParameterException(@NonNull String name) {
 		return new ParameterRequiredException("require parameter '" + name + "'");
 	}
 

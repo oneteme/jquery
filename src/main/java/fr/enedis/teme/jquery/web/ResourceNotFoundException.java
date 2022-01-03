@@ -1,5 +1,7 @@
 package fr.enedis.teme.jquery.web;
 
+import lombok.NonNull;
+
 @SuppressWarnings("serial")
 public final class ResourceNotFoundException extends JQueryRuntimeException {
 
@@ -7,11 +9,11 @@ public final class ResourceNotFoundException extends JQueryRuntimeException {
 		super(message);
 	}
 	
-	public static ResourceNotFoundException tableNotFoundException(String name) {
+	public static ResourceNotFoundException tableNotFoundException(@NonNull String name) {
 		return new ResourceNotFoundException("table not found '"+ name + "'");
 	}
 	
-	public static ResourceNotFoundException columnNotFoundException(String name) {
+	public static ResourceNotFoundException columnNotFoundException(@NonNull String name) {
 		return new ResourceNotFoundException("column not found '"+ name + "'");
 	}
 
