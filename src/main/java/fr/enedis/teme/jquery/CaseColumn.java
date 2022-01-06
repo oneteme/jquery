@@ -24,10 +24,11 @@ import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+@Deprecated
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CaseColumn implements DBColumn {
 
-	private final Collection<NamedFilter> filters;
+	private final Collection<WhenCase> filters;
 	private final String defaultTag;
 	private final Supplier<String> tagFn;
 	
@@ -69,7 +70,7 @@ public final class CaseColumn implements DBColumn {
 
 	public static CaseColumn betweenIntervals(@NonNull DBColumn column, @NonNull Number... serie) {
 		sort(requireNonEmpty(serie)); //must be sorted
-		var filters = new ArrayList<NamedFilter>(serie.length+1);
+		var filters = new ArrayList<WhenCase>(serie.length+1);
 		filters.add(column.lessThanFilter(serie[0]).as("lt_"+serie[0]));
 		for(var i=0; i<serie.length-1; i++) {
 			filters.add(and(
