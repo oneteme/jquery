@@ -4,6 +4,7 @@ import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
+import static java.util.Arrays.copyOf;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -52,6 +53,14 @@ public final class PartitionedRequestQuery extends RequestQuery {
 			})
 			.collect(toList());
 		return join(queries);
+	}
+	
+	@Override
+	public RequestQuery fork(DBTable tab) {
+		return new PartitionedRequestQuery(revisions)
+				.select(tab)
+				.columns(copyOf(columns, columns.length))
+				.filters(copyOf(filters, filters.length));
 	}
 	
 	//TD impl. collector

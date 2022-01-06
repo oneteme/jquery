@@ -4,6 +4,7 @@ import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
 import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
+import static java.util.Arrays.copyOf;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 
@@ -22,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class RequestQuery {
 
-	DBColumn[] columns;
 	DBTable table;
+	DBColumn[] columns;
 	DBFilter[] filters;
 	String suffix; //internal fin
 	
@@ -110,6 +111,13 @@ public class RequestQuery {
         		q.toString(), 
         		Stream.of(columns).map(DBColumn::getTag).toArray(String[]::new), 
         		ph.getArgs().toArray());
+	}
+	
+	public RequestQuery fork(DBTable tab) {
+		return new RequestQuery(
+				tab, 
+				copyOf(columns, columns.length), 
+				copyOf(filters, filters.length), suffix);
 	}
 	
 	private static boolean groupable(DBColumn column) {
