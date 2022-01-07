@@ -26,8 +26,8 @@ public final class WhenCase  {
 		}
 		else {
 			sb.append(value instanceof TableColumn 
-					? ((DBColumn)value).sql(table, arg)  //tableColumn or Expression
-					: formatValue(value)); //secure column name
+					? ((DBColumn)value).sql(table, arg)//tableColumn or Expression
+					: formatValue(value)); //constant
 		}
 		return sb.toString();
 	}

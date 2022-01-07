@@ -1,6 +1,5 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ColumnFilterGroup.and;
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static fr.enedis.teme.jquery.ParameterHolder.formatString;
@@ -71,14 +70,14 @@ public final class CaseColumn implements DBColumn {
 	public static CaseColumn betweenIntervals(@NonNull DBColumn column, @NonNull Number... serie) {
 		sort(requireNonEmpty(serie)); //must be sorted
 		var filters = new ArrayList<WhenCase>(serie.length+1);
-		filters.add(column.lessThanFilter(serie[0]).as("lt_"+serie[0]));
+		filters.add(column.lessThanFilter(serie[0]).then("lt_"+serie[0]));
 		for(var i=0; i<serie.length-1; i++) {
-			filters.add(and(
-					column.greaterOrEqualFilter(serie[i]),
-					column.lessThanFilter(serie[i+1]))
-					.as("bt_"+serie[i]+"_"+serie[i+1]));
+			filters.add(
+					column.greaterOrEqualFilter(serie[i])
+						.and(column.lessThanFilter(serie[i+1]))
+						.then("bt_"+serie[i]+"_"+serie[i+1]));
 		}
-		filters.add(column.greaterOrEqualFilter(serie[serie.length-1]).as("gt_"+serie[serie.length-1]));
+		filters.add(column.greaterOrEqualFilter(serie[serie.length-1]).then("gt_"+serie[serie.length-1]));
 		return new CaseColumn(unmodifiableCollection(filters), null, tagFunction(column));
 	}
 
@@ -88,8 +87,8 @@ public final class CaseColumn implements DBColumn {
 		var filters = Stream.of(values)
 			.filter(e-> e.getValue().length > 0)
 			.map(e-> e.getValue().length == 1
-						? column.equalFilter(e.getValue()[0]).as(e.getKey())
-						: column.inFilter(e.getValue()).as(e.getKey()))
+						? column.equalFilter(e.getValue()[0]).then(e.getKey())
+						: column.inFilter(e.getValue()).then(e.getKey()))
 			.collect(toList());
 		var defaultValue = Stream.of(values)
 				.filter(e-> isEmpty(e.getValue()))

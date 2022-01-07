@@ -3,11 +3,10 @@ package fr.enedis.teme.jquery;
 import java.util.function.Supplier;
 
 public interface DBFilter extends DBObject<DBTable> {
+	
+	DBFilter and(DBFilter filter);
 
-	@Deprecated
-	default WhenCase as(String name) { //map
-		return new WhenCase(this, name);
-	}
+	DBFilter or(DBFilter filter);	
 
 	default WhenCase then(int value) {
 		return new WhenCase(this, value);
@@ -28,6 +27,5 @@ public interface DBFilter extends DBObject<DBTable> {
 	default WhenCase then(Supplier<Object> fn) {
 		return new WhenCase(this, fn);
 	}
-
 
 }

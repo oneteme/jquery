@@ -4,39 +4,54 @@ import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.LogicalOperator.OR;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
-import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 
+import java.util.Collection;
 import java.util.stream.Stream;
 
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
 public final class ColumnFilterGroup implements DBFilter {
 	
 	private final LogicalOperator operator;
-	private final DBFilter[] expression;
+	private final Collection<DBFilter> expression;
+
+	public ColumnFilterGroup(@NonNull LogicalOperator operator, @NonNull DBFilter... expression) {//assert length > 1
+		this.operator = operator;
+		this.expression = Stream.of(expression).collect(toList());
+	}
+	
+	@Override
+	public String sql(DBTable obj, ParameterHolder ph) { //td deep sql parentheses
+		
+		return expression.stream()
+				.map(e-> e instanceof ColumnFilterGroup 
+						? "("+e.sql(obj, ph)+")" 
+						: e.sql(obj, ph))
+				.collect(joining(operator.toString()));
+	}
 
 	@Override
-	public String sql(DBTable obj, ParameterHolder ph) {
-		return Stream.of(expression)
-				.map(e-> e.sql(obj, ph))
-				.collect(joining(operator.toString()));
+	public DBFilter and(DBFilter filter) {
+		return append(AND, filter);
+	}
+
+	@Override
+	public DBFilter or(DBFilter filter) {
+		return append(OR, filter);
 	}
 	
 	@Override
 	public String toString() {
 		return sql(mockTable(), addWithValue());
 	}
-
-	public static ColumnFilterGroup and(@NonNull ColumnFilter... expressions) {
-		return new ColumnFilterGroup(AND, requireNonEmpty(expressions));
+	
+	private DBFilter append(LogicalOperator op, DBFilter filter) {
+		if(operator == op) {
+			expression.add(filter);
+			return this;
+		}
+		return new ColumnFilterGroup(op, this, filter);
 	}
-
-	public static ColumnFilterGroup or(@NonNull ColumnFilter... expressions) {
-		
-		return new ColumnFilterGroup(OR, requireNonEmpty(expressions));
-	}
-
 }
