@@ -22,7 +22,7 @@ public final class WhenCase  {
 			sb.append("WHEN ").append(filter.sql(table, arg)).append(" THEN ");
 		}
 		if(value instanceof Supplier) {
-			sb.append(((Supplier<?>)value).get());
+			sb.append(((Supplier<?>)value).get()); //function
 		}
 		else {
 			sb.append(value instanceof TableColumn 
