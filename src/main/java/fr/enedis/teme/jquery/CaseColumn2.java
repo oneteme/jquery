@@ -51,6 +51,6 @@ public final class CaseColumn2 implements DBColumn {
 	
 	public static CaseColumn2 cases(WhenCase... filters){
 		
-		return new CaseColumn2(filters, null);
+		return new CaseColumn2(filters, null); //check order 
 	}
 }

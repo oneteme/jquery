@@ -1,10 +1,10 @@
 package fr.enedis.teme.jquery;
 
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 public interface DBFilter extends DBObject<DBTable> {
 
+	@Deprecated
 	default WhenCase as(String name) { //map
 		return new WhenCase(this, name);
 	}

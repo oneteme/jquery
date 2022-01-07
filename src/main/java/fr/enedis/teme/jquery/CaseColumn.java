@@ -24,7 +24,7 @@ import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@Deprecated
+@Deprecated //see CaseColumn2
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CaseColumn implements DBColumn {
 

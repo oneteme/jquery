@@ -31,9 +31,25 @@ public final class WhenCase  {
 		}
 		return sb.toString();
 	}
+
+	public CaseColumn2 orElse(int value) {
+		return orElse(new WhenCase(null, value));
+	}
+
+	public CaseColumn2 orElse(double value) {
+		return orElse(new WhenCase(null, value));
+	}
+
+	public CaseColumn2 orElse(String value) {
+		return orElse(new WhenCase(null, value));
+	}
 	
-	public static WhenCase orElse(Object value) {
-		return new WhenCase(null, value);
+	public CaseColumn2 orElse(Supplier<Object> fn) {
+		return orElse(new WhenCase(null, fn));
+	}
+
+	private CaseColumn2 orElse(WhenCase whenCase) {
+		return CaseColumn2.cases(this, whenCase);
 	}
 	
 }
