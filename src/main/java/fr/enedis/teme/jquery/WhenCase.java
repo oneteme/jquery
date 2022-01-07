@@ -7,7 +7,7 @@ import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class WhenCase  {
+public final class WhenCase {
 	
 	private final DBFilter filter;
 	private final Object value;
@@ -33,23 +33,23 @@ public final class WhenCase  {
 	}
 
 	public CaseColumn2 orElse(int value) {
-		return orElse(new WhenCase(null, value));
+		return orElseExp(value);
 	}
 
 	public CaseColumn2 orElse(double value) {
-		return orElse(new WhenCase(null, value));
+		return orElseExp(value);
 	}
 
 	public CaseColumn2 orElse(String value) {
-		return orElse(new WhenCase(null, value));
+		return orElseExp(value);
 	}
 	
 	public CaseColumn2 orElse(Supplier<Object> fn) {
-		return orElse(new WhenCase(null, fn));
+		return orElseExp(fn);
 	}
 
-	private CaseColumn2 orElse(WhenCase whenCase) {
-		return CaseColumn2.cases(this, whenCase);
+	private CaseColumn2 orElseExp(Object whenCase) {
+		return new CaseColumn2(null, this, new WhenCase(null, whenCase));
 	}
 	
 }
