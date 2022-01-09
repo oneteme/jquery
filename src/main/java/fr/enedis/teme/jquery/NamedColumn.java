@@ -7,21 +7,16 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class NamedColumn implements DBColumn {
+public final class NamedColumn implements TaggableColumn {
 
 	@NonNull
-	private final String name;
+	private final String tagName;
 	@NonNull
 	private final DBColumn column;
 
 	@Override
 	public String sql(DBTable table, ParameterHolder arg) {
 		return column.sql(table, arg);
-	}
-
-	@Override
-	public String getTag() {
-		return name;
 	}
 
 	@Override
@@ -37,6 +32,11 @@ public final class NamedColumn implements DBColumn {
 	@Override
 	public boolean isConstant() {
 		return column.isConstant();
+	}
+
+	@Override
+	public String tagname() {
+		return tagName;
 	}
 
 	@Override

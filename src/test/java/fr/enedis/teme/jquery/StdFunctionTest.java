@@ -27,7 +27,7 @@ class StdFunctionTest {
 	@ParameterizedTest
 	@EnumSource(StdFunction.class)
 	void testGetFunctionName(StdFunction fn) {
-		assertEquals(fn.name(), fn.getFunctionName());
+		assertEquals(fn.name(), fn.name());
 	}
 
 	@ParameterizedTest

@@ -7,18 +7,18 @@ import static fr.enedis.teme.jquery.GenericColumn.c4;
 import static fr.enedis.teme.jquery.Helper.array;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.LogicalOperator.OR;
-import static fr.enedis.teme.jquery.Operator.EQ;
-import static fr.enedis.teme.jquery.Operator.GE;
-import static fr.enedis.teme.jquery.Operator.GT;
-import static fr.enedis.teme.jquery.Operator.IN;
-import static fr.enedis.teme.jquery.Operator.IS_NOT_NULL;
-import static fr.enedis.teme.jquery.Operator.IS_NULL;
-import static fr.enedis.teme.jquery.Operator.LE;
-import static fr.enedis.teme.jquery.Operator.LIKE;
-import static fr.enedis.teme.jquery.Operator.LT;
-import static fr.enedis.teme.jquery.Operator.NE;
-import static fr.enedis.teme.jquery.Operator.NOT_IN;
-import static fr.enedis.teme.jquery.Operator.NOT_LIKE;
+import static fr.enedis.teme.jquery.CompareOperator.EQ;
+import static fr.enedis.teme.jquery.CompareOperator.GE;
+import static fr.enedis.teme.jquery.CompareOperator.GT;
+import static fr.enedis.teme.jquery.CompareOperator.IN;
+import static fr.enedis.teme.jquery.CompareOperator.IS_NOT_NULL;
+import static fr.enedis.teme.jquery.CompareOperator.IS_NULL;
+import static fr.enedis.teme.jquery.CompareOperator.LE;
+import static fr.enedis.teme.jquery.CompareOperator.LIKE;
+import static fr.enedis.teme.jquery.CompareOperator.LT;
+import static fr.enedis.teme.jquery.CompareOperator.NE;
+import static fr.enedis.teme.jquery.CompareOperator.NOT_IN;
+import static fr.enedis.teme.jquery.CompareOperator.NOT_LIKE;
 import static java.lang.String.format;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toList;
@@ -48,7 +48,7 @@ public abstract interface DataProvider {
 					var arg = list.get(rand.nextInt(list.size()));
 					var col = COLUMNS[rand.nextInt(4)];
 					coList.add(col);
-					exList.add(new ColumnFilter(col, new OperatorExpression<>((Operator)arg.get()[0], arg.get()[1])));
+					exList.add(new ColumnFilter(col, new OperatorExpression<>((CompareOperator)arg.get()[0], arg.get()[1])));
 					String[] sql = (String[]) arg.get()[2];
 					sqList.get(0).add(sql[0]);
 					sqList.get(1).add(sql[1]);
@@ -63,13 +63,13 @@ public abstract interface DataProvider {
 		var rand = new Random();
 		return operationCaseProvider()
 			.map(a->
-				of(new ColumnFilter(COLUMNS[rand.nextInt(4)], new OperatorExpression<>((Operator)a.get()[0], a.get()[1])), a.get()[2]));
+				of(new ColumnFilter(COLUMNS[rand.nextInt(4)], new OperatorExpression<>((CompareOperator)a.get()[0], a.get()[1])), a.get()[2]));
 	}
 
 	static Stream<Arguments> expressionCaseProvider() {
 		return operationCaseProvider()
 			.map(a-> 
-				of(new OperatorExpression<>((Operator)a.get()[0], a.get()[1]), a.get()[2]));
+				of(new OperatorExpression<>((CompareOperator)a.get()[0], a.get()[1]), a.get()[2]));
 	}
 		
 	static Stream<Arguments> operationCaseProvider() {
@@ -116,8 +116,8 @@ public abstract interface DataProvider {
 		});
 	}
 	
-	static EnumMap<Operator, String> enumMap() {
-		EnumMap<Operator, String> map = new EnumMap<>(Operator.class);
+	static EnumMap<CompareOperator, String> enumMap() {
+		EnumMap<CompareOperator, String> map = new EnumMap<>(CompareOperator.class);
 		map.put(EQ, "=");
 		map.put(NE, "<>");
 		map.put(LT, "<");
@@ -136,6 +136,6 @@ public abstract interface DataProvider {
 	DBColumn[] COLUMNS = {c1,c2,c3,c4};
 
 	static final LocalDate date = LocalDate.now();
-	static final Map<Operator, String> enumMap = enumMap();
+	static final Map<CompareOperator, String> enumMap = enumMap();
 
 }

@@ -1,5 +1,5 @@
 package fr.enedis.teme.jquery;
 
-public interface DBExpression extends DBObject<String> {
+public interface DBExpression extends DBObject<DBTable> {
 
 }

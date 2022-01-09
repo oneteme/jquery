@@ -22,15 +22,15 @@ class ColumnFilterTest implements DataProvider {
 	@MethodSource("filterCaseProvider")
 	void testSql(ColumnFilter filter, String[] sql) {
 		DBColumn c = (DBColumn) fieldValue("column", filter);
-		assertEquals(tab1.dbColumnName(c)+sql[0], filter.sql(tab1, DYNC));
-		assertEquals(tab1.dbColumnName(c)+sql[1], filter.sql(tab1, STAT));
+		assertEquals(tab1.physicalColumnName(c)+sql[0], filter.sql(tab1, DYNC));
+		assertEquals(tab1.physicalColumnName(c)+sql[1], filter.sql(tab1, STAT));
 	}
 	
 	@ParameterizedTest
 	@MethodSource("filterCaseProvider")
 	void testString(DBFilter filter, String[] sql) {
 		DBColumn c = (DBColumn) fieldValue("column", filter);
-		assertEquals(c.getTag()+sql[1], filter.toString());
+		assertEquals(c.tagname()+sql[1], filter.toString());
 	}
 	
 	@Test

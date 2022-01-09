@@ -1,5 +1,7 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.DBTable.mockTable;
+import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static fr.enedis.teme.jquery.ParameterHolder.formatValue;
 
 import java.util.function.Supplier;
@@ -7,11 +9,12 @@ import java.util.function.Supplier;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class WhenCase {
+public final class WhenCase implements WhenExpression {
 	
 	private final DBFilter filter;
 	private final Object value;
 	
+	@Override
 	public String sql(DBTable table, ParameterHolder arg) {
 		
 		var sb = new StringBuilder(50);
@@ -31,25 +34,10 @@ public final class WhenCase {
 		}
 		return sb.toString();
 	}
-
-	public CaseColumn2 orElse(int value) {
-		return orElseExp(value);
-	}
-
-	public CaseColumn2 orElse(double value) {
-		return orElseExp(value);
-	}
-
-	public CaseColumn2 orElse(String value) {
-		return orElseExp(value);
-	}
 	
-	public CaseColumn2 orElse(Supplier<Object> fn) {
-		return orElseExp(fn);
-	}
-
-	private CaseColumn2 orElseExp(Object whenCase) {
-		return new CaseColumn2(null, this, new WhenCase(null, whenCase));
+	@Override
+	public String toString() {
+		return sql(mockTable(), addWithValue());
 	}
 	
 }

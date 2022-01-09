@@ -30,7 +30,7 @@ class AggregatFunctionTest {
 	@ParameterizedTest
 	@EnumSource(AggregatFunction.class)
 	void testGetFunctionName(AggregatFunction fn) {
-		assertEquals(fn.name(), fn.getFunctionName());
+		assertEquals(fn.name(), fn.name());
 	}
 
 	@ParameterizedTest

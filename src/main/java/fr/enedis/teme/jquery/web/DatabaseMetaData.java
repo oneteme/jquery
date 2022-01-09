@@ -31,14 +31,14 @@ public final class DatabaseMetaData {
 	
 	public YearMonth requireRevision(DBTable table, YearMonth ym) {
 		if(table instanceof YearPartitionTable) {
-			var meta = tables.get(table.getTableName());
+			var meta = tables.get(table.physicalName());
 			if(meta != null) {
 				if(IntStream.of(meta.getRevisions()).noneMatch(v-> v == ym.getYear())) {
 					throw tableNotFoundException(table.sql(null, ""+ym.getYear(), null));
 				}//else ok
 			}
 			else {
-				log.error("table partitions not found for " + table.getTableName());
+				log.error("table partitions not found for " + table.physicalName());
 			}
 			return ym;
 		}
@@ -46,9 +46,9 @@ public final class DatabaseMetaData {
 	}
 
 	public Object typedValue(DBTable table, TableColumn column, String value) {
-		var tm = tables.get(table.getTableName());
+		var tm = tables.get(table.physicalName());
 		if(tm != null) {
-			var cm = tm.getColumns().get(table.dbColumnName(column));
+			var cm = tm.getColumns().get(table.physicalColumnName(column));
 			if(cm != null) {
 				try {
 					return cm.parser().apply(value);
@@ -58,15 +58,15 @@ public final class DatabaseMetaData {
 				}
 			}
 		}
-		log.error("column metadata not found for : " + table.getTableName() + "." + table.dbColumnName(column));
+		log.error("column metadata not found for : " + table.physicalName() + "." + table.physicalColumnName(column));
 		return value;
 	}
 
 	public Object[] typedValues(DBTable table, TableColumn column, String[] values) {
 
-		var tm = tables.get(table.getTableName());
+		var tm = tables.get(table.physicalName());
 		if(tm != null) {
-			var cm = tm.getColumns().get(table.dbColumnName(column));
+			var cm = tm.getColumns().get(table.physicalColumnName(column));
 			if(cm != null) {
 				var fn = cm.parser();
 				List<Object> list = new ArrayList<>(values.length);
@@ -81,7 +81,7 @@ public final class DatabaseMetaData {
 				return list.toArray();
 			}
 		}
-		log.error("column metadata not found for : " + table.getTableName() + "." + table.dbColumnName(column));
+		log.error("column metadata not found for : " + table.physicalName() + "." + table.physicalColumnName(column));
 		return values;
 	}
 	

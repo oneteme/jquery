@@ -2,13 +2,13 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 
-public interface TableColumn extends DBColumn {
+public interface TableColumn extends TaggableColumn {
 	
 	String name();
 
 	@Override
 	default String sql(DBTable table, ParameterHolder arg) {
-		return requireNonBlank(table.dbColumnName(this));
+		return requireNonBlank(table.physicalColumnName(this));
 	}
 
 	@Override

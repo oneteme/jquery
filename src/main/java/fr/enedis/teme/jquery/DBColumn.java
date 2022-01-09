@@ -1,23 +1,23 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.CaseColumn.betweenIntervals;
-import static fr.enedis.teme.jquery.CaseColumn.inValues;
-import static fr.enedis.teme.jquery.OperatorExpression.equal;
-import static fr.enedis.teme.jquery.OperatorExpression.greaterOrEquals;
-import static fr.enedis.teme.jquery.OperatorExpression.greaterThan;
-import static fr.enedis.teme.jquery.OperatorExpression.in;
-import static fr.enedis.teme.jquery.OperatorExpression.isNotNull;
-import static fr.enedis.teme.jquery.OperatorExpression.isNull;
-import static fr.enedis.teme.jquery.OperatorExpression.lessOrEquals;
-import static fr.enedis.teme.jquery.OperatorExpression.lessThan;
-import static fr.enedis.teme.jquery.OperatorExpression.like;
-import static fr.enedis.teme.jquery.OperatorExpression.notEquals;
-import static fr.enedis.teme.jquery.OperatorExpression.notIn;
-import static fr.enedis.teme.jquery.OperatorExpression.notLike;
+import static fr.enedis.teme.jquery.CompareOperator.EQ;
+import static fr.enedis.teme.jquery.CompareOperator.GE;
+import static fr.enedis.teme.jquery.CompareOperator.GT;
+import static fr.enedis.teme.jquery.CompareOperator.IN;
+import static fr.enedis.teme.jquery.CompareOperator.IS_NOT_NULL;
+import static fr.enedis.teme.jquery.CompareOperator.IS_NULL;
+import static fr.enedis.teme.jquery.CompareOperator.LE;
+import static fr.enedis.teme.jquery.CompareOperator.LIKE;
+import static fr.enedis.teme.jquery.CompareOperator.LT;
+import static fr.enedis.teme.jquery.CompareOperator.NE;
+import static fr.enedis.teme.jquery.CompareOperator.NOT_IN;
+import static fr.enedis.teme.jquery.CompareOperator.NOT_LIKE;
 
-import java.util.Map.Entry;
+import fr.enedis.teme.jquery.builder.ColumnFilterBridge;
+import fr.enedis.teme.jquery.builder.WhenCaseBuilder;
+import lombok.NonNull;
 
-public interface DBColumn extends DBObject<DBTable>, Taggable {
+public interface DBColumn extends DBObject<DBTable> {
 	
 	boolean isExpression();
 	
@@ -30,70 +30,57 @@ public interface DBColumn extends DBObject<DBTable>, Taggable {
 	}
 	
 	// filters	
-    default ColumnFilter equalFilter(Object value){
-    	return new ColumnFilter(this, equal(value));
+    default DBFilter equal(Object value){
+    	return new ColumnFilter(this, EQ, value);
     }
     
-    default ColumnFilter notEqualFilter(Object value){
-    	return new ColumnFilter(this, notEquals(value));
+    default DBFilter notEqual(Object value){
+    	return new ColumnFilter(this, NE, value);
     }
     
-    default ColumnFilter greaterThanExpression(Object min){
-    	return new ColumnFilter(this, greaterThan(min));
+    default DBFilter greaterThan(@NonNull Object value){
+    	return new ColumnFilter(this, GT, value);
     }
 
-    default ColumnFilter greaterOrEqualFilter(Object min){
-    	return new ColumnFilter(this, greaterOrEquals(min));
+    default DBFilter greaterOrEqual(@NonNull Object value){
+    	return new ColumnFilter(this, GE, value);
     }
     
-    default ColumnFilter lessThanFilter(Object max){
-    	return new ColumnFilter(this, lessThan(max));
+    default DBFilter lessThan(@NonNull Object value){
+    	return new ColumnFilter(this, LT, value);
     }
     
-    default ColumnFilter lessOrEqualFilter(Object max){
-    	return new ColumnFilter(this, lessOrEquals(max));
+    default DBFilter lessOrEqual(@NonNull Object value){
+    	return new ColumnFilter(this, LE, value);
     }
 
-	default ColumnFilter likeFilter(String value) {
-		return new ColumnFilter(this, like(value));
+	default DBFilter like(@NonNull String value) {
+		return new ColumnFilter(this, LIKE, value);
 	}
 
-	default ColumnFilter notLikeFilter(String value) {
-		return new ColumnFilter(this, notLike(value));
+	default DBFilter notLike(@NonNull String value) {
+		return new ColumnFilter(this, NOT_LIKE, value);
 	}
-
-    default <T> ColumnFilter inFilter(@SuppressWarnings("unchecked") T... values){
-    	return new ColumnFilter(this, in(values));
-    }
-    
-    default <T> ColumnFilter notInFilter(@SuppressWarnings("unchecked") T... values){
-    	return new ColumnFilter(this, notIn(values));
-    }
-
-    default ColumnFilter nullFilter(){
-    	return new ColumnFilter(this, isNull());
-    }
-    
-    default ColumnFilter notNullFilter(){
-    	return new ColumnFilter(this, isNotNull());
-    }
-    
-    default <T> ColumnFilter filter(OperatorExpression<T> exp){
-    	return new ColumnFilter(this, exp);
-    }
-
-	// case column
-    default CaseColumn caseIntervals(Integer... values){
-    	return betweenIntervals(this, values);
-    }
-
-    default CaseColumn caseIntervals(Double... values){
-    	return betweenIntervals(this, values);
-    }
 
     @SuppressWarnings("unchecked")
-	default <T> CaseColumn caseValues(Entry<String, T[]>... values){
-    	return inValues(this, values);
+    default <T> DBFilter in(@NonNull T... values){
+    	return new ColumnFilter(this, IN, values);
     }
     
+    @SuppressWarnings("unchecked")
+    default <T> DBFilter notIn(@NonNull T... values){
+    	return new ColumnFilter(this, NOT_IN, values);
+    }
+
+    default DBFilter isNull(){
+    	return new ColumnFilter(this, IS_NULL, null);
+    }
+    
+    default DBFilter isNotNull(){
+    	return new ColumnFilter(this, IS_NOT_NULL, null);
+    }
+    
+    default ColumnFilterBridge when() {
+	   return new WhenCaseBuilder(this).when();
+	}
 }

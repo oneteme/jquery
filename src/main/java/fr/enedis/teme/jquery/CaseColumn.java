@@ -2,49 +2,31 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
-import static fr.enedis.teme.jquery.ParameterHolder.formatString;
-import static fr.enedis.teme.jquery.Taggable.prefix;
-import static fr.enedis.teme.jquery.Utils.isBlank;
-import static fr.enedis.teme.jquery.Utils.isEmpty;
-import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
-import static java.util.Arrays.sort;
-import static java.util.Collections.unmodifiableCollection;
-import static java.util.Map.entry;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Map.Entry;
-import java.util.function.Supplier;
+import java.util.List;
 import java.util.stream.Stream;
 
-import lombok.AccessLevel;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
-@Deprecated //see CaseColumn2
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class CaseColumn implements DBColumn {
 
-	private final Collection<WhenCase> filters;
-	private final String defaultTag;
-	private final Supplier<String> tagFn;
+	private final List<WhenExpression> filters;
+
+	public CaseColumn(@NonNull WhenExpression... filters) {
+		this.filters = Stream.of(filters).collect(toList());
+	}
 	
 	@Override
-	public String sql(DBTable table, ParameterHolder pc) {
-		return pc.staticMode(()-> new SqlStringBuilder(filters.size() * 50) //force static values
+	public String sql(DBTable table, ParameterHolder ph) {
+		//force static values
+		return ph.staticMode(()-> new SqlStringBuilder(filters.size() * 50)
 				.append("CASE ")
 				.append(filters.stream()
-					.map(f-> f.sql(table, pc))
+					.map(f-> f.sql(table, ph))
 					.collect(joining(" "))) //optimize SQL 
-				.appendIf(!isBlank(defaultTag), ()-> " ELSE " + formatString(defaultTag))
 				.append(" END").toString());
-	}
-
-	@Override
-	public String getTag() {
-		return tagFn.get();
 	}
 	
 	@Override
@@ -66,43 +48,5 @@ public final class CaseColumn implements DBColumn {
 	public String toString() {
 		return sql(mockTable(), addWithValue());
 	}
-
-	public static CaseColumn betweenIntervals(@NonNull DBColumn column, @NonNull Number... serie) {
-		sort(requireNonEmpty(serie)); //must be sorted
-		var filters = new ArrayList<WhenCase>(serie.length+1);
-		filters.add(column.lessThanFilter(serie[0]).then("lt_"+serie[0]));
-		for(var i=0; i<serie.length-1; i++) {
-			filters.add(
-					column.greaterOrEqualFilter(serie[i])
-						.and(column.lessThanFilter(serie[i+1]))
-						.then("bt_"+serie[i]+"_"+serie[i+1]));
-		}
-		filters.add(column.greaterOrEqualFilter(serie[serie.length-1]).then("gt_"+serie[serie.length-1]));
-		return new CaseColumn(unmodifiableCollection(filters), null, tagFunction(column));
-	}
-
-	@SafeVarargs
-	public static <T> CaseColumn inValues(@NonNull DBColumn column, @NonNull Entry<String, T[]>... values) { //map should contains defaultValue
-		requireNonEmpty(values);
-		var filters = Stream.of(values)
-			.filter(e-> e.getValue().length > 0)
-			.map(e-> e.getValue().length == 1
-						? column.equalFilter(e.getValue()[0]).then(e.getKey())
-						: column.inFilter(e.getValue()).then(e.getKey()))
-			.collect(toList());
-		var defaultValue = Stream.of(values)
-				.filter(e-> isEmpty(e.getValue()))
-				.findAny().map(Entry::getKey)
-				.orElse(null);
-		return new CaseColumn(unmodifiableCollection(filters), defaultValue, tagFunction(column));
-	}
 	
-	private static Supplier<String> tagFunction(DBColumn column) {
-		return ()-> prefix("case", column);
-	}
-	
-	@SafeVarargs
-	public static <T> Entry<String, T[]> tagWhen(String tag, T... values) {
-		return entry(tag, values);
-	}
 }

@@ -29,11 +29,11 @@ import lombok.extern.slf4j.Slf4j;
 public class RequestQuery {
 
 	DBTable table;
-	DBColumn[] columns;
+	TaggableColumn[] columns;
 	DBFilter[] filters;
 	String suffix; //internal fin
 	
-	public RequestQuery select(DBTable table, DBColumn... columns) {
+	public RequestQuery select(DBTable table, TaggableColumn... columns) {
 		this.table = table;
 		return columns(columns);
 	}
@@ -43,16 +43,16 @@ public class RequestQuery {
 		return this;
 	}
 
-	public RequestQuery columns(DBColumn... columns) {
+	public RequestQuery columns(TaggableColumn... columns) {
 		this.columns = concat(this.columns, columns);
 		return this;
 	}
 	
-	public RequestQuery column(boolean condition, Supplier<DBColumn> column) {
+	public RequestQuery column(boolean condition, Supplier<TaggableColumn> column) {
 		return condition ? columns(column.get()) : this;
 	}
 
-	public RequestQuery columns(boolean condition, Supplier<DBColumn[]> column) {
+	public RequestQuery columns(boolean condition, Supplier<TaggableColumn[]> column) {
 		return condition ? columns(column.get()) : this;
 	}
 
@@ -98,7 +98,7 @@ public class RequestQuery {
 
         var q = new StringBuilder(1000).append("SELECT ")
         		.append(Stream.of(columns)
-            			.map(c-> c.sql(table, ph) + " AS " + c.getTag()) //important tag
+            			.map(c-> c.sql(table, ph) + " AS " + c.tagname()) //important tag
             			.collect(joining(", ")))
         		.append(" FROM " + table.sql(schema, suffix, ph));
         if(!isEmpty(filters)) {
@@ -110,7 +110,7 @@ public class RequestQuery {
         if(Stream.of(columns).anyMatch(DBColumn::isAggregation)) {
         	var gc = Stream.of(columns)
         			.filter(RequestQuery::groupable)
-        			.map(DBColumn::getTag)
+        			.map(TaggableColumn::tagname)
         			.toArray(String[]::new);
         	if(gc.length > 0) {
         		q = q.append(" GROUP BY " + String.join(",", gc));
@@ -118,7 +118,7 @@ public class RequestQuery {
         }
         return new ParametredQuery(
         		q.toString(), 
-        		Stream.of(columns).map(DBColumn::getTag).toArray(String[]::new), 
+        		Stream.of(columns).map(TaggableColumn::tagname).toArray(String[]::new), 
         		ph.getArgs().toArray());
 	}
 	
@@ -131,11 +131,11 @@ public class RequestQuery {
 	
 	public ParametredQuery join(String schema, @NonNull RequestQuery req) { //
 		
-		var leftCols = Stream.of(columns).map(DBColumn::getTag).collect(toList());
+		var leftCols = Stream.of(columns).map(TaggableColumn::tagname).collect(toList());
 		var add = new LinkedList<String>();
 		var com = new LinkedList<String>();
 		for(var c : req.columns) {
-			var tag = c.getTag();
+			var tag = c.tagname();
 			(leftCols.contains(tag) ? com : add).add(tag);
 		}
 		var r1 = this.build(schema);

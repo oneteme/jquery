@@ -131,8 +131,8 @@ public final class RequestQueryParamResolver {
  			 ofNullable(colMap.get(name)).ifPresent(c->{
  				var values = flatArray(p.getValue()); //check types before
 				filters.add(values.length == 1 
-						? c.equalFilter(metadata().typedValue(table, c, values[0])) 
-						: c.inFilter(metadata().typedValues(table, c, values)));
+						? c.equal(metadata().typedValue(table, c, values[0])) 
+						: c.in(metadata().typedValues(table, c, values)));
  			});
 		});
 		return filters.toArray(DBFilter[]::new);

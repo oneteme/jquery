@@ -13,11 +13,12 @@ public final class ColumnFilter implements DBFilter {
 	@NonNull
 	private final DBColumn column;
 	@NonNull
-	private final DBExpression expression;
+	private final CompareOperator operator;
+	private final Object value; //nullable
 
 	@Override
 	public String sql(DBTable table, ParameterHolder ph) {
-		return expression.sql(column.sql(table, ph), ph);
+		return column.sql(table, ph) + operator.sql(value, ph);
 	}
 
 	@Override

@@ -5,14 +5,14 @@ import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-enum Operator {
+enum CompareOperator {
 	
 	EQ("="), NE("<>"), LT("<"), LE("<="), GT(">"), GE(">="), 
 	LIKE, NOT_LIKE, IN, NOT_IN, IS_NULL, IS_NOT_NULL;
 	
 	private final String sign;
 
-	private Operator() {
+	private CompareOperator() {
 		this.sign = null;
 	}
 

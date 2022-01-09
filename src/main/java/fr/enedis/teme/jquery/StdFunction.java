@@ -5,7 +5,7 @@ public enum StdFunction implements DBFunction {
 	ABS, TRIM, LENGTH, UPPER, LOWER;
 	
 	@Override
-	public String getFunctionName() {
+	public String physicalName() {
 		return name();
 	}
 	

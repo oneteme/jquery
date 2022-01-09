@@ -34,7 +34,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 		var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
 		if(map.size() == 1) {//one table reference
 			var e = map.entrySet().iterator().next();
-			filters(pTab.getRevisionColumn().inFilter(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
+			filters(pTab.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
 			if(e.getValue().size() > 1) {//add month rev. when multiple values
 				columns(pTab.getRevisionColumn());
 			}
@@ -43,8 +43,8 @@ public final class PartitionedRequestQuery extends RequestQuery {
 		}
 		var queries = map.entrySet().stream()
 			.map(e-> {
-				var ftrs = new DBFilter[]{pTab.getRevisionColumn().inFilter(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
-				var cols = new DBColumn[]{pTab.getRevisionColumn(), staticColumn("revisionYear", e.getKey())}; //add year rev. when multiple values
+				var ftrs = new DBFilter[]{pTab.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
+				var cols = new TaggableColumn[]{pTab.getRevisionColumn(), staticColumn("revisionYear", e.getKey())}; //add year rev. when multiple values
 				return new RequestQuery()
 						.select(table, concat(this.columns, cols))
 						.filters(concat(this.filters, ftrs))

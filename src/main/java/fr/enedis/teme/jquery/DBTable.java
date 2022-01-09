@@ -4,36 +4,37 @@ import static fr.enedis.teme.jquery.Utils.isBlank;
 
 public interface DBTable extends DBObject<String> {
 	
-	String getTableName();
+	String physicalName();
 	
-	String dbColumnName(DBColumn column);
+	String physicalColumnName(TableColumn column);
 
 	TableColumn[] columns();
 
 	@Override
 	default String sql(String schema, ParameterHolder ph) {
 		return isBlank(schema) 
-				? getTableName() 
-				: schema + "." + getTableName();
+				? physicalName() 
+				: schema + "." + physicalName();
 	}
 
 	default String sql(String schema, String suffix, ParameterHolder ph) {
-		return isBlank(suffix) 
-				? sql(schema, ph)
-				: sql(schema, ph) + "_" + suffix;
+		
+		return new SqlStringBuilder(sql(schema, ph))
+				.appendIf(!isBlank(suffix), ()-> "_" + suffix)
+				.toString();
 	}
 	
 	static DBTable mockTable() {
 		return new DBTable() {
 
 			@Override
-			public String getTableName() {
+			public String physicalName() {
 				return "${table}";
 			}
 			
 			@Override
-			public String dbColumnName(DBColumn column) {
-				return column.getTag();
+			public String physicalColumnName(TableColumn column) {
+				return column.tagname();
 			}
 			
 			@Override

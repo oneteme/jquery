@@ -26,9 +26,15 @@ final class GenericTable implements DBTable {
 	private final String tableName;
 	private final Map<DBColumn, String> columnMap;
 	private final DBColumn revisionColumn;
-	
+
+
 	@Override
-	public String dbColumnName(DBColumn column) {
+	public String physicalName() {
+		return tableName;
+	}
+
+	@Override
+	public String physicalColumnName(TableColumn column) {
 		return columnMap.get(column);
 	}
 	
@@ -36,5 +42,4 @@ final class GenericTable implements DBTable {
 	public TableColumn[] columns() {
 		return columnMap.keySet().toArray(TableColumn[]::new);
 	}
-
 }

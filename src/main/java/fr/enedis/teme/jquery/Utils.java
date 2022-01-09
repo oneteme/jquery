@@ -18,8 +18,8 @@ public final class Utils {
 		return str == null || str.isBlank();
 	}
 
-	public static DBColumn[] concat(DBColumn[] c1, DBColumn[] c2) {
-		return concat(c1, c2, DBColumn[]::new);
+	public static TaggableColumn[] concat(TaggableColumn[] c1, TaggableColumn[] c2) {
+		return concat(c1, c2, TaggableColumn[]::new);
 	}
 	
 	public static DBFilter[] concat(DBFilter[] c1, DBFilter[] c2) {

@@ -52,13 +52,13 @@ public final class DatabaseScanner {
 				for(var e : enums) {
 					var names = tableNames(e);
 					var nRevs = names.stream().mapToInt(n-> parseInt(n.substring(n.length()-4))).toArray();
-					meta.put(e.getTableName(), new TableMetadata(nRevs, unmodifiableMap(columnMetadata(e, names))));
+					meta.put(e.physicalName(), new TableMetadata(nRevs, unmodifiableMap(columnMetadata(e, names))));
 				}
 			}
 			else {
 				var enums = (DBTable[]) t.getEnumConstants();
 				for(var e : enums) {
-					meta.put(e.getTableName(), new TableMetadata(null, unmodifiableMap(columnMetadata(e, e.getTableName()))));
+					meta.put(e.physicalName(), new TableMetadata(null, unmodifiableMap(columnMetadata(e, e.physicalName()))));
 				}
 			}
 		}
@@ -67,11 +67,11 @@ public final class DatabaseScanner {
 	
 	private static List<String> tableNames(YearPartitionTable table) {
 		
-		try(ResultSet rs = ds.getConnection().getMetaData().getTables(null, null, table.getTableName()+"_20__", null)){
+		try(ResultSet rs = ds.getConnection().getMetaData().getTables(null, null, table.physicalName()+"_20__", null)){
 			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
 				var tn = rs.getString("TABLE_NAME");
-				if(tn.matches(table.getTableName() + "_20[0-9]{2}")) { // strict pattern
+				if(tn.matches(table.physicalName() + "_20[0-9]{2}")) { // strict pattern
 					nName.add(tn);
 				}
 			}
@@ -104,7 +104,7 @@ public final class DatabaseScanner {
 		try(var cn = ds.getConnection()){
 			var map = new HashMap<String, ColumnMetadata>(table.columns().length);
 			try(var rs = cn.getMetaData().getColumns(null, null, tablename, null)){
-				var columns = Stream.of(table.columns()).map(table::dbColumnName).collect(toSet());
+				var columns = Stream.of(table.columns()).map(table::physicalColumnName).collect(toSet());
 				while(rs.next()) {
 					var name = rs.getString("COLUMN_NAME");
 					if(columns.contains(name)) {

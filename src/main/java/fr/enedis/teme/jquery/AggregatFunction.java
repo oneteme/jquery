@@ -8,17 +8,17 @@ public enum AggregatFunction implements DBFunction {
 	COUNT, SUM, AVG, MIN, MAX;
 	
 	@Override
-	public String getFunctionName() {
+	public String physicalName() {
 		return name();
 	}
-	
+		
 	@Override
 	public boolean isAggregate() {
 		return true;
 	}
 	
 	public FunctionColumn ofAll() {
-		illegalArgumentIf(this != COUNT, "Parameter required");
+		illegalArgumentIf(this != COUNT, "column is required");
 		return new FunctionColumn(staticColumn("all", "*"), this);
 	}
 

@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-enum LogicalOperator {
+public enum LogicalOperator {
 	
 	AND, OR;
 	

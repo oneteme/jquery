@@ -20,7 +20,7 @@ public final class GenericColumn implements TableColumn {
 	}
 
 	@Override
-	public String getTag() {
+	public String tagname() {
 		return tagName;
 	}
 

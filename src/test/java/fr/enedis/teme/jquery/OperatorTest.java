@@ -19,20 +19,20 @@ class OperatorTest implements DataProvider {
 	
 	@ParameterizedTest
 	@MethodSource("operationCaseProvider")
-	void testSql(Operator op, Object arg, String[] sql) {
+	void testSql(CompareOperator op, Object arg, String[] sql) {
 		assertEquals(sql[0], op.sql(arg, DYNC));
 		assertEquals(sql[1], op.sql(arg, STAT));
 	}
 
 	@ParameterizedTest()
-	@EnumSource(value = Operator.class)
-	void testToString(Operator e) {
+	@EnumSource(value = CompareOperator.class)
+	void testToString(CompareOperator e) {
 		assertEquals(enumMap.get(e), e.toString());
 	}
 
 	@ParameterizedTest()
-	@EnumSource(value = Operator.class, names = {"EQ", "NE", "LT", "LE", "GT", "GE"})
-	void testSqlSign(Operator e) {
+	@EnumSource(value = CompareOperator.class, names = {"EQ", "NE", "LT", "LE", "GT", "GE"})
+	void testSqlSign(CompareOperator e) {
 		assertThrows(IllegalArgumentException.class, ()-> e.sql(new int[] {0}, STAT));//primitive array
 		assertThrows(IllegalArgumentException.class, ()-> e.sql(new int[] {0}, DYNC));
 		assertThrows(IllegalArgumentException.class, ()-> e.sql(new String[] {"abc"}, STAT));//String array
@@ -40,8 +40,8 @@ class OperatorTest implements DataProvider {
 	}
 	
 	@ParameterizedTest()
-	@EnumSource(value = Operator.class, names = {"LIKE", "NOT_LIKE"})
-	void testSqlLike(Operator e) {
+	@EnumSource(value = CompareOperator.class, names = {"LIKE", "NOT_LIKE"})
+	void testSqlLike(CompareOperator e) {
 		assertThrows(NullPointerException.class, ()-> e.sql(null, STAT));//null
 		assertThrows(NullPointerException.class, ()-> e.sql(null, DYNC));
 		assertThrows(IllegalArgumentException.class, ()-> e.sql(1234, STAT));//int
@@ -55,8 +55,8 @@ class OperatorTest implements DataProvider {
 	}
 
 	@ParameterizedTest()
-	@EnumSource(value = Operator.class, names = {"IN", "NOT_IN"})
-	void testSqlIn(Operator e) {
+	@EnumSource(value = CompareOperator.class, names = {"IN", "NOT_IN"})
+	void testSqlIn(CompareOperator e) {
 		assertThrows(NullPointerException.class, ()-> e.sql(null, STAT));//null
 		assertThrows(NullPointerException.class, ()-> e.sql(null, DYNC));
 		assertThrows(IllegalArgumentException.class, ()-> e.sql(1234, STAT));//int
@@ -72,8 +72,8 @@ class OperatorTest implements DataProvider {
 	}
 
 	@ParameterizedTest()
-	@EnumSource(value = Operator.class, names = {"IS_NULL", "IS_NOT_NULL"})
-	void testSqlNull(Operator e) {
+	@EnumSource(value = CompareOperator.class, names = {"IS_NULL", "IS_NOT_NULL"})
+	void testSqlNull(CompareOperator e) {
 		assertThrows(IllegalArgumentException.class, ()-> e.sql(1234, STAT));//int
 		assertThrows(IllegalArgumentException.class, ()-> e.sql(1234, DYNC));
 		assertThrows(IllegalArgumentException.class, ()-> e.sql("abc", STAT));//string

@@ -1,8 +1,8 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.GenericColumn.c1;
-import static fr.enedis.teme.jquery.Taggable.prefix;
-import static fr.enedis.teme.jquery.Taggable.snakeToCamelCase;
+import static fr.enedis.teme.jquery.TaggableColumn.prefix;
+import static fr.enedis.teme.jquery.TaggableColumn.snakeToCamelCase;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 

@@ -8,19 +8,14 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ValueColumn<T> implements DBColumn {
+public final class ValueColumn<T> implements TaggableColumn {
 
 	private final String tagName;
-	private final T value;//nullable
+	private final T value; //nullable
 
 	@Override
 	public String sql(DBTable table, ParameterHolder ph) {//see count(*) 
 		return "*".equals(value) ? value.toString() : formatValue(value);
-	}
-	
-	@Override
-	public String getTag() {
-		return tagName;
 	}
 	
 	@Override
@@ -37,6 +32,11 @@ public final class ValueColumn<T> implements DBColumn {
 	public boolean isConstant() {
 		return true;
 	}
+	
+	@Override
+	public String tagname() {
+		return tagName;
+	}
 
 	@Override
 	public String toString() {
@@ -44,6 +44,6 @@ public final class ValueColumn<T> implements DBColumn {
 	}
 	
 	public static <T> ValueColumn<T> staticColumn(@NonNull String tagName, T expression) {
-		return new ValueColumn<>(requireLegalVariable(tagName), expression); //requireLegalVariable
+		return new ValueColumn<>(requireLegalVariable(tagName), expression);
 	}
 }
