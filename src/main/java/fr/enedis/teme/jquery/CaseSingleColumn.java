@@ -5,7 +5,7 @@ import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -16,7 +16,7 @@ public final class CaseSingleColumn implements DBColumn {
 	private final List<WhenExpression> filters;
 	
 	CaseSingleColumn() {
-		filters = new ArrayList<>();
+		filters = new LinkedList<>();
 	}
 
 	public CaseSingleColumn(@NonNull WhenExpression... filters) {
