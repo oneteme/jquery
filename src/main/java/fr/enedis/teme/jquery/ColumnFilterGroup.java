@@ -24,9 +24,9 @@ public final class ColumnFilterGroup implements DBFilter {
 	public String sql(DBTable obj, ParameterHolder ph) { //td deep sql parentheses
 		
 		return expression.stream()
-				.map(e-> e instanceof ColumnFilterGroup 
-						? "(" + e.sql(obj, ph)+")" 
-						: e.sql(obj, ph))
+				.map(e-> e instanceof ColumnSingleFilter
+						? e.sql(obj, ph)
+						: "(" + e.sql(obj, ph)+")")
 				.collect(joining(operator.toString()));
 	}
 

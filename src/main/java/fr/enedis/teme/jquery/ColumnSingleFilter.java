@@ -9,7 +9,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class ColumnFilter implements DBFilter {
+public final class ColumnSingleFilter implements DBFilter {
 
 	@NonNull
 	private final DBColumn column;
@@ -34,9 +34,9 @@ public final class ColumnFilter implements DBFilter {
 		return append(OR, exp);
 	}
 
-	public ColumnFilter append(LogicalOperator op, OperatorExpression exp) {
+	public ColumnSingleFilter append(LogicalOperator op, OperatorExpression exp) {
 		var nex = exp.append(op, exp); //@see OperatorExpressionGroup
-		return nex == exp ? this : new ColumnFilter(column, nex);
+		return nex == exp ? this : new ColumnSingleFilter(column, nex);
 	}
 	
 	@Override

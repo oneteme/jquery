@@ -20,7 +20,7 @@ class ColumnFilterTest implements DataProvider {
 
 	@ParameterizedTest
 	@MethodSource("filterCaseProvider")
-	void testSql(ColumnFilter filter, String[] sql) {
+	void testSql(ColumnSingleFilter filter, String[] sql) {
 		DBColumn c = (DBColumn) fieldValue("column", filter);
 		assertEquals(tab1.physicalColumnName(c)+sql[0], filter.sql(tab1, DYNC));
 		assertEquals(tab1.physicalColumnName(c)+sql[1], filter.sql(tab1, STAT));
@@ -36,9 +36,9 @@ class ColumnFilterTest implements DataProvider {
 	@Test
 	void testColumnFilter(){
 		var exp = isNull();
-		assertThrows(NullPointerException.class, ()-> new ColumnFilter(null, null));
-		assertThrows(NullPointerException.class, ()-> new ColumnFilter(c1, null));
-		assertThrows(NullPointerException.class, ()-> new ColumnFilter(null, exp));
+		assertThrows(NullPointerException.class, ()-> new ColumnSingleFilter(null, null));
+		assertThrows(NullPointerException.class, ()-> new ColumnSingleFilter(c1, null));
+		assertThrows(NullPointerException.class, ()-> new ColumnSingleFilter(null, exp));
 	}
 	
 }

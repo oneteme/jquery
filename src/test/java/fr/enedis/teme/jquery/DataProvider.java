@@ -48,7 +48,7 @@ public abstract interface DataProvider {
 					var arg = list.get(rand.nextInt(list.size()));
 					var col = COLUMNS[rand.nextInt(4)];
 					coList.add(col);
-					exList.add(new ColumnFilter(col, new OperatorSingleExpression<>((CompareOperator)arg.get()[0], arg.get()[1])));
+					exList.add(new ColumnSingleFilter(col, new OperatorSingleExpression<>((CompareOperator)arg.get()[0], arg.get()[1])));
 					String[] sql = (String[]) arg.get()[2];
 					sqList.get(0).add(sql[0]);
 					sqList.get(1).add(sql[1]);
@@ -63,7 +63,7 @@ public abstract interface DataProvider {
 		var rand = new Random();
 		return operationCaseProvider()
 			.map(a->
-				of(new ColumnFilter(COLUMNS[rand.nextInt(4)], new OperatorSingleExpression<>((CompareOperator)a.get()[0], a.get()[1])), a.get()[2]));
+				of(new ColumnSingleFilter(COLUMNS[rand.nextInt(4)], new OperatorSingleExpression<>((CompareOperator)a.get()[0], a.get()[1])), a.get()[2]));
 	}
 
 	static Stream<Arguments> expressionCaseProvider() {

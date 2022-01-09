@@ -20,7 +20,7 @@ public class CaseSingleColumnBuilder {
 	}
 	
 	public WhenFilterBridge when(OperatorExpression exp) {
-		this.filter = new ColumnFilter(column, exp);
+		this.filter = new ColumnSingleFilter(column, exp);
 		return bridge;
 	}
 	
@@ -40,7 +40,7 @@ public class CaseSingleColumnBuilder {
 		return orElseExp(fn);
 	}
 
-	public CaseSingleColumn orElseExp(Object elseValue) {
+	private CaseSingleColumn orElseExp(Object elseValue) {
 		caseColumn.append(WhenCase.orElse(elseValue));
 		return caseColumn;
 	}
