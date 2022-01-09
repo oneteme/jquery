@@ -16,14 +16,14 @@ class OperatorExpressionTest implements DataProvider {
 
 	@ParameterizedTest
 	@MethodSource("expressionCaseProvider")
-	void testSql(OperatorExpression<?> exp, String[] sql) {
+	void testSql(OperatorSingleExpression<?> exp, String[] sql) {
 		assertEquals(c1_name+sql[0], exp.sql(c1_name, DYNC));
 		assertEquals(c2_name+sql[1], exp.sql(c2_name, STAT));
 	}
 	
 	@ParameterizedTest
 	@MethodSource("expressionCaseProvider")
-	void testString(OperatorExpression<?> exp, String[] sql) {
+	void testString(OperatorSingleExpression<?> exp, String[] sql) {
 		assertEquals(sql[1], exp.toString());
 	}	
 }

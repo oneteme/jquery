@@ -5,16 +5,21 @@ import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 import lombok.NonNull;
 
-public final class CaseColumn implements DBColumn {
+public final class CaseSingleColumn implements DBColumn {
 
 	private final List<WhenExpression> filters;
+	
+	CaseSingleColumn() {
+		filters = new ArrayList<>();
+	}
 
-	public CaseColumn(@NonNull WhenExpression... filters) {
+	public CaseSingleColumn(@NonNull WhenExpression... filters) {
 		this.filters = Stream.of(filters).collect(toList());
 	}
 	
@@ -42,6 +47,10 @@ public final class CaseColumn implements DBColumn {
 	@Override
 	public boolean isConstant() {
 		return false;
+	}
+	
+	void append(WhenExpression when) {
+		filters.add(when);
 	}
 	
 	@Override

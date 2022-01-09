@@ -1,8 +1,6 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
-import static fr.enedis.teme.jquery.LogicalOperator.AND;
-import static fr.enedis.teme.jquery.LogicalOperator.OR;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -27,19 +25,18 @@ public final class ColumnFilterGroup implements DBFilter {
 		
 		return expression.stream()
 				.map(e-> e instanceof ColumnFilterGroup 
-						? "("+e.sql(obj, ph)+")" 
+						? "(" + e.sql(obj, ph)+")" 
 						: e.sql(obj, ph))
 				.collect(joining(operator.toString()));
 	}
 
 	@Override
-	public DBFilter and(DBFilter filter) {
-		return append(AND, filter);
-	}
-
-	@Override
-	public DBFilter or(DBFilter filter) {
-		return append(OR, filter);
+	public DBFilter append(LogicalOperator op, DBFilter filter) {
+		if(operator == op) {
+			expression.add(filter);
+			return this;
+		}
+		return new ColumnFilterGroup(op, this, filter);
 	}
 	
 	@Override
@@ -47,11 +44,4 @@ public final class ColumnFilterGroup implements DBFilter {
 		return sql(mockTable(), addWithValue());
 	}
 	
-	private DBFilter append(LogicalOperator op, DBFilter filter) {
-		if(operator == op) {
-			expression.add(filter);
-			return this;
-		}
-		return new ColumnFilterGroup(op, this, filter);
-	}
 }

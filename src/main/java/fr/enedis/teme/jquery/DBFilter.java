@@ -1,31 +1,17 @@
 package fr.enedis.teme.jquery;
 
-import java.util.function.Supplier;
+import static fr.enedis.teme.jquery.LogicalOperator.AND;
+import static fr.enedis.teme.jquery.LogicalOperator.OR;
 
 public interface DBFilter extends DBObject<DBTable> {
-	
-	DBFilter and(DBFilter filter);
 
-	DBFilter or(DBFilter filter);	
-	
-	default WhenExpression then(int value) {
-		return new WhenCase(this, value);
+	DBFilter append(LogicalOperator op, DBFilter filter);
+
+	default DBFilter and(DBFilter filter) {
+		return append(AND, filter);
 	}
 
-	default WhenExpression then(double value) {
-		return new WhenCase(this, value);
+	default DBFilter or(DBFilter filter) {
+		return append(OR, filter);
 	}
-
-	default WhenExpression then(String value) {
-		return new WhenCase(this, value);
-	}
-	
-	default WhenExpression then(TableColumn column) {
-		return new WhenCase(this, column);
-	}
-	
-	default WhenExpression then(Supplier<Object> fn) {
-		return new WhenCase(this, fn);
-	}
-
 }

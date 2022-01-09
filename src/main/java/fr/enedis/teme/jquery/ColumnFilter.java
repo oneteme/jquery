@@ -1,7 +1,8 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
-import static fr.enedis.teme.jquery.LogicalOperator.*;
+import static fr.enedis.teme.jquery.LogicalOperator.AND;
+import static fr.enedis.teme.jquery.LogicalOperator.OR;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 
 import lombok.NonNull;
@@ -13,22 +14,29 @@ public final class ColumnFilter implements DBFilter {
 	@NonNull
 	private final DBColumn column;
 	@NonNull
-	private final CompareOperator operator;
-	private final Object value; //nullable
+	private final OperatorExpression expression;
 
 	@Override
 	public String sql(DBTable table, ParameterHolder ph) {
-		return column.sql(table, ph) + operator.sql(value, ph);
+		return expression.sql(column.sql(table, ph), ph);
 	}
 
 	@Override
-	public DBFilter and(DBFilter filter) {
-		return new ColumnFilterGroup(AND, this, filter);
+	public ColumnFilterGroup append(LogicalOperator op, DBFilter filter) {
+		return new ColumnFilterGroup(op, this, filter);
+	}
+	
+	public DBFilter and(OperatorExpression exp) {
+		return append(AND, exp);
+	}
+	
+	public DBFilter or(OperatorExpression exp) {
+		return append(OR, exp);
 	}
 
-	@Override
-	public DBFilter or(DBFilter filter) {
-		return new ColumnFilterGroup(OR, this, filter);
+	public ColumnFilter append(LogicalOperator op, OperatorExpression exp) {
+		var nex = exp.append(op, exp); //@see OperatorExpressionGroup
+		return nex == exp ? this : new ColumnFilter(column, nex);
 	}
 	
 	@Override

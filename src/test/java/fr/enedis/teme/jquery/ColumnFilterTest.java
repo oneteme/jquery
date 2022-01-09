@@ -3,7 +3,7 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.GenericColumn.c1;
 import static fr.enedis.teme.jquery.GenericTable.tab1;
 import static fr.enedis.teme.jquery.Helper.fieldValue;
-import static fr.enedis.teme.jquery.OperatorExpression.isNull;
+import static fr.enedis.teme.jquery.OperatorSingleExpression.isNull;
 import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
 import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
 import static org.junit.jupiter.api.Assertions.assertEquals;
