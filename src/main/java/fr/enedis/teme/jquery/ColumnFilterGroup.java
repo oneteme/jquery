@@ -10,6 +10,7 @@ import java.util.stream.Stream;
 
 import lombok.NonNull;
 
+//@see OperatorExpressionGroup
 public final class ColumnFilterGroup implements DBFilter {
 	
 	private final LogicalOperator operator;
@@ -21,12 +22,12 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 	
 	@Override
-	public String sql(DBTable obj, ParameterHolder ph) { //td deep sql parentheses
+	public String sql(DBTable table, ParameterHolder ph) { //td deep sql parentheses
 		
 		return expression.stream()
 				.map(e-> e instanceof ColumnSingleFilter
-						? e.sql(obj, ph)
-						: "(" + e.sql(obj, ph)+")")
+						? e.sql(table, ph)
+						: "(" + e.sql(table, ph)+")")
 				.collect(joining(operator.toString()));
 	}
 

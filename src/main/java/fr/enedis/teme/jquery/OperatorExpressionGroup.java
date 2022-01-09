@@ -9,6 +9,7 @@ import java.util.stream.Stream;
 
 import lombok.NonNull;
 
+//@see ColumnFilterGroup
 public final class OperatorExpressionGroup implements OperatorExpression {
 	
 	private final LogicalOperator operator;
