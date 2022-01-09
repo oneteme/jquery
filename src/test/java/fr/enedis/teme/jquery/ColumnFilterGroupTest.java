@@ -26,7 +26,7 @@ class ColumnFilterGroupTest implements DataProvider {
 		assertEquals(join(op, columns, sql[1]), filter.sql(tab1, STAT));
 	}
 
-	@Disabled
+	@Disabled("symbole was replaced by tagname")
 	@ParameterizedTest
 	@MethodSource("filterGroupCaseProvider")
 	void testToString(ColumnFilterGroup filter, DBColumn[] columns, String[][] sql) {

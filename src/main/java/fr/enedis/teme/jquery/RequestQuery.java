@@ -155,4 +155,5 @@ public class RequestQuery {
 	private static boolean groupable(DBColumn column) {
 		return !column.isAggregation() && !column.isConstant();
 	}
+	
 }
