@@ -14,8 +14,8 @@ class StdFunctionTest {
 	@EnumSource(StdFunction.class)
 	void testToSql(StdFunction fn) {
 		assertEquals(fn.name().toUpperCase() + "(column)", fn.sql("column", null));
-		assertThrows(NullPointerException.class, ()-> fn.sql(null, null));
-		assertThrows(IllegalArgumentException.class, ()-> fn.sql("", null));
+//		assertThrows(NullPointerException.class, ()-> fn.sql(null, null));
+//		assertThrows(IllegalArgumentException.class, ()-> fn.sql("", null));
 	}
 
 	@ParameterizedTest

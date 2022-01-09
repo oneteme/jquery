@@ -42,7 +42,7 @@ public abstract interface DataProvider {
 		return IntStream.range(1, 5)
 			.mapToObj(n->{
 				var exList = new ArrayList<DBFilter>();
-				var coList = new ArrayList<DBColumn>();
+				var coList = new ArrayList<TableColumn>();
 				var sqList = IntStream.range(0, 2).mapToObj(i-> new ArrayList<String>(n)).collect(toList());
 				for(int i=0; i<n; i++) {
 					var arg = list.get(rand.nextInt(list.size()));
@@ -54,7 +54,7 @@ public abstract interface DataProvider {
 					sqList.get(1).add(sql[1]);
 				}
 				return of(new ColumnFilterGroup(rand.nextBoolean() ? AND : OR, exList.toArray(DBFilter[]::new)),
-						coList.toArray(DBColumn[]::new),
+						coList.toArray(TableColumn[]::new),
 						sqList.stream().map(c-> c.toArray(String[]::new)).toArray(String[][]::new));
 			});
 	}
@@ -133,7 +133,7 @@ public abstract interface DataProvider {
 		return map;
 	}
 
-	DBColumn[] COLUMNS = {c1,c2,c3,c4};
+	TableColumn[] COLUMNS = {c1,c2,c3,c4};
 
 	static final LocalDate date = LocalDate.now();
 	static final Map<CompareOperator, String> enumMap = enumMap();
