@@ -40,8 +40,8 @@ public class CaseSingleColumnBuilder {
 		return orElseExp(fn);
 	}
 
-	public CaseSingleColumn orElseExp(Object def) {
-		caseColumn.append(new WhenCase(null, def));
+	public CaseSingleColumn orElseExp(Object elseValue) {
+		caseColumn.append(WhenCase.orElse(elseValue));
 		return caseColumn;
 	}
 	
@@ -50,30 +50,35 @@ public class CaseSingleColumnBuilder {
 	}
 	
 	public final class WhenFilterBridge {
+
+		public CaseSingleColumnBuilder thenNull() {
+			return thenExp(null);
+		}
 		
 		public CaseSingleColumnBuilder then(int value) {
-			caseColumn.append(new WhenCase(requireNonNull(filter), value));
-			return CaseSingleColumnBuilder.this;
+			return thenExp(value);
 		}
 
 		public CaseSingleColumnBuilder then(double value) {
-			caseColumn.append(new WhenCase(requireNonNull(filter), value));
-			return CaseSingleColumnBuilder.this;
+			return thenExp(value);
 		}
 
 		public CaseSingleColumnBuilder then(String value) {
-			caseColumn.append(new WhenCase(requireNonNull(filter), value));
-			return CaseSingleColumnBuilder.this;
+			return thenExp(value);
 		}
 		
 		public CaseSingleColumnBuilder then(@NonNull TableColumn column) {
-			caseColumn.append(new WhenCase(requireNonNull(filter), column));
-			return CaseSingleColumnBuilder.this;
+			return thenExp(column);
 		}
 		
 		public CaseSingleColumnBuilder then(@NonNull Supplier<Object> fn) {
-			caseColumn.append(new WhenCase(requireNonNull(filter), fn));
-			return CaseSingleColumnBuilder.this;
+			return thenExp(fn);
+		}
+		
+		private CaseSingleColumnBuilder thenExp(Object o) {
+			caseColumn.append(new WhenCase(requireNonNull(filter), o));
+			filter = null;
+			return CaseSingleColumnBuilder.this;			
 		}
 	}
 }

@@ -40,4 +40,8 @@ public final class WhenCase implements WhenExpression {
 		return sql(mockTable(), addWithValue());
 	}
 	
+	public static WhenCase orElse(Object value) {
+		return new WhenCase(null, value);
+	}
+	
 }
