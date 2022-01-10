@@ -8,7 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
 @AllArgsConstructor
-public class CaseSingleColumnBuilder {
+public final class CaseSingleColumnBuilder {
 
 	private final CaseSingleColumn caseColumn = new CaseSingleColumn();
 	private final WhenFilterBridge bridge = new WhenFilterBridge(); 
