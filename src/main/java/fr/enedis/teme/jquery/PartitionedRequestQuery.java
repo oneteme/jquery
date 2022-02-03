@@ -23,7 +23,6 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	@Override
 	public ParametredQuery build(String schema){
 		
-		tableSuffix(null);
 		if(table instanceof YearPartitionTable == false) {
 			return super.build(schema);
 		}
@@ -38,8 +37,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 			if(e.getValue().size() > 1) {//add month rev. when multiple values
 				columns(pTab.getRevisionColumn());
 			}
-			tableSuffix(e.getKey().toString());
-			return super.build(schema);
+			return super.build(schema, e.getKey().toString());
 		}
 		var queries = map.entrySet().stream()
 			.map(e-> {
@@ -48,8 +46,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 				return new RequestQuery()
 						.select(table, concat(this.columns, cols))
 						.filters(concat(this.filters, ftrs))
-						.tableSuffix(e.getKey().toString())
-						.build(schema);
+						.build(schema, e.getKey().toString());
 			})
 			.collect(toList());
 		return join(queries);

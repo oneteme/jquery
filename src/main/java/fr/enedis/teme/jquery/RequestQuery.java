@@ -3,22 +3,32 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
 import static fr.enedis.teme.jquery.Utils.concat;
+import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
+import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.copyOf;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
@@ -26,48 +36,45 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter(value = AccessLevel.PACKAGE)
 public class RequestQuery {
 
 	DBTable table;
 	TaggableColumn[] columns;
 	DBFilter[] filters;
-	String suffix; //internal fin
+	RequestQuery[] joins;
+	
+	JoinType joinType;
+	JoinExpression joinExpression;
 	
 	public RequestQuery select(DBTable table, TaggableColumn... columns) {
 		this.table = table;
 		return columns(columns);
 	}
-	
-	RequestQuery tableSuffix(String tableSuffix) {
-		this.suffix = tableSuffix;
-		return this;
-	}
 
+	public RequestQuery column(boolean condition, Supplier<TaggableColumn> column) {
+		return condition ? columns(column.get()) : this;
+	}
+	public RequestQuery columns(boolean condition, Supplier<TaggableColumn[]> column) {
+		return condition ? columns(column.get()) : this;
+	}
 	public RequestQuery columns(TaggableColumn... columns) {
 		this.columns = concat(this.columns, columns);
 		return this;
 	}
 	
-	public RequestQuery column(boolean condition, Supplier<TaggableColumn> column) {
-		return condition ? columns(column.get()) : this;
-	}
 
-	public RequestQuery columns(boolean condition, Supplier<TaggableColumn[]> column) {
-		return condition ? columns(column.get()) : this;
+	public RequestQuery filter(boolean condition, Supplier<DBFilter> filter){
+		return condition ? filters(filter.get()) : this;
 	}
-
+	public RequestQuery filters(boolean condition, Supplier<DBFilter[]> filter){
+		return condition ? filters(filter.get()) : this;
+	}
 	public RequestQuery filters(DBFilter... filters){
 		this.filters = concat(this.filters, filters);
 		return this;
 	}
 	
-	public RequestQuery filter(boolean condition, Supplier<DBFilter> filter){
-		return condition ? filters(filter.get()) : this;
-	}
-
-	public RequestQuery filters(boolean condition, Supplier<DBFilter[]> filter){
-		return condition ? filters(filter.get()) : this;
-	}
 
 	public List<DynamicModel> execute(Function<ParametredQuery, List<DynamicModel>> fn) {
 		return execute(null, null, fn);
@@ -80,33 +87,68 @@ public class RequestQuery {
 	public List<DynamicModel> execute(String schema, RequestQuery req, Function<ParametredQuery, List<DynamicModel>> fn) {
 
 		requireNonNull(fn);
-		var bg = System.currentTimeMillis();
+		var bg = currentTimeMillis();
 		var query = req == null ? build(schema) : join(schema, req);
-		log.info("query built in {} ms", System.currentTimeMillis() - bg);
+		log.info("query built in {} ms", currentTimeMillis() - bg);
 		var rows = fn.apply(query);
         log.info("query parameters : {}", Arrays.toString(query.getParams()));
-		log.info("{} rows in {} ms", rows.size(), System.currentTimeMillis() - bg);
+		log.info("{} rows in {} ms", rows.size(), currentTimeMillis() - bg);
 		return rows;
 	}
-
+	
+	private Stream<String> columns(ParameterHolder ph) {
+		return Stream.of(columns)
+				.map(c-> c.sql(table, ph) + " AS " + c.tagname()); //important tag
+	}
+	
+	private Stream<String> filters(ParameterHolder ph) {
+		return filters == null 
+				? Stream.empty()
+				: Stream.of(filters).map(f-> f.sql(table, ph));
+	}
+	
 	public ParametredQuery build(String schema){ //nullable
+		return build(schema, null);
+	}
+
+
+	public ParametredQuery build(String schema, String suffix){ //nullable
     	
     	requireNonNull(table);
     	requireNonEmpty(columns);
     	
     	var ph = parametrized();
+    	 Stream<String> cs = isEmpty(joins) 
+    			 ? columns(ph)
+				 : IntStream.range(0, joins.length)
+					.mapToObj(i-> joins[i].columns(ph).map(("t"+i)::concat))
+					.flatMap(identity());
+    	
+    	 var q = new StringBuilder(1000)
+    			.append("SELECT ").append(cs.collect(joining(", ")))
+    			.append(" FROM ").append(table.sql(schema, suffix, ph));
 
-        var q = new StringBuilder(1000).append("SELECT ")
-        		.append(Stream.of(columns)
-            			.map(c-> c.sql(table, ph) + " AS " + c.tagname()) //important tag
-            			.collect(joining(", ")))
-        		.append(" FROM " + table.sql(schema, suffix, ph));
-        if(!isEmpty(filters)) {
-        	q = q.append(" WHERE ")
-    			.append(Stream.of(filters)
-	    			.map(f-> f.sql(table, ph))
-	    			.collect(joining(AND.toString())));
-        }
+     	if(!isEmpty(joins)) {
+     		IntStream.range(0, joins.length)
+     			.mapToObj(i-> joins[i].table.sql(schema, ph));
+     	}
+    	
+    	 Collection<String> fs;
+    	
+    	if(isEmpty(joins)) {
+    		fs = filters(ph).collect(toList());
+    	}
+    	else {
+    		//merge
+    		fs = IntStream.range(0, joins.length)
+    				.mapToObj(i-> joins[i].filters(ph).map(("t"+i)::concat))
+    				.flatMap(identity()).collect(toList());
+    	}
+    	
+    	if(!fs.isEmpty()) {
+    		q.append(fs.stream().collect(joining(AND.toString())));
+    	}
+    	
         if(Stream.of(columns).anyMatch(DBColumn::isAggregation)) {
         	var gc = Stream.of(columns)
         			.filter(RequestQuery::groupable)
@@ -126,9 +168,11 @@ public class RequestQuery {
 		return new RequestQuery(
 				tab, 
 				copyOf(columns, columns.length), 
-				copyOf(filters, filters.length), suffix);
+				copyOf(filters, filters.length), 
+				copyOf(joins, joins.length), joinType);
 	}
-	
+
+	@Deprecated
 	public ParametredQuery join(String schema, @NonNull RequestQuery req) { //
 		
 		var leftCols = Stream.of(columns).map(TaggableColumn::tagname).collect(toList());

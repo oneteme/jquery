@@ -34,7 +34,7 @@ public final class DatabaseMetaData {
 			var meta = tables.get(table.physicalName());
 			if(meta != null) {
 				if(IntStream.of(meta.getRevisions()).noneMatch(v-> v == ym.getYear())) {
-					throw tableNotFoundException(table.sql(null, ""+ym.getYear(), null));
+					throw tableNotFoundException(table.physicalName());
 				}//else ok
 			}
 			else {
