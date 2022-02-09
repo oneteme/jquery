@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ParameterHolder.formatValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.formatValue;
 import static fr.enedis.teme.jquery.Validation.requireLegalVariable;
 
 import lombok.AccessLevel;
@@ -14,7 +14,7 @@ public final class ValueColumn<T> implements TaggableColumn {
 	private final T value; //nullable
 
 	@Override
-	public String sql(DBTable table, ParameterHolder ph) {//see count(*) 
+	public String sql(DBTable table, QueryParameterBuilder ph) {//see count(*) 
 		return "*".equals(value) ? value.toString() : formatValue(value);
 	}
 	

@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
-import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ public final class NamedColumn implements TaggableColumn {
 	private final DBColumn column;
 
 	@Override
-	public String sql(DBTable table, ParameterHolder arg) {
+	public String sql(DBTable table, QueryParameterBuilder arg) {
 		return column.sql(table, arg);
 	}
 

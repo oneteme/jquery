@@ -9,7 +9,7 @@ public interface DBFunction extends DBObject<String> {
 	boolean isAggregate();
 	
 	@Override
-	default String sql(String cn, ParameterHolder ph) {
+	default String sql(String cn, QueryParameterBuilder ph) {
 		return physicalName() + "(" + cn + ")";
 	}
 	

@@ -1,8 +1,8 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
-import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
-import static fr.enedis.teme.jquery.ParameterHolder.formatValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.formatValue;
 
 import java.util.function.Supplier;
 
@@ -15,7 +15,7 @@ public final class WhenCase implements WhenExpression {
 	private final Object value;
 	
 	@Override
-	public String sql(DBTable table, ParameterHolder arg) {
+	public String sql(DBTable table, QueryParameterBuilder arg) {
 		
 		var sb = new StringBuilder(50);
 		if(filter == null) {

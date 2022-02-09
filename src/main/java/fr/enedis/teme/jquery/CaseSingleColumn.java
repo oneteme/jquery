@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
-import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
@@ -24,7 +24,7 @@ public final class CaseSingleColumn implements DBColumn {
 	}
 	
 	@Override
-	public String sql(DBTable table, ParameterHolder ph) {
+	public String sql(DBTable table, QueryParameterBuilder ph) {
 		//force static values
 		return ph.staticMode(()-> new SqlStringBuilder(filters.size() * 50)
 				.append("CASE ")

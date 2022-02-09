@@ -26,6 +26,10 @@ public final class Utils {
 		return concat(c1, c2, DBFilter[]::new);
 	}
 
+	public static QueryDataJoiner[] concat(QueryDataJoiner[] c1, QueryDataJoiner... c2) {
+		return concat(c1, c2, QueryDataJoiner[]::new);
+	}
+
 	public static <T> T[] concat(T[] c1, T[] c2, @NonNull IntFunction<T[]> fn) {
 		//warn ArrayStoreException : cannot merge (enum, class)
 		if(c1 != null && c2 != null) {

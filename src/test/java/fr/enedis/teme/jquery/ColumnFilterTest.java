@@ -4,8 +4,8 @@ import static fr.enedis.teme.jquery.GenericColumn.c1;
 import static fr.enedis.teme.jquery.GenericTable.tab1;
 import static fr.enedis.teme.jquery.Helper.fieldValue;
 import static fr.enedis.teme.jquery.OperatorSingleExpression.isNull;
-import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
-import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.parametrized;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -15,8 +15,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class ColumnFilterTest implements DataProvider {
 
-	private final ParameterHolder STAT = addWithValue();
-	private final ParameterHolder DYNC = parametrized();
+	private final QueryParameterBuilder STAT = addWithValue();
+	private final QueryParameterBuilder DYNC = parametrized();
 
 	@ParameterizedTest
 	@MethodSource("filterCaseProvider")

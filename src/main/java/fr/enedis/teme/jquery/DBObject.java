@@ -2,6 +2,6 @@ package fr.enedis.teme.jquery;
 
 public interface DBObject<T> {
 	
-	String sql(T obj, ParameterHolder arg);
+	String sql(T obj, QueryParameterBuilder arg);
 
 }

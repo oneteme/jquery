@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
-import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.parametrized;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -13,8 +13,8 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class OperatorTest implements DataProvider {
 	
-	private final ParameterHolder STAT = addWithValue();
-	private final ParameterHolder DYNC = parametrized();
+	private final QueryParameterBuilder STAT = addWithValue();
+	private final QueryParameterBuilder DYNC = parametrized();
 	private final LocalDate date = LocalDate.now();
 	
 	@ParameterizedTest

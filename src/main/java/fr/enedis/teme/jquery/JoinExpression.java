@@ -1,6 +1,5 @@
 package fr.enedis.teme.jquery;
 
-import java.util.Map;
 import java.util.function.Function;
 
 import lombok.RequiredArgsConstructor;
@@ -15,7 +14,7 @@ public final class JoinExpression {
 	private final DBColumn rightColumn;
 
 
-	public String sql(Function<DBTable, String> fn, ParameterHolder arg) {
+	public String sql(Function<DBTable, String> fn, QueryParameterBuilder arg) {
 		
 		var sb = new StringBuilder(50)
 				.append(fn.apply(leftTable) + "." + leftColumn.sql(leftTable, arg));

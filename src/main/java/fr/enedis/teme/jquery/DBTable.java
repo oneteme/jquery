@@ -1,11 +1,6 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Utils.isBlank;
-import static java.util.Arrays.asList;
-import static java.util.stream.Collectors.toList;
-
-import java.util.List;
-import java.util.stream.Stream;
 
 public interface DBTable extends DBObject<String> {
 	
@@ -16,24 +11,21 @@ public interface DBTable extends DBObject<String> {
 	TableColumn[] columns();
 
 	@Override
-	default String sql(String schema, ParameterHolder ph) {
-		return isBlank(schema) 
-				? physicalName() 
-				: schema + "." + physicalName();
+	default String sql(String schema, QueryParameterBuilder ph) {
+		return sql(schema, null, ph);
 	}
 
-	default String sql(String schema, String suffix, ParameterHolder ph) {
+	default String sql(String schema, String suffix, QueryParameterBuilder ph) {
 		
-		return new SqlStringBuilder(sql(schema, ph))
+		return new SqlStringBuilder(20)
+				.appendIf(!isBlank(schema), ()-> schema + ".")
+				.append(physicalName())
 				.appendIf(!isBlank(suffix), ()-> "_" + suffix)
 				.toString();
 	}
 	
-	default List<TableColumn> joinColumns(DBTable table) {
-		var cols = asList(columns());
-		return Stream.of(table.columns())
-				.filter(cols::contains)
-				.collect(toList());
+	default String logicalColumnName(TaggableColumn column) {
+		return column.tagname();
 	}
 	
 	static DBTable mockTable() {

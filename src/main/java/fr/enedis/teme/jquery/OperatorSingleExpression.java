@@ -12,7 +12,7 @@ import static fr.enedis.teme.jquery.CompareOperator.LT;
 import static fr.enedis.teme.jquery.CompareOperator.NE;
 import static fr.enedis.teme.jquery.CompareOperator.NOT_IN;
 import static fr.enedis.teme.jquery.CompareOperator.NOT_LIKE;
-import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
 import lombok.AccessLevel;
 import lombok.NonNull;
@@ -26,7 +26,7 @@ public final class OperatorSingleExpression<T> implements OperatorExpression {
 	private final T value;//nullable
 	
 	@Override
-	public String sql(String cn, ParameterHolder arg) {
+	public String sql(String cn, QueryParameterBuilder arg) {
 		return cn + operator.sql(value, arg);
 	}
 	

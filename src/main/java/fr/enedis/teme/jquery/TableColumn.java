@@ -7,7 +7,7 @@ public interface TableColumn extends TaggableColumn {
 	String name();
 
 	@Override
-	default String sql(DBTable table, ParameterHolder arg) {
+	default String sql(DBTable table, QueryParameterBuilder arg) {
 		return requireNonBlank(table.physicalColumnName(this));
 	}
 

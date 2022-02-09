@@ -16,7 +16,7 @@ enum CompareOperator {
 		this.sign = null;
 	}
 
-	public String sql(Object o, ParameterHolder arg) {
+	public String sql(Object o, QueryParameterBuilder arg) {
 		if(sign != null) {
 			return sign + arg.appendNullableParameter(o);
 		}

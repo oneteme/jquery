@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.DBTable.mockTable;
-import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -15,7 +15,7 @@ public final class FunctionColumn implements DBColumn {
 	private final DBFunction function;
 
 	@Override
-	public String sql(DBTable table, ParameterHolder ph) {
+	public String sql(DBTable table, QueryParameterBuilder ph) {
 		return function.sql(column.sql(table, ph), ph);
 	}
 	

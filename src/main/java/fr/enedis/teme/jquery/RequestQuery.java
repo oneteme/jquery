@@ -1,29 +1,29 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.JoinType.INNER;
+import static fr.enedis.teme.jquery.JoinType.LEFT;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
-import static fr.enedis.teme.jquery.ParameterHolder.parametrized;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.parametrized;
 import static fr.enedis.teme.jquery.Utils.concat;
-import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
+import static fr.enedis.teme.jquery.Validation.requireNonBlank;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.copyOf;
 import static java.util.Objects.requireNonNull;
-import static java.util.function.Function.identity;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Stream.concat;
 
 import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -42,10 +42,8 @@ public class RequestQuery {
 	DBTable table;
 	TaggableColumn[] columns;
 	DBFilter[] filters;
-	RequestQuery[] joins;
-	
-	JoinType joinType;
-	JoinExpression joinExpression;
+	List<QueryDataJoiner> dataJoins = new LinkedList<>();
+	List<QueryResultJoiner> resultJoins = new LinkedList<>();
 	
 	public RequestQuery select(DBTable table, TaggableColumn... columns) {
 		this.table = table;
@@ -62,7 +60,6 @@ public class RequestQuery {
 		this.columns = concat(this.columns, columns);
 		return this;
 	}
-	
 
 	public RequestQuery filter(boolean condition, Supplier<DBFilter> filter){
 		return condition ? filters(filter.get()) : this;
@@ -74,21 +71,40 @@ public class RequestQuery {
 		this.filters = concat(this.filters, filters);
 		return this;
 	}
+
+	public RequestQuery innerJoinData(RequestQuery query, JoinExpression ex) {
+		return dataJoin(true, INNER, query, ex);
+	}
+	public RequestQuery innerJoinResult(RequestQuery query) {
+		return dataJoin(false, INNER, query, null);
+	}
+	public RequestQuery leftJoinData(RequestQuery query, JoinExpression ex) {
+		return dataJoin(true, LEFT, query, ex);
+	}
+	public RequestQuery leftJoinResult(RequestQuery query) {
+		return dataJoin(false, LEFT, query, null);
+	}
+	public RequestQuery dataJoin(JoinType type, RequestQuery query, JoinExpression ex) {
+		if(!query.getDataJoins().isEmpty()) {
+			throw new UnsupportedOperationException("deep join"); //not 
+		}
+		this.dataJoins.add(new QueryDataJoiner(type, query,ex));
+		return this;
+	}
 	
-
+	public boolean isAggregation(){
+		return Stream.of(columns).anyMatch(DBColumn::isAggregation);
+	}
+	
 	public List<DynamicModel> execute(Function<ParametredQuery, List<DynamicModel>> fn) {
-		return execute(null, null, fn);
+		return execute(null, fn);
 	}
 
-	public List<DynamicModel> execute(RequestQuery req, Function<ParametredQuery, List<DynamicModel>> fn) {
-		return execute(null, req, fn);
-	}
-
-	public List<DynamicModel> execute(String schema, RequestQuery req, Function<ParametredQuery, List<DynamicModel>> fn) {
+	public List<DynamicModel> execute(String schema, Function<ParametredQuery, List<DynamicModel>> fn) {
 
 		requireNonNull(fn);
 		var bg = currentTimeMillis();
-		var query = req == null ? build(schema) : join(schema, req);
+		var query = build(schema);
 		log.info("query built in {} ms", currentTimeMillis() - bg);
 		var rows = fn.apply(query);
         log.info("query parameters : {}", Arrays.toString(query.getParams()));
@@ -96,108 +112,108 @@ public class RequestQuery {
 		return rows;
 	}
 	
-	private Stream<String> columns(ParameterHolder ph) {
-		return Stream.of(columns)
-				.map(c-> c.sql(table, ph) + " AS " + c.tagname()); //important tag
+
+	public final ParametredQuery build(String schema){
+		
+		var cb = new QueryColumnBuilder(schema, table, columns);
+		var ph = parametrized();
+		var qr = build(cb, ph);
+		return new ParametredQuery(qr, cb.columns(), ph.getArgs().toArray());
 	}
 	
-	private Stream<String> filters(ParameterHolder ph) {
+	public final String build(StringBuilder sb, QueryColumnBuilder cb, QueryParameterBuilder ph){
+
+    	QueryDataJoiner[] dataJoins = isEmpty(joins)
+    		? new QueryDataJoiner[] {} 
+    		: Stream.of(joins)
+    			.filter(QueryDataJoiner::isDataJoin)
+    			.toArray(QueryDataJoiner[]::new);
+		var param = build(null, cb, ph, dataJoins);
+		if(joins != null && joins.length > dataJoins.length) {
+			var sb = new StringBuilder();//size
+			var jq = Stream.of(joins)
+					.filter(not(QueryDataJoiner::isDataJoin))
+					.collect(Collectors.toList());
+			for(var q : jq) {
+				q.appendColumns(cb);
+			}
+		}
+		return param;
+	}
+	
+	private void initialize(QueryColumnBuilder cb) {
+		if(!dataJoins.isEmpty()) {
+    		alias("t0");
+    		for(var i=0; i<dataJoins.size(); i++) {
+    			dataJoins.get(i).getRequest().alias("t"+(i+1));
+    		}
+		}
+		for(var c : columns) {
+			cb.appendColumn(c, table);
+		}
+		if(!dataJoins.isEmpty()) {
+			for(var dj : dataJoins) {
+				for(var c : dj.getRequest().getColumns()) {			
+					cb.appendColumn(c, table); //no deep join
+				}
+			}
+		}
+	}
+
+	protected void build(String suffix, StringBuilder sb, QueryColumnBuilder cb, QueryParameterBuilder ph){ //nullable
+    	
+    	requireNonNull(table);
+    	requireNonEmpty(columns); 
+    	boolean agg = isAggregation();
+    	if(!dataJoins.isEmpty()) {
+			agg |= dataJoins.stream().anyMatch(q-> q.getRequest().isAggregation()); 
+    	}  
+    	initialize(cb);
+    	var entries= cb.entries();
+    	sb.append("SELECT ").append(entries.stream().map(e-> e.getKey().sql(e.getValue(), ph)).collect(joining(", ")))
+    		.append(" FROM ").append(table.sql(cb.getSchema(), suffix, ph));
+    	if(!dataJoins.isEmpty()) {
+    		dataJoins.stream().forEach(q-> q.sql(sb, cb, ph, null));
+    	}
+    	Stream<String> fs = filters(ph);
+    	if(!dataJoins.isEmpty()) {
+    		fs = Stream.concat(fs, dataJoins.stream().flatMap(q-> q.getRequest().filters(ph)));
+    	}
+     	var fList = fs.collect(AND.joiner());
+    	if(!fList.isEmpty()) {
+    		sb.append(" WHERE ").append(fList);
+    	}
+        if(agg) {
+        	var gc = entries.stream()
+        			.filter(e-> groupable(e.getKey()))
+        			.map(e-> e.getValue().logicalColumnName(e.getKey())) //add alias 
+        			.toArray(String[]::new);
+        	if(gc.length > 0) {
+        		sb.append(" GROUP BY ").append(String.join(",", gc));
+        	}
+        }
+	}
+	
+	private Stream<String> filters(QueryParameterBuilder ph) {
 		return filters == null 
 				? Stream.empty()
 				: Stream.of(filters).map(f-> f.sql(table, ph));
 	}
 	
-	public ParametredQuery build(String schema){ //nullable
-		return build(schema, null);
+	void alias(String alias) {
+		this.table = new TableAlias(requireNonNull(table), requireNonBlank(alias));
 	}
 
-
-	public ParametredQuery build(String schema, String suffix){ //nullable
-    	
-    	requireNonNull(table);
-    	requireNonEmpty(columns);
-    	
-    	var ph = parametrized();
-    	 Stream<String> cs = isEmpty(joins) 
-    			 ? columns(ph)
-				 : IntStream.range(0, joins.length)
-					.mapToObj(i-> joins[i].columns(ph).map(("t"+i)::concat))
-					.flatMap(identity());
-    	
-    	 var q = new StringBuilder(1000)
-    			.append("SELECT ").append(cs.collect(joining(", ")))
-    			.append(" FROM ").append(table.sql(schema, suffix, ph));
-
-     	if(!isEmpty(joins)) {
-     		IntStream.range(0, joins.length)
-     			.mapToObj(i-> joins[i].table.sql(schema, ph));
-     	}
-    	
-    	 Collection<String> fs;
-    	
-    	if(isEmpty(joins)) {
-    		fs = filters(ph).collect(toList());
-    	}
-    	else {
-    		//merge
-    		fs = IntStream.range(0, joins.length)
-    				.mapToObj(i-> joins[i].filters(ph).map(("t"+i)::concat))
-    				.flatMap(identity()).collect(toList());
-    	}
-    	
-    	if(!fs.isEmpty()) {
-    		q.append(fs.stream().collect(joining(AND.toString())));
-    	}
-    	
-        if(Stream.of(columns).anyMatch(DBColumn::isAggregation)) {
-        	var gc = Stream.of(columns)
-        			.filter(RequestQuery::groupable)
-        			.map(TaggableColumn::tagname)
-        			.toArray(String[]::new);
-        	if(gc.length > 0) {
-        		q = q.append(" GROUP BY " + String.join(",", gc));
-        	}
-        }
-        return new ParametredQuery(
-        		q.toString(), 
-        		Stream.of(columns).map(TaggableColumn::tagname).toArray(String[]::new), 
-        		ph.getArgs().toArray());
-	}
-	
 	public RequestQuery fork(DBTable tab) {
 		return new RequestQuery(
 				tab, 
 				copyOf(columns, columns.length), 
 				copyOf(filters, filters.length), 
-				copyOf(joins, joins.length), joinType);
+				copyOf(dataJoins, dataJoins.length), 
+				copyOf(resultJoins, resultJoins.length));
 	}
 
-	@Deprecated
-	public ParametredQuery join(String schema, @NonNull RequestQuery req) { //
-		
-		var leftCols = Stream.of(columns).map(TaggableColumn::tagname).collect(toList());
-		var add = new LinkedList<String>();
-		var com = new LinkedList<String>();
-		for(var c : req.columns) {
-			var tag = c.tagname();
-			(leftCols.contains(tag) ? com : add).add(tag);
-		}
-		var r1 = this.build(schema);
-		var r2 = req.build(schema);
-		StringBuilder sb = new StringBuilder(1000)
-				.append("SELECT ")
-				.append(concat(leftCols.stream().map("t0."::concat), add.stream().map("t1."::concat)).collect(joining(", ")))
-				.append(" FROM (").append(r1.getQuery()).append(") t0")
-				.append(" LEFT JOIN (").append(r2.getQuery()).append(") t1")
-				.append(" ON ").append(com.stream().map(c-> "t1." + c + "=" + "t0." + c).collect(joining(AND.toString())));
-		return new ParametredQuery(
-				sb.toString(), 
-				Stream.concat(leftCols.stream(), add.stream()).toArray(String[]::new),
-				Utils.concat(r1.getParams(), r2.getParams(), Object[]::new));
-	}
-	
 	private static boolean groupable(DBColumn column) {
 		return !column.isAggregation() && !column.isConstant();
 	}
-	
 }

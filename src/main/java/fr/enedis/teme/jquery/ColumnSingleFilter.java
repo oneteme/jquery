@@ -3,7 +3,7 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.LogicalOperator.OR;
-import static fr.enedis.teme.jquery.ParameterHolder.addWithValue;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ public final class ColumnSingleFilter implements DBFilter {
 	private final OperatorExpression expression;
 
 	@Override
-	public String sql(DBTable table, ParameterHolder ph) {
+	public String sql(DBTable table, QueryParameterBuilder ph) {
 		return expression.sql(column.sql(table, ph), ph);
 	}
 

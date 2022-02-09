@@ -17,14 +17,13 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
 
+@Getter(value = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ParameterHolder {
-
+public final class QueryParameterBuilder {
+	
+	private static final QueryParameterBuilder STATIC_INSTANCE = new QueryParameterBuilder(null, false, false);
 	private static final String ARG = "?";
 	
-	private static final ParameterHolder STATIC_INSTANCE = new ParameterHolder(null, false, false);
-	
-	@Getter
 	private final Collection<Object> args;
 	private final boolean ps;
 	private boolean dynamic;
@@ -112,14 +111,14 @@ public final class ParameterHolder {
 		var type = arr.getClass().getComponentType();
 		return Number.class.isAssignableFrom(type) || type.isPrimitive()
 				? Object::toString
-				: ParameterHolder::formatString;
+				: QueryParameterBuilder::formatString;
 	}
 	
-	public static ParameterHolder addWithValue() {
+	public static QueryParameterBuilder addWithValue() {
 		return STATIC_INSTANCE;
 	}
 	
-	public static ParameterHolder parametrized() {
-		return new ParameterHolder(new LinkedList<>(), true, true);
+	public static QueryParameterBuilder parametrized() {
+		return new QueryParameterBuilder(new LinkedList<>(), true, true);
 	}
 }

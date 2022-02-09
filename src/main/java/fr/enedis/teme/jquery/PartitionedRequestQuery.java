@@ -21,10 +21,10 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	private final YearMonth[] revisions;
 	
 	@Override
-	public ParametredQuery build(String schema){
+	public ParametredQuery build(String schema, QueryDataJoiner[] dataJoins){
 		
 		if(table instanceof YearPartitionTable == false) {
-			return super.build(schema);
+			return super.build(schema, null, dataJoins);
 		}
 		var pTab = (YearPartitionTable) table;
 		if(isEmpty(revisions)) {
@@ -37,7 +37,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 			if(e.getValue().size() > 1) {//add month rev. when multiple values
 				columns(pTab.getRevisionColumn());
 			}
-			return super.build(schema, e.getKey().toString());
+			return super.build(schema, e.getKey().toString(), dataJoins);
 		}
 		var queries = map.entrySet().stream()
 			.map(e-> {
@@ -46,7 +46,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 				return new RequestQuery()
 						.select(table, concat(this.columns, cols))
 						.filters(concat(this.filters, ftrs))
-						.build(schema, e.getKey().toString());
+						.build(schema, e.getKey().toString(), dataJoins);
 			})
 			.collect(toList());
 		return join(queries);
