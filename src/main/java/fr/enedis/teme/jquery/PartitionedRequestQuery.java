@@ -1,72 +1,85 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Utils.concat;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
-import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
-import static java.util.Arrays.copyOf;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 
 import java.time.YearMonth;
-import java.util.Collection;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
 public final class PartitionedRequestQuery extends RequestQuery {
 	
+	private static final String REVISION_YEAR_TAG = "revisionYear";
+	
+	@NonNull
 	private final YearMonth[] revisions;
 	
 	@Override
-	public ParametredQuery build(String schema, QueryDataJoiner[] dataJoins){
+	List<String> columnTags() {
+		if(revisions.length == 1) {
+			return super.columnTags();
+		}
+		var list = new LinkedList<String>(super.columnTags());
+		list.add(((YearPartitionTable) table).getRevisionColumn().tagname());
+		if(Stream.of(revisions).map(YearMonth::getYear).distinct().count() > 1) {
+			list.add(REVISION_YEAR_TAG);
+		}
+		return list;
+	}
+	
+	@Override
+	public void build(String schema, StringBuilder sb, QueryParameterBuilder pb){
 		
 		if(table instanceof YearPartitionTable == false) {
-			return super.build(schema, null, dataJoins);
+			super.build(schema, sb, pb);
 		}
-		var pTab = (YearPartitionTable) table;
-		if(isEmpty(revisions)) {
-			throw new IllegalArgumentException("missing parameter : " + pTab.getRevisionColumn().name().toLowerCase());
-		}
-		var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
-		if(map.size() == 1) {//one table reference
-			var e = map.entrySet().iterator().next();
-			filters(pTab.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
-			if(e.getValue().size() > 1) {//add month rev. when multiple values
-				columns(pTab.getRevisionColumn());
+		else {
+			var pTab = (YearPartitionTable) table;
+			if(isEmpty(revisions)) {
+				throw new IllegalArgumentException("missing parameter : " + pTab.getRevisionColumn().name().toLowerCase());
 			}
-			return super.build(schema, e.getKey().toString(), dataJoins);
+			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
+			boolean mc = revisions.length > 1;
+			boolean yc = map.size() > 1;
+			var it = map.entrySet().iterator();
+			query(it.next(), pTab.getRevisionColumn(), mc, yc).build(schema, sb, pb);
+			while(it.hasNext()) {
+				sb.append(" UNION ");
+				query(it.next(), pTab.getRevisionColumn(), mc, yc).build(schema, sb, pb);
+			}
 		}
-		var queries = map.entrySet().stream()
-			.map(e-> {
-				var ftrs = new DBFilter[]{pTab.getRevisionColumn().in(e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))}; //TD to int
-				var cols = new TaggableColumn[]{pTab.getRevisionColumn(), staticColumn("revisionYear", e.getKey())}; //add year rev. when multiple values
-				return new RequestQuery()
-						.select(table, concat(this.columns, cols))
-						.filters(concat(this.filters, ftrs))
-						.build(schema, e.getKey().toString(), dataJoins);
-			})
-			.collect(toList());
-		return join(queries);
+	}
+	
+	private RequestQuery query(Entry<Integer, List<YearMonth>> entry, TableColumn revisionColumn, boolean mc, boolean yc) {
+
+		var filter = entry.getValue().size() == 1 
+				? revisionColumn.equal(entry.getValue().get(0).getMonthValue())
+				: revisionColumn.in(entry.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new));
+		var req = super.fork(new TableAdapter(table, entry.getKey() + ""));
+		req.filters(filter);
+		req.column(mc, ()-> revisionColumn);
+		req.column(yc, ()-> staticColumn(REVISION_YEAR_TAG, entry.getKey()));
+		return req;
 	}
 	
 	@Override
 	public RequestQuery fork(DBTable tab) {
 		return new PartitionedRequestQuery(revisions)
 				.select(tab)
-				.columns(copyOf(columns, columns.length))
-				.filters(copyOf(filters, filters.length));
+				.columns(columns.toArray(TaggableColumn[]::new))
+				.filters(filters.toArray(DBFilter[]::new));
 	}
 	
-	//TD impl. collector
-	private static final ParametredQuery join(Collection<ParametredQuery> queries) {
-		requireNonEmpty(queries);
-		//check columns ?
-		return new ParametredQuery(
-				queries.stream().map(ParametredQuery::getQuery).collect(joining(" UNION ")),
-				queries.iterator().next().getColumnNames(),
-				queries.stream().flatMap(o-> Stream.of(o.getParams())).toArray());
+	@Override
+	int estimateSize() {
+		var n = (int)Stream.of(revisions).map(YearMonth::getYear).distinct().count();
+		return 1000 * (resultJoins.size()+n);
 	}
 }

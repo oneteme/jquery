@@ -1,5 +1,9 @@
 package fr.enedis.teme.jquery;
 
+import static java.util.stream.Collectors.joining;
+
+import java.util.stream.Collector;
+
 import fr.enedis.teme.jquery.CaseSingleColumnBuilder.WhenFilterBridge;
 import lombok.NonNull;
 
@@ -69,4 +73,13 @@ public interface DBColumn extends DBObject<DBTable> {
     default WhenFilterBridge when(OperatorExpression ex) {
     	return new CaseSingleColumnBuilder(this).when(ex);
 	}
+    
+    static Collector<CharSequence, ?, String> columnJoiner(){
+		return joining(", ");
+	}
+    
+    static String joinColumns(String[] columns) {
+    	return String.join(", ", columns);
+    }
+    
 }

@@ -1,6 +1,6 @@
 package fr.enedis.teme.jquery;
 
-public enum JoinType {	
+enum JoinType {	
 
 	INNER, LEFT, RIGHT;
 	

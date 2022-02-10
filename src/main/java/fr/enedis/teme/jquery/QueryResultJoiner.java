@@ -1,47 +1,44 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
+import static fr.enedis.teme.jquery.Utils.isEmpty;
+import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.Objects.requireNonNull;
 
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map.Entry;
+import java.util.Map;
+import java.util.function.Predicate;
+import java.util.stream.Stream;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
+@Setter
 @Getter
 @RequiredArgsConstructor
-final class QueryResultJoiner implements DBQuery {
+final class QueryResultJoiner {
 
 	private final JoinType joinType;
 	private final RequestQuery request;
+	private final String[] columns;
 	
-	@Override
-	public void sql(StringBuilder sb, QueryColumnBuilder cb, QueryParameterBuilder pb, String alias) {
+	private String alias;
+	
+	public void sql(String schema, StringBuilder sb, QueryParameterBuilder pb, Map<String, String> columnMap) {
 		
-		sb.append(" ")
-		.append(requireNonNull(joinType).toString())
+		Predicate<String> filter = t-> {
+			var e = columnMap.get(t);
+			return e != null && !e.equals(alias);
+		};
+		Stream<String> col = isEmpty(columns)
+				? request.columnTags().stream().filter(filter)
+				: Stream.of(columns);
+		String[] criteria = col.map(c-> alias + "." + c + "=" + requireNonNull(columnMap.get(c)) + "." + c)
+				.toArray(String[]::new);
+		sb.append(requireNonNull(joinType).toString())
 		.append(" JOIN (");
-		var sbc = new QueryColumnBuilder(cb.getSchema()); //specific ColumnBuilder
-		request.build(sb, sbc, pb);
+		request.build(schema, sb, pb);
 		sb.append(") ").append(alias);
-		var src = new TableAlias(null, alias);
-		List<Entry<TaggableColumn, DBTable>> com = new LinkedList<>();
-		sbc.entries().forEach(e->{
-			var o = cb.getEntry(e.getKey());
-			if(o == null) {
-				cb.appendColumn(e.getKey(), src);
-			}
-			else if(!request.getTable().equals(o.getValue())) { //column already added
-				com.add(e);
-			}
-		});
-		if(com.isEmpty()) {
-			throw new RuntimeException("no join columns");
-		}
-		sb.append(" ON ").append(com.stream()
-				.map(e-> alias + "." + e.getKey().tagname() + "=" + e.getValue().logicalColumnName(e.getKey()))
-				.collect(AND.joiner()));
+		sb.append(" ON ").append(AND.join(requireNonEmpty(criteria)));
 	}
 }
