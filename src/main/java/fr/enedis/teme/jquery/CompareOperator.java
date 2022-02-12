@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.SqlStringBuilder.SPACE_SEPARATOR;
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
 
 import lombok.RequiredArgsConstructor;
@@ -20,9 +21,9 @@ enum CompareOperator {
 		if(sign != null) {
 			return sign + arg.appendNullableParameter(o);
 		}
-		var fn = " " + toString();
+		var fn = SPACE_SEPARATOR + toString();
 		if(this == LIKE || this == NOT_LIKE) { 
-			return fn + " " + arg.appendString(o); //String only
+			return fn + SPACE_SEPARATOR + arg.appendString(o); //String only
 		}
 		if(this == IN || this == NOT_IN) {
 			return fn + "(" + arg.appendArray(o) + ")";
@@ -33,6 +34,6 @@ enum CompareOperator {
 	
 	@Override
 	public String toString() {
-		return sign == null ? name().replace("_", " ") : sign;
+		return sign == null ? name().replace("_", SPACE_SEPARATOR) : sign;
 	}
 }

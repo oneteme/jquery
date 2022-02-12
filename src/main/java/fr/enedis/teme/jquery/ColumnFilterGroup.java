@@ -14,11 +14,11 @@ import lombok.NonNull;
 public final class ColumnFilterGroup implements DBFilter {
 	
 	private final LogicalOperator operator;
-	private final Collection<DBFilter> expression;
+	private final Collection<DBFilter> expressions;
 
 	public ColumnFilterGroup(@NonNull LogicalOperator operator, DBFilter... expression) {//assert length > 1
 		this.operator = operator;
-		this.expression = expression == null 
+		this.expressions = expression == null 
 				? new LinkedList<>()
 				: Stream.of(expression).collect(toList());
 	}
@@ -26,7 +26,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	@Override
 	public String sql(DBTable table, QueryParameterBuilder ph) { //td deep sql parentheses
 		
-		return new SqlStringBuilder(50 * expression.size()).appendEach(expression, operator.sql(), 
+		return new SqlStringBuilder(50 * expressions.size()).appendEach(expressions, operator.sql(), 
 				e-> e instanceof ColumnSingleFilter
 					? e.sql(table, ph)
 					: "(" + e.sql(table, ph)+")").toString();
@@ -35,7 +35,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	@Override
 	public DBFilter append(LogicalOperator op, DBFilter filter) {
 		if(operator == op) {
-			expression.add(filter);
+			expressions.add(filter);
 			return this;
 		}
 		return new ColumnFilterGroup(op, this, filter);

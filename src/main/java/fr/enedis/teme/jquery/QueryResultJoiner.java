@@ -2,6 +2,7 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.SqlStringBuilder.COMA_SEPARATOR;
+import static fr.enedis.teme.jquery.SqlStringBuilder.SPACE_SEPARATOR;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.Objects.requireNonNull;
 
@@ -57,7 +58,7 @@ final class QueryResultJoiner implements Query {
 			request.build(schema, sb, pb);
 			sb.append(")");
 		}
-		sb.append(" ")
+		sb.append(SPACE_SEPARATOR)
 		.append(alias)
 		.append(" ON ")
 		.appendEach(requireNonEmpty(criteria), AND.sql(), Supplier::get);

@@ -5,6 +5,7 @@ import static fr.enedis.teme.jquery.JoinType.LEFT;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.parametrized;
 import static fr.enedis.teme.jquery.SqlStringBuilder.COMA_SEPARATOR;
+import static fr.enedis.teme.jquery.SqlStringBuilder.EMPTY_STRING;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
@@ -115,7 +116,7 @@ public class RequestQuery implements Query {
 			sb.append(" FROM (");
 			build(schema, sb, pb);
 			sb.append(") q0");
-			resultJoins.forEach(q-> q.build(schema, sb.append(" "), pb));
+			resultJoins.forEach(q-> q.build(schema, sb.append(EMPTY_STRING), pb));
 			cols = map.keySet().toArray(String[]::new);
 		}
 		return new ParametredQuery(sb.toString(), cols, pb.getArgs().toArray());
