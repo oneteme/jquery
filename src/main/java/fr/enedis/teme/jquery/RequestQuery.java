@@ -6,6 +6,7 @@ import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.parametrized;
 import static fr.enedis.teme.jquery.SqlStringBuilder.COMA_SEPARATOR;
 import static fr.enedis.teme.jquery.SqlStringBuilder.EMPTY_STRING;
+import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
@@ -124,7 +125,7 @@ public class RequestQuery implements Query {
 
 	@Override
 	public void columns(String alias, SqlStringBuilder sb, QueryParameterBuilder pb, Map<String, String> columnMap) {
-		sb.appendEach(columns, COMA_SEPARATOR, alias + ".", c-> {
+		sb.appendEach(columns, COMA_SEPARATOR, alias + POINT_SEPARATOR, c-> {
 			columnMap.put(c.tagname(), alias);
 			return c.tagname();
 		});

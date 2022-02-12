@@ -2,6 +2,7 @@ package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
 import static fr.enedis.teme.jquery.SqlStringBuilder.COMA_SEPARATOR;
+import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.SqlStringBuilder.SPACE_SEPARATOR;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.util.Objects.requireNonNull;
@@ -35,11 +36,11 @@ final class QueryResultJoiner implements Query {
 			var rs = columnMap.get(c.tagname());
 			if(rs == null) {
 				columnMap.put(c.tagname(), alias);
-				tc.add(alias + "." + (simple ? c.tagSql(request.getTable(), pb) : c.tagname()));
+				tc.add(alias + POINT_SEPARATOR + (simple ? c.tagSql(request.getTable(), pb) : c.tagname()));
 			}
 			else {
 				var cn = simple ? c.sql(request.getTable(), pb) : c.tagname();
-				criteria.add(()-> alias + "." + cn + "=" + rs + "." + c.tagname());
+				criteria.add(()-> alias + POINT_SEPARATOR + cn + "=" + rs + POINT_SEPARATOR + c.tagname());
 			}
 		}
 		sb.append(String.join(COMA_SEPARATOR, tc.toArray(String[]::new)));

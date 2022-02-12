@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 
 public interface DBTable extends DBObject<String> {
@@ -15,7 +16,7 @@ public interface DBTable extends DBObject<String> {
 		
 		return isBlank(schema) 
 				? physicalName() 
-				: schema + "." + physicalName();
+				: schema + POINT_SEPARATOR + physicalName();
 	}
 	
 	default RequestQuery selectAll(){

@@ -9,9 +9,10 @@ import java.util.function.Supplier;
 
 final class SqlStringBuilder {
 	
-	static final String COMA_SEPARATOR = ", ";	
-	static final String SPACE_SEPARATOR = " ";	
 	static final String EMPTY_STRING = "";
+	static final String COMA_SEPARATOR = ", ";
+	static final String SPACE_SEPARATOR = " ";
+	static final String POINT_SEPARATOR = ".";
 	private final StringBuilder sb;
 
 	public SqlStringBuilder(int capacity) {

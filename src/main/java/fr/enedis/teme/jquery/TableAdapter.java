@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 
 import lombok.Getter;
@@ -16,7 +17,7 @@ final class TableAdapter implements DBTable {
 	public String sql(String schema, QueryParameterBuilder ph) {
 		
 		return new SqlStringBuilder(20)
-				.appendIf(!isBlank(schema), ()-> schema + ".")
+				.appendIf(!isBlank(schema), ()-> schema + POINT_SEPARATOR)
 				.append(physicalName())
 				.appendIf(!isBlank(suffix), ()-> "_" + suffix)
 				.toString();
