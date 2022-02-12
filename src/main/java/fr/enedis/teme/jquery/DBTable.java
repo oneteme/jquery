@@ -18,6 +18,14 @@ public interface DBTable extends DBObject<String> {
 				: schema + "." + physicalName();
 	}
 	
+	default RequestQuery selectAll(){
+		return new RequestQuery().select(this, columns());
+	}
+
+	default RequestQuery select(TaggableColumn...columns){
+		return new RequestQuery().select(this, columns);
+	}
+	
 	static DBTable mockTable() {
 		return new DBTable() {
 

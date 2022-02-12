@@ -4,7 +4,6 @@ import static fr.enedis.teme.jquery.QueryParameterBuilder.formatValue;
 import static fr.enedis.teme.jquery.Validation.requireLegalVariable;
 
 import lombok.AccessLevel;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -43,7 +42,7 @@ public final class ValueColumn<T> implements TaggableColumn {
 		return sql(null, null);
 	}
 	
-	public static <T> ValueColumn<T> staticColumn(@NonNull String tagName, T expression) {
+	public static <T> ValueColumn<T> staticColumn(String tagName, T expression) {
 		return new ValueColumn<>(requireLegalVariable(tagName), expression);
 	}
 }
