@@ -72,15 +72,15 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	
 	private RequestQuery query(Entry<Integer, List<YearMonth>> entry, TableColumn revisionColumn) {
 
-		return super.fork(new TableAdapter(table, entry.getKey() + ""))
+		return super.fork(new TableAdapter(table, entry.getKey() + ""), true)
 				.columns(revisionColumns.apply(entry.getKey()))
 				.filters(entry.getValue().size() == 1 
 				? revisionColumn.equal(entry.getValue().get(0).getMonthValue())
 				: revisionColumn.in(entry.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
 	}
 	
-	@Override
-	public RequestQuery fork(DBTable tab) {
+	@Override	
+	public RequestQuery fork(DBTable tab, boolean joins) {
 		return new PartitionedRequestQuery(revisions)
 				.select(tab)
 				.columns(columns.toArray(TaggableColumn[]::new))

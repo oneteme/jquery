@@ -10,10 +10,12 @@ import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -158,11 +160,11 @@ public class RequestQuery implements Query {
         }
 	}
 	
-	public RequestQuery fork(DBTable tab) {
+	public RequestQuery fork(DBTable tab, boolean joins) {
 		return new RequestQuery(tab, 
 				new LinkedList<>(columns), 
 				new LinkedList<>(filters),
-				new LinkedList<>(resultJoins));
+				joins ? new LinkedList<>(resultJoins) : emptyList());
 	}
 
 	private static boolean groupable(DBColumn column) {
