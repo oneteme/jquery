@@ -18,7 +18,7 @@ public final class CaseSingleColumn implements DBColumn {
 	@Override
 	public String sql(DBTable table, QueryParameterBuilder ph) {
 		//force static values
-		return ph.staticMode(()-> new SqlStringBuilder(filters.size() * 50)
+		return ph.addWithValue(()-> new SqlStringBuilder(filters.size() * 50)
 				.append("CASE ")
 				.appendEach(filters, SPACE_SEPARATOR, f-> f.sql(table, ph))
 				.append(" END").toString());

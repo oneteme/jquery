@@ -75,7 +75,7 @@ public final class QueryParameterBuilder {
 		return "null";
 	}
 
-	public String staticMode(Supplier<String> supp) {
+	public String addWithValue(Supplier<String> supp) {
 		this.dynamic = false;
 		var v = supp.get();
 		this.dynamic = true;

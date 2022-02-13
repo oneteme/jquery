@@ -30,20 +30,20 @@ final class QueryResultJoiner implements Query {
 
 		this.alias = alias;
 		this.criteria = new LinkedList<>();
-		var tc = new LinkedList<String>();
+		var columns = new LinkedList<String>();
 		var simple = request.isSimpleQuery();
 		for(var c : request.getColumns()) {
 			var rs = columnMap.get(c.tagname());
 			if(rs == null) {
 				columnMap.put(c.tagname(), alias);
-				tc.add(alias + POINT_SEPARATOR + (simple ? c.tagSql(request.getTable(), pb) : c.tagname()));
+				columns.add(alias + POINT_SEPARATOR + (simple ? c.tagSql(request.getTable(), pb) : c.tagname()));
 			}
 			else {
 				var cn = simple ? c.sql(request.getTable(), pb) : c.tagname();
 				criteria.add(()-> alias + POINT_SEPARATOR + cn + "=" + rs + POINT_SEPARATOR + c.tagname());
 			}
 		}
-		sb.append(String.join(COMA_SEPARATOR, tc.toArray(String[]::new)));
+		sb.appendEach(requireNonEmpty(columns), COMA_SEPARATOR);
 	}
 
 	@Override

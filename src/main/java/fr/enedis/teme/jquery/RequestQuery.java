@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -27,9 +28,9 @@ import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
+@Getter
 @NoArgsConstructor
 @AllArgsConstructor
-@Getter
 public class RequestQuery implements Query {
 
 	DBTable table;
@@ -111,9 +112,8 @@ public class RequestQuery implements Query {
 			var map = new LinkedHashMap<String, String>();
 			sb.append("SELECT ");
 			columns("q0", sb, pb, map);
-			for(var i=0; i<resultJoins.size(); i++) {
-				resultJoins.get(i).columns("q"+(i+1), sb.append(COMA_SEPARATOR), pb, map);
-			}
+			var inc = new AtomicInteger();
+			resultJoins.forEach(q-> q.columns("q"+inc.incrementAndGet(), sb.append(COMA_SEPARATOR), pb, map));
 			sb.append(" FROM (");
 			build(schema, sb, pb);
 			sb.append(") q0");
@@ -124,7 +124,7 @@ public class RequestQuery implements Query {
 	}
 
 	@Override
-	public void columns(String alias, SqlStringBuilder sb, QueryParameterBuilder pb, Map<String, String> columnMap) {
+	public void columns(String alias, SqlStringBuilder sb, QueryParameterBuilder pb, Map<String, String> columnMap) {//init map
 		sb.appendEach(columns, COMA_SEPARATOR, alias + POINT_SEPARATOR, c-> {
 			columnMap.put(c.tagname(), alias);
 			return c.tagname();
@@ -153,7 +153,7 @@ public class RequestQuery implements Query {
         		sb.append(" GROUP BY ").appendEach(gc, COMA_SEPARATOR);
         	}
         	else if(columns.size() > 1) {
-        		throw new RuntimeException("missing groupBy columns");
+        		throw new RuntimeException("require groupBy columns");
         	}
         }
 	}
