@@ -136,7 +136,7 @@ public class RequestQuery implements Query {
 
 	@Override
 	public void columns(String alias, SqlStringBuilder sb, QueryParameterBuilder pb, Map<String, String> columnMap) {//init map
-		sb.appendEach(columns, COMA_SEPARATOR, alias + POINT_SEPARATOR, c-> {
+		sb.appendEach(getColumns(), COMA_SEPARATOR, alias + POINT_SEPARATOR, c-> {
 			columnMap.put(c.tagname(), alias);
 			return c.tagname();
 		});
