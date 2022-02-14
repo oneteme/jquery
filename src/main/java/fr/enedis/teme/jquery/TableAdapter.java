@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-final class TableAdapter implements DBTable {
+public final class TableAdapter implements DBTable {
 	
 	private final DBTable table;
 	private final String suffix;
@@ -36,6 +36,11 @@ final class TableAdapter implements DBTable {
 	@Override
 	public TableColumn[] columns() {
 		return table.columns();
+	}
+	
+	@Override
+	public TableAdapter suffix(String suffix) {
+		return new TableAdapter(table, suffix);
 	}
 
 }

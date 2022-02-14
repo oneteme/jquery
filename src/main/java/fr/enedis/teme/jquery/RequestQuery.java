@@ -14,8 +14,9 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
-import java.util.Collections;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -84,11 +85,11 @@ public class RequestQuery implements Query {
 		return this;
 	}
 	
-	public List<DynamicModel> execute(Function<ParametredQuery, List<DynamicModel>> fn) {
+	public <T> T execute(Function<ParametredQuery, T> fn) {
 		return execute(null, fn);
 	}
 
-	public List<DynamicModel> execute(String schema, Function<ParametredQuery, List<DynamicModel>> fn) {
+	public <T> T execute(String schema, Function<ParametredQuery, T> fn) {
 
 		requireNonNull(fn);
 		var bg = currentTimeMillis();
@@ -97,7 +98,7 @@ public class RequestQuery implements Query {
 		bg = currentTimeMillis();
 		var rows = fn.apply(query);
         log.info("query parameters : {}", Arrays.toString(query.getParams()));
-		log.info("{} rows in {} ms", rows.size(), currentTimeMillis() - bg);
+		log.info("{} rows in {} ms", rowCount(rows), currentTimeMillis() - bg);
 		return rows;
 	}
 
@@ -179,6 +180,20 @@ public class RequestQuery implements Query {
 		return filters.isEmpty() 
 				&& resultJoins.isEmpty() 
 				&& columns.stream().noneMatch(DBColumn::isAggregation);
+	}
+
+	@SuppressWarnings("rawtypes")
+	private static int rowCount(Object o) {
+		if(o.getClass().isArray()) {
+			return Array.getLength(o);
+		}
+		if(o instanceof Collection) {
+			return ((Collection)o).size();
+		}
+		if(o instanceof Map) {
+			return ((Map)o).size();
+		}
+		return 1; //???
 	}
 	
 }

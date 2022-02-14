@@ -10,6 +10,10 @@ public interface DBTable extends DBObject<String> {
 	String physicalColumnName(TableColumn column);
 
 	TableColumn[] columns();
+	
+	default TableAdapter suffix(String suffix) {
+		return new TableAdapter(this, suffix);
+	}
 
 	@Override
 	default String sql(String schema, QueryParameterBuilder ph) {

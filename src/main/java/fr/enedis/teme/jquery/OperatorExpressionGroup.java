@@ -26,7 +26,7 @@ public final class OperatorExpressionGroup implements OperatorExpression {
 				.map(e-> e instanceof OperatorSingleExpression
 					? e.sql(cn, ph)
 					: "(" + e.sql(cn, ph)+")")
-				.collect(joining(operator.toString()));
+				.collect(joining(operator.sql()));
 	}
 
 	@Override

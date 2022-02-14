@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery.web;
 
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 import static fr.enedis.teme.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.tableNotFoundException;
 import static java.util.Collections.emptyMap;
@@ -34,7 +35,7 @@ public final class DatabaseMetaData {
 			var meta = tables.get(table.physicalName());
 			if(meta != null) {
 				if(IntStream.of(meta.getRevisions()).noneMatch(v-> v == ym.getYear())) {
-					throw tableNotFoundException(table.physicalName());
+					throw tableNotFoundException(table.sql(null, addWithValue()) + "_" + ym.getYear());
 				}//else ok
 			}
 			else {
@@ -83,6 +84,10 @@ public final class DatabaseMetaData {
 		}
 		log.error("column metadata not found for : " + table.physicalName() + "." + table.physicalColumnName(column));
 		return values;
+	}
+	
+	public int[] revisions(DBTable table) {
+		return tables.get(table.physicalName()).getRevisions();
 	}
 	
 	//max size check
