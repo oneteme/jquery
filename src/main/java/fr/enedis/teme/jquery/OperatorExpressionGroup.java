@@ -1,7 +1,6 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 import java.util.List;
@@ -21,12 +20,12 @@ public final class OperatorExpressionGroup implements OperatorExpression {
 	}
 	
 	@Override
-	public String sql(String cn, QueryParameterBuilder ph) {		
-		return expressions.stream()
-				.map(e-> e instanceof OperatorSingleExpression
+	public String sql(String cn, QueryParameterBuilder ph) {
+		
+		return new SqlStringBuilder(50 * expressions.size()).appendEach(expressions, operator.sql(), 
+				e-> e instanceof OperatorSingleExpression
 					? e.sql(cn, ph)
-					: "(" + e.sql(cn, ph)+")")
-				.collect(joining(operator.sql()));
+					: "(" + e.sql(cn, ph)+")").toString();
 	}
 
 	@Override
