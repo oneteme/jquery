@@ -10,7 +10,6 @@ import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -40,6 +39,15 @@ public class RequestQuery implements Query {
 	List<TaggableColumn> columns = new LinkedList<>();
 	List<DBFilter> filters = new LinkedList<>();
 	List<QueryResultJoiner> resultJoins = new LinkedList<>();
+	
+	public RequestQuery(RequestQuery query, DBTable table, boolean joins) {
+		this.table = table;
+		this.columns = new LinkedList<>(query.columns);
+		this.filters = new LinkedList<>(query.filters);
+		if(joins) {
+			resultJoins = new LinkedList<>(query.resultJoins);
+		}
+	}
 	
 	public RequestQuery select(DBTable table, TaggableColumn... columns) {
 		this.table = table;
@@ -156,7 +164,7 @@ public class RequestQuery implements Query {
         		sb.append(" GROUP BY ").appendEach(gc, COMA_SEPARATOR);
         	}
         	else if(columns.size() > 1) {
-        		throw new RuntimeException("require groupBy columns");
+        		//throw new RuntimeException("require groupBy columns");
         	}
         }
 	}
@@ -165,7 +173,7 @@ public class RequestQuery implements Query {
 		return new RequestQuery(tab, 
 				new LinkedList<>(columns), 
 				new LinkedList<>(filters),
-				joins ? new LinkedList<>(resultJoins) : emptyList());
+				joins ? new LinkedList<>(resultJoins) : new LinkedList<>());
 	}
 
 	private static boolean groupable(DBColumn column) {
