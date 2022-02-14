@@ -49,8 +49,8 @@ final class QueryResultJoiner implements Query {
 	@Override
 	public void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb) {
 
-		sb.append(requireNonNull(joinType).sql())
-		.append("JOIN ");
+		sb.append(SPACE_SEPARATOR).append(requireNonNull(joinType).sql())
+		.append(" JOIN ");
 		if(request.isSimpleQuery()) {
 			sb.append(request.getTable().sql(schema, pb));
 		}
