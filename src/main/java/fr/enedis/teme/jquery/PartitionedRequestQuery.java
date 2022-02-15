@@ -81,11 +81,14 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	
 	@Override	
 	public RequestQuery fork(DBTable tab, boolean joins) {
-		return new PartitionedRequestQuery(revisions)
+		var q = new PartitionedRequestQuery(revisions)
 				.select(tab)
 				.columns(columns.toArray(TaggableColumn[]::new))
 				.filters(filters.toArray(DBFilter[]::new));
-				//TODO conditional parameter joins
+		if(joins) {// change this => constructor
+			q.resultJoins = this.resultJoins;
+		}
+		return q;
 	}
 	
 	@Override
