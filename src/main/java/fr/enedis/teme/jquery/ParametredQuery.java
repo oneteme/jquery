@@ -1,5 +1,7 @@
 package fr.enedis.teme.jquery;
 
+import static java.lang.System.currentTimeMillis;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
@@ -10,7 +12,9 @@ import javax.sql.DataSource;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Getter
 @RequiredArgsConstructor
 public final class ParametredQuery {
@@ -42,6 +46,7 @@ public final class ParametredQuery {
 	}
 
 	public List<DynamicModel> mapRows(ResultSet rs) throws SQLException {
+		var bg = currentTimeMillis();
 		var results = new LinkedList<DynamicModel>();
 		while(rs.next()) {
 	    	var model = new DynamicModel();
@@ -50,6 +55,7 @@ public final class ParametredQuery {
 	        }
 	        results.add(model);
 		}
+		log.info("{} rows mapped in {} ms", results.size(), currentTimeMillis() - bg);
         return results;
 	}
 	

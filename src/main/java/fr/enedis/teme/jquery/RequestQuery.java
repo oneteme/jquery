@@ -9,11 +9,11 @@ import static fr.enedis.teme.jquery.SqlStringBuilder.EMPTY_STRING;
 import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.lang.System.currentTimeMillis;
+import static java.lang.reflect.Array.getLength;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
-import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -164,7 +164,7 @@ public class RequestQuery implements Query {
         		sb.append(" GROUP BY ").appendEach(gc, COMA_SEPARATOR);
         	}
         	else if(columns.size() > 1) {
-        		//throw new RuntimeException("require groupBy columns");
+        		//throw new RuntimeException("require groupBy columns"); ValueColumn
         	}
         }
 	}
@@ -193,7 +193,7 @@ public class RequestQuery implements Query {
 	@SuppressWarnings("rawtypes")
 	private static int rowCount(Object o) {
 		if(o.getClass().isArray()) {
-			return Array.getLength(o);
+			return getLength(o);
 		}
 		if(o instanceof Collection) {
 			return ((Collection)o).size();
