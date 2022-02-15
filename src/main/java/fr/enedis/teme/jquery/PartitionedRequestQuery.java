@@ -72,7 +72,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	
 	private RequestQuery query(Entry<Integer, List<YearMonth>> entry, TableColumn revisionColumn) {
 
-		return super.fork(new TableAdapter(table, entry.getKey() + ""), true)
+		return super.fork(new TableAdapter(table, entry.getKey() + ""), false)
 				.columns(revisionColumns.apply(entry.getKey()))
 				.filters(entry.getValue().size() == 1 
 				? revisionColumn.equal(entry.getValue().get(0).getMonthValue())
