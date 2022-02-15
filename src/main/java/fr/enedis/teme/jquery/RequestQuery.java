@@ -117,7 +117,7 @@ public class RequestQuery implements Query {
 		String[] cols;
 		if(resultJoins.isEmpty()) {
 			build(schema, sb, pb);
-			cols = columns.stream().map(TaggableColumn::tagname).toArray(String[]::new);
+			cols = getColumns().stream().map(TaggableColumn::tagname).toArray(String[]::new);
 		}
 		else {
 			var map = new LinkedHashMap<String, String>();
