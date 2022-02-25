@@ -82,8 +82,14 @@ public class RequestQuery implements Query {
 		return this;
 	}
 
+	public RequestQuery innerJoinResult(boolean condition, Supplier<RequestQuery> supp) {
+		return condition ? innerJoinResult(supp.get()) : this;
+	}
 	public RequestQuery innerJoinResult(RequestQuery query) {
 		return resultJoin(INNER, query);
+	}
+	public RequestQuery leftJoinResult(boolean condition, Supplier<RequestQuery> supp) {
+		return condition ? leftJoinResult(supp.get()) : this;
 	}
 	public RequestQuery leftJoinResult(RequestQuery query) {
 		return resultJoin(LEFT, query);
