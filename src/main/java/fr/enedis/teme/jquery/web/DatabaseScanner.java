@@ -1,16 +1,14 @@
 package fr.enedis.teme.jquery.web;
 
+import static fr.enedis.teme.jquery.AggregatFunction.MAX;
 import static java.lang.Integer.parseInt;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Comparator.reverseOrder;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toSet;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -20,6 +18,7 @@ import java.util.stream.Stream;
 import javax.sql.DataSource;
 
 import fr.enedis.teme.jquery.DBTable;
+import fr.enedis.teme.jquery.RequestQuery;
 import fr.enedis.teme.jquery.YearPartitionTable;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -51,14 +50,16 @@ public final class DatabaseScanner {
 				var enums = (YearPartitionTable[]) t.getEnumConstants();
 				for(var e : enums) {
 					var names = tableNames(e);
-					var nRevs = names.stream().mapToInt(n-> parseInt(n.substring(n.length()-4))).toArray();
-					meta.put(e.physicalName(), new TableMetadata(nRevs, unmodifiableMap(columnMetadata(e, names))));
+					var colum = unmodifiableMap(columnMetadata(e, names));
+					var nRevs = names.stream().mapToInt(n-> parseInt(n.substring(n.length()-4))).sorted().toArray();
+					var maxRe = nRevs.length > 0 ? maxRevision(e, nRevs[nRevs.length-1]) : null;
+					meta.put(e.physicalName(), new TableMetadata(nRevs, maxRe, colum));
 				}
 			}
 			else {
 				var enums = (DBTable[]) t.getEnumConstants();
 				for(var e : enums) {
-					meta.put(e.physicalName(), new TableMetadata(null, unmodifiableMap(columnMetadata(e, e.physicalName()))));
+					meta.put(e.physicalName(), new TableMetadata(unmodifiableMap(columnMetadata(e, e.physicalName()))));
 				}
 			}
 		}
@@ -91,10 +92,14 @@ public final class DatabaseScanner {
 					if(p.equals(n)) {
 						return n;
 					}
-					throw new RuntimeException("mismtach partition"); //break
-				}).orElse(null);
+					log.warn(table.physicalName() + " => " + p.toString());
+					log.warn(table.physicalName() + " => " + n.toString());
+//					throw new RuntimeException("mismatch column description"); //break
+					return n;
+				}).orElse(emptyMap());
 		}
 		catch(RuntimeException e) {
+			log.error("mismtach table definition", e);
 			return emptyMap();
 		}
 	}
@@ -121,35 +126,10 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	//can check 
-	
-	@SuppressWarnings("unused")
-	private static YearMonth[] tableMonths(YearPartitionTable table, List<String> tableNames) {
+	private static int maxRevision(YearPartitionTable table, int year) {
 		
-		var rc = table.getRevisionColumn().sql(table, null);
-		var query = tableNames.stream()
-			.map(tn-> "SELECT DISTINCT " + rc + ", " + tn.substring(tn.length()-4) + " FROM " + tn)
-			.collect(joining("; "));
-		var months = new LinkedList<YearMonth>();
-		try(var cn = ds.getConnection()){
-			try(var ps = cn.createStatement()){
-				log.info(query);
-				boolean res = ps.execute(query);
-				if(res) {
-					do {
-						try(var rs = ps.getResultSet()){
-							while(rs.next()) {
-								months.add(YearMonth.of(rs.getInt(2), rs.getInt(1)));
-							}
-						}
-						res = ps.getMoreResults();
-					} while(res);
-				}
-			}
-		}
-		catch(SQLException e) {
-			log.warn(table + " : cannot fetch table month revision", e);
-		}
-		return months.stream().sorted(reverseOrder()).toArray(YearMonth[]::new); //sort desc.
+		return new RequestQuery()
+			.select(table.suffix(year+""), MAX.of(table.getRevisionColumn()).as("max"))
+			.execute(o-> o.execute(ds, rs-> rs.getInt("max")));
 	}
 }

@@ -36,9 +36,14 @@ public final class CaseSingleColumnBuilder {
 		return orElseExp(value);
 	}
 	
-	public CaseSingleColumn orElse(Supplier<Object> fn) {
-		return orElseExp(fn);
+	public CaseSingleColumn orElse(DBColumn column) {
+		return orElseExp(column);
 	}
+	
+	public CaseSingleColumn end() {
+		return caseColumn;
+	}
+	
 
 	private CaseSingleColumn orElseExp(Object elseValue) {
 		caseColumn.append(WhenCase.orElse(elseValue));

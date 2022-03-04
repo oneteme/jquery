@@ -3,7 +3,6 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.GenericColumn.c1;
 import static fr.enedis.teme.jquery.Helper.fieldValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertInstanceOf;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,8 +53,6 @@ class AggregatFunctionTest {
 		var fc = fn.ofAll();
 		assertEquals(fn, fieldValue("function", fc));
 		var c = fieldValue("column", fc);
-		assertInstanceOf(ValueColumn.class, c);
-		assertEquals("*", fieldValue("value", c));
-		assertEquals("all", fieldValue("tagName", c));
+		assertEquals("*", ((DBColumn)c).sql(null, null));
 	}
 }

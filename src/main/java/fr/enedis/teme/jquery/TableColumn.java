@@ -25,5 +25,4 @@ public interface TableColumn extends TaggableColumn {
 	default boolean isConstant() {
 		return false;
 	}
-
 }

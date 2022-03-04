@@ -15,21 +15,16 @@ public @interface RequestQueryParam {
 
 	Class<? extends Enum<? extends DBTable>> value();
 
-	String[] names() default {};
-	
-	Mode mode() default Mode.INCLUDE;
+	String name(); //tablename
 	
 	boolean columns() default true;
+	
+	String[] defaultColumns() default {};
 	
 	boolean filters() default true;
 	
 	String columnParameter() default "column";
 
 	String revisionParameter() default "revision";
-	
-	enum Mode {
-		
-		INCLUDE, EXCLUDE;
-	}
 	
 }

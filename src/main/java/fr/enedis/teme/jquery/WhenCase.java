@@ -4,8 +4,6 @@ import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.formatValue;
 
-import java.util.function.Supplier;
-
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -24,14 +22,9 @@ public final class WhenCase implements WhenExpression {
 		else {
 			sb.append("WHEN ").append(filter.sql(table, arg)).append(" THEN ");
 		}
-		if(value instanceof Supplier) {
-			sb.append(((Supplier<?>)value).get()); //function
-		}
-		else {
-			sb.append(value instanceof TableColumn 
-					? ((DBColumn)value).sql(table, arg)//tableColumn or Expression
-					: formatValue(value)); //constant
-		}
+		sb.append(value instanceof DBColumn 
+				? ((DBColumn)value).sql(table, arg)//tableColumn or Expression
+				: formatValue(value)); //constant
 		return sb.toString();
 	}
 	

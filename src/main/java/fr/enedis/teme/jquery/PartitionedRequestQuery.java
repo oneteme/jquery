@@ -12,7 +12,6 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -20,37 +19,24 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	
 	private static final String REVISION_YEAR_TAG = "revisionYear";
 	
-	@NonNull
 	private final YearMonth[] revisions;
 	
 	private final Function<Integer, TaggableColumn[]> revisionColumns;
 	
-	public PartitionedRequestQuery(@NonNull YearMonth[] revisions) {
+	public PartitionedRequestQuery(YearMonth[] revisions) {
 		this.revisions = revisions;
-		if(revisions.length ==1 ) {
-			revisionColumns = v-> new TaggableColumn[] {};
-		}
-		else if(Stream.of(revisions).map(YearMonth::getYear).distinct().count() > 1) {
-			revisionColumns = v-> new TaggableColumn[] {
-				((YearPartitionTable) table).getRevisionColumn(),
-				staticColumn(REVISION_YEAR_TAG, v)
-			};
-		}
-		else {
-			revisionColumns = v-> new TaggableColumn[] {
-				((YearPartitionTable) table).getRevisionColumn()
-			};
-		}
+		revisionColumns = v-> new TaggableColumn[] {
+			((YearPartitionTable) table).getRevisionColumn(),
+			staticColumn(v).as(REVISION_YEAR_TAG)
+		};
 	}
 	
 	@Override
 	public List<TaggableColumn> getColumns() {
-		var add = revisionColumns.apply(null);
-		if(add.length == 0) {
-			return super.getColumns();
-		}
 		var list = new LinkedList<>(super.getColumns());
-		list.addAll(asList(add));
+		if(table instanceof YearPartitionTable) {
+			list.addAll(asList(revisionColumns.apply(null))); //
+		}
 		return list;
 	}
 	
@@ -60,13 +46,13 @@ public final class PartitionedRequestQuery extends RequestQuery {
 		if(table instanceof YearPartitionTable == false) {
 			super.build(schema, sb, pb);
 		}
+		else if(isEmpty(revisions)) {
+			throw new IllegalArgumentException("missing revision parameter");
+		}
 		else {
 			var pTab = (YearPartitionTable) table;
-			if(isEmpty(revisions)) {
-				throw new IllegalArgumentException("missing revision parameter");
-			}
 			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
-			sb.forEach(map.entrySet(), " UNION ", e-> query(e, pTab.getRevisionColumn()).build(schema, sb, pb));
+			sb.forEach(map.entrySet(), " UNION ALL ", e-> query(e, pTab.getRevisionColumn()).build(schema, sb, pb));
 		}
 	}
 	

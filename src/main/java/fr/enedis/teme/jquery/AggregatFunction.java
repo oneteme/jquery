@@ -1,7 +1,6 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
-import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
 
 public enum AggregatFunction implements DBFunction {
 	
@@ -19,7 +18,7 @@ public enum AggregatFunction implements DBFunction {
 	
 	public FunctionColumn ofAll() {
 		illegalArgumentIf(this != COUNT, "column is required");
-		return new FunctionColumn(staticColumn("all", "*"), this);
+		return new FunctionColumn((tab, arg)-> "*", this);
 	}
 
 }

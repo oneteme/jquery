@@ -14,7 +14,6 @@ import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -106,12 +105,12 @@ public class RequestQuery implements Query {
 	public <T> T execute(String schema, Function<ParametredQuery, T> fn) {
 
 		requireNonNull(fn);
+		log.debug("Building prepared statement...");
 		var bg = currentTimeMillis();
 		var query = build(schema);
-		log.info("query built in {} ms", currentTimeMillis() - bg);
+		log.debug("Query built in {} ms", currentTimeMillis() - bg);
 		bg = currentTimeMillis();
 		var rows = fn.apply(query);
-        log.info("query parameters : {}", Arrays.toString(query.getParams()));
 		log.info("{} rows in {} ms", rowCount(rows), currentTimeMillis() - bg);
 		return rows;
 	}

@@ -6,6 +6,7 @@ import static fr.enedis.teme.jquery.SqlStringBuilder.SPACE_SEPARATOR;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Supplier;
 
 public final class CaseSingleColumn implements DBColumn {
 
@@ -47,5 +48,11 @@ public final class CaseSingleColumn implements DBColumn {
 	public String toString() {
 		return sql(mockTable(), addWithValue());
 	}
-	
+
+	public static CaseSingleColumn caseWhen(DBFilter filter, Object value){
+		
+		var cc = new CaseSingleColumn();
+		cc.append(new WhenCase(filter, value));
+		return cc;
+	}
 }

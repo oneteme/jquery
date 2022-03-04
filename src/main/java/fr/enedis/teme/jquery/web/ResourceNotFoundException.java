@@ -10,11 +10,11 @@ public final class ResourceNotFoundException extends JQueryRuntimeException {
 	}
 	
 	public static ResourceNotFoundException tableNotFoundException(@NonNull String name) {
-		return new ResourceNotFoundException("table not found '"+ name + "'");
+		return new ResourceNotFoundException("'"+ name + "' table not found");
 	}
 	
 	public static ResourceNotFoundException columnNotFoundException(@NonNull String name) {
-		return new ResourceNotFoundException("column not found '"+ name + "'");
+		return new ResourceNotFoundException("'"+ name + "' column not found");
 	}
 
 }

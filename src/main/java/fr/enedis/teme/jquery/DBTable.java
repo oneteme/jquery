@@ -3,11 +3,15 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 
+import java.util.Collection;
+
 public interface DBTable extends DBObject<String> {
 	
 	String physicalName();
 	
 	String physicalColumnName(TableColumn column);
+	
+	Collection<ColumnTemplate> columnTemplates();
 
 	TableColumn[] columns();
 	
@@ -46,6 +50,11 @@ public interface DBTable extends DBObject<String> {
 			
 			@Override
 			public TableColumn[] columns() {
+				throw new UnsupportedOperationException();
+			}
+			
+			@Override
+			public Collection<ColumnTemplate> columnTemplates() {
 				throw new UnsupportedOperationException();
 			}
 		}; 

@@ -1,19 +1,16 @@
 package fr.enedis.teme.jquery.web;
 
-import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 import static fr.enedis.teme.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
-import static fr.enedis.teme.jquery.web.ResourceNotFoundException.tableNotFoundException;
 import static java.util.Collections.emptyMap;
 
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.IntStream;
+import java.util.stream.Stream;
 
 import fr.enedis.teme.jquery.DBTable;
 import fr.enedis.teme.jquery.TableColumn;
-import fr.enedis.teme.jquery.YearPartitionTable;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 import lombok.ToString;
@@ -30,20 +27,21 @@ public final class DatabaseMetaData {
 		this.tables = tables;
 	}
 	
-	public YearMonth requireRevision(DBTable table, YearMonth ym) {
-		if(table instanceof YearPartitionTable) {
-			var meta = tables.get(table.physicalName());
-			if(meta != null) {
-				if(IntStream.of(meta.getRevisions()).noneMatch(v-> v == ym.getYear())) {
-					throw tableNotFoundException(table.sql(null, addWithValue()) + "_" + ym.getYear());
-				}//else ok
-			}
-			else {
-				log.error("table partitions not found for " + table.physicalName());
-			}
-			return ym;
+	public YearMonth[] filterExistingRevision(DBTable table, Stream<YearMonth> revs) {
+		var meta = tables.get(table.physicalName());
+		if(meta != null && meta.getRevisions().length > 0) {
+			return revs.filter(r-> {
+				if(meta.exits(r.getYear())) {
+					return true;
+				}
+				log.warn(table.physicalName() + "#" + r.getYear() + " : partition not found");
+				return false;
+			}).toArray(YearMonth[]::new);
 		}
-		throw new UnsupportedOperationException("");
+		else {
+			log.warn(table.physicalName() + " : empty partitions");
+		}
+		return new YearMonth[] {}; //empty
 	}
 
 	public Object typedValue(DBTable table, TableColumn column, String value) {
@@ -86,9 +84,11 @@ public final class DatabaseMetaData {
 		return values;
 	}
 	
-	public int[] revisions(DBTable table) {
-		return tables.get(table.physicalName()).getRevisions();
+	public YearMonth currentRevision(DBTable table) {
+		return tables.get(table.physicalName()).currentRevision();
 	}
+	
+	
 	
 	//max size check
 }

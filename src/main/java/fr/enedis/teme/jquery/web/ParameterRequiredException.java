@@ -10,7 +10,7 @@ public final class ParameterRequiredException extends JQueryRuntimeException {
 	}
 	
 	public static ParameterRequiredException missingParameterException(@NonNull String name) {
-		return new ParameterRequiredException("require parameter '" + name + "'");
+		return new ParameterRequiredException("require '" + name +"' parameter");
 	}
 
 }

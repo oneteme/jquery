@@ -4,8 +4,10 @@ import static fr.enedis.teme.jquery.GenericColumn.c1;
 import static fr.enedis.teme.jquery.GenericColumn.c2;
 import static fr.enedis.teme.jquery.GenericColumn.c3;
 import static fr.enedis.teme.jquery.GenericColumn.c4;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableMap;
 
+import java.util.Collection;
 import java.util.Map;
 
 import lombok.Getter;
@@ -41,5 +43,10 @@ final class GenericTable implements DBTable {
 	 @Override
 	public TableColumn[] columns() {
 		return columnMap.keySet().toArray(TableColumn[]::new);
+	}
+
+	@Override
+	public Collection<ColumnTemplate> columnTemplates() {
+		return emptyList();
 	}
 }

@@ -35,7 +35,7 @@ public final class ColumnSingleFilter implements DBFilter {
 	}
 
 	public ColumnSingleFilter append(LogicalOperator op, OperatorExpression exp) {
-		var nex = exp.append(op, exp); //@see OperatorExpressionGroup
+		var nex = expression.append(op, exp); //@see OperatorExpressionGroup
 		return nex == exp ? this : new ColumnSingleFilter(column, nex);
 	}
 	

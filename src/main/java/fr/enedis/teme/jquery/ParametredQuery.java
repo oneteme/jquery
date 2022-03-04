@@ -4,6 +4,7 @@ import static java.lang.System.currentTimeMillis;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
 
@@ -24,18 +25,22 @@ public final class ParametredQuery {
 	private final String[] columnNames;
 	private final Object[] params;
 	
-	public List<DynamicModel> execute(DataSource ds){
+	public <T> T execute(DataSource ds, ResultMapper<T> mapper){
 
-		List<DynamicModel> res;
+		T res = null;
 		try(var cn = ds.getConnection()){
 			try(var ps = cn.prepareStatement(query)){
+				log.debug("Executing prepared statement : {}", query);
 				if(params != null) {
 					for(var i=0; i<params.length; i++) {
 						ps.setObject(i+1, params[i]);
 					}						
 				}
+		        log.debug("Using parameters : {}", Arrays.toString(params));
 				try(var rs = ps.executeQuery()){
-					res = mapRows(rs);
+					if(rs.next()) {
+						res = mapper.apply(rs);
+					}
 				}
 			}
 		}
@@ -46,6 +51,7 @@ public final class ParametredQuery {
 	}
 
 	public List<DynamicModel> mapRows(ResultSet rs) throws SQLException {
+		log.debug("Mapping results...");
 		var bg = currentTimeMillis();
 		var results = new LinkedList<DynamicModel>();
 		while(rs.next()) {
@@ -55,7 +61,7 @@ public final class ParametredQuery {
 	        }
 	        results.add(model);
 		}
-		log.info("{} rows mapped in {} ms", results.size(), currentTimeMillis() - bg);
+		log.debug("{} rows mapped in {} ms", results.size(), currentTimeMillis() - bg);
         return results;
 	}
 	
@@ -67,5 +73,11 @@ public final class ParametredQuery {
 			names[i] = rs.getMetaData().getColumnLabel(i+1);
 		}
 		return names;
+	}
+	
+	@FunctionalInterface
+	public interface ResultMapper<T> {
+
+	    T apply(ResultSet rs) throws SQLException;
 	}
 }

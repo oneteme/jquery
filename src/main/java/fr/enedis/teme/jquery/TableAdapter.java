@@ -3,6 +3,8 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 
+import java.util.Collection;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -36,6 +38,11 @@ public final class TableAdapter implements DBTable {
 	@Override
 	public TableColumn[] columns() {
 		return table.columns();
+	}
+	
+	@Override
+	public Collection<ColumnTemplate> columnTemplates() {
+		return table.columnTemplates();
 	}
 	
 	@Override

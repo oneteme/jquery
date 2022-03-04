@@ -1,20 +1,18 @@
 package fr.enedis.teme.jquery;
 
 import static fr.enedis.teme.jquery.QueryParameterBuilder.formatValue;
-import static fr.enedis.teme.jquery.Validation.requireLegalVariable;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ValueColumn<T> implements TaggableColumn {
+public final class ValueColumn<T> implements DBColumn {
 
-	private final String tagName;
 	private final T value; //nullable
 
 	@Override
 	public String sql(DBTable table, QueryParameterBuilder ph) {//see count(*) 
-		return "*".equals(value) ? value.toString() : formatValue(value);
+		return formatValue(value);
 	}
 	
 	@Override
@@ -33,16 +31,11 @@ public final class ValueColumn<T> implements TaggableColumn {
 	}
 	
 	@Override
-	public String tagname() {
-		return tagName;
-	}
-
-	@Override
 	public String toString() {
 		return sql(null, null);
 	}
 	
-	public static <T> ValueColumn<T> staticColumn(String tagName, T expression) {
-		return new ValueColumn<>(requireLegalVariable(tagName), expression);
+	public static <T> ValueColumn<T> staticColumn(T expression) {
+		return new ValueColumn<>(expression);
 	}
 }
