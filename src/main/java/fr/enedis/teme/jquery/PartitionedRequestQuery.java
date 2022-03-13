@@ -12,6 +12,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
@@ -19,6 +20,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	
 	private static final String REVISION_YEAR_TAG = "revisionYear";
 	
+	@Getter
 	private final YearMonth[] revisions;
 	
 	private final Function<Integer, TaggableColumn[]> revisionColumns;

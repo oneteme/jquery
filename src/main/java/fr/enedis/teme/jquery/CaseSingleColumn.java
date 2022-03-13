@@ -6,7 +6,6 @@ import static fr.enedis.teme.jquery.SqlStringBuilder.SPACE_SEPARATOR;
 
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Supplier;
 
 public final class CaseSingleColumn implements DBColumn {
 
