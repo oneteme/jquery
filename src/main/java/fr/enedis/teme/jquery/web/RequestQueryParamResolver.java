@@ -9,7 +9,6 @@ import static fr.enedis.teme.jquery.web.ResourceNotFoundException.columnNotFound
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.tableNotFoundException;
 import static java.time.Month.DECEMBER;
 import static java.util.Collections.emptyMap;
-import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 
@@ -18,6 +17,7 @@ import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import fr.enedis.teme.jquery.ColumnTemplate;
@@ -38,11 +38,11 @@ public final class RequestQueryParamResolver {
 		
 		var table = parseTable(ant.name(), ant.value());
 		RequestQuery rq = YearPartitionTable.class.isAssignableFrom(ant.value())
-				? new PartitionedRequestQuery(parseRevision(ant.revisionParameter(), table, parameterMap)) //must use partitions
+				? new PartitionedRequestQuery(parseRevision(ant, table, parameterMap)) //must use partitions
 				: new RequestQuery();
 		return rq.select(table)
-				.columns(ant.columns(), ()-> parseColumns(ant.columnParameter(), table, parameterMap, ant.defaultColumns()))
-				.filters(ant.filters(), ()-> parseFilters(table.columns(), parameterMap, table));
+				.columns(ant.columns(), ()-> parseColumns(ant, table, parameterMap))
+				.filters(ant.filters(), ()-> parseFilters(ant, table, parameterMap));
 	}
 	
 	public static DBTable parseTable(String tableName, Class<? extends Enum<? extends DBTable>> enumType) {
@@ -53,15 +53,15 @@ public final class RequestQueryParamResolver {
 				.orElseThrow(()-> tableNotFoundException(tableName));
 	}
 	
-	public static YearMonth[] parseRevision(String parameterName, DBTable table, Map<String, String[]> parameterMap) {
+	public static YearMonth[] parseRevision(RequestQueryParam ant, DBTable table, Map<String, String[]> parameterMap) {
 
-		var revs = parameterMap.get(parameterName);
+		var revs = parameterMap.get(ant.revisionParameter());
 		if(isEmpty(revs)) {
 			var currentRev = metadata().currentRevision(table);
 			if(currentRev != null) {
 				return new YearMonth[] { currentRev };
 			}
-			throw missingParameterException(parameterName);
+			throw missingParameterException(ant.revisionParameter());
 		}
     	return metadata().filterExistingRevision(table, 
     			Stream.of(flatArray(revs))
@@ -69,11 +69,11 @@ public final class RequestQueryParamResolver {
     	//TODO => can be empty
     }
 		
-	public static TaggableColumn[] parseColumns(String parameterName, DBTable table, Map<String, String[]> parameterMap, String[] defaultColumns) {
+	public static TaggableColumn[] parseColumns(RequestQueryParam ant, DBTable table, Map<String, String[]> parameterMap) {
 
-		var cols = parameterMap.get(parameterName);
+		var cols = parameterMap.get(ant.columnParameter());
 		var colStream = isEmpty(cols) || isBlank(cols[0]) 
-				? Stream.of(defaultColumns)
+				? Stream.of(ant.defaultColumns())
 				: flatStream(cols);
 		var colMap  = Stream.of(table.columns()).collect(toMap(TableColumn::name, identity()));
 		Map<String, ColumnTemplate> tempMap = table.columnTemplates() == null 
@@ -100,18 +100,21 @@ public final class RequestQueryParamResolver {
 		return columns.toArray(TaggableColumn[]::new);
 	}
 	
-	public static DBFilter[] parseFilters(TableColumn[] columns, Map<String, String[]> parameterMap, DBTable table) {
+	public static DBFilter[] parseFilters(RequestQueryParam ant, DBTable table, Map<String, String[]> parameterMap) {
 		
-		var colMap = Stream.of(columns).collect(toMap(TableColumn::name, identity()));
+		var colMap = Stream.of(table.columns()).collect(toMap(TableColumn::name, identity()));
 		var filters = new LinkedList<DBFilter>();
-		parameterMap.entrySet().forEach(p->{
+    	var knownColumns = Set.of(ant.revisionParameter(), ant.columnParameter());
+		parameterMap.entrySet().stream().filter(e-> !knownColumns.contains(e.getKey())).forEach(p->{
  			var name = toEnumName(p.getKey());
- 			 ofNullable(colMap.get(name)).ifPresent(c->{
- 				var values = flatArray(p.getValue()); //check types before
-				filters.add(values.length == 1 
-						? c.equal(metadata().typedValue(table, c, values[0])) 
-						: c.in(metadata().typedValues(table, c, values)));
- 			});
+ 			var c = colMap.get(name);
+ 			if(c == null) {
+				throw columnNotFoundException(name);
+ 			}
+			var values = flatArray(p.getValue()); //check types before
+			filters.add(values.length == 1 
+					? c.equal(metadata().typedValue(table, c, values[0])) 
+					: c.in(metadata().typedValues(table, c, values)));
 		});
 		return filters.toArray(DBFilter[]::new);
 	}
