@@ -18,6 +18,7 @@ class ColumnFilterGroupTest implements DataProvider {
 	private final QueryParameterBuilder STAT = addWithValue();
 	private final QueryParameterBuilder DYNC = parametrized();
 
+	@Disabled
 	@ParameterizedTest
 	@MethodSource("filterGroupCaseProvider")
 	void testSql(ColumnFilterGroup filter, TableColumn[] columns, String[][] sql) {

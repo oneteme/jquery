@@ -23,7 +23,7 @@ final class TableMetadata {
 		this.currentRevision = null;
 	}
 
-	public boolean exits(int year) {
+	public boolean exists(int year) {
 		return binarySearch(revisions, year) > -1;
 	}
 	

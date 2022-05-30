@@ -22,10 +22,11 @@ public final class OperatorExpressionGroup implements OperatorExpression {
 	@Override
 	public String sql(String cn, QueryParameterBuilder ph) {
 		
-		return new SqlStringBuilder(50 * expressions.size()).appendEach(expressions, operator.sql(), 
-				e-> e instanceof OperatorSingleExpression
-					? e.sql(cn, ph)
-					: "(" + e.sql(cn, ph)+")").toString();
+		return new SqlStringBuilder(50 * expressions.size())
+				.append("(")
+				.appendEach(expressions, operator.sql(), e-> e.sql(cn, ph))
+				.append(")")
+				.toString();
 	}
 
 	@Override

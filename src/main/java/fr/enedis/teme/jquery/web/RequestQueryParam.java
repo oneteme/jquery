@@ -23,6 +23,8 @@ public @interface RequestQueryParam {
 	
 	boolean filters() default true;
 	
+	boolean allowUnknownParameters() default false;
+	
 	String columnParameter() default "column";
 
 	String revisionParameter() default "revision";

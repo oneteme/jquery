@@ -31,7 +31,7 @@ public final class DatabaseMetaData {
 		var meta = tables.get(table.physicalName());
 		if(meta != null && meta.getRevisions().length > 0) {
 			return revs.filter(r-> {
-				if(meta.exits(r.getYear())) {
+				if(meta.exists(r.getYear())) {
 					return true;
 				}
 				log.warn(table.physicalName() + "#" + r.getYear() + " : partition not found");

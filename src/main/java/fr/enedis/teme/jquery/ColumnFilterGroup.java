@@ -26,10 +26,11 @@ public final class ColumnFilterGroup implements DBFilter {
 	@Override
 	public String sql(DBTable table, QueryParameterBuilder ph) { //td deep sql parentheses
 		
-		return new SqlStringBuilder(50 * expressions.size()).appendEach(expressions, operator.sql(), 
-				e-> e instanceof ColumnSingleFilter
-					? e.sql(table, ph)
-					: "(" + e.sql(table, ph)+")").toString();
+		return new SqlStringBuilder(50 * expressions.size())
+				.append("(")
+				.appendEach(expressions, operator.sql(), e-> e.sql(table, ph))
+				.append(")")
+				.toString();
 	}
 
 	@Override

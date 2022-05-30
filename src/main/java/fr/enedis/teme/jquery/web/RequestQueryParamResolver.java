@@ -92,9 +92,10 @@ public final class RequestQueryParamResolver {
 				if(c != null) {
 					columns.add(c);
 				}
-				else{
+				else if(!ant.allowUnknownParameters()){
 					throw columnNotFoundException(p);
 				}
+	 			//warn
 			}
 		});
 		return columns.toArray(TaggableColumn[]::new);
@@ -108,13 +109,16 @@ public final class RequestQueryParamResolver {
 		parameterMap.entrySet().stream().filter(e-> !knownColumns.contains(e.getKey())).forEach(p->{
  			var name = toEnumName(p.getKey());
  			var c = colMap.get(name);
- 			if(c == null) {
+ 			if(c == null && !ant.allowUnknownParameters()) {
 				throw columnNotFoundException(name);
  			}
-			var values = flatArray(p.getValue()); //check types before
-			filters.add(values.length == 1 
-					? c.equal(metadata().typedValue(table, c, values[0])) 
-					: c.in(metadata().typedValues(table, c, values)));
+ 			//warn
+ 			if(c != null) {
+				var values = flatArray(p.getValue()); //check types before
+				filters.add(values.length == 1 
+						? c.equal(metadata().typedValue(table, c, values[0])) 
+						: c.in(metadata().typedValues(table, c, values)));
+ 			}
 		});
 		return filters.toArray(DBFilter[]::new);
 	}
