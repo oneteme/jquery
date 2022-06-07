@@ -3,6 +3,7 @@ package fr.enedis.teme.jquery;
 import static fr.enedis.teme.jquery.CompareOperator.EQ;
 import static fr.enedis.teme.jquery.CompareOperator.GE;
 import static fr.enedis.teme.jquery.CompareOperator.GT;
+import static fr.enedis.teme.jquery.CompareOperator.ILIKE;
 import static fr.enedis.teme.jquery.CompareOperator.IN;
 import static fr.enedis.teme.jquery.CompareOperator.IS_NOT_NULL;
 import static fr.enedis.teme.jquery.CompareOperator.IS_NULL;
@@ -10,6 +11,7 @@ import static fr.enedis.teme.jquery.CompareOperator.LE;
 import static fr.enedis.teme.jquery.CompareOperator.LIKE;
 import static fr.enedis.teme.jquery.CompareOperator.LT;
 import static fr.enedis.teme.jquery.CompareOperator.NE;
+import static fr.enedis.teme.jquery.CompareOperator.NOT_ILIKE;
 import static fr.enedis.teme.jquery.CompareOperator.NOT_IN;
 import static fr.enedis.teme.jquery.CompareOperator.NOT_LIKE;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
@@ -62,6 +64,10 @@ public final class OperatorSingleExpression<T> implements OperatorExpression {
 	public static final OperatorSingleExpression<String> like(@NonNull String value) {
 		return new OperatorSingleExpression<>(LIKE, value);
 	}
+	
+	public static final OperatorSingleExpression<String> iLike(@NonNull String value) {
+		return new OperatorSingleExpression<>(ILIKE, value);
+	}
 
 	@SafeVarargs
 	public static final <T> OperatorSingleExpression<T[]> in(@NonNull T... values) {
@@ -75,6 +81,10 @@ public final class OperatorSingleExpression<T> implements OperatorExpression {
 
 	public static final OperatorSingleExpression<String> notLike(@NonNull String value) {
 		return new OperatorSingleExpression<>(NOT_LIKE, value);
+	}
+
+	public static final OperatorSingleExpression<String> notILike(@NonNull String value) {
+		return new OperatorSingleExpression<>(NOT_ILIKE, value);
 	}
 	
 	public static final OperatorSingleExpression<Void> isNull() {

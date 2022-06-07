@@ -61,6 +61,15 @@ public interface DBColumn extends DBObject<DBTable> {
 	default ColumnSingleFilter notLike(@NonNull String value) {
 		return new ColumnSingleFilter(this, OperatorSingleExpression.notLike(value));
 	}
+	
+
+	default ColumnSingleFilter ilike(@NonNull String value) {
+		return new ColumnSingleFilter(this, OperatorSingleExpression.iLike(value));
+	}
+
+	default ColumnSingleFilter notILike(@NonNull String value) {
+		return new ColumnSingleFilter(this, OperatorSingleExpression.notILike(value));
+	}
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter in(@NonNull T... values) {

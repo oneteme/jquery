@@ -5,7 +5,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public enum ArithmeticOperator {
 	
-	ADD("+"), SUB("-"), MULT("*"), DIV("/");
+	ADD("+"), SUB("-"), MULT("*"), DIV("/"), MOD("%"), POW("^");
 	
 	private final String symbol;
 	

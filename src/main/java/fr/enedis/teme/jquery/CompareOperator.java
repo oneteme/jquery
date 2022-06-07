@@ -9,7 +9,7 @@ import lombok.RequiredArgsConstructor;
 enum CompareOperator {
 	
 	EQ("="), NE("<>"), LT("<"), LE("<="), GT(">"), GE(">="), 
-	LIKE, NOT_LIKE, IN, NOT_IN, IS_NULL, IS_NOT_NULL;
+	LIKE, NOT_LIKE, ILIKE, NOT_ILIKE, IN, NOT_IN, IS_NULL, IS_NOT_NULL;
 	
 	private final String sign;
 
@@ -22,7 +22,7 @@ enum CompareOperator {
 			return sign + arg.appendNullableParameter(o);
 		}
 		var fn = SPACE_SEPARATOR + toString();
-		if(this == LIKE || this == NOT_LIKE) { 
+		if(this == LIKE || this == NOT_LIKE || this == ILIKE || this == NOT_ILIKE) { 
 			return fn + SPACE_SEPARATOR + arg.appendString(o); //String only
 		}
 		if(this == IN || this == NOT_IN) {
