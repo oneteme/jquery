@@ -38,9 +38,7 @@ public final class DatabaseMetaData {
 				return false;
 			}).toArray(YearMonth[]::new);
 		}
-		else {
-			log.warn(table.physicalName() + " : empty partitions");
-		}
+		log.warn(table.physicalName() + " : empty partitions");
 		return new YearMonth[] {}; //empty
 	}
 

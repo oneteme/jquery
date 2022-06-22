@@ -21,7 +21,6 @@ import lombok.NonNull;
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
-	private static final QueryParameterBuilder STATIC_INSTANCE = new QueryParameterBuilder(null, false, false);
 	private static final String ARG = "?";
 	
 	private final Collection<Object> args;
@@ -115,7 +114,7 @@ public final class QueryParameterBuilder {
 	}
 	
 	public static QueryParameterBuilder addWithValue() {
-		return STATIC_INSTANCE;
+		return new QueryParameterBuilder(null, false, false);
 	}
 	
 	public static QueryParameterBuilder parametrized() {

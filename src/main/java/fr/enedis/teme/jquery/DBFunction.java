@@ -17,4 +17,19 @@ public interface DBFunction extends DBObject<String> {
 		return new FunctionColumn(column, this);
 	}
 	
+	static DBFunction definedFunction(final String name) {
+		return new DBFunction() {
+			
+			@Override
+			public String physicalName() {
+				return name;
+			}
+			
+			@Override
+			public boolean isAggregate() {
+				return false;
+			}
+		};
+	}
+	
 }
