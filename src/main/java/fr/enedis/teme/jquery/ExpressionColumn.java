@@ -1,5 +1,6 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.DBColumn.*;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
 import lombok.AccessLevel;
@@ -21,12 +22,14 @@ final class ExpressionColumn implements DBColumn {
 	
 	@Override
 	public boolean isAggregation() {
-		return operand instanceof DBColumn && ((DBColumn)operand).isAggregation();
+		return isColumnAggregation(operand) ||
+				isColumnAggregation(operator.getValue());
 	}
 	
 	@Override
 	public boolean isConstant() {
-		return operand instanceof DBColumn && ((DBColumn)operand).isConstant();
+		return isColumnConstant(operand) && 
+				isColumnConstant(operator.getValue());
 	}
 	
 	@Override

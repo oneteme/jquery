@@ -1,5 +1,7 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.DBColumn.isColumnAggregation;
+import static fr.enedis.teme.jquery.DBColumn.isColumnConstant;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
 import lombok.AccessLevel;
@@ -26,14 +28,14 @@ public final class FunctionColumn implements DBColumn {
 
 	@Override
 	public boolean isAggregation() {
-		return function.isAggregate();
+		return function.isAggregate() || isColumnAggregation(operand);
 	}
 
 	@Override
 	public boolean isConstant() {
-		return false;
+		return isColumnConstant(operand);
 	}
-		
+
 	@Override
 	public String toString() {
 		return sql(addWithValue());

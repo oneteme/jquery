@@ -137,4 +137,12 @@ public interface DBColumn extends DBObject {
 		};
 	}
 	
+	static boolean isColumnConstant(Object o) {
+		return !(o instanceof DBColumn && !((DBColumn)o).isConstant());
+	}
+	
+	static boolean isColumnAggregation(Object o) {
+		return o instanceof DBColumn && ((DBColumn)o).isAggregation();
+	}
+	
 }

@@ -7,8 +7,11 @@ import static fr.enedis.teme.jquery.ArithmeticOperator.MULT;
 import static fr.enedis.teme.jquery.ArithmeticOperator.POW;
 import static fr.enedis.teme.jquery.ArithmeticOperator.SUB;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+@Getter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor
 final class OperationSingleExpression implements DBExpression {
 	
