@@ -1,27 +1,27 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class FunctionColumn implements DBColumn {
 
 	@NonNull
-	private final DBColumn column;
-	@NonNull
 	private final DBFunction function;
+	@NonNull
+	private final Object operand;
+	private final Object value; //nullable
 
-	@Override
-	public String sql(DBTable table, QueryParameterBuilder ph) {
-		return function.sql(column.sql(table, ph), ph);
+	public FunctionColumn(DBFunction function, Object operand) {
+		this(function, operand, null);
 	}
 	
 	@Override
-	public boolean isExpression() {
-		return true;
+	public String sql(QueryParameterBuilder builder) {
+		return DBCallable.sql(function, builder, operand, value);
 	}
 
 	@Override
@@ -36,6 +36,6 @@ public final class FunctionColumn implements DBColumn {
 		
 	@Override
 	public String toString() {
-		return sql(mockTable(), addWithValue());
+		return sql(addWithValue());
 	}
 }

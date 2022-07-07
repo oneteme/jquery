@@ -1,8 +1,8 @@
 package fr.enedis.teme.jquery;
 
 @FunctionalInterface
-public interface DBObject<T> {
+public interface DBObject {
 	
-	String sql(T obj, QueryParameterBuilder arg);
+	String sql(QueryParameterBuilder arg);
 
 }

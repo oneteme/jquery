@@ -30,11 +30,7 @@ public final class Validation {
 		return c;
 	}
 
-	public static void illegalArgumentIfNot(boolean test, String msg) {
-		illegalArgumentIf(!test, msg);
-	}
-	
-	public static void illegalArgumentIf(boolean test, String msg) {
+	private static void illegalArgumentIf(boolean test, String msg) {
 		if(test) {
 			throw new IllegalArgumentException(msg);
 		}

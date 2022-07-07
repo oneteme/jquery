@@ -1,5 +1,7 @@
 package fr.enedis.teme.jquery.web;
 
+import static fr.enedis.teme.jquery.web.RequestQueryParam.RevisionMode.STRICT;
+
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -29,4 +31,11 @@ public @interface RequestQueryParam {
 
 	String revisionParameter() default "revision";
 	
+	RevisionMode revisionMode() default STRICT;
+	
+	
+	public enum RevisionMode {
+		
+		STRICT, CLOSEST;
+	} 	
 }

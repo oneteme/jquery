@@ -1,45 +1,37 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
-public final class ExpressionColumn implements DBColumn {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+final class ExpressionColumn implements DBColumn {
 	
 	@NonNull
-	private final DBColumn leftOp;
+	private final Object operand;
 	@NonNull
-	private final DBColumn rigthOp;
-	@NonNull
-	private final ArithmeticOperator operator;
+	private final OperationSingleExpression operator;
 	
 	@Override
-	public String sql(DBTable obj, QueryParameterBuilder arg) {
-		
-		return leftOp.sql(obj, arg) + operator.sql() + rigthOp.sql(obj, arg);
+	public String sql(QueryParameterBuilder arg) {
+		return operator.sql(arg, operand);
 	}
 	
 	@Override
 	public boolean isAggregation() {
-		return leftOp.isAggregation() || rigthOp.isAggregation();
+		return operand instanceof DBColumn && ((DBColumn)operand).isAggregation();
 	}
 	
 	@Override
-	public boolean isExpression() {
-		return true;
-	}
-
-	@Override
 	public boolean isConstant() {
-		return leftOp.isConstant() && rigthOp.isConstant();
+		return operand instanceof DBColumn && ((DBColumn)operand).isConstant();
 	}
 	
 	@Override
 	public String toString() {
-		return sql(mockTable(), addWithValue());
+		return sql(addWithValue());
 	}
 	
 }

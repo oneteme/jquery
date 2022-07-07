@@ -1,62 +1,38 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
-import static fr.enedis.teme.jquery.Utils.isBlank;
+import java.util.stream.Stream;
 
-import java.util.Collection;
+import fr.enedis.teme.jquery.web.ColumnDescriptor;
 
-public interface DBTable extends DBObject<String> {
+public interface DBTable extends DBObject {
 	
-	String physicalName();
-	
-	String physicalColumnName(TableColumn column);
-	
-	Collection<ColumnTemplate> columnTemplates();
+	String dbName();
 
-	TableColumn[] columns();
+	String dbColumnName(ColumnDescriptor desc);
 	
+	default TableColumn get(ColumnDescriptor desc) {
+		var colomnName = dbColumnName(desc);
+		if(colomnName == null) {
+			throw new IllegalArgumentException(desc + " was not declared in " + this);
+		}
+		return new TableColumn(colomnName, desc.value());
+	}
+	
+	@Override
+	default String sql(QueryParameterBuilder ph) {
+		return dbName();
+	}
+
 	default TableAdapter suffix(String suffix) {
 		return new TableAdapter(this, suffix);
 	}
 
-	@Override
-	default String sql(String schema, QueryParameterBuilder ph) {
-		
-		return isBlank(schema) 
-				? physicalName() 
-				: schema + POINT_SEPARATOR + physicalName();
-	}
-	
-	default RequestQuery selectAll(){
-		return new RequestQuery().select(this, columns());
+	default RequestQuery select(ColumnDescriptor...columns){
+		return new RequestQuery().select(this)
+				.columns(columns != null, ()-> 
+					Stream.of(columns)
+					.map(this::get)
+					.toArray(TableColumn[]::new));
 	}
 
-	default RequestQuery select(TaggableColumn...columns){
-		return new RequestQuery().select(this, columns);
-	}
-	
-	static DBTable mockTable() {
-		return new DBTable() {
-
-			@Override
-			public String physicalName() {
-				return "${table}";
-			}
-			
-			@Override
-			public String physicalColumnName(TableColumn column) {
-				return column.tagname();
-			}
-			
-			@Override
-			public TableColumn[] columns() {
-				throw new UnsupportedOperationException();
-			}
-			
-			@Override
-			public Collection<ColumnTemplate> columnTemplates() {
-				throw new UnsupportedOperationException();
-			}
-		}; 
-	}
 }

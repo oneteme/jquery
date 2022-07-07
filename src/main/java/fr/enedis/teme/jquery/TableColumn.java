@@ -1,28 +1,30 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.Validation.requireNonBlank;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
-public interface TableColumn extends TaggableColumn {
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+@Getter
+@RequiredArgsConstructor
+public final class TableColumn implements TaggableColumn {
 	
-	String name();
+	private final String dbName;
+	private final String tagname;
 
 	@Override
-	default String sql(DBTable table, QueryParameterBuilder arg) {
-		return requireNonBlank(table.physicalColumnName(this));
+	public String sql(QueryParameterBuilder arg) {
+		return dbName;
 	}
 
 	@Override
-	default boolean isExpression() {
-		return false;
+	public String tagname() {
+		return tagname;
+	}
+	
+	@Override
+	public String toString() {
+		return sql(addWithValue());
 	}
 
-	@Override
-	default boolean isAggregation() {
-		return false;
-	}
-
-	@Override
-	default boolean isConstant() {
-		return false;
-	}
 }

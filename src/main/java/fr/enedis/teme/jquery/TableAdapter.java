@@ -1,10 +1,8 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
 import static fr.enedis.teme.jquery.Utils.isBlank;
 
-import java.util.Collection;
-
+import fr.enedis.teme.jquery.web.ColumnDescriptor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -16,33 +14,22 @@ public final class TableAdapter implements DBTable {
 	private final String suffix;
 	
 	@Override
-	public String sql(String schema, QueryParameterBuilder ph) {
+	public String sql(QueryParameterBuilder ph) {
 		
 		return new SqlStringBuilder(20)
-				.appendIf(!isBlank(schema), ()-> schema + POINT_SEPARATOR)
-				.append(physicalName())
+				.append(dbName())
 				.appendIf(!isBlank(suffix), ()-> "_" + suffix)
 				.toString();
 	}
-
-	@Override
-	public String physicalName() {
-		return table.physicalName();
-	}
-
-	@Override
-	public String physicalColumnName(TableColumn column) {
-		return table.physicalColumnName(column);
-	}
-
-	@Override
-	public TableColumn[] columns() {
-		return table.columns();
-	}
 	
 	@Override
-	public Collection<ColumnTemplate> columnTemplates() {
-		return table.columnTemplates();
+	public String dbColumnName(ColumnDescriptor desc) {
+		return table.dbColumnName(desc);
+	}
+
+	@Override
+	public String dbName() {
+		return table.dbName();
 	}
 	
 	@Override

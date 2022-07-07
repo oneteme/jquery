@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.GenericColumn.c1;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
+import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -9,15 +10,7 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.EnumSource;
 
 class StdFunctionTest {
-
-	@ParameterizedTest
-	@EnumSource(StdFunction.class)
-	void testToSql(StdFunction fn) {
-		assertEquals(fn.name().toUpperCase() + "(column)", fn.sql("column", null));
-//		assertThrows(NullPointerException.class, ()-> fn.sql(null, null));
-//		assertThrows(IllegalArgumentException.class, ()-> fn.sql("", null));
-	}
-
+	
 	@ParameterizedTest
 	@EnumSource(StdFunction.class)
 	void testIsAggregation(StdFunction fn) {
@@ -26,16 +19,30 @@ class StdFunctionTest {
 	
 	@ParameterizedTest
 	@EnumSource(StdFunction.class)
-	void testGetFunctionName(StdFunction fn) {
-		assertEquals(fn.name(), fn.name());
+	void testSql_fail(StdFunction fn) {
+		assertThrows(IllegalArgumentException.class, ()-> fn.sql(addWithValue(), null));
+		assertThrows(IllegalArgumentException.class, ()-> fn.sql(addWithValue(), 123, 456));
+		assertThrows(IllegalArgumentException.class, ()-> fn.sql(addWithValue(), "abc", "def"));
 	}
 
 	@ParameterizedTest
-	@EnumSource(StdFunction.class)
-	void testOf(StdFunction fn) {
-		assertThrows(NullPointerException.class, ()-> fn.of(null));
-		var fc = fn.of(c1);
-		assertEquals(fn, Helper.fieldValue("function", fc));
-		assertEquals(c1, Helper.fieldValue("column", fc));
+	@EnumSource(value=StdFunction.class, names={"ABS", "SQRT", "TRUNC", "CEIL", "FLOOR"})
+	void testSql_number(StdFunction fn) {
+
+		var exp = fn.name() + "(%s)";
+		assertEquals(format(exp, "col1"), fn.sql(addWithValue(), DBColumn.ofReference("col1")));
+		assertEquals(format(exp, 333), fn.sql(addWithValue(), 333));
+		assertThrows(IllegalArgumentException.class, ()-> fn.sql(addWithValue(), "abc"));
 	}
+	
+	@ParameterizedTest
+	@EnumSource(value=StdFunction.class, names={"LENGTH", "TRIM", "UPPER", "LOWER"})
+	void testSql_string(StdFunction fn) {
+
+		var exp = fn.name() + "(%s)";
+		assertEquals(format(exp, "col1"), fn.sql(addWithValue(), DBColumn.ofReference("col1")));
+		assertEquals(format(exp, "'abc'"), fn.sql(addWithValue(), "abc"));
+		assertThrows(IllegalArgumentException.class, ()-> fn.sql(addWithValue(), 123));
+	}
+	
 }

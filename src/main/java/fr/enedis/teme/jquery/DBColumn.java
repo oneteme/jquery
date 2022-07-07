@@ -1,21 +1,13 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.ArithmeticOperator.ADD;
-import static fr.enedis.teme.jquery.ArithmeticOperator.DIV;
-import static fr.enedis.teme.jquery.ArithmeticOperator.MULT;
-import static fr.enedis.teme.jquery.ArithmeticOperator.SUB;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.formatValue;
 import static fr.enedis.teme.jquery.Validation.requireLegalVariable;
-import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
 
 import fr.enedis.teme.jquery.CaseSingleColumnBuilder.WhenFilterBridge;
 import lombok.NonNull;
 
 @FunctionalInterface
-public interface DBColumn extends DBObject<DBTable> {
-
-	default boolean isExpression() {
-		return false;
-	}
+public interface DBColumn extends DBObject {
 
 	default boolean isAggregation() {
 		return false;
@@ -26,102 +18,123 @@ public interface DBColumn extends DBObject<DBTable> {
 	}
 
 	default NamedColumn as(String name) {
-		return new NamedColumn(requireLegalVariable(name), this);
+		return new NamedColumn(this, requireLegalVariable(name));
 	}
 
 	// filters
 	default ColumnSingleFilter equal(Object value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.equal(value));
+		return filter(ComparisonSingleExpression.equal(value));
 	}
 
 	default ColumnSingleFilter notEqual(Object value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.notEqual(value));
+		return filter(ComparisonSingleExpression.notEqual(value));
 	}
 
-	default ColumnSingleFilter greaterThan(@NonNull Object value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.greaterThan(value));
+	default ColumnSingleFilter greaterThan(Object value) {
+		return filter(ComparisonSingleExpression.greaterThan(value));
 	}
 
-	default ColumnSingleFilter greaterOrEqual(@NonNull Object value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.greaterOrEqual(value));
+	default ColumnSingleFilter greaterOrEqual(Object value) {
+		return filter(ComparisonSingleExpression.greaterOrEqual(value));
 	}
 
-	default ColumnSingleFilter lessThan(@NonNull Object value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.lessThan(value));
+	default ColumnSingleFilter lessThan(Object value) {
+		return filter(ComparisonSingleExpression.lessThan(value));
 	}
 
-	default ColumnSingleFilter lessOrEqual(@NonNull Object value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.lessOrEqual(value));
+	default ColumnSingleFilter lessOrEqual(Object value) {
+		return filter(ComparisonSingleExpression.lessOrEqual(value));
 	}
 
-	default ColumnSingleFilter like(@NonNull String value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.like(value));
+	default ColumnSingleFilter like(Object value) {
+		return filter(ComparisonSingleExpression.like(value));
 	}
 
-	default ColumnSingleFilter notLike(@NonNull String value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.notLike(value));
+	default ColumnSingleFilter notLike(Object value) {
+		return filter(ComparisonSingleExpression.notLike(value));
 	}
 	
 
-	default ColumnSingleFilter ilike(@NonNull String value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.iLike(value));
+	default ColumnSingleFilter ilike(Object value) {
+		return filter(ComparisonSingleExpression.iLike(value));
 	}
 
-	default ColumnSingleFilter notILike(@NonNull String value) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.notILike(value));
-	}
-
-	@SuppressWarnings("unchecked")
-	default <T> ColumnSingleFilter in(@NonNull T... values) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.in(values));
+	default ColumnSingleFilter notILike(Object value) {
+		return filter(ComparisonSingleExpression.notILike(value));
 	}
 
 	@SuppressWarnings("unchecked")
-	default <T> ColumnSingleFilter notIn(@NonNull T... values) {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.notIn(values));
+	default <T> ColumnSingleFilter in(T... values) {
+		return filter(ComparisonSingleExpression.in(values));
+	}
+
+	@SuppressWarnings("unchecked")
+	default <T> ColumnSingleFilter notIn(T... values) {
+		return filter(ComparisonSingleExpression.notIn(values));
 	}
 
 	default ColumnSingleFilter isNull() {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.isNull());
+		return filter(ComparisonSingleExpression.isNull());
 	}
 
 	default ColumnSingleFilter isNotNull() {
-		return new ColumnSingleFilter(this, OperatorSingleExpression.isNotNull());
+		return filter(ComparisonSingleExpression.isNotNull());
 	}
 
-	default WhenFilterBridge when(OperatorExpression ex) {
+	default ColumnSingleFilter filter(ComparatorExpression exp) {
+		return new ColumnSingleFilter(this, exp);
+	}
+	
+	
+	default ExpressionColumn plus(Object o) {
+		return apply(OperationSingleExpression.plus(o));
+	}
+
+	default ExpressionColumn minus(Object o) {
+		return apply(OperationSingleExpression.minus(o));
+	}
+
+	default ExpressionColumn multiply(Object o) {
+		return apply(OperationSingleExpression.multiply(o));
+	}
+
+	default ExpressionColumn divise(Object o) {
+		return apply(OperationSingleExpression.divise(o));
+	}
+	
+	default ExpressionColumn mode(Object o) {
+		return apply(OperationSingleExpression.mode(o));
+	}
+
+	default ExpressionColumn pow(Object o) {
+		return apply(OperationSingleExpression.pow(o));
+	}
+
+	default ExpressionColumn apply(OperationSingleExpression o) {
+		return new ExpressionColumn(this, o);
+	}
+
+	default WhenFilterBridge when(ComparatorExpression ex) {
 		return new CaseSingleColumnBuilder(this).when(ex);
 	}
-
-	default ExpressionColumn plus(@NonNull Number value) {
-		return new ExpressionColumn(this, staticColumn(value), ADD);
-	}
 	
-	default ExpressionColumn plus(@NonNull DBColumn column) {
-		return new ExpressionColumn(this, column, ADD);
+	public static DBColumn ofReference(@NonNull String value) {
+		return p-> value;
 	}
 
-	default ExpressionColumn subtract(@NonNull Number value) {
-		return new ExpressionColumn(this, staticColumn(value), SUB);
+	static DBColumn ofConstant(Object value) {
+		return new DBColumn() {
+			
+			@Override
+			public String sql(QueryParameterBuilder arg) {
+				return formatValue(value);
+			}
+			
+			@Override
+			public boolean isConstant() {
+				return true;
+			}
+		};
 	}
 	
-	default ExpressionColumn subtract(@NonNull DBColumn column) {
-		return new ExpressionColumn(this, column, SUB);
-	}
-
-	default ExpressionColumn multiply(@NonNull Number value) {
-		return new ExpressionColumn(this, staticColumn(value), MULT);
-	}
-	
-	default ExpressionColumn multiply(@NonNull DBColumn column) {
-		return new ExpressionColumn(this, column, MULT);
-	}
-
-	default ExpressionColumn divide(@NonNull Number value) {
-		return new ExpressionColumn(this, staticColumn(value), DIV);
-	}
-	
-	default ExpressionColumn divide(@NonNull DBColumn column) {
-		return new ExpressionColumn(this, column, DIV);
-	}
 }

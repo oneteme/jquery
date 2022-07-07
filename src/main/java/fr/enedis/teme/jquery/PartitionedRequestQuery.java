@@ -1,7 +1,7 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.DBColumn.ofConstant;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
-import static fr.enedis.teme.jquery.ValueColumn.staticColumn;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.groupingBy;
 
@@ -9,7 +9,7 @@ import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.function.Function;
+import java.util.function.BiFunction;
 import java.util.stream.Stream;
 
 import lombok.Getter;
@@ -21,72 +21,63 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	private static final String REVISION_YEAR_TAG = "revisionYear";
 	
 	@Getter
-	private final YearMonth[] revisions;
+	private final YearMonth[] revisions; // nullable
 	
-	private final Function<Integer, TaggableColumn[]> revisionColumns;
+	private final BiFunction<YearPartitionTable, Integer, TaggableColumn[]> revisionColumns;
 	
 	public PartitionedRequestQuery(YearMonth[] revisions) {
 		this.revisions = revisions;
-		revisionColumns = v-> new TaggableColumn[] {
-			((YearPartitionTable) table).getRevisionColumn(),
-			staticColumn(v).as(REVISION_YEAR_TAG)
-		};
+		this.revisionColumns = (t, v)-> t.revisionColumn() == null 
+			? new TaggableColumn[] {ofConstant(v).as(REVISION_YEAR_TAG)}
+			: new TaggableColumn[] {ofConstant(v).as(REVISION_YEAR_TAG), t.revisionColumn()};
+		this.noResult = isEmpty(revisions);
 	}
 	
 	@Override
 	public List<TaggableColumn> getColumns() {
-		var list = new LinkedList<>(super.getColumns());
-		if(table instanceof YearPartitionTable) {
-			list.addAll(asList(revisionColumns.apply(null))); //
+		if(isEmpty(revisions)) {
+			return super.getColumns();
 		}
-		return list;
+		if(table instanceof YearPartitionTable) {
+			var list = new LinkedList<>(super.getColumns());
+			list.addAll(asList(revisionColumns.apply((YearPartitionTable) table, null))); //
+			return list;
+		}
+		throw new IllegalArgumentException(table + " is not YearPartitionTable");
 	}
 	
 	@Override
 	public void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
-		
-		if(table instanceof YearPartitionTable == false) {
+		if(isEmpty(revisions)) {
 			super.build(schema, sb, pb);
 		}
-		else if(isEmpty(revisions)) {
-			throw new IllegalArgumentException("missing revision parameter");
+		else if(table instanceof YearPartitionTable) {
+			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
+			var tab = (YearPartitionTable) table;
+			sb.forEach(map.entrySet(), " UNION ALL ", e-> query(tab, e).build(schema, sb, pb));
 		}
 		else {
-			var pTab = (YearPartitionTable) table;
-			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
-			sb.forEach(map.entrySet(), " UNION ALL ", e-> query(e, pTab.getRevisionColumn()).build(schema, sb, pb));
+			throw new IllegalArgumentException(table + " is not YearPartitionTable");
 		}
 	}
 	
-	private RequestQuery query(Entry<Integer, List<YearMonth>> entry, TableColumn revisionColumn) {
-
-		return super.fork(new TableAdapter(table, entry.getKey() + ""), false)
-				.columns(revisionColumns.apply(entry.getKey()))
-				.filters(entry.getValue().size() == 1 
-				? revisionColumn.equal(entry.getValue().get(0).getMonthValue())
-				: revisionColumn.in(entry.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
+	private RequestQuery query(YearPartitionTable tab, Entry<Integer, List<YearMonth>> entry) {
+		var q = super.fork(tab.suffix(entry.getKey() + ""))
+				     .columns(revisionColumns.apply(tab, entry.getKey()));
+		if(tab.revisionColumn() == null) {
+			return q;
+		}
+		return q.filters(entry.getValue().size() == 1 
+				? tab.revisionColumn().equal(entry.getValue().get(0).getMonthValue())
+				: tab.revisionColumn().in(entry.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
 	}
 	
 	@Override	
-	public RequestQuery fork(DBTable tab, boolean joins) {
-		var q = new PartitionedRequestQuery(revisions)
+	public RequestQuery fork(DBTable tab) {
+		return new PartitionedRequestQuery(revisions)
 				.select(tab)
 				.columns(columns.toArray(TaggableColumn[]::new))
 				.filters(filters.toArray(DBFilter[]::new));
-		if(joins) {// change this => constructor
-			q.resultJoins = this.resultJoins;
-		}
-		return q;
 	}
 	
-	@Override
-	int estimateSize() {
-		var n = (int)Stream.of(revisions).map(YearMonth::getYear).distinct().count();
-		return 500 * (resultJoins.size()+n);
-	}
-	
-	@Override
-	public boolean isSimpleQuery() {
-		return false; //TODO check that
-	}
 }

@@ -1,41 +1,59 @@
 package fr.enedis.teme.jquery.web;
 
-import static java.util.Arrays.binarySearch;
+import static fr.enedis.teme.jquery.Utils.isEmpty;
 
 import java.time.YearMonth;
-import java.util.Arrays;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Stream;
 
+import fr.enedis.teme.jquery.TableColumn;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 @Getter
-@RequiredArgsConstructor 
-final class TableMetadata {
+@ToString(includeFieldNames = false)
+@RequiredArgsConstructor
+public final class TableMetadata {
 	
-	private final int[] revisions; //nullable, sorted
-	private final Integer currentRevision; //nullable
+	static final YearMonth[] EMPTY_REVISION = new YearMonth[0];
+	
+	private final YearMonth[] revisions; //nullable
 	private final Map<String, ColumnMetadata> columns;
 
-	public TableMetadata(Map<String, ColumnMetadata> columns) {
-		this.columns = columns;
-		this.revisions = null;
-		this.currentRevision = null;
+	
+	TableMetadata(Map<String, ColumnMetadata> columns) {
+		this(null, columns);
 	}
 
-	public boolean exists(int year) {
-		return binarySearch(revisions, year) > -1;
+	public ColumnMetadata column(TableColumn c) {
+		return columns.get(c.getDbName());
+	}
+
+	public YearMonth latestRevision() {
+		return isEmpty(revisions) ? null : revisions[0];
+	}
+		
+	public YearMonth[] findStrictRevision(YearMonth[] values) {
+		return isEmpty(revisions) ? EMPTY_REVISION : Stream.of(values)
+				.filter(v-> Stream.of(revisions).anyMatch(o-> o.equals(v)))
+				.toArray(YearMonth[]::new);
 	}
 	
-	public YearMonth currentRevision() {
-		return revisions != null && currentRevision != null 
-				? YearMonth.of(revisions[revisions.length - 1], currentRevision)
-				: null;
-	}
-	
-	@Override
-	public String toString() {
-		return "{revisions:" + Arrays.toString(revisions) + ", columns:" + columns + "}";
+	public YearMonth[] findClosestRevision(YearMonth[] values) {
+		if(isEmpty(revisions)) {
+			return EMPTY_REVISION;
+		}
+		List<YearMonth> list = new LinkedList<>();
+		for(var v : values) {
+			Stream.of(revisions)
+			.filter(o-> o.compareTo(v) <= 0)
+			.findFirst()
+			.ifPresent(list::add);
+		}
+		return list.isEmpty() ? EMPTY_REVISION : list.toArray(YearMonth[]::new);
 	}
 	
 }

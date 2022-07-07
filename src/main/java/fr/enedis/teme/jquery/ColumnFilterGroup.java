@@ -1,6 +1,5 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.DBTable.mockTable;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 import static java.util.stream.Collectors.toList;
 
@@ -24,11 +23,11 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 	
 	@Override
-	public String sql(DBTable table, QueryParameterBuilder ph) { //td deep sql parentheses
+	public String sql(QueryParameterBuilder ph) { //td deep sql parentheses
 		
 		return new SqlStringBuilder(50 * expressions.size())
 				.append("(")
-				.appendEach(expressions, operator.sql(), e-> e.sql(table, ph))
+				.appendEach(expressions, operator.sql(), e-> e.sql(ph))
 				.append(")")
 				.toString();
 	}
@@ -44,7 +43,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	
 	@Override
 	public String toString() {
-		return sql(mockTable(), addWithValue());
+		return sql(addWithValue());
 	}
 	
 }

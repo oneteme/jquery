@@ -1,57 +1,39 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.GenericColumn.c1;
-import static fr.enedis.teme.jquery.GenericColumn.c2;
-import static fr.enedis.teme.jquery.GenericColumn.c3;
-import static fr.enedis.teme.jquery.GenericColumn.c4;
-import static fr.enedis.teme.jquery.GenericTable.c1_name;
-import static fr.enedis.teme.jquery.GenericTable.c2_name;
-import static fr.enedis.teme.jquery.GenericTable.c3_name;
-import static fr.enedis.teme.jquery.GenericTable.c4_name;
-import static fr.enedis.teme.jquery.GenericTable.tab1;
+import static fr.enedis.teme.jquery.DBColumn.ofConstant;
+import static fr.enedis.teme.jquery.DBColumn.ofReference;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.stream.Stream;
-
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
-import org.junit.jupiter.params.provider.MethodSource;
+import org.junit.jupiter.api.Test;
 
 class DBColumnTest {
-	
-	@ParameterizedTest
-	@MethodSource("caseProvider")
-	void testToSql(DBColumn column, DBTable table, String sql) {
-		assertEquals(sql, column.sql(table, null));
-		assertThrows(NullPointerException.class, ()-> column.sql(null, null));
-	}
-	
-	@ParameterizedTest
-	@MethodSource("caseProvider")
-	void testIsAggregated(DBColumn column) {
-		assertFalse(column.isAggregation());
-	}
-	
-	@ParameterizedTest
-	@MethodSource("caseProvider")
-	void testIsExpression(DBColumn column) {
-		assertFalse(column.isExpression());
-	}
-	
-	@ParameterizedTest
-	@MethodSource("caseProvider")
-	void testIsConstant(DBColumn column) {
-		assertFalse(column.isConstant());
+
+	@Test
+	void testIsAggregation() {
+		assertFalse(ofReference("col1").isAggregation());
+		assertFalse(ofConstant("col1").isAggregation());
 	}
 
-	private static Stream<Arguments> caseProvider() {
-	    return Stream.of(
-	    		Arguments.of(c1, tab1, c1_name),
-	    		Arguments.of(c2, tab1, c2_name),
-	    		Arguments.of(c3, tab1, c3_name),
-	    		Arguments.of(c4, tab1, c4_name)
-	    	);
+	@Test
+	void testIsConstant() {
+		assertFalse(ofReference("cm1").isConstant());
+		assertTrue(ofConstant("cm1").isConstant());
+	}
+	
+	@Test
+	void testSql() {
+		assertEquals("cm1", ofReference("cm1").sql(addWithValue()));
+		assertEquals("'cm1'", ofConstant("cm1").sql(addWithValue()));
+		assertEquals("1234", ofConstant(1234).sql(addWithValue()));
+	}
+	
+	@Test
+	void testAs() {
+		assertEquals("cm1 AS lb1", ofReference("cm1").as("lb1").tagSql(addWithValue()));
+		assertEquals("'cm1' AS lb1", ofConstant("cm1").as("lb1").tagSql(addWithValue()));
+		assertEquals("1234 AS lb1", ofConstant(1234).as("lb1").tagSql(addWithValue()));
 	}
 }

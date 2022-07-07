@@ -1,12 +1,11 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.JoinType.INNER;
-import static fr.enedis.teme.jquery.JoinType.LEFT;
 import static fr.enedis.teme.jquery.LogicalOperator.AND;
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.parametrized;
 import static fr.enedis.teme.jquery.SqlStringBuilder.COMA_SEPARATOR;
-import static fr.enedis.teme.jquery.SqlStringBuilder.EMPTY_STRING;
-import static fr.enedis.teme.jquery.SqlStringBuilder.POINT_SEPARATOR;
+import static fr.enedis.teme.jquery.SqlStringBuilder.QUOTE_SEPARATOR;
+import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Validation.requireNonEmpty;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.reflect.Array.getLength;
@@ -15,11 +14,9 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
@@ -37,15 +34,12 @@ public class RequestQuery implements Query {
 	DBTable table;
 	List<TaggableColumn> columns = new LinkedList<>();
 	List<DBFilter> filters = new LinkedList<>();
-	List<QueryResultJoiner> resultJoins = new LinkedList<>();
+	boolean noResult;
 	
-	public RequestQuery(RequestQuery query, DBTable table, boolean joins) {
+	public RequestQuery(RequestQuery query, DBTable table) {
 		this.table = table;
 		this.columns = new LinkedList<>(query.columns);
 		this.filters = new LinkedList<>(query.filters);
-		if(joins) {
-			resultJoins = new LinkedList<>(query.resultJoins);
-		}
 	}
 	
 	public RequestQuery select(DBTable table, TaggableColumn... columns) {
@@ -81,23 +75,6 @@ public class RequestQuery implements Query {
 		return this;
 	}
 
-	public RequestQuery innerJoinResult(boolean condition, Supplier<RequestQuery> supp) {
-		return condition ? innerJoinResult(supp.get()) : this;
-	}
-	public RequestQuery innerJoinResult(RequestQuery query) {
-		return resultJoin(INNER, query);
-	}
-	public RequestQuery leftJoinResult(boolean condition, Supplier<RequestQuery> supp) {
-		return condition ? leftJoinResult(supp.get()) : this;
-	}
-	public RequestQuery leftJoinResult(RequestQuery query) {
-		return resultJoin(LEFT, query);
-	}
-	public RequestQuery resultJoin(JoinType type, RequestQuery query) {
-		this.resultJoins.add(new QueryResultJoiner(type, query));
-		return this;
-	}
-	
 	public <T> T execute(Function<ParametredQuery, T> fn) {
 		return execute(null, fn);
 	}
@@ -118,47 +95,25 @@ public class RequestQuery implements Query {
 	public final ParametredQuery build(String schema){
 		
 		var pb = parametrized();
-		var sb = new SqlStringBuilder(estimateSize());
-		String[] cols;
-		if(resultJoins.isEmpty()) {
-			build(schema, sb, pb);
-			cols = getColumns().stream().map(TaggableColumn::tagname).toArray(String[]::new);
-		}
-		else {
-			var map = new LinkedHashMap<String, String>();
-			sb.append("SELECT ");
-			columns("q0", sb, pb, map);
-			var inc = new AtomicInteger();
-			resultJoins.forEach(q-> q.columns("q"+inc.incrementAndGet(), sb.append(COMA_SEPARATOR), pb, map));
-			sb.append(" FROM (");
-			build(schema, sb, pb);
-			sb.append(") q0");
-			resultJoins.forEach(q-> q.build(schema, sb.append(EMPTY_STRING), pb));
-			cols = map.keySet().toArray(String[]::new);
-		}
-		return new ParametredQuery(sb.toString(), cols, pb.getArgs().toArray());
+		var sb = new SqlStringBuilder(500);
+		build(schema, sb, pb);
+		String[] cols = getColumns().stream().map(TaggableColumn::tagname).toArray(String[]::new);
+		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
 	}
 
-	@Override
-	public void columns(String alias, SqlStringBuilder sb, QueryParameterBuilder pb, Map<String, String> columnMap) {//init map
-		sb.appendEach(getColumns(), COMA_SEPARATOR, alias + POINT_SEPARATOR, c-> {
-			columnMap.put(c.tagname(), alias);
-			return c.tagname();
-		});
-	}
-	
 	@Override
 	public void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
     	
     	requireNonNull(table);
     	requireNonEmpty(columns); 
     	sb.append("SELECT ")
-    	.appendEach(columns, COMA_SEPARATOR, e-> e.tagSql(table, pb))
+    	.appendEach(columns, COMA_SEPARATOR, e-> e.tagSql(addWithValue()))
     	.append(" FROM ")
-    	.append(table.sql(schema, pb));
+    	.appendIf(!isBlank(schema), ()-> schema + QUOTE_SEPARATOR)
+    	.append(table.sql(addWithValue()));
     	if(!filters.isEmpty()) {
     		sb.append(" WHERE ")
-    		.appendEach(filters, AND.sql(), f-> f.sql(table, pb));
+    		.appendEach(filters, AND.sql(), f-> f.sql(pb));
     	}
         if(columns.stream().anyMatch(DBColumn::isAggregation)) {
         	var gc = columns.stream()
@@ -174,27 +129,17 @@ public class RequestQuery implements Query {
         }
 	}
 	
-	public RequestQuery fork(DBTable tab, boolean joins) {
+	public RequestQuery fork(DBTable tab) {
 		return new RequestQuery(tab, 
 				new LinkedList<>(columns), 
-				new LinkedList<>(filters),
-				joins ? new LinkedList<>(resultJoins) : new LinkedList<>());
+				new LinkedList<>(filters), 
+				noResult);
 	}
 
 	private static boolean groupable(DBColumn column) {
 		return !column.isAggregation() && !column.isConstant();
 	}
 	
-	int estimateSize() {
-		return 500 * (resultJoins.size()+1);
-	}
-	
-	public boolean isSimpleQuery() {
-		return filters.isEmpty() 
-				&& resultJoins.isEmpty() 
-				&& columns.stream().noneMatch(DBColumn::isAggregation);
-	}
-
 	@SuppressWarnings("rawtypes")
 	private static int rowCount(Object o) {
 		if(o.getClass().isArray()) {

@@ -1,26 +1,21 @@
 package fr.enedis.teme.jquery.web;
 
-import static fr.enedis.teme.jquery.Utils.isBlank;
 import static fr.enedis.teme.jquery.Utils.isEmpty;
-import static fr.enedis.teme.jquery.web.DatabaseScanner.metadata;
+import static fr.enedis.teme.jquery.Utils.toMap;
+import static fr.enedis.teme.jquery.web.DatabaseScanner.get;
 import static fr.enedis.teme.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
-import static fr.enedis.teme.jquery.web.ParameterRequiredException.missingParameterException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.columnNotFoundException;
 import static fr.enedis.teme.jquery.web.ResourceNotFoundException.tableNotFoundException;
+import static fr.enedis.teme.jquery.web.TableMetadata.EMPTY_REVISION;
 import static java.time.Month.DECEMBER;
-import static java.util.Collections.emptyMap;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toMap;
 
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.LinkedList;
-import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import fr.enedis.teme.jquery.ColumnTemplate;
 import fr.enedis.teme.jquery.DBFilter;
 import fr.enedis.teme.jquery.DBTable;
 import fr.enedis.teme.jquery.PartitionedRequestQuery;
@@ -38,7 +33,7 @@ public final class RequestQueryParamResolver {
 		
 		var table = parseTable(ant.name(), ant.value());
 		RequestQuery rq = YearPartitionTable.class.isAssignableFrom(ant.value())
-				? new PartitionedRequestQuery(parseRevision(ant, table, parameterMap)) //must use partitions
+				? new PartitionedRequestQuery(parseRevisions(ant, table, parameterMap)) //must use partitions
 				: new RequestQuery();
 		return rq.select(table)
 				.columns(ant.columns(), ()-> parseColumns(ant, table, parameterMap))
@@ -53,72 +48,58 @@ public final class RequestQueryParamResolver {
 				.orElseThrow(()-> tableNotFoundException(tableName));
 	}
 	
-	public static YearMonth[] parseRevision(RequestQueryParam ant, DBTable table, Map<String, String[]> parameterMap) {
+	public static YearMonth[] parseRevisions(RequestQueryParam ant, DBTable table, Map<String, String[]> parameterMap) {
 
-		var revs = parameterMap.get(ant.revisionParameter());
-		if(isEmpty(revs)) {
-			var currentRev = metadata().currentRevision(table);
-			if(currentRev != null) {
-				return new YearMonth[] { currentRev };
-			}
-			throw missingParameterException(ant.revisionParameter());
+		var values = parameterMap.get(ant.revisionParameter());
+		if(isEmpty(values)) {
+			var currentRev = DatabaseScanner.get().metadata().latestRevision(table);
+			return currentRev == null ? EMPTY_REVISION : new YearMonth[] { currentRev };
 		}
-    	return metadata().filterExistingRevision(table, 
-    			Stream.of(flatArray(revs))
-    			.map(RequestQueryParamResolver::parseYearMonth));
-    	//TODO => can be empty
+		var revs = flatStream(values)
+    			.map(RequestQueryParamResolver::parseYearMonth)
+    			.toArray(YearMonth[]::new);
+    	return DatabaseScanner.get().metadata().filterExistingRevision(table, ant.revisionMode(), revs);// can be null or empty
     }
 		
 	public static TaggableColumn[] parseColumns(RequestQueryParam ant, DBTable table, Map<String, String[]> parameterMap) {
 
 		var cols = parameterMap.get(ant.columnParameter());
-		var colStream = isEmpty(cols) || isBlank(cols[0]) 
+		var colStream = isEmpty(cols) //TD check first param isBlank
 				? Stream.of(ant.defaultColumns())
 				: flatStream(cols);
-		var colMap  = Stream.of(table.columns()).collect(toMap(TableColumn::name, identity()));
-		Map<String, ColumnTemplate> tempMap = table.columnTemplates() == null 
-				? emptyMap()
-				: table.columnTemplates().stream().collect(toMap(ColumnTemplate::name, identity()));
-		List<TaggableColumn> columns = new LinkedList<>();
-		colStream
-		.map(RequestQueryParamResolver::toEnumName)
-		.forEach(p->{
-			var c = colMap.get(p);
-			var t = tempMap.get(p);
-			if(t != null) {
-				columns.addAll(t.getColumns());
+		var colMap = toMap(get().columnDescriptors(), ColumnDescriptor::value);
+		return colStream.map(RequestQueryParamResolver::toEnumName).map(p->{
+			try {
+				return colMap.get(p).column(table);
+			}catch (NullPointerException | IllegalArgumentException e) {
+				throw columnNotFoundException(p);
 			}
-			else {
-				if(c != null) {
-					columns.add(c);
-				}
-				else if(!ant.allowUnknownParameters()){
-					throw columnNotFoundException(p);
-				}
-	 			//warn
-			}
-		});
-		return columns.toArray(TaggableColumn[]::new);
+		}).toArray(TaggableColumn[]::new);
 	}
 	
 	public static DBFilter[] parseFilters(RequestQueryParam ant, DBTable table, Map<String, String[]> parameterMap) {
-		
-		var colMap = Stream.of(table.columns()).collect(toMap(TableColumn::name, identity()));
-		var filters = new LinkedList<DBFilter>();
-    	var knownColumns = Set.of(ant.revisionParameter(), ant.columnParameter());
-		parameterMap.entrySet().stream().filter(e-> !knownColumns.contains(e.getKey())).forEach(p->{
+
+		var colMap = toMap(get().columnDescriptors(), ColumnDescriptor::value);
+    	var skipColumns = Set.of(ant.revisionParameter(), ant.columnParameter());
+    	var filters = new LinkedList<DBFilter>();
+		parameterMap.entrySet().stream().filter(e-> !skipColumns.contains(e.getKey())).forEach(p->{
  			var name = toEnumName(p.getKey());
- 			var c = colMap.get(name);
- 			if(c == null && !ant.allowUnknownParameters()) {
+ 			var desc = colMap.get(name);
+ 			if(desc == null && !ant.allowUnknownParameters()) {
 				throw columnNotFoundException(name);
  			}
- 			//warn
- 			if(c != null) {
-				var values = flatArray(p.getValue()); //check types before
-				filters.add(values.length == 1 
-						? c.equal(metadata().typedValue(table, c, values[0])) 
-						: c.in(metadata().typedValues(table, c, values)));
+ 			if(desc != null) {
+				var c = desc.column(table);
+				if(c instanceof TableColumn) {
+					var meta = DatabaseScanner.get().metadata().table(table).column((TableColumn)c);
+					var filter = c.filter(desc.expression(meta, flatArray(p.getValue())));
+					filters.add(filter);
+				}
+				else {
+					throw new UnsupportedOperationException("applying filter on " + name);//
+				}
  			}
+ 			//warn
 		});
 		return filters.toArray(DBFilter[]::new);
 	}

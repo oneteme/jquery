@@ -1,123 +1,119 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.SqlStringBuilder.varchar;
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIf;
 import static fr.enedis.teme.jquery.Validation.illegalArgumentIfNot;
 import static java.lang.reflect.Array.getLength;
+import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.range;
 
 import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NonNull;
 
-@Getter(value = AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
 	private static final String ARG = "?";
 	
 	private final Collection<Object> args;
-	private final boolean ps;
-	private boolean dynamic;
 	
-	public String appendNullableParameter(Object o) {
-		return o == null ? appendNull() : appendParameter(o);
-	}
-
-	public String appendParameter(@NonNull Object o) {
-		illegalArgumentIf(o.getClass().isArray(), "array value");
-		if(ps && dynamic) {
-			args.add(o);
-			return ARG;
+	public String appendParameter(Object o) {
+		if(o == null) {
+			return appendNull();
 		}
-		return formatValue(o);
-	}
-
-	public String appendNullableString(Object o) {
-		return o == null ? appendNull() : appendString(o);
-	}
-	
-	public String appendString(@NonNull Object o) {
-		illegalArgumentIfNot(o instanceof String, "not string");
-		if(ps && dynamic) {
-			args.add(o);
-			return ARG;
+		if(o instanceof DBColumn) {
+			return formatColumn((DBColumn)o);
 		}
-		return formatString(o); 
+		illegalArgumentIf(o.getClass().isArray(), ()-> "array value");
+		return dynamic() ? appendArg(o) : formatValue(o);
 	}
 	
-	public String appendArray(@NonNull Object o) {
-		illegalArgumentIf(!o.getClass().isArray(), "not array");
-		illegalArgumentIf(getLength(o) == 0, "not array");
-		if(ps && dynamic) {
-			forEach(o, args::add);
+	public String appendString(Object o) {
+		if(o == null ) {
+			return appendNull();
+		}
+		if(o instanceof DBColumn) {
+			return formatColumn((DBColumn)o);
+		}
+		illegalArgumentIfNot(o instanceof String, ()->"require string parameter");
+		return dynamic() ? appendArg(o) : formatString(o); 
+	}
+	
+	public String appendNumber(Object o) {
+		if(o == null ) {
+			return appendNull();
+		}
+		if(o instanceof DBColumn) {
+			return formatColumn((DBColumn)o);
+		}
+		illegalArgumentIfNot(o instanceof Number, ()->"require number parameter");
+		return dynamic() ? appendArg(o) : formatNumber((Number)o);
+	}
+	
+	public String appendArray(Object o) {
+		illegalArgumentIf(o == null || !o.getClass().isArray() || getLength(o) == 0, ()-> "not array");
+		if(dynamic()) {
+			streamArray(o).forEach(args::add);
 			return nParameter(getLength(o));
 		}
-		var sb = new LinkedList<>();
-		Function<Object, String> fn = arrayFormatter(o);
-		forEach(o, v-> sb.add(fn.apply(v)));
-		return String.join(",", sb.toArray(String[]::new));
+		return streamArray(o).map(QueryParameterBuilder::formatValue).collect(joining(","));
 	}
 	
 	private String appendNull() {
-		if(ps && dynamic) {
-			args.add(null);
-			return ARG;
-		}
-		return "null";
-	}
-
-	public String addWithValue(Supplier<String> supp) {
-		this.dynamic = false;
-		var v = supp.get();
-		this.dynamic = true;
-		return v;
+		return dynamic() ? appendArg(null) : "null";
 	}
 	
-	static void forEach(Object o, Consumer<Object> cons) {
-		
-		range(0, getLength(o))
-			.mapToObj(i-> Array.get(o, i))
-			.forEach(cons);
+	private String appendArg(Object o) {
+		args.add(o);
+		return ARG;
+	}
+
+	String formatColumn(DBColumn o) {
+		return o.sql(this);
+	}
+
+	static String formatValue(Object o) {
+		return o instanceof Number 
+				? formatNumber((Number)o)
+				: formatString(o);
+	}
+	
+	boolean dynamic() {
+		return nonNull(args);
+	}
+	
+	public Object[] args() {
+		return dynamic() ? args.toArray() : new Object[0];
+	}
+
+	static Stream<Object> streamArray(Object o) {
+		return range(0, getLength(o))
+			.mapToObj(i-> Array.get(o, i));
 	}
 
 	static String nParameter(int n){
         return n == 1 ? ARG : ARG + ",?".repeat(n-1);
     }
-
-	static String formatValue(Object o) {
-		if(o == null) {
-			return "null";
-		}
-		if(o instanceof Number || o.getClass().isPrimitive()) {
-			return o.toString();
-		}
-		return formatString(o);
+	
+	static String formatNumber(Number o) {
+		return o.toString();
 	}
 	
 	static String formatString(Object o) {
-		return "'" + o + "'";
-	}
-
-	static Function<Object, String> arrayFormatter(Object arr) {
-		var type = arr.getClass().getComponentType();
-		return Number.class.isAssignableFrom(type) || type.isPrimitive()
-				? Object::toString
-				: QueryParameterBuilder::formatString;
+		return varchar(o.toString());
 	}
 	
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null, false, false);
+		return new QueryParameterBuilder(null);
 	}
 	
 	public static QueryParameterBuilder parametrized() {
-		return new QueryParameterBuilder(new LinkedList<>(), true, true);
+		return new QueryParameterBuilder(new LinkedList<>());
 	}
 }

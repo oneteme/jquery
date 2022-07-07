@@ -19,7 +19,7 @@ public final class CaseSingleColumnBuilder {
 		this.column = column;
 	}
 	
-	public WhenFilterBridge when(OperatorExpression exp) {
+	public WhenFilterBridge when(ComparatorExpression exp) {
 		this.filter = new ColumnSingleFilter(column, exp);
 		return bridge;
 	}
@@ -46,12 +46,12 @@ public final class CaseSingleColumnBuilder {
 	
 
 	private CaseSingleColumn orElseExp(Object elseValue) {
-		caseColumn.append(WhenCase.orElse(elseValue));
+		caseColumn.append(CaseExpression.orElse(elseValue));
 		return caseColumn;
 	}
 	
 	public NamedColumn as(String tagname) {
-		return new NamedColumn(tagname, caseColumn);
+		return new NamedColumn(caseColumn, tagname);
 	}
 	
 	public final class WhenFilterBridge {
@@ -72,7 +72,7 @@ public final class CaseSingleColumnBuilder {
 			return thenExp(value);
 		}
 		
-		public CaseSingleColumnBuilder then(@NonNull TableColumn column) {
+		public CaseSingleColumnBuilder then(@NonNull DBColumn column) {
 			return thenExp(column);
 		}
 		
@@ -81,7 +81,7 @@ public final class CaseSingleColumnBuilder {
 		}
 		
 		private CaseSingleColumnBuilder thenExp(Object o) {
-			caseColumn.append(new WhenCase(requireNonNull(filter), o));
+			caseColumn.append(new CaseExpression(requireNonNull(filter), o));
 			filter = null;
 			return CaseSingleColumnBuilder.this;			
 		}

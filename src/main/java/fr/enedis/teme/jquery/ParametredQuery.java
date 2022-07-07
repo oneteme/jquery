@@ -24,6 +24,7 @@ public final class ParametredQuery {
 	private final String query;
 	private final String[] columnNames;
 	private final Object[] params;
+	private final boolean noResult;
 	
 	public <T> T execute(DataSource ds, ResultMapper<T> mapper){
 
@@ -79,5 +80,9 @@ public final class ParametredQuery {
 	public interface ResultMapper<T> {
 
 	    T apply(ResultSet rs) throws SQLException;
+	}
+	
+	public boolean hasNoResult() {
+		return noResult;
 	}
 }

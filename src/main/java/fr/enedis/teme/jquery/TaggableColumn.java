@@ -4,7 +4,7 @@ public interface TaggableColumn extends DBColumn {
 
 	String tagname();
 	
-	default String tagSql(DBTable table, QueryParameterBuilder ph) {
-		return sql(table, ph) + " AS " + tagname();
+	default String tagSql(QueryParameterBuilder ph) {
+		return sql(ph) + " AS " + tagname();
 	}
 }

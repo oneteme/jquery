@@ -9,10 +9,11 @@ import java.util.function.Supplier;
 
 final class SqlStringBuilder {
 	
-	static final String EMPTY_STRING = "";
-	static final String COMA_SEPARATOR = ", ";
+	static final String EMPTY_STRING    = "";
+	static final String COMA_SEPARATOR  = ", ";
 	static final String SPACE_SEPARATOR = " ";
 	static final String POINT_SEPARATOR = ".";
+	static final String QUOTE_SEPARATOR = "'";
 	
 	private final StringBuilder sb;
 
@@ -72,6 +73,18 @@ final class SqlStringBuilder {
 	@Override
 	public String toString() {
 		return sb.toString();
+	}
+
+	public static String space(String op) {
+		return SPACE_SEPARATOR + op + SPACE_SEPARATOR;
+	}
+
+	public static String varchar(String op) {
+		return QUOTE_SEPARATOR + op + QUOTE_SEPARATOR;
+	}
+
+	public static String parenthese(String op) { 
+		return "(" + op + ")";
 	}
 	
 }
