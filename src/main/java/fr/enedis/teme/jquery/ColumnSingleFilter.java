@@ -8,7 +8,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-final class ColumnSingleFilter implements DBFilter {
+public final class ColumnSingleFilter implements DBFilter {
 
 	@NonNull
 	private final DBColumn column;

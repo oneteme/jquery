@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery;
 
-import static fr.enedis.teme.jquery.DBColumn.*;
+import static fr.enedis.teme.jquery.DBColumn.isColumnAggregation;
+import static fr.enedis.teme.jquery.DBColumn.isColumnConstant;
 import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
 
 import lombok.AccessLevel;

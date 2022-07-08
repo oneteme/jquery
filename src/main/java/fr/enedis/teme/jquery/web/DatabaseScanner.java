@@ -1,8 +1,10 @@
 package fr.enedis.teme.jquery.web;
 
 import static fr.enedis.teme.jquery.web.TableMetadata.EMPTY_REVISION;
+import static java.time.Month.DECEMBER;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
@@ -18,7 +20,9 @@ import static java.util.stream.Collectors.toMap;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.Year;
 import java.time.YearMonth;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
@@ -47,8 +51,8 @@ public final class DatabaseScanner {
 	private DatabaseMetadata metadata;
 	
 	@Getter
-	List<ColumnDescriptor> columns;
-	List<? extends DBTable> tables;
+	List<ColumnDescriptor> columns = emptyList();
+	List<? extends DBTable> tables = emptyList();
 
 	DatabaseScanner(Configuration config, DatabaseMetadata metadata) {
 		this(config);
@@ -67,6 +71,13 @@ public final class DatabaseScanner {
 		return metadata;
 	}
 	
+	public DatabaseScanner register(List<? extends DBTable> tables, List<ColumnDescriptor> columns){
+		
+		this.tables = unmodifiableList(tables);
+		this.columns = unmodifiableList(columns);
+		return this;
+	}
+	
 	List<ColumnDescriptor> columnDescriptors() {
 		return columns;
 	}
@@ -83,7 +94,7 @@ public final class DatabaseScanner {
 					var e = (YearPartitionTable) t;
 					var names = tableNames(e);
 					var colum = columnMetadata(e, e.dbName()+"_20__", declaredColumns);
-					var revs = names.isEmpty() || e.revisionColumn() == null ? null : yearMonthRevisions(e, names);
+					YearMonth[] revs = names.isEmpty() ? null : yearMonthRevisions(e, names);
 					meta.put(e.dbName(), new TableMetadata(revs, unmodifiableMap(colum)));
 				}
 				else {
@@ -96,6 +107,7 @@ public final class DatabaseScanner {
 	
 	private List<String> tableNames(YearPartitionTable table) {
 		
+		log.info("Scanning'{}' table year partitions...", table);
 		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.dbName()+"_20__", null)){
 			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
@@ -104,7 +116,7 @@ public final class DatabaseScanner {
 					nName.add(tn);
 				}
 			}
-			log.info("{} : {}", table, nName);
+			log.info("==> {}", nName);
 			return nName;
 		}
 		catch(SQLException e) {
@@ -114,18 +126,21 @@ public final class DatabaseScanner {
 	}
 	
 	private Map<String, ColumnMetadata> columnMetadata(DBTable table, String tablePattern, Map<String, ColumnDescriptor> declaredColumns) {
-		
+
+		log.info("Scanning table '{}' columns...", table);
 		try(var cn = config.getDataSource().getConnection()){
 			try(var rs = cn.getMetaData().getColumns(null, null, tablePattern, null)){
 				var def = new LinkedList<ColumnType>();
 				while(rs.next()) {
 					var col = rs.getString("COLUMN_NAME");
 					var tab = rs.getString("TABLE_NAME");
-					if(declaredColumns.containsKey(col) && tab.matches(table.dbName() + "_20[0-9]{2}")) {
+					if(declaredColumns.containsKey(col)) { //regex check table name
 						def.add(new ColumnType(tab, col, rs.getInt("DATA_TYPE"), rs.getInt("COLUMN_SIZE")));
 					}
 				}
-				return resolve(def, declaredColumns);
+				var cols = resolve(def, declaredColumns);
+				log.info("==> {}", cols);
+				return cols;
 			}
 		} catch (SQLException e) {
 			log.error(table + " : cannot fetch table columns", e);
@@ -158,6 +173,14 @@ public final class DatabaseScanner {
 	
 	private YearMonth[] yearMonthRevisions(YearPartitionTable table, List<String> tableNames) {
 		
+		if(table.revisionColumn() == null) {
+			return tableNames.stream()
+					.map(n-> n.substring(n.length()-4))
+					.map(Year::parse)
+					.map(y-> y.atMonth(DECEMBER))
+					.toArray(YearMonth[]::new);
+		}
+		log.info("Scanning '{}' table month revisions...", table);
 		try(var cn = config.getDataSource().getConnection()){
 			var yearMonths = new LinkedList<YearMonth>();
 			try(var ps = cn.createStatement()){
@@ -176,7 +199,9 @@ public final class DatabaseScanner {
 					} while(ps.getMoreResults());
 				}
 			}
-			return yearMonths.stream().sorted(reverseOrder()).toArray(YearMonth[]::new); //sort desc.
+			var revs = yearMonths.stream().sorted(reverseOrder()).toArray(YearMonth[]::new); //sort desc.
+			log.info("==> {}", Arrays.toString(revs));
+			return revs;
 		}
 		catch(SQLException e) {
 			log.error(table + " : cannot fetch table month revisions", e);

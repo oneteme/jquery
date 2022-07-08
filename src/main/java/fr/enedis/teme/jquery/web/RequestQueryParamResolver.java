@@ -67,7 +67,7 @@ public final class RequestQueryParamResolver {
 		var colStream = isEmpty(cols) //TD check first param isBlank
 				? Stream.of(ant.defaultColumns())
 				: flatStream(cols);
-		var colMap = toMap(get().columnDescriptors(), ColumnDescriptor::value);
+		var colMap = toMap(get().columnDescriptors(), ColumnDescriptor::key);
 		return colStream.map(RequestQueryParamResolver::toEnumName).map(p->{
 			try {
 				return colMap.get(p).column(table);
@@ -79,7 +79,7 @@ public final class RequestQueryParamResolver {
 	
 	public static DBFilter[] parseFilters(RequestQueryParam ant, DBTable table, Map<String, String[]> parameterMap) {
 
-		var colMap = toMap(get().columnDescriptors(), ColumnDescriptor::value);
+		var colMap = toMap(get().columnDescriptors(), ColumnDescriptor::key);
     	var skipColumns = Set.of(ant.revisionParameter(), ant.columnParameter());
     	var filters = new LinkedList<DBFilter>();
 		parameterMap.entrySet().stream().filter(e-> !skipColumns.contains(e.getKey())).forEach(p->{

@@ -3,8 +3,8 @@ package fr.enedis.teme.jquery.web;
 import static fr.enedis.teme.jquery.ComparisonSingleExpression.equal;
 import static fr.enedis.teme.jquery.ComparisonSingleExpression.in;
 
-import fr.enedis.teme.jquery.DBTable;
 import fr.enedis.teme.jquery.ComparatorExpression;
+import fr.enedis.teme.jquery.DBTable;
 import fr.enedis.teme.jquery.TaggableColumn;
 
 public interface ColumnDescriptor {

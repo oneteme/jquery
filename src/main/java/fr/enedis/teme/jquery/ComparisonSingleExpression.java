@@ -1,5 +1,7 @@
 package fr.enedis.teme.jquery;
 
+import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
+import static fr.enedis.teme.jquery.SqlStringBuilder.EMPTY_STRING;
 import static fr.enedis.teme.jquery.StdComparator.EQ;
 import static fr.enedis.teme.jquery.StdComparator.GE;
 import static fr.enedis.teme.jquery.StdComparator.GT;
@@ -14,8 +16,6 @@ import static fr.enedis.teme.jquery.StdComparator.NE;
 import static fr.enedis.teme.jquery.StdComparator.NOT_ILIKE;
 import static fr.enedis.teme.jquery.StdComparator.NOT_IN;
 import static fr.enedis.teme.jquery.StdComparator.NOT_LIKE;
-import static fr.enedis.teme.jquery.QueryParameterBuilder.addWithValue;
-import static fr.enedis.teme.jquery.SqlStringBuilder.EMPTY_STRING;
 
 import lombok.AccessLevel;
 import lombok.NonNull;

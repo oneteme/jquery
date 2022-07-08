@@ -24,7 +24,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 @Getter
-@ToString
 @RequiredArgsConstructor 
 public final class ColumnMetadata {
 
@@ -65,5 +64,10 @@ public final class ColumnMetadata {
 		case TIMESTAMP: return v-> Timestamp.from(Instant.parse(v)); //TD check
 		default       : throw new UnsupportedOperationException("Unsupported dbType " + type);
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return "(name="+ name + ", type=" + type + ", length=" + length + ")";
 	}
 }
