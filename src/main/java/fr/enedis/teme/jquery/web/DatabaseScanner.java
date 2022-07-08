@@ -1,6 +1,7 @@
 package fr.enedis.teme.jquery.web;
 
 import static fr.enedis.teme.jquery.web.TableMetadata.EMPTY_REVISION;
+import static java.lang.String.format;
 import static java.time.Month.DECEMBER;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -24,11 +25,14 @@ import java.time.Year;
 import java.time.YearMonth;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
@@ -107,7 +111,7 @@ public final class DatabaseScanner {
 	
 	private List<String> tableNames(YearPartitionTable table) {
 		
-		log.info("Scanning'{}' table year partitions...", table);
+		log.info("Scanning '{}' table year partitions...", table);
 		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.dbName()+"_20__", null)){
 			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
@@ -116,7 +120,7 @@ public final class DatabaseScanner {
 					nName.add(tn);
 				}
 			}
-			log.info("==> {}", nName);
+			log.info("[{}]", nName.stream().map(t-> t.substring(t.length()-4)).collect(joining(", ")));
 			return nName;
 		}
 		catch(SQLException e) {
@@ -139,7 +143,7 @@ public final class DatabaseScanner {
 					}
 				}
 				var cols = resolve(def, declaredColumns);
-				log.info("==> {}", cols);
+				logTableColumns(cols);
 				return cols;
 			}
 		} catch (SQLException e) {
@@ -200,7 +204,7 @@ public final class DatabaseScanner {
 				}
 			}
 			var revs = yearMonths.stream().sorted(reverseOrder()).toArray(YearMonth[]::new); //sort desc.
-			log.info("==> {}", Arrays.toString(revs));
+			logRevisions(revs);
 			return revs;
 		}
 		catch(SQLException e) {
@@ -217,4 +221,34 @@ public final class DatabaseScanner {
 		final int type;
 		final int length;
 	}
+	
+	private static void logTableColumns(Map<String, ColumnMetadata> map) {
+		if(!map.isEmpty()) {
+			var pattern = "|%-20s|%-40s|%-6s|%-12s|";
+			var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
+			log.info(bar);
+			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
+			log.info(bar);
+			map.entrySet().forEach(e-> 
+			log.info(format(pattern, e.getKey(), e.getValue().getName(), e.getValue().getType(), e.getValue().getLength())));
+			log.info(bar);
+		}
+	}
+
+	private static void logRevisions(YearMonth[] revs) {
+		
+		if(revs.length > 0) {
+			var pattern = "|%-5s|%-40s|";
+			var bar = format(pattern, "", "").replace("|", "+").replace(" ", "-");
+			var map = Stream.of(revs).collect(groupingBy(YearMonth::getYear));
+			log.info(bar);
+			log.info(format(pattern, "YEAR", "MONTHS"));
+			log.info(bar);
+			map.entrySet().stream().sorted(comparing(Entry::getKey)).forEach(e-> 
+			log.info(format(pattern, e.getKey(), e.getValue().stream().map(o-> o.getMonthValue() + "").collect(joining(", ")))));
+			log.info(bar);
+		}
+		
+	}
+	
 }
