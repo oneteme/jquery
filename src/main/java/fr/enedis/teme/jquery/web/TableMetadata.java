@@ -29,7 +29,7 @@ public final class TableMetadata {
 	}
 
 	public ColumnMetadata column(TableColumn c) {
-		return columns.get(c.getDbName());
+		return columns.get(c.getTagname());
 	}
 
 	public YearMonth latestRevision() {

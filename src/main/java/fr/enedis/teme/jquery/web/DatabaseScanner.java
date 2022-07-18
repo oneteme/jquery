@@ -23,15 +23,12 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Year;
 import java.time.YearMonth;
-import java.util.Arrays;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
@@ -89,7 +86,7 @@ public final class DatabaseScanner {
 	public void fetch() {
 		requireNonNull(config, "configuration not found");
 		synchronized (sync) {
-			var meta = new LinkedHashMap<String, TableMetadata>(); //avg
+			var meta = new LinkedHashMap<String, TableMetadata>();
 			for(var t : tables) {
 				var declaredColumns = columns.stream()
 						.filter(cd-> nonNull(t.dbColumnName(cd)))
@@ -131,7 +128,7 @@ public final class DatabaseScanner {
 	
 	private Map<String, ColumnMetadata> columnMetadata(DBTable table, String tablePattern, Map<String, ColumnDescriptor> declaredColumns) {
 
-		log.info("Scanning table '{}' columns...", table);
+		log.info("Scanning '{}' table columns...", table);
 		try(var cn = config.getDataSource().getConnection()){
 			try(var rs = cn.getMetaData().getColumns(null, null, tablePattern, null)){
 				var def = new LinkedList<ColumnType>();
@@ -213,15 +210,6 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	@Getter
-	@RequiredArgsConstructor
-	final class ColumnType {
-		final String table;
-		final String column;
-		final int type;
-		final int length;
-	}
-	
 	private static void logTableColumns(Map<String, ColumnMetadata> map) {
 		if(!map.isEmpty()) {
 			var pattern = "|%-20s|%-40s|%-6s|%-12s|";
@@ -248,7 +236,14 @@ public final class DatabaseScanner {
 			log.info(format(pattern, e.getKey(), e.getValue().stream().map(o-> o.getMonthValue() + "").collect(joining(", ")))));
 			log.info(bar);
 		}
-		
 	}
 	
+	@Getter
+	@RequiredArgsConstructor
+	final class ColumnType {
+		final String table;
+		final String column;
+		final int type;
+		final int length;
+	}
 }
