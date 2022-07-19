@@ -63,7 +63,7 @@ public interface TableDescriptor {
  			if(desc != null) {
 				var c = desc.from(this);
 				if(c instanceof TableColumn) {
-					var filter = c.filter(desc.expression(metadata.column((TableColumn)c), flatArray(p.getValue())));
+					var filter = c.filter(desc.expression(metadata.column(desc), flatArray(p.getValue())));
 					filters.add(filter);
 				}
 				else if(c != null) {

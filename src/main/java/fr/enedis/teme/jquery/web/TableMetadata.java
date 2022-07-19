@@ -32,12 +32,12 @@ public final class TableMetadata {
 		this(null, columns);
 	}
 
-	public ColumnMetadata column(TableColumn c) {
-		var meta = columns.get(c.getTagname());
+	public ColumnMetadata column(ColumnDescriptor cd) {
+		var meta = columns.get(cd.name());
 		if(meta != null) {
 			return meta;
 		}
-		log.warn("column metadata not found : " + c.tagname());
+		log.warn("column metadata not found : " + cd.name());
 		return defaultColumnMetadata();
 	}
 

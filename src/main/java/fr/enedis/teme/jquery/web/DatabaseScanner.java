@@ -96,12 +96,12 @@ public final class DatabaseScanner {
 				if(t instanceof YearTableDescriptor) {
 					var e = (YearTableDescriptor) t;
 					var names = tableNames(e);
-					var colum = columnMetadata(e, e.name()+"_20__", declaredColumns);
+					var colum = columnMetadata(e, e.value()+"_20__", declaredColumns);
 					YearMonth[] revs = names.isEmpty() ? null : yearMonthRevisions(e, names);
 					meta.put(e.name(), new TableMetadata(revs, unmodifiableMap(colum)));
 				}
 				else {
-					meta.put(t.name(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.name(), declaredColumns))));
+					meta.put(t.name(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.value(), declaredColumns))));
 				}
 			}
 			this.metadata = new DatabaseMetadata(meta);
@@ -111,11 +111,11 @@ public final class DatabaseScanner {
 	private List<String> tableNames(YearTableDescriptor table) {
 		
 		log.info("Scanning '{}' table year partitions...", table);
-		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.name()+"_20__", null)){
+		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.value()+"_20__", null)){
 			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
 				var tn = rs.getString("TABLE_NAME");
-				if(tn.matches(table.name() + "_20[0-9]{2}")) { // strict pattern
+				if(tn.matches(table.value() + "_20[0-9]{2}")) { // strict pattern
 					nName.add(tn);
 				}
 			}
