@@ -91,7 +91,14 @@ public final class DatabaseScanner {
 			var meta = new LinkedHashMap<String, TableMetadata>();
 			for(var t : tables) {
 				var declaredColumns = columns.stream()
-						.filter(cd-> nonNull(t.columnName(cd)))
+						.filter(cd-> {
+							try {
+								t.columnName(cd);
+							}catch (Exception e) {
+								return false;
+							}
+							return true;
+						})
 						.collect(toMap(t::columnName, identity()));
 				if(t instanceof YearTableDescriptor) {
 					var e = (YearTableDescriptor) t;
