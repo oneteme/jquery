@@ -35,7 +35,7 @@ public final class ColumnMetadata {
 	private final int type;
 	private final int length;
 
-	public Object parseArgs(String... values) {
+	public Object[] parseArgs(String... values) {
 		List<Object> list = new ArrayList<>(values.length);
 		Function<String, Object> parser = this::parseArg;
 		for(String value : values) {
