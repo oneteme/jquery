@@ -8,14 +8,10 @@ import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
-import fr.enedis.teme.jquery.DBTable;
-
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface RequestQueryParam {
-
-	Class<? extends Enum<? extends DBTable>> value();
 
 	String name(); //tablename
 	

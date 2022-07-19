@@ -7,7 +7,7 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-final class SqlStringBuilder {
+public final class SqlStringBuilder {
 	
 	static final String EMPTY_STRING    = "";
 	static final String COMA_SEPARATOR  = ", ";
@@ -86,5 +86,8 @@ final class SqlStringBuilder {
 	public static String parenthese(String op) { 
 		return "(" + op + ")";
 	}
-	
+
+	public static String member(String parent, String child) { 
+		return parent + POINT_SEPARATOR + child;
+	}
 }

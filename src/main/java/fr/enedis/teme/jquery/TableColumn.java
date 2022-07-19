@@ -11,6 +11,7 @@ public final class TableColumn implements TaggableColumn {
 	
 	private final String dbName;
 	private final String tagname;
+	//add tablename
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {

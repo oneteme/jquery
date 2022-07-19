@@ -33,8 +33,6 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import fr.enedis.teme.jquery.DBTable;
-import fr.enedis.teme.jquery.YearPartitionTable;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
@@ -53,7 +51,7 @@ public final class DatabaseScanner {
 	
 	@Getter
 	List<ColumnDescriptor> columns = emptyList();
-	List<? extends DBTable> tables = emptyList();
+	List<? extends TableDescriptor> tables = emptyList();
 
 	DatabaseScanner(Configuration config, DatabaseMetadata metadata) {
 		this(config);
@@ -72,7 +70,7 @@ public final class DatabaseScanner {
 		return metadata;
 	}
 	
-	public DatabaseScanner register(List<? extends DBTable> tables, List<ColumnDescriptor> columns){
+	public DatabaseScanner register(List<? extends TableDescriptor> tables, List<ColumnDescriptor> columns){
 		
 		this.tables = unmodifiableList(tables);
 		this.columns = unmodifiableList(columns);
@@ -83,37 +81,41 @@ public final class DatabaseScanner {
 		return columns;
 	}
 	
+	List<? extends TableDescriptor> tableDescriptors() {
+		return tables;
+	}
+	
 	public void fetch() {
 		requireNonNull(config, "configuration not found");
 		synchronized (sync) {
 			var meta = new LinkedHashMap<String, TableMetadata>();
 			for(var t : tables) {
 				var declaredColumns = columns.stream()
-						.filter(cd-> nonNull(t.dbColumnName(cd)))
-						.collect(toMap(t::dbColumnName, identity()));
-				if(t instanceof YearPartitionTable) {
-					var e = (YearPartitionTable) t;
+						.filter(cd-> nonNull(t.columnName(cd)))
+						.collect(toMap(t::columnName, identity()));
+				if(t instanceof YearTableDescriptor) {
+					var e = (YearTableDescriptor) t;
 					var names = tableNames(e);
-					var colum = columnMetadata(e, e.dbName()+"_20__", declaredColumns);
+					var colum = columnMetadata(e, e.name()+"_20__", declaredColumns);
 					YearMonth[] revs = names.isEmpty() ? null : yearMonthRevisions(e, names);
-					meta.put(e.dbName(), new TableMetadata(revs, unmodifiableMap(colum)));
+					meta.put(e.name(), new TableMetadata(revs, unmodifiableMap(colum)));
 				}
 				else {
-					meta.put(t.dbName(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.dbName(), declaredColumns))));
+					meta.put(t.name(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.name(), declaredColumns))));
 				}
 			}
 			this.metadata = new DatabaseMetadata(meta);
 		}
 	}
 	
-	private List<String> tableNames(YearPartitionTable table) {
+	private List<String> tableNames(YearTableDescriptor table) {
 		
 		log.info("Scanning '{}' table year partitions...", table);
-		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.dbName()+"_20__", null)){
+		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.name()+"_20__", null)){
 			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
 				var tn = rs.getString("TABLE_NAME");
-				if(tn.matches(table.dbName() + "_20[0-9]{2}")) { // strict pattern
+				if(tn.matches(table.name() + "_20[0-9]{2}")) { // strict pattern
 					nName.add(tn);
 				}
 			}
@@ -126,7 +128,7 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private Map<String, ColumnMetadata> columnMetadata(DBTable table, String tablePattern, Map<String, ColumnDescriptor> declaredColumns) {
+	private Map<String, ColumnMetadata> columnMetadata(TableDescriptor table, String tablePattern, Map<String, ColumnDescriptor> declaredColumns) {
 
 		log.info("Scanning '{}' table columns...", table);
 		try(var cn = config.getDataSource().getConnection()){
@@ -166,13 +168,13 @@ public final class DatabaseScanner {
 							log.warn("type:{}, length:{} => {}", o.get(0).getType(), o.get(0).getLength(), o.stream().map(ColumnType::getTable).collect(toList())));
 						res = map.values().stream().max(comparing(Collection::size)).orElseThrow().get(0);
 					}
-					return entry(declaredColumns.get(res.getColumn()).value(), 
+					return entry(declaredColumns.get(res.getColumn()).name(), 
 							new ColumnMetadata(res.getColumn(), res.getType(), res.getLength()));
 				})
 				.toArray(Entry[]::new));
 	}
 	
-	private YearMonth[] yearMonthRevisions(YearPartitionTable table, List<String> tableNames) {
+	private YearMonth[] yearMonthRevisions(YearTableDescriptor table, List<String> tableNames) {
 		
 		if(table.revisionColumn() == null) {
 			return tableNames.stream()
@@ -185,7 +187,7 @@ public final class DatabaseScanner {
 		try(var cn = config.getDataSource().getConnection()){
 			var yearMonths = new LinkedList<YearMonth>();
 			try(var ps = cn.createStatement()){
-				var rc = table.revisionColumn().sql(null);
+				var rc = table.revisionColumn().from(table).sql(null);
 				var query = tableNames.stream()
 						.map(tn-> "SELECT DISTINCT " + rc + ", " + tn.substring(tn.length()-4) + " FROM " + tn)
 						.collect(joining("; "));

@@ -9,7 +9,7 @@ import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import lombok.Getter;
@@ -20,17 +20,24 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	
 	private static final String REVISION_YEAR_TAG = "revisionYear";
 	
+	private final TaggableColumn revisionColumn;
 	@Getter
 	private final YearMonth[] revisions; // nullable
 	
-	private final BiFunction<YearPartitionTable, Integer, TaggableColumn[]> revisionColumns;
+	private final Function<Integer, TaggableColumn[]> additionalColumns;
 	
-	public PartitionedRequestQuery(YearMonth[] revisions) {
+	public PartitionedRequestQuery(TaggableColumn revisionColumn, YearMonth... revisions) {
+		this.revisionColumn = revisionColumn;
 		this.revisions = revisions;
-		this.revisionColumns = (t, v)-> t.revisionColumn() == null 
-			? new TaggableColumn[] {ofConstant(v).as(REVISION_YEAR_TAG)}
-			: new TaggableColumn[] {ofConstant(v).as(REVISION_YEAR_TAG), t.revisionColumn()};
-		this.noResult = isEmpty(revisions);
+		if(isEmpty(revisions)) {
+			this.noResult = true;
+			this.additionalColumns = null; //unused
+		}
+		else {
+			this.additionalColumns = v-> revisionColumn == null 
+					? new TaggableColumn[] {ofConstant(v).as(REVISION_YEAR_TAG)}
+					: new TaggableColumn[] {ofConstant(v).as(REVISION_YEAR_TAG), this.revisionColumn};
+		}
 	}
 	
 	@Override
@@ -38,12 +45,9 @@ public final class PartitionedRequestQuery extends RequestQuery {
 		if(isEmpty(revisions)) {
 			return super.getColumns();
 		}
-		if(table instanceof YearPartitionTable) {
-			var list = new LinkedList<>(super.getColumns());
-			list.addAll(asList(revisionColumns.apply((YearPartitionTable) table, null))); //
-			return list;
-		}
-		throw new IllegalArgumentException(table + " is not YearPartitionTable");
+		var list = new LinkedList<>(super.getColumns());
+		list.addAll(asList(additionalColumns.apply(null))); //
+		return list;
 	}
 	
 	@Override
@@ -51,31 +55,25 @@ public final class PartitionedRequestQuery extends RequestQuery {
 		if(isEmpty(revisions)) {
 			super.build(schema, sb, pb);
 		}
-		else if(table instanceof YearPartitionTable) {
-			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
-			var tab = (YearPartitionTable) table;
-			sb.forEach(map.entrySet(), " UNION ALL ", e-> query(tab, e).build(schema, sb, pb));
-		}
-		else {
-			throw new IllegalArgumentException(table + " is not YearPartitionTable");
-		}
+		var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
+		sb.forEach(map.entrySet(), " UNION ALL ", e-> query(e).build(schema, sb, pb));
 	}
 	
-	private RequestQuery query(YearPartitionTable tab, Entry<Integer, List<YearMonth>> entry) {
-		var q = super.fork(tab.suffix(entry.getKey() + ""))
-				     .columns(revisionColumns.apply(tab, entry.getKey()));
-		if(tab.revisionColumn() == null) {
+	private RequestQuery query(Entry<Integer, List<YearMonth>> entry) {
+		var q = super.fork(tablename + "_" + entry.getKey())
+				     .columns(additionalColumns.apply(entry.getKey()));
+		if(revisionColumn == null) {
 			return q;
 		}
 		return q.filters(entry.getValue().size() == 1 
-				? tab.revisionColumn().equal(entry.getValue().get(0).getMonthValue())
-				: tab.revisionColumn().in(entry.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)));
+				? revisionColumn.equal(entry.getValue().get(0).getMonthValue())
+				: revisionColumn.in(entry.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))); //int[] ?
 	}
 	
 	@Override	
-	public RequestQuery fork(DBTable tab) {
-		return new PartitionedRequestQuery(revisions)
-				.select(tab)
+	public RequestQuery fork(String tn) {
+		return new PartitionedRequestQuery(revisionColumn, revisions)
+				.select(tn)
 				.columns(columns.toArray(TaggableColumn[]::new))
 				.filters(filters.toArray(DBFilter[]::new));
 	}

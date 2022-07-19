@@ -4,17 +4,18 @@ import static fr.enedis.teme.jquery.ComparisonSingleExpression.equal;
 import static fr.enedis.teme.jquery.ComparisonSingleExpression.in;
 
 import fr.enedis.teme.jquery.ComparatorExpression;
-import fr.enedis.teme.jquery.DBTable;
+import fr.enedis.teme.jquery.TableColumn;
 import fr.enedis.teme.jquery.TaggableColumn;
 
 public interface ColumnDescriptor {
 	
-	String key();
+	String name(); //URL
 	
-	String value();
+	String value(); //JSON
 	
-	default TaggableColumn column(DBTable table) {
-		return table.get(this);
+	default TaggableColumn from(TableDescriptor table) {
+		var cn = table.columnName(this);
+		return cn == null ? null : new TableColumn(cn, value());
 	}
 	
 	default ComparatorExpression expression(ColumnMetadata cm, String... values) {

@@ -31,19 +31,13 @@ import lombok.extern.slf4j.Slf4j;
 @AllArgsConstructor
 public class RequestQuery implements Query {
 
-	DBTable table;
+	String tablename;
 	List<TaggableColumn> columns = new LinkedList<>();
 	List<DBFilter> filters = new LinkedList<>();
 	boolean noResult;
-	
-	public RequestQuery(RequestQuery query, DBTable table) {
-		this.table = table;
-		this.columns = new LinkedList<>(query.columns);
-		this.filters = new LinkedList<>(query.filters);
-	}
-	
-	public RequestQuery select(DBTable table, TaggableColumn... columns) {
-		this.table = table;
+
+	public RequestQuery select(String tablename, TaggableColumn... columns) {
+		this.tablename = tablename;
 		return columns(columns);
 	}
 
@@ -104,13 +98,13 @@ public class RequestQuery implements Query {
 	@Override
 	public void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
     	
-    	requireNonNull(table);
+    	requireNonNull(tablename);
     	requireNonEmpty(columns); 
     	sb.append("SELECT ")
     	.appendEach(columns, COMA_SEPARATOR, e-> e.tagSql(addWithValue()))
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + QUOTE_SEPARATOR)
-    	.append(table.sql(addWithValue()));
+    	.append(tablename);
     	if(!filters.isEmpty()) {
     		sb.append(" WHERE ")
     		.appendEach(filters, AND.sql(), f-> f.sql(pb));
@@ -129,8 +123,8 @@ public class RequestQuery implements Query {
         }
 	}
 	
-	public RequestQuery fork(DBTable tab) {
-		return new RequestQuery(tab, 
+	public RequestQuery fork(String tn) {
+		return new RequestQuery(tn, 
 				new LinkedList<>(columns), 
 				new LinkedList<>(filters), 
 				noResult);
