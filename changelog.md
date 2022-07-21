@@ -1,7 +1,7 @@
 ChangeLog :
 
 CHANGES
-- Empty revision => simple query (no exception)
+- Empty revision => simple query 
 
 FEATURES
 - no data join
@@ -28,3 +28,5 @@ FALCOME :
 Démarrage +long
 web service tree : https://goconfluence.enedis.fr/display/OME/WS+Tree
 VOLUME >> VENTE : share column & filter
+controller vr/ve/vhr ?
+move filter -> front
