@@ -186,6 +186,7 @@ public final class DatabaseScanner {
 			return tableNames.stream()
 					.map(n-> n.substring(n.length()-4))
 					.map(Year::parse)
+					.sorted(reverseOrder())
 					.map(y-> y.atMonth(DECEMBER))
 					.toArray(YearMonth[]::new);
 		}
