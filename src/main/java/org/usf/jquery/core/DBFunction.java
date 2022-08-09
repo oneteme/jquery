@@ -24,10 +24,10 @@ public interface DBFunction extends DBCallable {
 			var sb = new SqlStringBuilder(args.length * 10)
 					.append(name)
 					.append("(")
-					.append(b.appendParameter(op))
-					.append(",");
+					.append(b.appendParameter(op));
 			if(!isEmpty(args)) {
-				sb.appendEach(Stream.of(args).map(b::appendParameter).collect(toList()), COMA_SEPARATOR);
+				sb.append(",")
+				.appendEach(Stream.of(args).map(b::appendParameter).collect(toList()), COMA_SEPARATOR);
 			}
 			return sb.append(")")
 					.toString();

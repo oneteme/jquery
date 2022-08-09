@@ -81,7 +81,7 @@ public interface TableDescriptor {
 		return filters.toArray(DBFilter[]::new);
 	}
 
-	@Deprecated // move to client side 
+	@Deprecated(forRemoval = true) // move to client side 
 	static String toEnumName(String v) {
 		return v.replace("-", "_").toUpperCase();
 	}

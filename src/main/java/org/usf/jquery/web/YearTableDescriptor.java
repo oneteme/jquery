@@ -17,9 +17,9 @@ public interface YearTableDescriptor extends TableDescriptor {
 	
 	@Override
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		var meta  = DatabaseScanner.get().metadata().table(this);
-		var revis = revisionColumn() == null ? null: revisionColumn().from(this);
-		var query = new PartitionedRequestQuery(revis, parseRevisions(ant, meta, parameterMap)) ;
+		var meta = DatabaseScanner.get().metadata().table(this);
+		var revs = revisionColumn() == null ? null: revisionColumn().from(this);
+		var query = new PartitionedRequestQuery(revs, parseRevisions(ant, meta, parameterMap)) ;
 		return query.select(value())
 				.columns(ant.columns(), ()-> parseColumns(ant, meta, parameterMap))
 				.filters(ant.filters(), ()-> parseFilters(ant, meta, parameterMap));
