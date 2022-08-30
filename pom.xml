@@ -71,5 +71,16 @@
 			</plugin>
 		</plugins>
 	</build>
+	
+	
+
+  <distributionManagement>
+    <repository>
+      <id>github</id>
+      <name>GitHub JQuery Apache Maven Packages</name>
+      <url>https://maven.pkg.github.com/oneteme/jquery</url>
+    </repository>
+  </distributionManagement>
+
 
 </project>
