@@ -6,7 +6,7 @@
 
 	<groupId>io.github.oneteme</groupId>
 	<artifactId>jquery</artifactId>
-	<version>1.0.0</version>
+	<version>1.0.0-SNAPSHOT</version>
   <packaging>jar</packaging>
 	<name>java-query</name>
 
@@ -82,7 +82,7 @@
   <distributionManagement>
     <snapshotRepository>
       <id>ossrh</id>
-      <url>https://s01.oss.sonatype.org/content/repositories/snapshots</url>
+      <url>https://s01.oss.sonatype.org/content/repositories/snapshots/</url>
     </snapshotRepository>
     <repository>
       <id>ossrh</id>
