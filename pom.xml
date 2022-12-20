@@ -20,6 +20,11 @@
       <organizationUrl>http://www.enedis.fr</organizationUrl>
     </developer>
   </developers>
+  
+  <scm>
+    <url>https://github.com/oneteme/jquery</url>
+  </scm>
+
 
   <licenses>
     <license>
