@@ -31,7 +31,6 @@ jobs:
           server-password: MAVEN_PASSWORD
           gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }} # Value of the GPG private key to import
           gpg-passphrase: MAVEN_GPG_PASSPHRASE # env variable for GPG private key passphrase
-          overwrite-settings: 'false'
     - name: Publish package
       run: mvn --batch-mode deploy
       env:
