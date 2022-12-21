@@ -42,9 +42,9 @@ jobs:
       env:
         MAVEN_USERNAME: ${{ secrets.OSSRH_USERNAME }}
         MAVEN_PASSWORD: ${{ secrets.OSSRH_TOKEN }}
-        run: |
-          mvn \
-            --no-transfer-progress \
-            --batch-mode \
-            -Dgpg.passphrase=${{ secrets.MAVEN_GPG_PRIVATE_KEY }} \
-            clean deploy
+      run: |
+        mvn \
+          --no-transfer-progress \
+          --batch-mode \
+          -Dgpg.passphrase=${{ secrets.MAVEN_GPG_PRIVATE_KEY }} \
+          clean deploy
