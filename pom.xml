@@ -16,15 +16,14 @@
     <developer>
       <name>u$f</name>
       <email>usf.alami@gmail.com</email>
-      <organization>ENEDIS</organization>
-      <organizationUrl>http://www.enedis.fr</organizationUrl>
+      <organization>JARVIS</organization>
+      <organizationUrl>https://oneteme.github.io/</organizationUrl>
     </developer>
   </developers>
   
   <scm>
     <url>https://github.com/oneteme/jquery</url>
   </scm>
-
 
   <licenses>
     <license>
@@ -40,6 +39,8 @@
 		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
 		<maven.compiler.source>${java.version}</maven.compiler.source>
 		<maven.compiler.target>${java.version}</maven.compiler.target>
+    <sonar.organization>jarvis</sonar.organization>
+    <sonar.host.url>https://sonarcloud.io</sonar.host.url>
 	</properties>
 
 	<dependencies>
@@ -83,8 +84,30 @@
 				<artifactId>maven-surefire-plugin</artifactId>
 				<version>3.0.0-M3</version>
 			</plugin>
-			
-			
+      <plugin>
+        <groupId>org.jacoco</groupId>
+       <artifactId>jacoco-maven-plugin</artifactId>
+        <version>0.8.7</version>
+        <executions>
+          <execution>
+            <id>prepare-agent</id>
+            <goals>
+              <goal>prepare-agent</goal>
+            </goals>
+          </execution>
+          <execution>
+            <id>report</id>
+            <goals>
+              <goal>report</goal>
+            </goals>
+            <configuration>
+              <formats>
+                <format>XML</format>
+              </formats>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
