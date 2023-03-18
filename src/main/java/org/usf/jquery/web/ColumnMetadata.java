@@ -1,10 +1,5 @@
 package org.usf.jquery.web;
 
-import static java.lang.Byte.parseByte;
-import static java.lang.Double.parseDouble;
-import static java.lang.Integer.parseInt;
-import static java.lang.Long.parseLong;
-import static java.lang.Short.parseShort;
 import static java.sql.Types.BIGINT;
 import static java.sql.Types.CHAR;
 import static java.sql.Types.DATE;
@@ -37,7 +32,7 @@ public final class ColumnMetadata {
 
 	public Object[] parseArgs(String... values) {
 		List<Object> list = new ArrayList<>(values.length);
-		Function<String, Object> parser = this::parseArg;
+		Function<String, Object> parser = this.parser();
 		for(String value : values) {
 			try {
 				list.add(parser.apply(value));
@@ -50,17 +45,21 @@ public final class ColumnMetadata {
 	}
 
 	public Object parseArg(String v){
+		return parser().apply(v);
+	}
+	
+	public Function<String, Object> parser(){
 
 		switch(type) {
-		case VARCHAR  : return v;
-		case INTEGER  : return parseInt(v);
-		case BIGINT   : return parseLong(v);
-		case DECIMAL  : return parseDouble(v);
-		case SMALLINT : return parseShort(v);
-		case TINYINT  : return parseByte(v);
-		case CHAR  	  : return v.charAt(0); //check length==1
-		case DATE     : return Date.valueOf(LocalDate.parse(v)); //TD check
-		case TIMESTAMP: return Timestamp.from(Instant.parse(v)); //TD check
+		case VARCHAR  : return v-> v;
+		case INTEGER  : return Integer::parseInt;
+		case BIGINT   : return Long::parseLong;
+		case DECIMAL  : return Double::parseDouble;
+		case SMALLINT : return Short::parseShort;
+		case TINYINT  : return Byte::parseByte;
+		case CHAR  	  : return v-> v.charAt(0); //check length==1
+		case DATE     : return v-> Date.valueOf(LocalDate.parse(v)); //TD check
+		case TIMESTAMP: return v-> Timestamp.from(Instant.parse(v)); //TD check
 		default       : throw new UnsupportedOperationException("Unsupported dbType " + type);
 		}
 	}

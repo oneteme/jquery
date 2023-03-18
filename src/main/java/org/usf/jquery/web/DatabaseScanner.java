@@ -49,8 +49,8 @@ public final class DatabaseScanner {
 	private DatabaseMetadata metadata;
 	
 	@Getter
-	List<ColumnDescriptor> columns = emptyList();
-	List<? extends TableDescriptor> tables = emptyList();
+	List<ColumnDecorator> columns = emptyList();
+	List<? extends TableDecorator> tables = emptyList();
 
 	DatabaseScanner(Configuration config, DatabaseMetadata metadata) {
 		this(config);
@@ -69,18 +69,18 @@ public final class DatabaseScanner {
 		return metadata;
 	}
 	
-	public DatabaseScanner register(List<? extends TableDescriptor> tables, List<ColumnDescriptor> columns){
+	public DatabaseScanner register(List<? extends TableDecorator> tables, List<ColumnDecorator> columns){
 		
 		this.tables = unmodifiableList(tables);
 		this.columns = unmodifiableList(columns);
 		return this;
 	}
 	
-	List<ColumnDescriptor> columnDescriptors() {
+	List<ColumnDecorator> columnDescriptors() {
 		return columns;
 	}
 	
-	List<? extends TableDescriptor> tableDescriptors() {
+	List<? extends TableDecorator> tableDescriptors() {
 		return tables;
 	}
 	
@@ -134,7 +134,7 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private Map<String, ColumnMetadata> columnMetadata(TableDescriptor table, String tablePattern, Map<String, ColumnDescriptor> declaredColumns) {
+	private Map<String, ColumnMetadata> columnMetadata(TableDecorator table, String tablePattern, Map<String, ColumnDecorator> declaredColumns) {
 
 		log.info("Scanning '{}' table columns...", table);
 		try(var cn = config.getDataSource().getConnection()){
@@ -158,7 +158,7 @@ public final class DatabaseScanner {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Map<String, ColumnMetadata> resolve(List<ColumnType> types, Map<String, ColumnDescriptor> declaredColumns){
+	private static Map<String, ColumnMetadata> resolve(List<ColumnType> types, Map<String, ColumnDecorator> declaredColumns){
 		
 		return Map.ofEntries(types.stream()
 				.collect(groupingBy(ColumnType::getColumn)).entrySet()
@@ -194,7 +194,7 @@ public final class DatabaseScanner {
 		try(var cn = config.getDataSource().getConnection()){
 			var yearMonths = new LinkedList<YearMonth>();
 			try(var ps = cn.createStatement()){
-				var rc = table.revisionColumn().from(table).sql(null);
+				var rc = table.revisionColumn().column(table).sql(null);
 				var query = tableNames.stream()
 						.map(tn-> "SELECT DISTINCT " + rc + ", " + tn.substring(tn.length()-4) + " FROM " + tn)
 						.collect(joining("; "));

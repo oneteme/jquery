@@ -8,8 +8,9 @@ import java.util.stream.Stream;
 
 import lombok.NonNull;
 
+@FunctionalInterface
 public interface DBFunction extends DBCallable {
-		
+			
 	default boolean isAggregate() {
 		return false;
 	}

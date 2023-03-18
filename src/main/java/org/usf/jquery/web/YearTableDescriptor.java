@@ -2,7 +2,7 @@ package org.usf.jquery.web;
 
 import static java.time.Month.DECEMBER;
 import static org.usf.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
-import static org.usf.jquery.web.TableDescriptor.flatStream;
+import static org.usf.jquery.web.TableDecorator.flatStream;
 
 import java.time.Year;
 import java.time.YearMonth;
@@ -11,14 +11,14 @@ import java.util.Map;
 import org.usf.jquery.core.PartitionedRequestQuery;
 import org.usf.jquery.core.RequestQuery;
 
-public interface YearTableDescriptor extends TableDescriptor {
+public interface YearTableDescriptor extends TableDecorator {
 	
-	ColumnDescriptor revisionColumn();
+	ColumnDecorator revisionColumn();
 	
 	@Override
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var meta = DatabaseScanner.get().metadata().table(this);
-		var revs = revisionColumn() == null ? null: revisionColumn().from(this);
+		var revs = revisionColumn() == null ? null: revisionColumn().column(this);
 		var query = new PartitionedRequestQuery(revs, parseRevisions(ant, meta, parameterMap)) ;
 		return query.select(value())
 				.columns(ant.columns(), ()-> parseColumns(ant, meta, parameterMap))

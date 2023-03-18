@@ -9,7 +9,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-final class ExpressionColumn implements DBColumn {
+public final class ExpressionColumn implements DBColumn {
 	
 	@NonNull
 	private final Object operand;

@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.util.Collections.emptyMap;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.ColumnMetadata.defaultColumnMetadata;
 
 import java.time.YearMonth;
 import java.util.LinkedList;
@@ -32,13 +31,8 @@ public final class TableMetadata {
 		this(null, columns);
 	}
 
-	public ColumnMetadata column(ColumnDescriptor cd) {
-		var meta = columns.get(cd.name());
-		if(meta != null) {
-			return meta;
-		}
-		log.warn("column metadata not found : " + cd.name());
-		return defaultColumnMetadata();
+	public ColumnMetadata column(ColumnDecorator cd) {
+		return columns.get(cd.name());
 	}
 
 	public YearMonth latestRevision() {

@@ -11,16 +11,15 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.RequestQuery;
-import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 
-public interface TableDescriptor {
+public interface TableDecorator {
 	
 	String name(); //URL
 	
 	String value(); //SQL
 
-	String columnName(ColumnDescriptor desc);
+	String columnName(ColumnDecorator desc);
 	
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var meta = DatabaseScanner.get().metadata().table(this);
@@ -31,58 +30,45 @@ public interface TableDescriptor {
 		
 	default TaggableColumn[] parseColumns(RequestQueryParam ant, TableMetadata metadata, Map<String, String[]> parameterMap) {
 
-		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDescriptor::name);
+		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::name);
 		var cols = parameterMap.get(ant.columnParameter());
-		if(isEmpty(cols) && isEmpty(ant.defaultColumns())) {
+		if(isEmpty(cols)) {
+			cols = ant.defaultColumns();
+		}
+		if(isEmpty(cols)) { //TD check first param isBlank
 			throw new IllegalArgumentException("require " + ant.columnParameter() + " parameter");
 		}
-		var colStream = isEmpty(cols) //TD check first param isBlank
-				? Stream.of(ant.defaultColumns())
-				: flatStream(cols);
-		return colStream.map(p->{
-			var desc = map.get(toEnumName(p));
-			if(desc != null) {
-				var c = desc.from(this);
-				if(c != null) {
-					return c;
-				}
+		return flatStream(cols).map(p->{
+			var dcr = map.get(formatColumnName(p));
+			if(dcr == null) {
+				throw columnNotFoundException(p);
 			}
-			throw columnNotFoundException(p);
+			return dcr.column(this);
 		}).toArray(TaggableColumn[]::new);
 	}
 	
 	default DBFilter[] parseFilters(RequestQueryParam ant, TableMetadata metadata, Map<String, String[]> parameterMap) {
 
-		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDescriptor::name);
+		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::name);
     	var skipColumns = Set.of(ant.revisionParameter(), ant.columnParameter());
     	var filters = new LinkedList<DBFilter>();
-		parameterMap.entrySet().stream()
-		.filter(e-> !skipColumns.contains(e.getKey()))
-		.forEach(p-> {
- 			var desc = map.get(toEnumName(p.getKey()));
- 			if(desc != null) {
-				var c = desc.from(this);
-				if(c instanceof TableColumn) {
-					var filter = c.filter(desc.expression(metadata.column(desc), flatArray(p.getValue())));
-					filters.add(filter);
-				}
-				else if(c != null) {
-					throw new UnsupportedOperationException("applying filter on " + p.getKey());//
-				}
-				else if(!ant.allowUnknownParameters()){
-					throw columnNotFoundException(p.getKey());
-				}
+    	for(var e : parameterMap.entrySet()) {
+    		var name = formatColumnName(e.getKey());
+ 			if(!skipColumns.contains(name)) {
+ 				var dcr = map.get(name);
+ 				if(dcr != null) {
+ 					filters.add(dcr.filter(this, metadata, flatArray(e.getValue())));
+ 				}
+ 	 			else if(!ant.allowUnknownParameters()) {
+ 					throw columnNotFoundException(e.getKey());
+ 	 			}
  			}
- 			else if(!ant.allowUnknownParameters()) {
-				throw columnNotFoundException(p.getKey());
- 			}
- 			//warn
-		});
+    	}
 		return filters.toArray(DBFilter[]::new);
 	}
 
 	@Deprecated(forRemoval = true) // move to client side 
-	static String toEnumName(String v) {
+	static String formatColumnName(String v) {
 		return v.replace("-", "_").toUpperCase();
 	}
 	

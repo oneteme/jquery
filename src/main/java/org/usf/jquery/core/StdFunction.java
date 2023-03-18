@@ -4,20 +4,30 @@ import static org.usf.jquery.core.SqlStringBuilder.parenthese;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
-public enum StdFunction implements DBFunction {
+import java.util.function.BiFunction;
 
-	ABS, SQRT, TRUNC, CEIL, FLOOR, //numeric functions
-	LENGTH, TRIM, UPPER, LOWER; //string functions
+import lombok.RequiredArgsConstructor;
+
+@RequiredArgsConstructor
+public enum StdFunction implements DBFunction {
+	 
+	//numeric functions
+	ABS(QueryParameterBuilder::appendNumber), 
+	SQRT(QueryParameterBuilder::appendNumber), 
+	TRUNC(QueryParameterBuilder::appendNumber), 
+	CEIL(QueryParameterBuilder::appendNumber), 
+	FLOOR(QueryParameterBuilder::appendNumber),
+	//varchar functions
+	TRIM(QueryParameterBuilder::appendString), 
+	LENGTH(QueryParameterBuilder::appendString), //return number
+	UPPER(QueryParameterBuilder::appendString), 
+	LOWER(QueryParameterBuilder::appendString);
 	
+	private final BiFunction<QueryParameterBuilder, Object, String> fn;
+
 	@Override
 	public String sql(QueryParameterBuilder ph, Object operand, Object... args) {
 		illegalArgumentIf(operand == null || !isEmpty(args),  ()-> this.name() + " require one parameter");
-		if(this == ABS || this == SQRT || this == TRUNC || this == CEIL || this == FLOOR) {
-			return this.name() + parenthese(ph.appendNumber(operand));
-		}
-		else if(this == LENGTH || this == TRIM || this == UPPER || this == LOWER) {
-			return this.name() + parenthese(ph.appendString(operand));
-		}
-		throw new UnsupportedOperationException("Unsupported operator " + this.name());
+		return this.name() + parenthese(fn.apply(ph, operand));
 	}
 }

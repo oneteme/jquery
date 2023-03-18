@@ -15,7 +15,7 @@ public final class DatabaseMetadata {
 	
 	private final Map<String, TableMetadata> tables;
 	
-	public TableMetadata table(TableDescriptor table) {
+	public TableMetadata table(TableDecorator table) {
 		var meta = tables.get(table.name());
 		if(meta != null) {
 			return meta;
