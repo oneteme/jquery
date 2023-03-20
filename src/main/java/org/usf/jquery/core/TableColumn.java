@@ -2,14 +2,15 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
-import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@Getter
 @RequiredArgsConstructor
 public final class TableColumn implements TaggableColumn {
-	
+
+	@NonNull
 	private final String dbName;
+	@NonNull
 	private final String tagname;
 	//add tablename
 

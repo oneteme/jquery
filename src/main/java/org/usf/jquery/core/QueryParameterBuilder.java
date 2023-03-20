@@ -41,7 +41,7 @@ public final class QueryParameterBuilder {
 		if(o instanceof DBColumn) {
 			return formatColumn((DBColumn)o);
 		}
-		illegalArgumentIfNot(o instanceof String, ()->"require string parameter");
+		illegalArgumentIfNot(o instanceof String, ()-> "require string parameter");
 		return dynamic() ? appendArg(o) : formatString(o); 
 	}
 	
@@ -52,7 +52,7 @@ public final class QueryParameterBuilder {
 		if(o instanceof DBColumn) {
 			return formatColumn((DBColumn)o);
 		}
-		illegalArgumentIfNot(o instanceof Number, ()->"require number parameter");
+		illegalArgumentIfNot(o instanceof Number, ()-> "require number parameter");
 		return dynamic() ? appendArg(o) : formatNumber((Number)o);
 	}
 	

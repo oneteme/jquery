@@ -8,8 +8,8 @@ import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
-import static org.usf.jquery.core.SqlStringBuilder.COMA_SEPARATOR;
-import static org.usf.jquery.core.SqlStringBuilder.QUOTE_SEPARATOR;
+import static org.usf.jquery.core.SqlStringBuilder.COMA;
+import static org.usf.jquery.core.SqlStringBuilder.POINT;
 import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
@@ -100,9 +100,9 @@ public class RequestQuery {
     	requireNonNull(tablename);
     	requireNonEmpty(columns); 
     	sb.append("SELECT ")
-    	.appendEach(columns, COMA_SEPARATOR, e-> e.tagSql(addWithValue()))
+    	.appendEach(columns, COMA, e-> e.tagSql(addWithValue()))
     	.append(" FROM ")
-    	.appendIf(!isBlank(schema), ()-> schema + QUOTE_SEPARATOR)
+    	.appendIf(!isBlank(schema), ()-> schema + POINT)
     	.append(tablename);
     	if(!filters.isEmpty()) {
     		sb.append(" WHERE ")
@@ -114,7 +114,7 @@ public class RequestQuery {
         			.map(TaggableColumn::tagname) //add alias 
         			.collect(toList());
         	if(!gc.isEmpty()) {
-        		sb.append(" GROUP BY ").appendEach(gc, COMA_SEPARATOR);
+        		sb.append(" GROUP BY ").appendEach(gc, COMA);
         	}
         	else if(columns.size() > 1) {
         		//throw new RuntimeException("require groupBy columns"); ValueColumn

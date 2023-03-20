@@ -17,6 +17,14 @@ public final class Utils {
 	public static <T> boolean isEmpty(T[] a) {
 		return a == null || a.length == 0;
 	}
+	
+	public static boolean isEmpty(Collection<?> c) {
+		return c == null || c.isEmpty();
+	}
+	
+	public static <T> boolean isPresent(T[] a) {
+		return !isEmpty(a);
+	}
 
 	public static boolean isBlank(String str) {
 		return str == null || str.isBlank();

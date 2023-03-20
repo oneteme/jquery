@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.groupingBy;
-import static org.usf.jquery.core.DBColumn.ofConstant;
+import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.time.YearMonth;
@@ -35,8 +35,8 @@ public final class PartitionedRequestQuery extends RequestQuery {
 		}
 		else {
 			this.additionalColumns = v-> revisionColumn == null 
-					? new TaggableColumn[] {ofConstant(v).as(REVISION_YEAR_TAG)}
-					: new TaggableColumn[] {ofConstant(v).as(REVISION_YEAR_TAG), this.revisionColumn};
+					? new TaggableColumn[] {constant(v).as(REVISION_YEAR_TAG)}
+					: new TaggableColumn[] {constant(v).as(REVISION_YEAR_TAG), this.revisionColumn};
 		}
 	}
 	

@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY_STRING;
+import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 
 import java.util.List;
 import java.util.stream.Stream;
@@ -22,7 +22,6 @@ public final class ComparaisonExpressionGroup implements ComparatorExpression {
 	
 	@Override
 	public String sql(QueryParameterBuilder arg, Object operand) {
-		
 		return new SqlStringBuilder(50 * expressions.size())
 				.append("(")
 				.appendEach(expressions, operator.sql(), e-> e.sql(arg, operand))
@@ -41,7 +40,7 @@ public final class ComparaisonExpressionGroup implements ComparatorExpression {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), EMPTY_STRING);
+		return sql(addWithValue(), EMPTY);
 	}
 
 }

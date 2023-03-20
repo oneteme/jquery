@@ -1,16 +1,7 @@
 package org.usf.jquery.core;
 
 @FunctionalInterface
-public interface DBCallable {
+public interface DBCallable extends DBObject {
 
-	String sql(QueryParameterBuilder builder, Object operand, Object... args);
-	
-	static String sql(DBCallable call, QueryParameterBuilder builder, Object operand, Object args) {
-		if(args == null) {
-			return call.sql(builder, operand); //avoid [null]
-		}
-		return args instanceof Object[] 
-				? call.sql(builder, operand, (Object[]) args)
-				: call.sql(builder, operand, args);
-	}
+	//doc https://learnsql.com/blog/standard-sql-functions-cheat-sheet/
 }

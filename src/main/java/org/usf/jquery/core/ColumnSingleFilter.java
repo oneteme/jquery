@@ -4,10 +4,11 @@ import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ColumnSingleFilter implements DBFilter {
 
 	@NonNull

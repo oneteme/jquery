@@ -1,17 +1,20 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-final class CaseExpression implements DBExpression {
+final class WhenExpression implements DBExpression {
 	
 	private final DBFilter filter;
 	private final Object value;
 	
 	@Override
-	public String sql(QueryParameterBuilder arg, Object operand) {
+	public String sql(QueryParameterBuilder arg, Object[] args) {
+		illegalArgumentIf(nonNull(args), "WhenExpression takes no arguments");
 		var sb = new StringBuilder(50);
 		sb = filter == null
 				? sb.append("ELSE ")
@@ -24,8 +27,8 @@ final class CaseExpression implements DBExpression {
 		return sql(addWithValue(), null);
 	}
 	
-	public static CaseExpression orElse(Object value) {
-		return new CaseExpression(null, value);
+	public static WhenExpression orElse(Object value) {
+		return new WhenExpression(null, value);
 	}
 	
 }

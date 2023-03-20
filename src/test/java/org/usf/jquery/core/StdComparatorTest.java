@@ -15,35 +15,35 @@ import org.junit.jupiter.params.provider.EnumSource;
 class StdComparatorTest  {
 	
 	@ParameterizedTest
-	@EnumSource(value = StdComparator.class, names = {"EQ", "NE", "LT", "LE", "GT", "GE"})
-	void testSql_sign(StdComparator op) {
+	@EnumSource(value = BasicComparator.class, names = {"EQ", "NE", "LT", "LE", "GT", "GE"})
+	void testSql_sign(BasicComparator op) {
 		assertRequireTwoParameter(op);
 		//accept all type
 		assertCallParameter((o1,o2)-> o1+op.symbol+o2, op);
 	}
-	
-	@ParameterizedTest
-	@EnumSource(value = StdComparator.class, names = {"LIKE", "NOT_LIKE", "ILIKE", "NOT_ILIKE"})
-	void testSql_like(StdComparator op) {
-		assertRequireTwoParameter(op);
-		assertStringType(op);
-		assertCallString((o1,o2)-> o1+" "+op.name().replace('_', ' ')+" "+o2, op);
-	}
 
 	@ParameterizedTest
-	@EnumSource(value = StdComparator.class, names = {"IN", "NOT_IN"})
-	void testSql_in(StdComparator op) {
+	@EnumSource(value = BasicComparator.class, names = {"IN", "NOT_IN"})
+	void testSql_in(BasicComparator op) {
 		assertRequireAtLeastTwoParameter(op);
 		assertArrayType(op);
 		assertCallArray((o1,o2)-> o1+" "+op.name().replace('_', ' ') + "(" + o2 + ")", op);
 	}
-
+	
 	@ParameterizedTest
-	@EnumSource(value = StdComparator.class, names = {"IS_NULL", "IS_NOT_NULL"})
-	void testSql_null(StdComparator op) {
+	@EnumSource(value = StringComparator.class, names = {"LIKE", "NOT_LIKE", "ILIKE", "NOT_ILIKE"})
+	void testSql_like(StringComparator op) {
+		assertRequireTwoParameter(op);
+		assertStringType(op);
+		assertCallString((o1,o2)-> o1+" "+op.name().replace('_', ' ')+" "+o2, op);
+	}
+	
+	@ParameterizedTest
+	@EnumSource(value = NullComparator.class)
+	void testSql_null(NullComparator op) {
 		assertRequireOneParameter(op);
 		//accept all type
-		assertCallParameter((o1,__)-> o1+" "+op.name().replace('_', ' '), (p, oper, __)-> op.sql(p, oper));
+		assertCallParameter((o1,__)-> o1+" "+op.name().replace('_', ' '), op::sql);
 	}
 
 }

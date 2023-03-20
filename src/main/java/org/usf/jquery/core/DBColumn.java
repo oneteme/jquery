@@ -1,6 +1,8 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
+import static org.usf.jquery.core.Validation.illegalArgumentIf;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
@@ -17,6 +19,14 @@ public interface DBColumn extends DBObject {
 	default boolean isConstant() {
 		return false;
 	}
+	
+	@Override
+	default String sql(QueryParameterBuilder builder, Object[] args) {
+		illegalArgumentIf(nonNull(args), ()-> "DBColumn takes no arguments");
+		return sql(builder);
+	}
+	
+	String sql(QueryParameterBuilder builder);
 
 	default NamedColumn as(String name) {
 		return new NamedColumn(this, requireLegalVariable(name));
@@ -24,106 +34,102 @@ public interface DBColumn extends DBObject {
 
 	// filters
 	default ColumnSingleFilter equal(Object value) {
-		return filter(ComparisonSingleExpression.equal(value));
+		return filter(DBComparator.equal(value));
 	}
 
 	default ColumnSingleFilter notEqual(Object value) {
-		return filter(ComparisonSingleExpression.notEqual(value));
+		return filter(DBComparator.notEqual(value));
 	}
 
 	default ColumnSingleFilter greaterThan(Object value) {
-		return filter(ComparisonSingleExpression.greaterThan(value));
+		return filter(DBComparator.greaterThan(value));
 	}
 
 	default ColumnSingleFilter greaterOrEqual(Object value) {
-		return filter(ComparisonSingleExpression.greaterOrEqual(value));
+		return filter(DBComparator.greaterOrEqual(value));
 	}
 
 	default ColumnSingleFilter lessThan(Object value) {
-		return filter(ComparisonSingleExpression.lessThan(value));
+		return filter(DBComparator.lessThan(value));
 	}
 
 	default ColumnSingleFilter lessOrEqual(Object value) {
-		return filter(ComparisonSingleExpression.lessOrEqual(value));
+		return filter(DBComparator.lessOrEqual(value));
 	}
 
 	default ColumnSingleFilter like(Object value) {
-		return filter(ComparisonSingleExpression.like(value));
+		return filter(DBComparator.like(value));
 	}
 
 	default ColumnSingleFilter notLike(Object value) {
-		return filter(ComparisonSingleExpression.notLike(value));
+		return filter(DBComparator.notLike(value));
 	}
-	
 
 	default ColumnSingleFilter ilike(Object value) {
-		return filter(ComparisonSingleExpression.iLike(value));
+		return filter(DBComparator.iLike(value));
 	}
 
 	default ColumnSingleFilter notILike(Object value) {
-		return filter(ComparisonSingleExpression.notILike(value));
+		return filter(DBComparator.notILike(value));
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter in(T... values) {
-		return filter(ComparisonSingleExpression.in(values));
+		return filter(DBComparator.in(values));
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter notIn(T... values) {
-		return filter(ComparisonSingleExpression.notIn(values));
+		return filter(DBComparator.notIn(values));
 	}
 
 	default ColumnSingleFilter isNull() {
-		return filter(ComparisonSingleExpression.isNull());
+		return filter(DBComparator.isNull());
 	}
 
 	default ColumnSingleFilter isNotNull() {
-		return filter(ComparisonSingleExpression.isNotNull());
+		return filter(DBComparator.isNotNull());
 	}
 
 	default ColumnSingleFilter filter(ComparatorExpression exp) {
 		return new ColumnSingleFilter(this, exp);
 	}
+
+	// operations
 	
+	default OperationColumn plus(Object o) {
+		return DBArithmetic.plus().args(this, o);
+	}
+
+	default OperationColumn minus(Object o) {
+		return DBArithmetic.minus().args(this, o);
+	}
+
+	default OperationColumn multiply(Object o) {
+		return DBArithmetic.multiply().args(this, o);
+	}
+
+	default OperationColumn divise(Object o) {
+		return DBArithmetic.divise().args(this, o);
+	}
 	
-	default ExpressionColumn plus(Object o) {
-		return apply(OperationSingleExpression.plus(o));
+	default OperationColumn mode(Object o) {
+		return DBArithmetic.mode().args(this, o);
 	}
 
-	default ExpressionColumn minus(Object o) {
-		return apply(OperationSingleExpression.minus(o));
-	}
-
-	default ExpressionColumn multiply(Object o) {
-		return apply(OperationSingleExpression.multiply(o));
-	}
-
-	default ExpressionColumn divise(Object o) {
-		return apply(OperationSingleExpression.divise(o));
-	}
-	
-	default ExpressionColumn mode(Object o) {
-		return apply(OperationSingleExpression.mode(o));
-	}
-
-	default ExpressionColumn pow(Object o) {
-		return apply(OperationSingleExpression.pow(o));
-	}
-
-	default ExpressionColumn apply(OperationSingleExpression o) {
-		return new ExpressionColumn(this, o);
+	default OperationColumn pow(Object o) {
+		return DBArithmetic.pow().args(this, o);
 	}
 
 	default WhenFilterBridge when(ComparatorExpression ex) {
 		return new CaseSingleColumnBuilder(this).when(ex);
 	}
 	
-	public static DBColumn ofReference(@NonNull String value) {
+	public static DBColumn column(@NonNull String value) {
 		return p-> value;
 	}
 
-	static DBColumn ofConstant(Object value) {
+	static DBColumn constant(Object value) {
 		return new DBColumn() {
 			
 			@Override

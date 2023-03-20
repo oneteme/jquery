@@ -15,7 +15,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	private final LogicalOperator operator;
 	private final Collection<DBFilter> expressions;
 
-	public ColumnFilterGroup(@NonNull LogicalOperator operator, DBFilter... expression) {//assert length > 1
+	ColumnFilterGroup(@NonNull LogicalOperator operator, DBFilter... expression) {//assert length > 1
 		this.operator = operator;
 		this.expressions = expression == null 
 				? new LinkedList<>()

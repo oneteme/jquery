@@ -53,8 +53,8 @@ public interface TableDecorator {
     	var skipColumns = Set.of(ant.revisionParameter(), ant.columnParameter());
     	var filters = new LinkedList<DBFilter>();
     	for(var e : parameterMap.entrySet()) {
-    		var name = formatColumnName(e.getKey());
- 			if(!skipColumns.contains(name)) {
+ 			if(!skipColumns.contains(e.getKey())) {
+ 	    		var name = formatColumnName(e.getKey());
  				var dcr = map.get(name);
  				if(dcr != null) {
  					filters.add(dcr.filter(this, metadata, flatArray(e.getValue())));

@@ -21,11 +21,19 @@ public interface ColumnDecorator {
     	var column = requireNonNull(column(table));
     	var meta = requireNonNull(metadata(tm));
     	return values.length == 1 
-    			? column.equal(meta.parseArg(values[0]))
-    			: column.in(meta.parseArgs(values));
+    			? column.equal(parseArg(meta, values[0]))
+    			: column.in(parseArgs(meta, values));
 	}
 	
 	default ColumnMetadata metadata(TableMetadata metadata) {
 		return metadata.column(this);
+	}
+
+	default Object parseArg(ColumnMetadata meta, String value) {
+		return meta.parseArg(value);
+	}
+	
+	default Object[] parseArgs(ColumnMetadata meta, String... values) {
+		return meta.parseArgs(values);
 	}
 }

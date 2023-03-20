@@ -9,11 +9,11 @@ import java.util.function.Supplier;
 
 public final class SqlStringBuilder {
 	
-	static final String EMPTY_STRING    = "";
-	static final String COMA_SEPARATOR  = ", ";
-	static final String SPACE_SEPARATOR = " ";
-	static final String POINT_SEPARATOR = ".";
-	static final String QUOTE_SEPARATOR = "'";
+	static final String EMPTY = "";
+	static final String COMA  = ", ";
+	static final String SPACE = " ";
+	static final String POINT = ".";
+	static final String QUOTE = "'";
 	
 	private final StringBuilder sb;
 
@@ -34,11 +34,11 @@ public final class SqlStringBuilder {
 	}
 
 	public SqlStringBuilder appendEach(Collection<String> list, String separator) {
-		return appendEach(list, separator, EMPTY_STRING, identity());
+		return appendEach(list, separator, EMPTY, identity());
 	}
 
 	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, Function<T, String> fn) {
-		return appendEach(list, separator, EMPTY_STRING, fn);
+		return appendEach(list, separator, EMPTY, fn);
 	}
 
 	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, String prefix, Function<T, String> fn) {
@@ -76,11 +76,11 @@ public final class SqlStringBuilder {
 	}
 
 	public static String space(String op) {
-		return SPACE_SEPARATOR + op + SPACE_SEPARATOR;
+		return SPACE + op + SPACE;
 	}
 
 	public static String varchar(String op) {
-		return QUOTE_SEPARATOR + op + QUOTE_SEPARATOR;
+		return QUOTE + op + QUOTE;
 	}
 
 	public static String parenthese(String op) { 
@@ -88,6 +88,6 @@ public final class SqlStringBuilder {
 	}
 
 	public static String member(String parent, String child) { 
-		return parent + POINT_SEPARATOR + child;
+		return parent + POINT + child;
 	}
 }

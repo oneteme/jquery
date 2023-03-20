@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 @FunctionalInterface
-public interface DBExpression {
+public interface DBExpression extends DBObject {
 
-	String sql(QueryParameterBuilder arg, Object operand);
 }

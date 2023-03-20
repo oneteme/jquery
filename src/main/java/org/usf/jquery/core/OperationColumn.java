@@ -2,46 +2,37 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
+import java.util.stream.Stream;
+
 import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class NamedColumn implements TaggableColumn {
+public final class OperationColumn implements DBColumn {
 
 	@NonNull
-	private final DBColumn column;
-	@NonNull
-	private final String tagName;
+	private final DBOperation operation;
+	private final Object[] args; //
 
 	@Override
-	public String sql(QueryParameterBuilder arg) {
-		return column.sql(arg);
+	public String sql(QueryParameterBuilder builder) {
+		return operation.sql(builder, args);
 	}
-	
+
 	@Override
 	public boolean isAggregation() {
-		return column.isAggregation();
+		return operation.isAggregate() 
+				|| Stream.of(args).anyMatch(DBColumn::isColumnAggregation);
 	}
 
 	@Override
 	public boolean isConstant() {
-		return column.isConstant();
+		return Stream.of(args).allMatch(DBColumn::isColumnConstant);
 	}
 
-	@Override
-	public String tagname() {
-		return tagName;
-	}
-
-	@Override
-	public NamedColumn as(String name) {
-		return this.column.as(name); //safe 
-	}
-	
 	@Override
 	public String toString() {
 		return sql(addWithValue());
 	}
-
 }

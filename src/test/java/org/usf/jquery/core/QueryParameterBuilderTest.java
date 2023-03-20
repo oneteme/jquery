@@ -18,7 +18,7 @@ class QueryParameterBuilderTest {
 	void testAppendParameter() {
 		assertNotArray();//not array
 		assertNullParam(QueryParameterBuilder::appendParameter);
-		assertParamEquals("col1", "col1", DBColumn.ofReference("col1"), QueryParameterBuilder::appendParameter);
+		assertParamEquals("col1", "col1", DBColumn.column("col1"), QueryParameterBuilder::appendParameter);
 		assertParamEquals("'abc'", "?", "abc", QueryParameterBuilder::appendParameter);
 		assertParamEquals("123", "?", 123, QueryParameterBuilder::appendParameter);
 	}
@@ -27,7 +27,7 @@ class QueryParameterBuilderTest {
 	void testAppendString() {
 		assertNotArray();//not array
 		assertNullParam(QueryParameterBuilder::appendString);
-		assertParamEquals("col1", "col1", DBColumn.ofReference("col1"), QueryParameterBuilder::appendString);
+		assertParamEquals("col1", "col1", DBColumn.column("col1"), QueryParameterBuilder::appendString);
 		assertParamEquals("'abc'", "?", "abc", QueryParameterBuilder::appendString);
 	}
 	
@@ -35,7 +35,7 @@ class QueryParameterBuilderTest {
 	void testAppendNumber() {
 		assertNotArray();//not array
 		assertNullParam(QueryParameterBuilder::appendNumber);		
-		assertParamEquals("col1", "col1", DBColumn.ofReference("col1"), QueryParameterBuilder::appendNumber);
+		assertParamEquals("col1", "col1", DBColumn.column("col1"), QueryParameterBuilder::appendNumber);
 		assertParamEquals("123", "?", 123, QueryParameterBuilder::appendNumber);
 		assertParamEquals("1", "?", ONE, QueryParameterBuilder::appendNumber);
 	}
@@ -60,7 +60,7 @@ class QueryParameterBuilderTest {
 		p.appendArray(new int[] {1,2,3});
 		p.appendNumber(null);
 		p.appendString("abc");
-		p.appendParameter(DBColumn.ofReference("col1"));
+		p.appendParameter(DBColumn.column("col1"));
 		assertArrayEquals(new Object[] {1,2,3, null, "abc"}, p.args());
 	}
 	
@@ -70,7 +70,7 @@ class QueryParameterBuilderTest {
 		p.appendArray(new int[] {1,2,3});
 		p.appendNumber(null);
 		p.appendString("abc");
-		p.appendParameter(DBColumn.ofReference("col1"));
+		p.appendParameter(DBColumn.column("col1"));
 		assertArrayEquals(new Object[0], p.args());
 	}
 

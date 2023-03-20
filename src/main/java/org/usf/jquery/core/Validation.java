@@ -30,12 +30,13 @@ public final class Validation {
 		return c;
 	}
 
-	private static void illegalArgumentIf(boolean test, String msg) {
+	public static void illegalArgumentIf(boolean test, String msg) {
 		if(test) {
 			throw new IllegalArgumentException(msg);
 		}
 	}
 
+	@Deprecated
 	public static void illegalArgumentIfNot(boolean test, @NonNull Supplier<String> supplier) {
 		illegalArgumentIf(!test, supplier);
 	}
