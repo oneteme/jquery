@@ -18,7 +18,6 @@ import static java.sql.Types.TIME;
 import static java.sql.Types.TIMESTAMP;
 import static java.sql.Types.TINYINT;
 import static java.sql.Types.VARCHAR;
-import static org.usf.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -27,8 +26,6 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Function;
 
 import lombok.Getter;
@@ -36,37 +33,30 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor 
-public final class ColumnMetadata {
-	
+public final class ColumnMetadata implements ArgumentParser {
+
 	private final String name;
 	private final int type;
 	private final int length;
+	private final Function<String, Object> fn;
 
-	public Object[] parseArgs(String... values) {
-		List<Object> list = new ArrayList<>(values.length);
-		Function<String, Object> parser = this.parser();
-		for(String value : values) {
-			try {
-				list.add(parser.apply(value));
-			}
-			catch(Exception e) {
-				throw invalidParameterValueException(value, e);
-			}
-		}
-		return list.toArray();
+	public ColumnMetadata(String name, int type, int length) {
+		this.name = name;
+		this.type = type;
+		this.length = length;
+		this.fn = parser(type);
 	}
-
-	public Object parseArg(String v){
-		return parser().apply(v);
+	
+	@Override
+	public Object parseArg(String v) {
+		return fn.apply(v);
 	}
 	
 	/**
 	 * see: https://download.oracle.com/otn-pub/jcp/jdbc-4_2-mrel2-spec/jdbc4.2-fr-spec.pdf?AuthParam=1679342559_531aef55f72b5993f346322f9e9e7fe3
 	 * @return
 	 */
-	
-	public Function<String, Object> parser(){
-
+	static Function<String, Object> parser(int type){
 		switch(type) {
 		case BOOLEAN:
 		case BIT		  	: return Boolean::parseBoolean;

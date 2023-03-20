@@ -19,21 +19,13 @@ public interface ColumnDecorator {
 	
 	default DBFilter filter(TableDecorator table, TableMetadata tm, String... values) {
     	var column = requireNonNull(column(table));
-    	var meta = requireNonNull(metadata(tm));
+    	var parser = requireNonNull(parser(tm));
     	return values.length == 1 
-    			? column.equal(parseArg(meta, values[0]))
-    			: column.in(parseArgs(meta, values));
+    			? column.equal(parser.parseArg(values[0]))
+    			: column.in(parser.parseArgs(values));
 	}
 	
-	default ColumnMetadata metadata(TableMetadata metadata) {
+	default ArgumentParser parser(TableMetadata metadata) {
 		return metadata.column(this);
-	}
-
-	default Object parseArg(ColumnMetadata meta, String value) {
-		return meta.parseArg(value);
-	}
-	
-	default Object[] parseArgs(ColumnMetadata meta, String... values) {
-		return meta.parseArgs(values);
 	}
 }
