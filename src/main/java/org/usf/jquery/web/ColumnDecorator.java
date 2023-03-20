@@ -17,15 +17,15 @@ public interface ColumnDecorator {
 		return new TableColumn(cn, value());
 	}
 	
-	default DBFilter filter(TableDecorator table, TableMetadata tm, String... values) {
+	default DBFilter filter(TableDecorator table, TableMetadata meta, String... values) {
     	var column = requireNonNull(column(table));
-    	var parser = requireNonNull(parser(tm));
+    	var parser = requireNonNull(parser(meta));
     	return values.length == 1 
     			? column.equal(parser.parseArg(values[0]))
     			: column.in(parser.parseArgs(values));
 	}
 	
 	default ArgumentParser parser(TableMetadata metadata) {
-		return metadata.column(this);
+		return metadata.column(this); //avoid metaMap.get(this) if overridden
 	}
 }
