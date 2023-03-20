@@ -30,7 +30,7 @@ public final class QueryParameterBuilder {
 		if(o instanceof DBColumn) {
 			return formatColumn((DBColumn)o);
 		}
-		illegalArgumentIf(o.getClass().isArray(), ()-> "array value");
+		illegalArgumentIf(o.getClass().isArray(), "array value");
 		return dynamic() ? appendArg(o) : formatValue(o);
 	}
 	
@@ -62,7 +62,7 @@ public final class QueryParameterBuilder {
 			streamArray(o).forEach(args::add);
 			return nParameter(getLength(o));
 		}
-		return streamArray(o).map(QueryParameterBuilder::formatValue).collect(joining(","));
+		return streamArray(o).map(this::formatValue).collect(joining(","));
 	}
 	
 	private String appendNull() {
@@ -78,7 +78,7 @@ public final class QueryParameterBuilder {
 		return o.sql(this);
 	}
 
-	static String formatValue(Object o) {
+	String formatValue(Object o) {
 		return o instanceof Number 
 				? formatNumber((Number)o)
 				: formatString(o);

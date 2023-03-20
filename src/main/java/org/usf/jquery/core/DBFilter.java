@@ -11,7 +11,7 @@ public interface DBFilter extends DBObject {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(nonNull(args), ()-> "DBFilter takes no arguments");
+		illegalArgumentIf(nonNull(args), "DBFilter takes no arguments");
 		return sql(builder);
 	}
 

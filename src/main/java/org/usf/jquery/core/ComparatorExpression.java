@@ -9,7 +9,7 @@ public interface ComparatorExpression extends DBExpression {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(!hasSize(args, 1), ()-> "DBFilter takes no arguments");
+		illegalArgumentIf(!hasSize(args, 1), "DBFilter takes no arguments");
 		return sql(builder, args[0]);
 	}
 

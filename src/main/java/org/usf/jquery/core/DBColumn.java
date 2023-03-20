@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 
@@ -22,7 +21,7 @@ public interface DBColumn extends DBObject {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(nonNull(args), ()-> "DBColumn takes no arguments");
+		illegalArgumentIf(nonNull(args), "DBColumn takes no arguments");
 		return sql(builder);
 	}
 	
@@ -134,7 +133,7 @@ public interface DBColumn extends DBObject {
 			
 			@Override
 			public String sql(QueryParameterBuilder arg) {
-				return formatValue(value);
+				return arg.formatValue(value);
 			}
 			
 			@Override

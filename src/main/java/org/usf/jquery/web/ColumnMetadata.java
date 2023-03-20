@@ -49,7 +49,7 @@ public final class ColumnMetadata implements ArgumentParser {
 	
 	@Override
 	public Object parseArg(String v) {
-		return fn.apply(v);
+		return fn.apply(v); //can check string.size < length
 	}
 	
 	/**
