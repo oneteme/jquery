@@ -10,27 +10,27 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.RequestQuery;
 import org.usf.jquery.core.TaggableColumn;
 
-public interface TableDecorator {
+public interface TableDecorator extends DBTable {
 	
-	String name(); //URL
-	
-	String value(); //SQL
+	String identity(); //URL
 
-	String columnName(ColumnDecorator desc);
+	@Override
+	String reference(); //SQL
 	
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var meta = DatabaseScanner.get().metadata().table(this);
-		return new RequestQuery().select(value())
+		return new RequestQuery().select(this)
 				.columns(ant.columns(), ()-> parseColumns(ant, meta, parameterMap))
 				.filters(ant.filters(), ()-> parseFilters(ant, meta, parameterMap));
 	}
 		
 	default TaggableColumn[] parseColumns(RequestQueryParam ant, TableMetadata metadata, Map<String, String[]> parameterMap) {
 
-		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::name);
+		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
 		var cols = parameterMap.get(ant.columnParameter());
 		if(isEmpty(cols)) {
 			cols = ant.defaultColumns();
@@ -49,7 +49,7 @@ public interface TableDecorator {
 	
 	default DBFilter[] parseFilters(RequestQueryParam ant, TableMetadata metadata, Map<String, String[]> parameterMap) {
 
-		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::name);
+		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
     	var skipColumns = Set.of(ant.revisionParameter(), ant.columnParameter());
     	var filters = new LinkedList<DBFilter>();
     	for(var e : parameterMap.entrySet()) {

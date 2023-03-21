@@ -16,11 +16,11 @@ public final class DatabaseMetadata {
 	private final Map<String, TableMetadata> tables;
 	
 	public TableMetadata table(TableDecorator table) {
-		var meta = tables.get(table.name());
+		var meta = tables.get(table.identity());
 		if(meta != null) {
 			return meta;
 		}
-		log.warn("table metadata not found : " + table.name());
+		log.warn("table metadata not found : " + table.identity());
 		return defaultTableMetadata();
 	}
 }

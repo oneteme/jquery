@@ -35,28 +35,20 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor 
 public final class ColumnMetadata implements ArgumentParser {
 
-	private final String name;
+	private final String reference;
 	private final int type;
 	private final int length;
-	private final Function<String, Object> fn;
 
-	public ColumnMetadata(String name, int type, int length) {
-		this.name = name;
-		this.type = type;
-		this.length = length;
-		this.fn = parser(type);
-	}
-	
-	@Override
-	public Object parseArg(String v) {
-		return fn.apply(v); //can check string.size < length
-	}
-	
 	/**
 	 * see: https://download.oracle.com/otn-pub/jcp/jdbc-4_2-mrel2-spec/jdbc4.2-fr-spec.pdf?AuthParam=1679342559_531aef55f72b5993f346322f9e9e7fe3
 	 * @return
 	 */
-	static Function<String, Object> parser(int type){
+	@Override
+	public Object parseArg(String v) {
+		return parser(v, type).apply(v); //can check string.size < length
+	}
+	
+	Function<String, Object> parser(String name, int type){
 		switch(type) {
 		case BOOLEAN:
 		case BIT		  	: return Boolean::parseBoolean;
@@ -76,12 +68,12 @@ public final class ColumnMetadata implements ArgumentParser {
 		case DATE     		: return v-> Date.valueOf(LocalDate.parse(v)); //TD check
 		case TIME     		: return v-> Time.valueOf(LocalTime.parse(v)); //TD check
 		case TIMESTAMP		: return v-> Timestamp.from(Instant.parse(v)); //TD check
-		default       		: throw new UnsupportedOperationException("Unsupported dbType " + type);
+		default       		: throw new UnsupportedOperationException(name + " unsupported dbType " + type);
 		}
 	}
 	
 	@Override
 	public String toString() {
-		return "(name="+ name + ", type=" + type + ", length=" + length + ")";
+		return "(name="+ reference + ", type=" + type + ", length=" + length + ")";
 	}
 }

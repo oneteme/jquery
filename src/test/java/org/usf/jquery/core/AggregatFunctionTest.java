@@ -34,11 +34,11 @@ class AggregatFunctionTest {
 	@ParameterizedTest
 	@EnumSource(value=AggregatFunction.class, names={"SUM", "AVG"})
 	void testSql_number(AggregatFunction fn) {
-		assertEquals(fn.name() + "(dummy)", fn.sql(builder, new Object[] {column("dummy")}));
-		assertEquals(fn.name() + "(12345)", fn.sql(builder, new Object[] {12345}));
-		assertEquals(fn.name() + "(12.45)", fn.sql(builder, new Object[] {12.45}));
-		assertEquals(fn.name() + "(123.5)", fn.sql(builder, new BigDecimal[] {valueOf(123.5)}));
-		assertEquals(fn.name() + "(12345, 'dummy')", fn.sql(builder, new Object[] {new AtomicInteger(12345), "dummy"}));
+		assertEquals(fn.identity() + "(dummy)", fn.sql(builder, new Object[] {column("dummy")}));
+		assertEquals(fn.identity() + "(12345)", fn.sql(builder, new Object[] {12345}));
+		assertEquals(fn.identity() + "(12.45)", fn.sql(builder, new Object[] {12.45}));
+		assertEquals(fn.identity() + "(123.5)", fn.sql(builder, new BigDecimal[] {valueOf(123.5)}));
+		assertEquals(fn.identity() + "(12345, 'dummy')", fn.sql(builder, new Object[] {new AtomicInteger(12345), "dummy"}));
 	}
 	
 	@ParameterizedTest
@@ -54,9 +54,9 @@ class AggregatFunctionTest {
 	@EnumSource(value=AggregatFunction.class, names={"COUNT", "MIN", "MAX"})
 	void testSql_any(AggregatFunction fn) {
 		testSql_number(fn);
-		assertEquals(fn.name() + "('a')", fn.sql(builder, new Object[] {'a'}));
-		assertEquals(fn.name() + "('dummy')", fn.sql(builder, new String[] {"dummy"}));
-		assertEquals(fn.name() + "('2020-01-01', 123)", fn.sql(builder, new Object[] {valueOf(LocalDate.of(2020, 1, 1)), 123}));
+		assertEquals(fn.identity() + "('a')", fn.sql(builder, new Object[] {'a'}));
+		assertEquals(fn.identity() + "('dummy')", fn.sql(builder, new String[] {"dummy"}));
+		assertEquals(fn.identity() + "('2020-01-01', 123)", fn.sql(builder, new Object[] {valueOf(LocalDate.of(2020, 1, 1)), 123}));
 	}
 
 	@ParameterizedTest

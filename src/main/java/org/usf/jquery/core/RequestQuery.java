@@ -20,7 +20,6 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -28,42 +27,37 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @NoArgsConstructor
-@AllArgsConstructor
 public class RequestQuery {
 
-	String tablename;
+	DBTable table;
+	String suffix;
 	List<TaggableColumn> columns = new LinkedList<>();
 	List<DBFilter> filters = new LinkedList<>();
 	boolean noResult;
 
-	public RequestQuery select(String tablename, TaggableColumn... columns) {
-		this.tablename = tablename;
+	public RequestQuery select(DBTable table, TaggableColumn... columns) {
+		return select(table, "", columns);
+	}
+
+	public RequestQuery select(DBTable table, String suffix, TaggableColumn... columns) {
+		this.table = table;
+		this.suffix = suffix;
 		return columns(columns);
 	}
 
-	public RequestQuery column(boolean condition, Supplier<TaggableColumn> column) {
-		if(condition) {
-			columns.add(column.get());
-		}
-		return this;
-	}
 	public RequestQuery columns(boolean condition, Supplier<TaggableColumn[]> column) {
 		return condition ? columns(column.get()) : this;
 	}
+	
 	public RequestQuery columns(TaggableColumn... columns) {
 		this.columns.addAll(asList(columns));
 		return this;
 	}
 
-	public RequestQuery filter(boolean condition, Supplier<DBFilter> filter){
-		if(condition) {
-			filters.add(filter.get());
-		}
-		return this;
-	}
 	public RequestQuery filters(boolean condition, Supplier<DBFilter[]> filter){
 		return condition ? filters(filter.get()) : this;
 	}
+
 	public RequestQuery filters(DBFilter... filters){
 		this.filters.addAll(asList(filters));
 		return this;
@@ -86,24 +80,23 @@ public class RequestQuery {
 		return rows;
 	}
 
-	public final ParametredQuery build(String schema){
-		
-		var pb = parametrized();
+	public ParametredQuery build(String schema){
+		var pb = parametrized(table);
 		var sb = new SqlStringBuilder(500);
 		build(schema, sb, pb);
-		String[] cols = getColumns().stream().map(TaggableColumn::tagname).toArray(String[]::new);
+		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new); //!postgres insensitive case
 		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
 	}
 
-	public void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
+	public final void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
     	
-    	requireNonNull(tablename);
+    	requireNonNull(table);
     	requireNonEmpty(columns); 
     	sb.append("SELECT ")
     	.appendEach(columns, COMA, e-> e.tagSql(addWithValue()))
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + POINT)
-    	.append(tablename);
+    	.append(table.reference() + suffix);
     	if(!filters.isEmpty()) {
     		sb.append(" WHERE ")
     		.appendEach(filters, AND.sql(), f-> f.sql(pb));
@@ -111,7 +104,7 @@ public class RequestQuery {
         if(columns.stream().anyMatch(DBColumn::isAggregation)) {
         	var gc = columns.stream()
         			.filter(RequestQuery::groupable)
-        			.map(TaggableColumn::tagname) //add alias 
+        			.map(TaggableColumn::reference) //add alias 
         			.collect(toList());
         	if(!gc.isEmpty()) {
         		sb.append(" GROUP BY ").appendEach(gc, COMA);
@@ -120,13 +113,6 @@ public class RequestQuery {
         		//throw new RuntimeException("require groupBy columns"); ValueColumn
         	}
         }
-	}
-	
-	public RequestQuery fork(String tn) {
-		return new RequestQuery(tn, 
-				new LinkedList<>(columns), 
-				new LinkedList<>(filters), 
-				noResult);
 	}
 
 	private static boolean groupable(DBColumn column) {
@@ -146,5 +132,5 @@ public class RequestQuery {
 		}
 		return 1; //???
 	}
-	
+		
 }

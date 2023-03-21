@@ -4,6 +4,7 @@ import static org.usf.jquery.web.ParameterInvalidValueException.invalidParameter
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 @FunctionalInterface
 public interface ArgumentParser {
@@ -12,9 +13,10 @@ public interface ArgumentParser {
 
 	default Object[] parseArgs(String... args) {
 		List<Object> list = new ArrayList<>(args.length);
+		Function<String, Object> parser = this::parseArg;
 		for(String value : args) {
 			try {
-				list.add(parseArg(value));
+				list.add(parser.apply(value));
 			}
 			catch(Exception e) {
 				throw invalidParameterValueException(value, e);

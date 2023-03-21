@@ -32,7 +32,7 @@ class StdFunctionTest {
 	@EnumSource(value=NumericFunction.class, names={"ABS", "SQRT", "TRUNC", "CEIL", "FLOOR"})
 	void testSql_number(NumericFunction fn) {
 
-		var exp = fn.name() + "(%s)";
+		var exp = fn.identity() + "(%s)";
 		assertEquals(format(exp, "col1"), fn.sql(addWithValue(), new Object[] {column("col1")}));
 		assertEquals(format(exp, 333), fn.sql(addWithValue(), new Object[] {333}));
 		assertThrowsExactly(IllegalArgumentException.class, ()-> fn.sql(addWithValue(), new Object[] {"abc"}));
@@ -42,7 +42,7 @@ class StdFunctionTest {
 	@EnumSource(value=NumericFunction.class, names={"LENGTH", "TRIM", "UPPER", "LOWER"})
 	void testSql_string(NumericFunction fn) {
 
-		var exp = fn.name() + "(%s)";
+		var exp = fn.identity() + "(%s)";
 		assertEquals(format(exp, "col1"), fn.sql(addWithValue(), new Object[] {column("col1")}));
 		assertEquals(format(exp, "'abc'"), fn.sql(addWithValue(), new Object[] {"abc"}));
 		assertThrowsExactly(IllegalArgumentException.class, ()-> fn.sql(addWithValue(), new Object[] {123}));

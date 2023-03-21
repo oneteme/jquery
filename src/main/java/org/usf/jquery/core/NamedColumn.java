@@ -30,7 +30,7 @@ public final class NamedColumn implements TaggableColumn {
 	}
 
 	@Override
-	public String tagname() {
+	public String reference() {
 		return tagName;
 	}
 

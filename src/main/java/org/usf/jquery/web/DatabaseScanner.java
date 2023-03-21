@@ -102,12 +102,12 @@ public final class DatabaseScanner {
 				if(t instanceof YearTableDescriptor) {
 					var e = (YearTableDescriptor) t;
 					var names = tableNames(e);
-					var colum = columnMetadata(e, e.value()+"_20__", declaredColumns);
+					var colum = columnMetadata(e, e.reference()+"_20__", declaredColumns);
 					YearMonth[] revs = names.isEmpty() ? null : yearMonthRevisions(e, names);
-					meta.put(e.name(), new TableMetadata(revs, unmodifiableMap(colum)));
+					meta.put(e.identity(), new TableMetadata(revs, unmodifiableMap(colum)));
 				}
 				else {
-					meta.put(t.name(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.value(), declaredColumns))));
+					meta.put(t.identity(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.reference(), declaredColumns))));
 				}
 			}
 			this.metadata = new DatabaseMetadata(meta);
@@ -117,11 +117,11 @@ public final class DatabaseScanner {
 	private List<String> tableNames(YearTableDescriptor table) {
 		
 		log.info("Scanning '{}' table year partitions...", table);
-		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.value()+"_20__", null)){
+		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.reference()+"_20__", null)){
 			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
 				var tn = rs.getString("TABLE_NAME");
-				if(tn.matches(table.value() + "_20[0-9]{2}")) { // strict pattern
+				if(tn.matches(table.reference() + "_20[0-9]{2}")) { // strict pattern
 					nName.add(tn);
 				}
 			}
@@ -174,7 +174,7 @@ public final class DatabaseScanner {
 							log.warn("type:{}, length:{} => {}", o.get(0).getType(), o.get(0).getLength(), o.stream().map(ColumnType::getTable).collect(toList())));
 						res = map.values().stream().max(comparing(Collection::size)).orElseThrow().get(0);
 					}
-					return entry(declaredColumns.get(res.getColumn()).name(), 
+					return entry(declaredColumns.get(res.getColumn()).identity(), 
 							new ColumnMetadata(res.getColumn(), res.getType(), res.getLength()));
 				})
 				.toArray(Entry[]::new));
@@ -227,7 +227,7 @@ public final class DatabaseScanner {
 			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
 			log.info(bar);
 			map.entrySet().forEach(e-> 
-			log.info(format(pattern, e.getKey(), e.getValue().getName(), e.getValue().getType(), e.getValue().getLength())));
+			log.info(format(pattern, e.getKey(), e.getValue().getReference(), e.getValue().getType(), e.getValue().getLength())));
 			log.info(bar);
 		}
 	}

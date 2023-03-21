@@ -3,18 +3,20 @@ package org.usf.jquery.web;
 import static java.util.Objects.requireNonNull;
 
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.QueryParameterBuilder;
 import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 
-public interface ColumnDecorator {
+public interface ColumnDecorator extends TaggableColumn {
 	
-	String name(); //URL
+	String identity(); //URL
 	
-	String value(); //JSON
+	@Override
+	String reference(); //JSON
 	
 	default TaggableColumn column(TableDecorator table) {
-		var cn = requireNonNull(table.columnName(this));
-		return new TableColumn(cn, value());
+		var id = requireNonNull(table.columnName(this));
+		return new TableColumn(id, reference());
 	}
 	
 	default DBFilter filter(TableDecorator table, TableMetadata meta, String... values) {
@@ -27,5 +29,11 @@ public interface ColumnDecorator {
 	
 	default ArgumentParser parser(TableMetadata metadata) {
 		return metadata.column(this); //avoid metaMap.get(this) if overridden
+	}
+	
+	@Override
+	default String sql(QueryParameterBuilder builder) {
+		var table = (TableDecorator) builder.getMainTable();
+		return table.columnName(this);
 	}
 }

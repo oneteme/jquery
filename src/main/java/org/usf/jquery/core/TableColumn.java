@@ -20,7 +20,7 @@ public final class TableColumn implements TaggableColumn {
 	}
 
 	@Override
-	public String tagname() {
+	public String reference() {
 		return tagname;
 	}
 	

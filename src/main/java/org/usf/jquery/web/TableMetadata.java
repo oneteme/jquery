@@ -32,7 +32,7 @@ public final class TableMetadata {
 	}
 
 	public ColumnMetadata column(ColumnDecorator cd) {
-		return columns.get(cd.name());
+		return columns.get(cd.identity());
 	}
 
 	public YearMonth latestRevision() {

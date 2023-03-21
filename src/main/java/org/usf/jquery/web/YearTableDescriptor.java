@@ -20,7 +20,7 @@ public interface YearTableDescriptor extends TableDecorator {
 		var meta = DatabaseScanner.get().metadata().table(this);
 		var revs = revisionColumn() == null ? null: revisionColumn().column(this);
 		var query = new PartitionedRequestQuery(revs, parseRevisions(ant, meta, parameterMap)) ;
-		return query.select(value())
+		return query.select(this)
 				.columns(ant.columns(), ()-> parseColumns(ant, meta, parameterMap))
 				.filters(ant.filters(), ()-> parseFilters(ant, meta, parameterMap));
 	}
