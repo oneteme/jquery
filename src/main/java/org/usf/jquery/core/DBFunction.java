@@ -116,7 +116,7 @@ public interface DBFunction extends DBOperation {
 		if(isEmpty(appenders) || isEmpty(args) || appenders.size() != args.length) {
 			throw new IllegalArgumentException("appenders.size != args.size");
 		}
-		return new TypedArgsAppender(name, aggregate, appenders).args(args);
+		return new TypedArgsFunction(name, aggregate, appenders).args(args);
 	}
 	
 	static DBFunction function(final String name) {

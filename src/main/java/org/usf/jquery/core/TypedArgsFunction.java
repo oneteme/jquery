@@ -12,17 +12,11 @@ import java.util.stream.IntStream;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public
-final class TypedArgsAppender implements DBFunction {
+final class TypedArgsFunction implements DBFunction {
 	
 	private final String name;
-	private final boolean aggregat;
+	private final boolean aggregate;
 	private final List<BiFunction<QueryParameterBuilder, Object, String>> appenders;
-	
-	@Override
-	public String name() {
-		return name;
-	}
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
@@ -30,10 +24,15 @@ final class TypedArgsAppender implements DBFunction {
 		illegalArgumentIf(!hasSize(args, n), ()-> name() + " operator takes " + n +" parameters");
 		return DBFunction.super.sql(builder, args);
 	}
+
+	@Override
+	public String name() {
+		return name;
+	}
 	
 	@Override
-	public boolean isAggregate() {
-		return aggregat;
+	public boolean isAggregation() {
+		return aggregate;
 	}
 	
 	@Override

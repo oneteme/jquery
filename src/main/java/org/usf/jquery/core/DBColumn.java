@@ -9,7 +9,15 @@ import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
 import lombok.NonNull;
 
 @FunctionalInterface
-public interface DBColumn extends DBObject {
+public interface DBColumn extends DBObject, NestedSql {
+	
+	String sql(QueryParameterBuilder builder);
+	
+	@Override
+	default String sql(QueryParameterBuilder builder, Object[] args) {
+		illegalArgumentIf(nonNull(args), "DBColumn takes no arguments");
+		return sql(builder);
+	}
 
 	default boolean isAggregation() {
 		return false;
@@ -18,14 +26,6 @@ public interface DBColumn extends DBObject {
 	default boolean isConstant() {
 		return false;
 	}
-	
-	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(nonNull(args), "DBColumn takes no arguments");
-		return sql(builder);
-	}
-	
-	String sql(QueryParameterBuilder builder);
 
 	default NamedColumn as(String name) {
 		return new NamedColumn(this, requireLegalVariable(name));
@@ -145,10 +145,5 @@ public interface DBColumn extends DBObject {
 	
 	static boolean isColumnConstant(Object o) {
 		return !(o instanceof DBColumn && !((DBColumn)o).isConstant());
-	}
-	
-	static boolean isColumnAggregation(Object o) {
-		return o instanceof DBColumn && ((DBColumn)o).isAggregation();
-	}
-	
+	}	
 }

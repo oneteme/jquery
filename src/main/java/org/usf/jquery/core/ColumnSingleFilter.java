@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.NestedSql.aggregation;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
@@ -19,6 +20,12 @@ public final class ColumnSingleFilter implements DBFilter {
 	@Override
 	public String sql(QueryParameterBuilder ph) {
 		return expression.sql(ph, column);
+	}
+	
+	@Override
+	public boolean isAggregation() {
+		return column.isAggregation() 
+				|| aggregation(expression);
 	}
 
 	@Override

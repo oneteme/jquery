@@ -22,8 +22,8 @@ public final class OperationColumn implements DBColumn {
 
 	@Override
 	public boolean isAggregation() {
-		return operation.isAggregate() 
-				|| Stream.of(args).anyMatch(DBColumn::isColumnAggregation);
+		return operation.isAggregation() 
+				|| Stream.of(args).anyMatch(NestedSql::aggregation);
 	}
 
 	@Override

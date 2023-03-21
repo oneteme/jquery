@@ -9,7 +9,7 @@ import java.util.function.Function;
 @FunctionalInterface
 public interface ArgumentParser {
 
-	Object parseArg(String arg);
+	Object parseArg(String arg); //TD throw invalidParameterValueException(value, e);
 
 	default Object[] parseArgs(String... args) {
 		List<Object> list = new ArrayList<>(args.length);

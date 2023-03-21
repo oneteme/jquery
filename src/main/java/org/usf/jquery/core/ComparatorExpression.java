@@ -5,7 +5,7 @@ import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
-public interface ComparatorExpression extends DBExpression {
+public interface ComparatorExpression extends DBExpression, NestedSql {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {

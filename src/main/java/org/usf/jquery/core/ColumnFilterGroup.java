@@ -31,6 +31,12 @@ public final class ColumnFilterGroup implements DBFilter {
 				.append(")")
 				.toString();
 	}
+	
+	@Override
+	public boolean isAggregation() {
+		return expressions.stream()
+				.anyMatch(NestedSql::isAggregation);
+	}
 
 	@Override
 	public DBFilter append(LogicalOperator op, DBFilter filter) {

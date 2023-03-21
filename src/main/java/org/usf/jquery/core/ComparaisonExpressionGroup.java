@@ -28,6 +28,12 @@ public final class ComparaisonExpressionGroup implements ComparatorExpression {
 				.append(")")
 				.toString();
 	}
+	
+	@Override
+	public boolean isAggregation() {
+		return expressions.stream()
+				.allMatch(NestedSql::aggregation);
+	}
 
 	@Override
 	public ComparatorExpression append(LogicalOperator op, ComparatorExpression exp) {

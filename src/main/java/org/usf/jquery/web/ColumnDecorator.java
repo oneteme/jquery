@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.requireNonNull;
 
+import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.QueryParameterBuilder;
 import org.usf.jquery.core.TableColumn;
@@ -20,7 +21,10 @@ public interface ColumnDecorator extends TaggableColumn {
 	}
 	
 	default DBFilter filter(TableDecorator table, TableMetadata meta, String... values) {
-    	var column = requireNonNull(column(table));
+    	return filter(requireNonNull(column(table)), meta, values);
+	}
+	
+	default DBFilter filter(DBColumn column, TableMetadata meta, String... values) {
     	var parser = requireNonNull(parser(meta));
     	return values.length == 1 
     			? column.equal(parser.parseArg(values[0]))

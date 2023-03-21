@@ -5,7 +5,7 @@ import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
-public interface DBFilter extends DBObject {
+public interface DBFilter extends DBObject, NestedSql {
 	
 	String sql(QueryParameterBuilder builder);
 

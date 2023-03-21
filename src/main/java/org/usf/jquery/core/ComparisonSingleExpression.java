@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.NestedSql.aggregation;
 import static java.lang.reflect.Array.get;
 import static java.lang.reflect.Array.getLength;
 import static java.util.stream.IntStream.range;
@@ -31,6 +32,11 @@ public final class ComparisonSingleExpression implements ComparatorExpression {
 			}
 		}
 		return comparator.sql(builder, param.toArray());
+	}
+	
+	@Override
+	public boolean isAggregation() {
+		return aggregation(right);
 	}
 	
 	@Override

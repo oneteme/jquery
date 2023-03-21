@@ -4,6 +4,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.lang.reflect.Array.getLength;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
@@ -18,7 +19,9 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -81,6 +84,8 @@ public class RequestQuery {
 	}
 
 	public ParametredQuery build(String schema){
+    	requireNonNull(table);
+    	requireNonEmpty(columns);
 		var pb = parametrized(table);
 		var sb = new SqlStringBuilder(500);
 		build(schema, sb, pb);
@@ -89,18 +94,31 @@ public class RequestQuery {
 	}
 
 	public final void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
-    	
-    	requireNonNull(table);
-    	requireNonEmpty(columns); 
+    	select(schema, sb, pb);
+    	where(sb, pb);
+    	groupBy(sb, pb);
+    	having(sb, pb);
+	}
+
+	void select(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
     	sb.append("SELECT ")
     	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table)))
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + POINT)
     	.append(table.reference() + suffix);
-    	if(!filters.isEmpty()) {
+	}
+
+	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
+		var where = filters.stream()
+				.filter(not(DBFilter::isAggregation))
+				.collect(toList());
+    	if(!where.isEmpty()) {
     		sb.append(" WHERE ")
-    		.appendEach(filters, AND.sql(), f-> f.sql(pb));
+    		.appendEach(where, AND.sql(), f-> f.sql(pb));
     	}
+	}
+	
+	void groupBy(SqlStringBuilder sb, QueryParameterBuilder pb){
         if(columns.stream().anyMatch(DBColumn::isAggregation)) {
         	var gc = columns.stream()
         			.filter(RequestQuery::groupable)
@@ -113,6 +131,16 @@ public class RequestQuery {
         		//throw new RuntimeException("require groupBy columns"); ValueColumn
         	}
         }
+	}
+	
+	void having(SqlStringBuilder sb, QueryParameterBuilder pb){
+		var having = filters.stream()
+				.filter(DBFilter::isAggregation)
+				.collect(toList());
+    	if(!having.isEmpty()) {
+    		sb.append(" HAVING ")
+    		.appendEach(having, AND.sql(), f-> f.sql(pb));
+    	}
 	}
 
 	private static boolean groupable(DBColumn column) {
