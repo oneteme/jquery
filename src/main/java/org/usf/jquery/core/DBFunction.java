@@ -31,10 +31,6 @@ public interface DBFunction extends DBOperation {
 				.collect(joining(COMA));
 	}
 	
-	default boolean isAggregate() {
-		return false;
-	}
-	
 	default OperationColumn args(Object... args) {
 		return new OperationColumn(this, args);
 	}
