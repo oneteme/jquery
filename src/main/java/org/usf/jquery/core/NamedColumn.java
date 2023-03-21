@@ -12,7 +12,7 @@ public final class NamedColumn implements TaggableColumn {
 	@NonNull
 	private final DBColumn column;
 	@NonNull
-	private final String tagName;
+	private final String reference;
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {
@@ -31,7 +31,7 @@ public final class NamedColumn implements TaggableColumn {
 
 	@Override
 	public String reference() {
-		return tagName;
+		return reference;
 	}
 
 	@Override
