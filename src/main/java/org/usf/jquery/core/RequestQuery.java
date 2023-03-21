@@ -93,7 +93,7 @@ public class RequestQuery {
     	requireNonNull(table);
     	requireNonEmpty(columns); 
     	sb.append("SELECT ")
-    	.appendEach(columns, COMA, e-> e.tagSql(addWithValue()))
+    	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table)))
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + POINT)
     	.append(table.reference() + suffix);

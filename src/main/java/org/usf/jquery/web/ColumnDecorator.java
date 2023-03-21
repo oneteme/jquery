@@ -16,7 +16,7 @@ public interface ColumnDecorator extends TaggableColumn {
 	
 	default TaggableColumn column(TableDecorator table) {
 		var id = requireNonNull(table.columnName(this));
-		return new TableColumn(id, reference());
+		return new TableColumn(id, reference(), table.reference());
 	}
 	
 	default DBFilter filter(TableDecorator table, TableMetadata meta, String... values) {
@@ -33,7 +33,7 @@ public interface ColumnDecorator extends TaggableColumn {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder) {
-		var table = (TableDecorator) builder.getMainTable();
-		return table.columnName(this);
+		var column = column((TableDecorator) builder.getMainTable());
+		return column.sql(builder);
 	}
 }

@@ -9,19 +9,19 @@ import lombok.RequiredArgsConstructor;
 public final class TableColumn implements TaggableColumn {
 
 	@NonNull
-	private final String dbName;
+	private final String columnName;
 	@NonNull
-	private final String tagname;
-	//add tablename
+	private final String reference;
+	private final String tableName;
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {
-		return dbName;
+		return columnName;
 	}
 
 	@Override
 	public String reference() {
-		return tagname;
+		return reference;
 	}
 	
 	@Override

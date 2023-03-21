@@ -11,7 +11,7 @@ import java.util.Map;
 import org.usf.jquery.core.PartitionedRequestQuery;
 import org.usf.jquery.core.RequestQuery;
 
-public interface YearTableDescriptor extends TableDecorator {
+public interface YearTableDecorator extends TableDecorator {
 	
 	ColumnDecorator revisionColumn();
 	
@@ -30,19 +30,19 @@ public interface YearTableDescriptor extends TableDecorator {
 		var revs = values == null 
 				? null
 				: flatStream(values)
-    			.map(YearTableDescriptor::parseYearMonth)
+    			.map(YearTableDecorator::parseYearMonth)
     			.toArray(YearMonth[]::new);
     	return metadata.filterExistingRevision(ant.revisionMode(), revs);
     }
 
-    static YearMonth parseYearMonth(String rev) {
-    	if(rev.matches("[0-9]{4}-[0-9]{2}")) {
-    		return YearMonth.parse(rev);
+    static YearMonth parseYearMonth(String revision) {
+    	if(revision.matches("[0-9]{4}-[0-9]{2}")) {
+    		return YearMonth.parse(revision);
     	}
-    	if(rev.matches("[0-9]{4}")) {
-    		return Year.parse(rev).atMonth(DECEMBER);
+    	if(revision.matches("[0-9]{4}")) {
+    		return Year.parse(revision).atMonth(DECEMBER);
     	}
-    	throw invalidParameterValueException(rev);
+    	throw invalidParameterValueException(revision);
     }
 
 }

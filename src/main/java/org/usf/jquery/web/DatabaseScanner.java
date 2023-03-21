@@ -99,8 +99,8 @@ public final class DatabaseScanner {
 							return true;
 						})
 						.collect(toMap(t::columnName, identity()));
-				if(t instanceof YearTableDescriptor) {
-					var e = (YearTableDescriptor) t;
+				if(t instanceof YearTableDecorator) {
+					var e = (YearTableDecorator) t;
 					var names = tableNames(e);
 					var colum = columnMetadata(e, e.reference()+"_20__", declaredColumns);
 					YearMonth[] revs = names.isEmpty() ? null : yearMonthRevisions(e, names);
@@ -114,7 +114,7 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private List<String> tableNames(YearTableDescriptor table) {
+	private List<String> tableNames(YearTableDecorator table) {
 		
 		log.info("Scanning '{}' table year partitions...", table);
 		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.reference()+"_20__", null)){
@@ -180,7 +180,7 @@ public final class DatabaseScanner {
 				.toArray(Entry[]::new));
 	}
 	
-	private YearMonth[] yearMonthRevisions(YearTableDescriptor table, List<String> tableNames) {
+	private YearMonth[] yearMonthRevisions(YearTableDecorator table, List<String> tableNames) {
 		
 		if(table.revisionColumn() == null) {
 			return tableNames.stream()
