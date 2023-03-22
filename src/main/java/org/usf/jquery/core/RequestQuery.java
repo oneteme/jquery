@@ -19,9 +19,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Predicate;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -102,7 +100,7 @@ public class RequestQuery {
 
 	void select(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
     	sb.append("SELECT ")
-    	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table)))
+    	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table))) //addWithValue constant columns
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + POINT)
     	.append(table.reference() + suffix);
