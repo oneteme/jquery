@@ -6,7 +6,6 @@ import static org.usf.jquery.core.Validation.requireLegalAlias;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.QueryParameterBuilder;
-import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 
 public interface ColumnDecorator extends TaggableColumn {
@@ -18,7 +17,7 @@ public interface ColumnDecorator extends TaggableColumn {
 	
 	default TaggableColumn column(TableDecorator table) {
 		var id = requireLegalAlias(table.columnReference(this));
-		return new TableColumn(id, reference(), table.reference());
+		return DBColumn.column(id).as(reference());
 	}
 	
 	default DBFilter filter(TableDecorator table, TableMetadata meta, String... values) {
