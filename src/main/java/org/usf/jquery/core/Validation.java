@@ -10,8 +10,8 @@ import lombok.NonNull;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Validation {
     
-    public static String requireLegalVariable(String s) {
-    	illegalArgumentIf(!requireNonBlank(s).matches("\\w+"), ()-> "illegal variable name : " + s);
+    public static String requireLegalAlias(String s) {
+    	illegalArgumentIf(!requireNonBlank(s).matches("\\w+"), ()-> "illegal alias : " + s);
 		return s;
 	}
 	
@@ -36,7 +36,6 @@ public final class Validation {
 		}
 	}
 
-	@Deprecated
 	public static void illegalArgumentIfNot(boolean test, @NonNull Supplier<String> supplier) {
 		illegalArgumentIf(!test, supplier);
 	}

@@ -32,7 +32,7 @@ public class RequestQuery {
 
 	DBTable table;
 	String suffix;
-	List<TaggableColumn> columns = new LinkedList<>();
+	List<TaggableColumn> columns = new LinkedList<>(); //were + having
 	List<DBFilter> filters = new LinkedList<>();
 	boolean noResult;
 
@@ -100,7 +100,7 @@ public class RequestQuery {
 
 	void select(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
     	sb.append("SELECT ")
-    	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table))) //addWithValue constant columns
+    	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table))) //addWithValue columns (case, constant, Operation, ..)
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + POINT)
     	.append(table.reference() + suffix);

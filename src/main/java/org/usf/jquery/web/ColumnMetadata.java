@@ -40,18 +40,18 @@ public final class ColumnMetadata implements ArgumentParser {
 	private final int length;
 	private Function<String, Object> fn;
 
-	/**
-	 * see: https://download.oracle.com/otn-pub/jcp/jdbc-4_2-mrel2-spec/jdbc4.2-fr-spec.pdf?AuthParam=1679342559_531aef55f72b5993f346322f9e9e7fe3
-	 * @return
-	 */
 	@Override
-	public Object parseArg(String v) {
+	public Object parse(String v) {
 		if(fn == null) {
 			fn = parser(v, type); // load on demand
 		}
 		return fn.apply(v); //can check string.size < length
 	}
-	
+
+	/**
+	 * see: https://download.oracle.com/otn-pub/jcp/jdbc-4_2-mrel2-spec/jdbc4.2-fr-spec.pdf?AuthParam=1679342559_531aef55f72b5993f346322f9e9e7fe3
+	 * @return
+	 */
 	static Function<String, Object> parser(String name, int type){
 		switch(type) {
 		case BOOLEAN:

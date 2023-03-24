@@ -109,7 +109,7 @@ public final class QueryParameterBuilder {
 	}
 	
 	static String formatString(Object o) {
-		return varchar(o.toString());
+		return varchar(o.toString()); //TODO 
 	}
 	
 	

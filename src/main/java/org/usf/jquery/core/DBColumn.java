@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
-import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.core.Validation.requireLegalAlias;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
 
@@ -19,6 +19,7 @@ public interface DBColumn extends DBObject, NestedSql {
 		return sql(builder);
 	}
 
+	@Override
 	default boolean isAggregation() {
 		return false;
 	}
@@ -28,7 +29,7 @@ public interface DBColumn extends DBObject, NestedSql {
 	}
 
 	default NamedColumn as(String name) {
-		return new NamedColumn(this, requireLegalVariable(name));
+		return new NamedColumn(this, requireLegalAlias(name));
 	}
 
 	// filters
@@ -124,7 +125,7 @@ public interface DBColumn extends DBObject, NestedSql {
 		return new CaseSingleColumnBuilder(this).when(ex);
 	}
 	
-	public static DBColumn column(@NonNull String value) {
+	static DBColumn column(@NonNull String value) {
 		return p-> value;
 	}
 

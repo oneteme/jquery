@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.time.Month.DECEMBER;
-import static org.usf.jquery.web.ParameterInvalidValueException.invalidParameterValueException;
 import static org.usf.jquery.web.TableDecorator.flatStream;
 
 import java.time.Year;
@@ -42,7 +41,7 @@ public interface YearTableDecorator extends TableDecorator {
     	if(revision.matches("[0-9]{4}")) {
     		return Year.parse(revision).atMonth(DECEMBER);
     	}
-    	throw invalidParameterValueException(revision);
+    	throw new IllegalArgumentException("cannot parse revision " + revision);
     }
 
 }

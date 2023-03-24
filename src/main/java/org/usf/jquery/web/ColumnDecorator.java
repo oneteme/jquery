@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.requireNonNull;
+import static org.usf.jquery.core.Validation.requireLegalAlias;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -16,17 +17,18 @@ public interface ColumnDecorator extends TaggableColumn {
 	String reference(); //JSON
 	
 	default TaggableColumn column(TableDecorator table) {
-		var id = requireNonNull(table.columnName(this));
+		var id = requireLegalAlias(table.columnName(this));
 		return new TableColumn(id, reference(), table.reference());
 	}
 	
 	default DBFilter filter(TableDecorator table, TableMetadata meta, String... values) {
-    	return filter(requireNonNull(column(table)), meta, values);
+		var column = requireNonNull(column(table));
+    	return filter(column, meta, values);
 	}
 	
 	default DBFilter filter(DBColumn column, TableMetadata meta, String... values) {
     	var parser = requireNonNull(parser(meta));
-    	return values.length == 1 
+    	return values.length == 1
     			? column.equal(parser.parseArg(values[0]))
     			: column.in(parser.parseArgs(values));
 	}
@@ -37,7 +39,8 @@ public interface ColumnDecorator extends TaggableColumn {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder) {
-		var column = column((TableDecorator) builder.getMainTable());
+		var table  = (TableDecorator) requireNonNull(builder.getMainTable());
+		var column = requireNonNull(column(table));
 		return column.sql(builder);
 	}
 }
