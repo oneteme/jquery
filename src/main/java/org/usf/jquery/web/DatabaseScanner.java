@@ -92,13 +92,13 @@ public final class DatabaseScanner {
 				var declaredColumns = columns.stream()
 						.filter(cd-> {
 							try {
-								t.columnName(cd);
+								t.columnReference(cd);
 							}catch (Exception e) {
 								return false;
 							}
 							return true;
 						})
-						.collect(toMap(t::columnName, identity()));
+						.collect(toMap(t::columnReference, identity()));
 				if(t instanceof YearTableDecorator) {
 					var e = (YearTableDecorator) t;
 					var names = tableNames(e);

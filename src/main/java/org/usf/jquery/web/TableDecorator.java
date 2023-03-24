@@ -21,6 +21,8 @@ public interface TableDecorator extends DBTable {
 	@Override
 	String reference(); //SQL
 	
+	String columnReference(ColumnDecorator desc);
+	
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var meta = DatabaseScanner.get().metadata().table(this);
 		return new RequestQuery().select(this)

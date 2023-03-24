@@ -17,7 +17,7 @@ public interface ColumnDecorator extends TaggableColumn {
 	String reference(); //JSON
 	
 	default TaggableColumn column(TableDecorator table) {
-		var id = requireLegalAlias(table.columnName(this));
+		var id = requireLegalAlias(table.columnReference(this));
 		return new TableColumn(id, reference(), table.reference());
 	}
 	
