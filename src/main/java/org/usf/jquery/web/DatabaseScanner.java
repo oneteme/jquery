@@ -92,22 +92,22 @@ public final class DatabaseScanner {
 				var declaredColumns = columns.stream()
 						.filter(cd-> {
 							try {
-								t.columnReference(cd);
+								t.columnName(cd);
 							}catch (Exception e) {
 								return false;
 							}
 							return true;
 						})
-						.collect(toMap(t::columnReference, identity()));
+						.collect(toMap(t::columnName, identity()));
 				if(t instanceof YearTableDecorator) {
 					var e = (YearTableDecorator) t;
 					var names = tableNames(e);
-					var colum = columnMetadata(e, e.reference()+"_20__", declaredColumns);
+					var colum = columnMetadata(e, e.sql()+"_20__", declaredColumns);
 					YearMonth[] revs = names.isEmpty() ? null : yearMonthRevisions(e, names);
 					meta.put(e.identity(), new TableMetadata(revs, unmodifiableMap(colum)));
 				}
 				else {
-					meta.put(t.identity(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.reference(), declaredColumns))));
+					meta.put(t.identity(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.sql(), declaredColumns))));
 				}
 			}
 			this.metadata = new DatabaseMetadata(meta);
@@ -117,11 +117,11 @@ public final class DatabaseScanner {
 	private List<String> tableNames(YearTableDecorator table) {
 		
 		log.info("Scanning '{}' table year partitions...", table);
-		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.reference()+"_20__", null)){
+		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.sql()+"_20__", null)){
 			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
 				var tn = rs.getString("TABLE_NAME");
-				if(tn.matches(table.reference() + "_20[0-9]{2}")) { // strict pattern
+				if(tn.matches(table.sql() + "_20[0-9]{2}")) { // strict pattern
 					nName.add(tn);
 				}
 			}
@@ -194,7 +194,7 @@ public final class DatabaseScanner {
 		try(var cn = config.getDataSource().getConnection()){
 			var yearMonths = new LinkedList<YearMonth>();
 			try(var ps = cn.createStatement()){
-				var rc = table.revisionColumn().column(table).sql(null);
+				var rc = table.columnName(table.revisionColumn());
 				var query = tableNames.stream()
 						.map(tn-> "SELECT DISTINCT " + rc + ", " + tn.substring(tn.length()-4) + " FROM " + tn)
 						.collect(joining("; "));

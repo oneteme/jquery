@@ -1,13 +1,14 @@
 package org.usf.jquery.core;
 
-@FunctionalInterface
 public interface DBTable extends DBObject {
-	
-	String reference(); //SQL
+
+	String reference(); //JSON & TAG
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {
-		return reference();
+	default String sql(QueryParameterBuilder builder, Object[] args) {//schema, suffix ?
+		return sql();
 	}
+	
+	String sql();
 	
 }

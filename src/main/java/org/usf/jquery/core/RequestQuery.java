@@ -20,7 +20,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -33,7 +32,7 @@ public class RequestQuery {
 
 	DBTable table;
 	String suffix;
-	List<TaggableColumn> columns = new LinkedList<>(); //were + having
+	List<TaggableColumn> columns = new LinkedList<>(); //WERE & HAVING
 	List<DBFilter> filters = new LinkedList<>();
 	boolean noResult;
 
@@ -46,18 +45,10 @@ public class RequestQuery {
 		this.suffix = suffix;
 		return columns(columns);
 	}
-
-	public RequestQuery columns(boolean condition, Supplier<TaggableColumn[]> column) {
-		return condition ? columns(column.get()) : this;
-	}
 	
 	public RequestQuery columns(TaggableColumn... columns) {
 		this.columns.addAll(asList(columns));
 		return this;
-	}
-
-	public RequestQuery filters(boolean condition, Supplier<DBFilter[]> filter){
-		return condition ? filters(filter.get()) : this;
 	}
 
 	public RequestQuery filters(DBFilter... filters){
@@ -104,7 +95,7 @@ public class RequestQuery {
     	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table))) //addWithValue columns (case, constant, Operation, ..)
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + POINT)
-    	.append(table.reference() + suffix);
+    	.append(table.sql() + suffix); //TODO call sql with args 
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){

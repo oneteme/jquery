@@ -1,68 +1,71 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.toMap;
-import static org.usf.jquery.web.ResourceNotFoundException.columnNotFoundException;
 
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.RequestQuery;
-import org.usf.jquery.core.TaggableColumn;
 
 public interface TableDecorator extends DBTable {
 	
 	String identity(); //URL
-
-	@Override
-	String reference(); //SQL
 	
-	String columnReference(ColumnDecorator desc);
+	@Override
+	default String reference() { //JSON & TAG == URL 
+		return identity();
+	}
+	
+	String columnName(ColumnDecorator desc);
 	
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		var meta = DatabaseScanner.get().metadata().table(this);
+		
+		var columns = parseColumns(ant, parameterMap);
+		var filters = parseFilters(ant, Set.of(columns), parameterMap);
 		return new RequestQuery().select(this)
-				.columns(ant.columns(), ()-> parseColumns(ant, meta, parameterMap))
-				.filters(ant.filters(), ()-> parseFilters(ant, meta, parameterMap));
+				.columns(columns)
+				.filters(filters);
 	}
 		
-	default TaggableColumn[] parseColumns(RequestQueryParam ant, TableMetadata metadata, Map<String, String[]> parameterMap) {
+	default ColumnDecorator[] parseColumns(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 
-		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
-		var cols = parameterMap.get(ant.columnParameter());
-		if(isEmpty(cols)) {
-			cols = ant.defaultColumns();
-		}
+		var cols = parameterMap.getOrDefault(ant.columnParameter(), ant.defaultColumns());
 		if(isEmpty(cols)) { //TD check first param isBlank
 			throw new IllegalArgumentException("require " + ant.columnParameter() + " parameter");
 		}
+		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
 		return flatStream(cols).map(p->{
-			var dcr = map.get(formatColumnName(p));
-			if(dcr == null) {
-				throw columnNotFoundException(p);
+			var column = map.get(formatColumnName(p));
+			if(column == null) {
+					throw new NoSuchElementException(p + " not found");
 			}
-			return dcr.column(this);
-		}).toArray(TaggableColumn[]::new);
+			return column;
+		}).toArray(ColumnDecorator[]::new);
 	}
 	
-	default DBFilter[] parseFilters(RequestQueryParam ant, TableMetadata metadata, Map<String, String[]> parameterMap) {
+	default DBFilter[] parseFilters(RequestQueryParam ant, Set<ColumnDecorator> columns, Map<String, String[]> parameterMap) {
 
 		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
+		var meta = DatabaseScanner.get().metadata().table(this);
     	var skipColumns = Set.of(ant.revisionParameter(), ant.columnParameter());
     	var filters = new LinkedList<DBFilter>();
     	for(var e : parameterMap.entrySet()) {
  			if(!skipColumns.contains(e.getKey())) {
  	    		var name = formatColumnName(e.getKey());
- 				var dcr = map.get(name);
- 				if(dcr != null) {
- 					filters.add(dcr.filter(this, metadata, flatArray(e.getValue())));
+ 				var dec = map.get(name);
+ 				if(dec != null) {
+ 					var column = columns.contains(dec) ? column(dec.reference()) : dec;
+ 					filters.add(column.filter(dec.expression(meta, flatArray(e.getValue()))));
  				}
  	 			else if(!ant.allowUnknownParameters()) {
- 					throw columnNotFoundException(e.getKey());
+ 					throw new NoSuchElementException(e.getKey() + " not found");
  	 			}
  			}
     	}

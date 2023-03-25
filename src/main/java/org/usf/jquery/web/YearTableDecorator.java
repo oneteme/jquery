@@ -6,6 +6,7 @@ import static org.usf.jquery.web.TableDecorator.flatStream;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.Map;
+import java.util.Set;
 
 import org.usf.jquery.core.PartitionedRequestQuery;
 import org.usf.jquery.core.RequestQuery;
@@ -17,11 +18,13 @@ public interface YearTableDecorator extends TableDecorator {
 	@Override
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var meta = DatabaseScanner.get().metadata().table(this);
-		var revs = revisionColumn() == null ? null: revisionColumn().column(this);
-		var query = new PartitionedRequestQuery(revs, parseRevisions(ant, meta, parameterMap)) ;
+		var revs = revisionColumn() == null ? null: revisionColumn();
+		var query = new PartitionedRequestQuery(revs, parseRevisions(ant, meta, parameterMap));
+		var columns = parseColumns(ant, parameterMap);
+		var filters = parseFilters(ant, Set.of(columns), parameterMap);
 		return query.select(this)
-				.columns(ant.columns(), ()-> parseColumns(ant, meta, parameterMap))
-				.filters(ant.filters(), ()-> parseFilters(ant, meta, parameterMap));
+				.columns(columns)
+				.filters(filters);
 	}
 
 	default YearMonth[] parseRevisions(RequestQueryParam ant, TableMetadata metadata, Map<String, String[]> parameterMap) {

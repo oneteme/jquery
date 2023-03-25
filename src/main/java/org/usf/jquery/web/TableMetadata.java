@@ -14,10 +14,8 @@ import org.usf.jquery.web.RequestQueryParam.RevisionMode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 
 @Getter
-@Slf4j
 @ToString(includeFieldNames = false)
 @RequiredArgsConstructor
 public final class TableMetadata {

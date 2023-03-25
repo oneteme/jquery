@@ -12,7 +12,7 @@ public final class TableColumn implements TaggableColumn {
 	private final String columnName;
 	@NonNull
 	private final String reference;
-	private final String tableName;
+	private final String tableRef;
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {

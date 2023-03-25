@@ -26,33 +26,33 @@ import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
-import java.util.function.Function;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
-@Getter
+@Getter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor 
 public final class ColumnMetadata implements ArgumentParser {
 
 	private final String reference;
 	private final int type;
 	private final int length;
-	private Function<String, Object> fn;
+	private ArgumentParser parser;
 
 	@Override
 	public Object parse(String v) {
-		if(fn == null) {
-			fn = parser(v, type); // load on demand
+		if(parser == null) {
+			parser = parser(v, type); // load on demand
 		}
-		return fn.apply(v); //can check string.size < length
+		return parser.parse(v); //can check string.size < length
 	}
 
 	/**
 	 * see: https://download.oracle.com/otn-pub/jcp/jdbc-4_2-mrel2-spec/jdbc4.2-fr-spec.pdf?AuthParam=1679342559_531aef55f72b5993f346322f9e9e7fe3
 	 * @return
 	 */
-	static Function<String, Object> parser(String name, int type){
+	static ArgumentParser parser(String name, int type){
 		switch(type) {
 		case BOOLEAN:
 		case BIT		  	: return Boolean::parseBoolean;

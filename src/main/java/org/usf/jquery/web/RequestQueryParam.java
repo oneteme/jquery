@@ -15,16 +15,14 @@ public @interface RequestQueryParam {
 
 	String name(); //tablename
 	
-	boolean columns() default true;
-	
 	String[] defaultColumns() default {};
 	
-	boolean filters() default true;
+	boolean allowUnknownParameters() default false; //ignoreUnknownParameters
 	
-	boolean allowUnknownParameters() default false;
+	//TODO sortColumn, ..
 	
-	String columnParameter() default "column";
-
+	String columnParameter() default "column"; 
+	
 	String revisionParameter() default "revision";
 	
 	RevisionMode revisionMode() default STRICT;

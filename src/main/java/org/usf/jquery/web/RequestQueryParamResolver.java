@@ -1,8 +1,7 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.web.ResourceNotFoundException.tableNotFoundException;
-
 import java.util.Map;
+import java.util.NoSuchElementException;
 
 import org.usf.jquery.core.RequestQuery;
 
@@ -16,7 +15,7 @@ public final class RequestQueryParamResolver {
 		return DatabaseScanner.get().tableDescriptors().stream()
 				.filter(e-> e.identity().equals(ant.name()))
 				.findAny()
-				.orElseThrow(()-> tableNotFoundException(ant.name()))
+				.orElseThrow(()-> new NoSuchElementException(ant.name() + " not found"))
 				.query(ant, parameterMap);
 	}
 }
