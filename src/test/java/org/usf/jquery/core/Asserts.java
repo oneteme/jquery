@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
@@ -85,27 +86,27 @@ final class Asserts {
 
 	
 	static void assertRequireOneParameter(DBCallable call) {
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), null)); //null operand
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"), 1234)); //2 args
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"), "ab")); //2 args
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), 1234, "ab")); //2 args
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), "ab", 1234)); //2 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), null)); //null operand
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"), 1234)); //2 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"), "ab")); //2 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), 1234, "ab")); //2 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), "ab", 1234)); //2 args
 	}
 
 	static void assertRequireTwoParameter(DBCallable call) {
 		assertRequireAtLeastTwoParameter(call);
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"), 1234, "ab")); //3 args
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"), "ab", 1234)); //3 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"), 1234, "ab")); //3 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"), "ab", 1234)); //3 args
 	}
 
 	static void assertRequireAtLeastTwoParameter(DBCallable call) {
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), null)); //null operand
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"))); //1 args
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), 1234)); //1 args
-		assertThrows(IllegalArgumentException.class, ()-> call.sql(addWithValue(), "ab")); //1 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), null)); //null operand
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), column("cm1"))); //1 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), 1234)); //1 args
+		assertThrowsExactly(IllegalArgumentException.class, ()-> call.sql(addWithValue(), "ab")); //1 args
 	}
 	
 	private static void assertNot(Class<? extends Exception> clazz, DBCallable op, Object oper, Object... values) {
-		assertThrows(IllegalArgumentException.class, ()-> op.sql(addWithValue(), oper, values)); // 0 arg
+		assertThrowsExactly(IllegalArgumentException.class, ()-> op.sql(addWithValue(), oper, values)); // 0 arg
 	}
 }

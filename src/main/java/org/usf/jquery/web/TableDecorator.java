@@ -73,8 +73,8 @@ public interface TableDecorator extends DBTable {
 		return filters.toArray(DBFilter[]::new);
 	}
 
-	@Deprecated(forRemoval = true) // move to client side 
-	static String formatColumnName(String v) {
+	// move to client side 
+	default String formatColumnName(String v) {
 		return v.replace("-", "_").toUpperCase();
 	}
 	

@@ -58,7 +58,8 @@ public final class DatabaseScanner {
 	}
 	
 	public static DatabaseScanner configure(String schema, @NonNull DataSource ds) {
-		return instance = new DatabaseScanner(new Configuration(schema, ds));
+		instance = new DatabaseScanner(new Configuration(schema, ds));
+		return instance;
 	}
 	
 	public static DatabaseScanner get() {

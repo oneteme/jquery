@@ -84,13 +84,13 @@ public class RequestQuery {
 	}
 
 	public final void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
-    	select(schema, sb, pb);
+    	select(schema, sb);
     	where(sb, pb);
-    	groupBy(sb, pb);
+    	groupBy(sb);
     	having(sb, pb);
 	}
 
-	void select(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
+	void select(String schema, SqlStringBuilder sb){
     	sb.append("SELECT ")
     	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table))) //addWithValue columns (case, constant, Operation, ..)
     	.append(" FROM ")
@@ -108,7 +108,7 @@ public class RequestQuery {
     	}
 	}
 	
-	void groupBy(SqlStringBuilder sb, QueryParameterBuilder pb){
+	void groupBy(SqlStringBuilder sb){
         if(columns.stream().anyMatch(DBColumn::isAggregation)) {
         	var expr = columns.stream()
         			.filter(RequestQuery::groupable)
