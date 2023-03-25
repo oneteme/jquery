@@ -5,6 +5,7 @@ import static java.lang.reflect.Array.getLength;
 import static java.util.Arrays.asList;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
@@ -107,26 +108,26 @@ public class RequestQuery {
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
-		var where = filters.stream()
+		var expr = filters.stream()
 				.filter(not(DBFilter::isAggregation))
-				.collect(toList());
-    	if(!where.isEmpty()) {
-    		sb.append(" WHERE ")
-    		.appendEach(where, AND.sql(), f-> f.sql(pb));
+				.map(f-> f.sql(pb))
+    			.collect(joining(AND.sql()));
+    	if(!expr.isEmpty()) {
+    		sb.append(" WHERE ").append(expr);
     	}
 	}
 	
 	void groupBy(SqlStringBuilder sb, QueryParameterBuilder pb){
         if(columns.stream().anyMatch(DBColumn::isAggregation)) {
-        	var gc = columns.stream()
+        	var expr = columns.stream()
         			.filter(RequestQuery::groupable)
         			.map(TaggableColumn::reference) //add alias 
-        			.collect(toList());
-        	if(!gc.isEmpty()) {
-        		sb.append(" GROUP BY ").appendEach(gc, COMA);
+        			.collect(joining(COMA));
+        	if(!expr.isEmpty()) {
+        		sb.append(" GROUP BY ").append(expr);
         	}
         	else if(columns.size() > 1) {
-        		//throw new RuntimeException("require groupBy columns"); ValueColumn
+        		//throw new RuntimeException("require groupBy columns"); CONST !?
         	}
         }
 	}
