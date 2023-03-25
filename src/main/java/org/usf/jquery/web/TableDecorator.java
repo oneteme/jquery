@@ -44,7 +44,7 @@ public interface TableDecorator extends DBTable {
 		return flatStream(cols).map(p->{
 			var column = map.get(formatColumnName(p));
 			if(column == null) {
-					throw new NoSuchElementException(p + " not found");
+				throw new NoSuchElementException(p + " not found");
 			}
 			return column;
 		}).toArray(ColumnDecorator[]::new);
@@ -62,7 +62,8 @@ public interface TableDecorator extends DBTable {
  				var dec = map.get(name);
  				if(dec != null) {
  					var column = columns.contains(dec) ? column(dec.reference()) : dec;
- 					filters.add(column.filter(dec.expression(meta, flatArray(e.getValue()))));
+ 					var expres = dec.expression(meta, flatArray(e.getValue()));
+ 					filters.add(column.filter(expres));
  				}
  	 			else if(!ant.allowUnknownParameters()) {
  					throw new NoSuchElementException(e.getKey() + " not found");
