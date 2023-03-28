@@ -10,10 +10,11 @@ import java.util.function.Supplier;
 public final class SqlStringBuilder {
 	
 	static final String EMPTY = "";
-	static final String COMA  = ", ";
+	static final String COMA  = ",";
 	static final String SPACE = " ";
 	static final String POINT = ".";
 	static final String QUOTE = "'";
+	static final String SCOMA  = COMA + SPACE;
 	
 	private final StringBuilder sb;
 

@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.SqlStringBuilder.COMA;
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
@@ -21,7 +21,7 @@ final class TypedArgsFunction implements DBFunction {
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
 		int n = appenders.size();
-		illegalArgumentIf(!hasSize(args, n), ()-> name() + " operator takes " + n +" parameters");
+		illegalArgumentIf(!hasSize(args, n), ()-> name() + " function takes " + n +" parameters");
 		return DBFunction.super.sql(builder, args);
 	}
 
@@ -39,6 +39,6 @@ final class TypedArgsFunction implements DBFunction {
 	public String appendParameters(QueryParameterBuilder builder, Object[] args) {
 		return IntStream.range(0, appenders.size())
 			.mapToObj(i-> appenders.get(i).apply(builder, args[i]))
-			.collect(joining(COMA));		
+			.collect(joining(SCOMA));		
 	}
 }

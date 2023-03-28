@@ -3,7 +3,7 @@ package org.usf.jquery.web;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.Validation.requireLegalAlias;
 
-import org.usf.jquery.core.ComparatorExpression;
+import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBComparator;
 import org.usf.jquery.core.QueryParameterBuilder;
 import org.usf.jquery.core.TableColumn;
@@ -28,7 +28,7 @@ public interface ColumnDecorator extends TaggableColumn {
 		return new TableColumn(sql, reference(), table.reference());
 	}
 	
-	default ComparatorExpression expression(TableMetadata meta, String... values) {
+	default ComparisonExpression expression(TableMetadata meta, String... values) {
     	var parser = requireNonNull(parser(meta));
     	return values.length == 1
     			? DBComparator.equal(parser.parseArg(values[0]))

@@ -5,23 +5,23 @@ import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
-public interface ComparatorExpression extends DBExpression, NestedSql {
+public interface ComparisonExpression extends DBExpression, NestedSql {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(!hasSize(args, 1), "DBFilter takes no arguments");
+		illegalArgumentIf(!hasSize(args, 1), "comparison takes one argument");
 		return sql(builder, args[0]);
 	}
 
-	String sql(QueryParameterBuilder builder, Object args); // do change method order
+	String sql(QueryParameterBuilder builder, Object left); // do change method order
 	
-	ComparatorExpression append(LogicalOperator op, ComparatorExpression exp);
+	ComparisonExpression append(LogicalOperator op, ComparisonExpression exp);
 	
-	default ComparatorExpression and(ComparatorExpression exp) {
+	default ComparisonExpression and(ComparisonExpression exp) {
 		return append(AND, exp);
 	}
 
-	default ComparatorExpression or(ComparatorExpression exp) {
+	default ComparisonExpression or(ComparisonExpression exp) {
 		return append(OR, exp);
 	}
 

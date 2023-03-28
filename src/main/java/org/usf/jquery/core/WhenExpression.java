@@ -11,14 +11,20 @@ final class WhenExpression implements DBExpression {
 	
 	private final DBFilter filter;
 	private final Object value;
-	
+
 	@Override
-	public String sql(QueryParameterBuilder arg, Object[] args) {
+	public String sql(QueryParameterBuilder builder, Object[] args) {
 		illegalArgumentIf(nonNull(args), "WhenExpression takes no arguments");
+		return sql(builder);
+	}
+	
+	public String sql(QueryParameterBuilder arg) {
 		var sb = new StringBuilder(50);
 		sb = filter == null
 				? sb.append("ELSE ")
-				: sb.append("WHEN ").append(filter.sql(arg)).append(" THEN ");
+				: sb.append("WHEN ")
+				.append(filter.sql(arg))
+				.append(" THEN ");
 		return sb.append(arg.appendParameter(value)).toString();
 	}
 	

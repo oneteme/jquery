@@ -10,7 +10,7 @@ interface DBArithmetic extends DBOperation {
 	
 	@Override
 	default String sql(QueryParameterBuilder ph, Object[] args) {
-		illegalArgumentIf(!hasSize(args, 2), ()-> symbol() + " operator takes two parameters");
+		illegalArgumentIf(!hasSize(args, 2), ()-> symbol() + " operation takes two parameters");
 		return ph.appendNumber(args[0]) + symbol() + ph.appendNumber(args[1]);
 	}
 	

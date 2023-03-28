@@ -10,7 +10,7 @@ import lombok.NonNull;
 @AllArgsConstructor
 public final class CaseSingleColumnBuilder {
 
-	private final CaseExpressionColumn caseColumn = new CaseExpressionColumn();
+	private final CaseColumn caseColumn = new CaseColumn();
 	private final WhenFilterBridge bridge = new WhenFilterBridge(); 
 	private final DBColumn column;
 	private DBFilter filter; //temp
@@ -19,33 +19,33 @@ public final class CaseSingleColumnBuilder {
 		this.column = column;
 	}
 	
-	public WhenFilterBridge when(ComparatorExpression exp) {
+	public WhenFilterBridge when(ComparisonExpression exp) {
 		this.filter = new ColumnSingleFilter(column, exp);
 		return bridge;
 	}
 	
-	public CaseExpressionColumn orElse(int value) {
+	public CaseColumn orElse(int value) {
 		return orElseExp(value);
 	}
 
-	public CaseExpressionColumn orElse(double value) {
+	public CaseColumn orElse(double value) {
 		return orElseExp(value);
 	}
 
-	public CaseExpressionColumn orElse(String value) {
+	public CaseColumn orElse(String value) {
 		return orElseExp(value);
 	}
 	
-	public CaseExpressionColumn orElse(DBColumn column) {
+	public CaseColumn orElse(DBColumn column) {
 		return orElseExp(column);
 	}
 	
-	public CaseExpressionColumn end() {
+	public CaseColumn end() {
 		return caseColumn;
 	}
 	
 
-	private CaseExpressionColumn orElseExp(Object elseValue) {
+	private CaseColumn orElseExp(Object elseValue) {
 		caseColumn.append(WhenExpression.orElse(elseValue));
 		return caseColumn;
 	}

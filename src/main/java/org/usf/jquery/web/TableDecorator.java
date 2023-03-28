@@ -1,6 +1,5 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.toMap;
 
@@ -26,12 +25,9 @@ public interface TableDecorator extends DBTable {
 	String columnName(ColumnDecorator desc);
 	
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		
-		var columns = parseColumns(ant, parameterMap);
-		var filters = parseFilters(ant, Set.of(columns), parameterMap);
 		return new RequestQuery().select(this)
-				.columns(columns)
-				.filters(filters);
+				.columns(parseColumns(ant, parameterMap))
+				.filters(parseFilters(ant, parameterMap));
 	}
 		
 	default ColumnDecorator[] parseColumns(RequestQueryParam ant, Map<String, String[]> parameterMap) {
@@ -50,7 +46,7 @@ public interface TableDecorator extends DBTable {
 		}).toArray(ColumnDecorator[]::new);
 	}
 	
-	default DBFilter[] parseFilters(RequestQueryParam ant, Set<ColumnDecorator> columns, Map<String, String[]> parameterMap) {
+	default DBFilter[] parseFilters(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 
 		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
 		var meta = DatabaseScanner.get().metadata().table(this);
@@ -61,7 +57,7 @@ public interface TableDecorator extends DBTable {
  	    		var name = formatColumnName(e.getKey());
  				var dec = map.get(name);
  				if(dec != null) {
- 					var column = columns.contains(dec) ? column(dec.reference()) : dec;
+ 					var column = dec.column(this);
  					var expres = dec.expression(meta, flatArray(e.getValue()));
  					filters.add(column.filter(expres));
  				}

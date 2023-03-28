@@ -10,7 +10,7 @@ class LogicalOperatorTest {
 	@ParameterizedTest()
 	@EnumSource(value = LogicalOperator.class)
 	void testToString(LogicalOperator op) {
-		assertEquals(" " + op.name() + " ", op.sql());
+		assertEquals(" " + op.symbol() + " ", op.sql());
 	}
 
 }

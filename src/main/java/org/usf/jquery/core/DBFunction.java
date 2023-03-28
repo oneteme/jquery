@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Collections.singletonList;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.DBColumn.column;
-import static org.usf.jquery.core.SqlStringBuilder.COMA;
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.isPresent;
 
@@ -28,7 +28,7 @@ public interface DBFunction extends DBOperation {
 	default String appendParameters(QueryParameterBuilder builder, Object[] args) {
 		return Stream.of(args)
 				.map(builder::appendParameter)
-				.collect(joining(COMA));
+				.collect(joining(SCOMA));
 	}
 	
 	default OperationColumn args(Object... args) {

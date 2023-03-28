@@ -91,7 +91,7 @@ public interface DBColumn extends DBObject, NestedSql {
 		return filter(DBComparator.isNotNull());
 	}
 
-	default ColumnSingleFilter filter(ComparatorExpression exp) {
+	default ColumnSingleFilter filter(ComparisonExpression exp) {
 		return new ColumnSingleFilter(this, exp);
 	}
 
@@ -121,7 +121,7 @@ public interface DBColumn extends DBObject, NestedSql {
 		return DBArithmetic.pow().args(this, o);
 	}
 
-	default WhenFilterBridge when(ComparatorExpression ex) {
+	default WhenFilterBridge when(ComparisonExpression ex) {
 		return new CaseSingleColumnBuilder(this).when(ex);
 	}
 	

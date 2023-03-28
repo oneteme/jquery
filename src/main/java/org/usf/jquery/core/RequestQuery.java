@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.reflect.Array.getLength;
 import static java.util.Arrays.asList;
+import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
@@ -10,8 +11,8 @@ import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
-import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.POINT;
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
@@ -23,6 +24,7 @@ import java.util.function.Function;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
@@ -43,15 +45,15 @@ public class RequestQuery {
 	public RequestQuery select(DBTable table, String suffix, TaggableColumn... columns) {
 		this.table = table;
 		this.suffix = suffix;
-		return columns(columns);
+		return isNull(columns) ? this : columns(columns);
 	}
 	
-	public RequestQuery columns(TaggableColumn... columns) {
+	public RequestQuery columns(@NonNull TaggableColumn... columns) {
 		this.columns.addAll(asList(columns));
 		return this;
 	}
 
-	public RequestQuery filters(DBFilter... filters){
+	public RequestQuery filters(@NonNull DBFilter... filters){
 		this.filters.addAll(asList(filters));
 		return this;
 	}
@@ -92,7 +94,7 @@ public class RequestQuery {
 
 	void select(String schema, SqlStringBuilder sb){
     	sb.append("SELECT ")
-    	.appendEach(columns, COMA, e-> e.tagSql(addWithValue(table))) //addWithValue columns (case, constant, Operation, ..)
+    	.appendEach(columns, SCOMA, e-> e.tagSql(addWithValue(table))) //addWithValue columns (case, constant, Operation, ..)
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + POINT)
     	.append(table.sql() + suffix); //TODO call sql with args 
@@ -113,7 +115,7 @@ public class RequestQuery {
         	var expr = columns.stream()
         			.filter(RequestQuery::groupable)
         			.map(TaggableColumn::reference) //add alias 
-        			.collect(joining(COMA));
+        			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {
         		sb.append(" GROUP BY ").append(expr);
         	}

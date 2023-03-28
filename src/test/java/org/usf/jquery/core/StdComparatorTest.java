@@ -27,7 +27,7 @@ class StdComparatorTest  {
 	void testSql_in(BasicComparator op) {
 		assertRequireAtLeastTwoParameter(op);
 		assertArrayType(op);
-		assertCallArray((o1,o2)-> o1+" "+op.name().replace('_', ' ') + "(" + o2 + ")", op);
+		assertCallArray((o1,o2)-> o1+" "+op.symbol().replace('_', ' ') + "(" + o2 + ")", op);
 	}
 	
 	@ParameterizedTest
