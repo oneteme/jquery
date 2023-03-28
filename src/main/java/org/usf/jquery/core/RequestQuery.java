@@ -94,7 +94,7 @@ public class RequestQuery {
 
 	void select(String schema, SqlStringBuilder sb){
     	sb.append("SELECT ")
-    	.appendEach(columns, SCOMA, e-> e.tagSql(addWithValue(table))) //addWithValue columns (case, constant, Operation, ..)
+    	.appendEach(columns, SCOMA, e-> e.sql(addWithValue(table)) + " AS " + e.reference()) //addWithValue columns (case, constant, Operation, ..)
     	.append(" FROM ")
     	.appendIf(!isBlank(schema), ()-> schema + POINT)
     	.append(table.sql() + suffix); //TODO call sql with args 
