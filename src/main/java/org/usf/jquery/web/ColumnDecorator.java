@@ -5,23 +5,14 @@ import static org.usf.jquery.core.Validation.requireLegalAlias;
 
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBComparator;
-import org.usf.jquery.core.QueryParameterBuilder;
 import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 
-public interface ColumnDecorator extends TaggableColumn {
+public interface ColumnDecorator  {
 	
 	String identity(); //URL
 	
-	@Override
 	String reference(); //JSON
-
-	@Override
-	default String sql(QueryParameterBuilder builder) {
-		var table  = (TableDecorator) requireNonNull(builder.getMainTable());
-		var column = requireNonNull(column(table));
-		return column.sql(builder);
-	}
 	
 	default TaggableColumn column(TableDecorator table) {
 		var sql = requireLegalAlias(table.columnName(this));

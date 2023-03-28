@@ -16,22 +16,22 @@ public interface YearTableDecorator extends TableDecorator {
 	
 	@Override
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		var meta = DatabaseScanner.get().metadata().table(this);
-		var revs = revisionColumn() == null ? null: revisionColumn();
-		var query = new PartitionedRequestQuery(revs, parseRevisions(ant, meta, parameterMap));
+		var revs = revisionColumn() == null ? null: revisionColumn().column(this);
+		var query = new PartitionedRequestQuery(revs, parseRevisions(ant, parameterMap));
 		return query.select(this)
 				.columns(parseColumns(ant, parameterMap))
 				.filters(parseFilters(ant, parameterMap));
 	}
 
-	default YearMonth[] parseRevisions(RequestQueryParam ant, TableMetadata metadata, Map<String, String[]> parameterMap) {
+	default YearMonth[] parseRevisions(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var values = parameterMap.get(ant.revisionParameter());
 		var revs = values == null 
 				? null
 				: flatStream(values)
     			.map(YearTableDecorator::parseYearMonth)
     			.toArray(YearMonth[]::new);
-    	return metadata.filterExistingRevision(ant.revisionMode(), revs);
+		var meta = DatabaseScanner.get().metadata().table(this);
+    	return meta.filterExistingRevision(ant.revisionMode(), revs);
     }
 
     static YearMonth parseYearMonth(String revision) {

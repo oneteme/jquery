@@ -12,6 +12,7 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.RequestQuery;
+import org.usf.jquery.core.TaggableColumn;
 
 public interface TableDecorator extends DBTable {
 	
@@ -30,7 +31,7 @@ public interface TableDecorator extends DBTable {
 				.filters(parseFilters(ant, parameterMap));
 	}
 		
-	default ColumnDecorator[] parseColumns(RequestQueryParam ant, Map<String, String[]> parameterMap) {
+	default TaggableColumn[] parseColumns(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 
 		var cols = parameterMap.getOrDefault(ant.columnParameter(), ant.defaultColumns());
 		if(isEmpty(cols)) { //TD check first param isBlank
@@ -42,8 +43,8 @@ public interface TableDecorator extends DBTable {
 			if(column == null) {
 				throw new NoSuchElementException(p + " not found");
 			}
-			return column;
-		}).toArray(ColumnDecorator[]::new);
+			return column.column(this);
+		}).toArray(TaggableColumn[]::new);
 	}
 	
 	default DBFilter[] parseFilters(RequestQueryParam ant, Map<String, String[]> parameterMap) {
