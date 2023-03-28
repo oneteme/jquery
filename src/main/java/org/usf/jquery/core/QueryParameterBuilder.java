@@ -82,7 +82,7 @@ public final class QueryParameterBuilder {
 
 	String formatValue(Object o) {
 		return o instanceof Number 
-				? o.toString()
+				? formatNumber(o)
 				: formatString(o);
 	}
 	
