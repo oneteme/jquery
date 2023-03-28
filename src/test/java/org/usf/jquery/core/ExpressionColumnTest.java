@@ -5,8 +5,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.usf.jquery.core.AggregatFunction.MAX;
 import static org.usf.jquery.core.AggregatFunction.SUM;
 import static org.usf.jquery.core.Asserts.assertColNumber;
-import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.DBColumn.column;
+import static org.usf.jquery.core.DBColumn.constant;
 
 import org.junit.jupiter.api.Test;
 

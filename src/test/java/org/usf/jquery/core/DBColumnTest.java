@@ -3,8 +3,8 @@ package org.usf.jquery.core;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.DBColumn.column;
+import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
 import org.junit.jupiter.api.Test;

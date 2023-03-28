@@ -1,10 +1,9 @@
 package org.usf.jquery.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
-import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.DBColumn.column;
+import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
 import java.util.function.BiFunction;

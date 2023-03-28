@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertThrowsExactly;
 import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;

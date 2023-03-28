@@ -2,9 +2,9 @@ package org.usf.jquery.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.params.provider.Arguments.of;
-import static org.usf.jquery.core.WhenExpression.orElse;
 import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.WhenExpression.orElse;
 
 import java.util.stream.Stream;
 
