@@ -84,7 +84,6 @@ public interface DBFunction extends DBOperation {
 	}
 	
 	//string
-
 	static OperationColumn trim(Object arg) {
 		return function("TRIM", QueryParameterBuilder::appendString, arg);
 	}
@@ -101,6 +100,8 @@ public interface DBFunction extends DBOperation {
 		return function("LOWER", QueryParameterBuilder::appendString, arg);
 	}
 	
+	
+	// generic
 	static OperationColumn aggregate(String name, BiFunction<QueryParameterBuilder, Object, String> appender, Object arg) {
 		return function(true, name, singletonList(appender), arg);
 	}

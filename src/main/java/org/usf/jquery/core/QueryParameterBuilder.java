@@ -19,15 +19,12 @@ import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.Getter;
 
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
 	private static final String ARG = "?";
 	
-	@Getter
-	private final DBTable mainTable;
 	private final Collection<Object> args;
 
 	public String appendParameter(Object o) {
@@ -111,14 +108,10 @@ public final class QueryParameterBuilder {
 	}
 	
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null, null); //TODO dummyTable
+		return new QueryParameterBuilder(null);
 	}
 	
-	public static QueryParameterBuilder addWithValue(DBTable mainTable) {
-		return new QueryParameterBuilder(mainTable, null);
-	}
-	
-	public static QueryParameterBuilder parametrized(DBTable mainTable) {
-		return new QueryParameterBuilder(mainTable, new LinkedList<>());
+	public static QueryParameterBuilder parametrized() {
+		return new QueryParameterBuilder(new LinkedList<>());
 	}
 }

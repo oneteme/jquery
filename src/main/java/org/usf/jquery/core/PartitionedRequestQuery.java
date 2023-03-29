@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Set.copyOf;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Stream.concat;
 import static org.usf.jquery.core.DBColumn.constant;
@@ -7,8 +8,10 @@ import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import lombok.Getter;
@@ -32,7 +35,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	@Override
 	public final ParametredQuery build(String schema){
 		
-		var pb = parametrized(table);
+		var pb = parametrized();
 		var sb = new SqlStringBuilder(500); // size ? 
 		if(isEmpty(revisions)) {
 			super.build(schema, sb, pb);
@@ -47,9 +50,8 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	
 	private RequestQuery query(Entry<Integer, List<YearMonth>> entry) {
 		
-		var query = new RequestQuery().select(table, "_" + entry.getKey(), columns.toArray(TaggableColumn[]::new))
-			     .columns(additionalColumns(entry.getKey()))
-			     .filters(filters.toArray(DBFilter[]::new));
+		var query = new RequestQuery(entry.getKey().toString(), copyOf(tables), new ArrayList<>(columns), new ArrayList<>(filters))
+			     .columns(additionalColumns(entry.getKey()));
 		if(revisionColumn == null) {
 			return query;
 		}
