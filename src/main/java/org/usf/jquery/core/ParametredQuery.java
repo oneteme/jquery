@@ -76,13 +76,14 @@ public final class ParametredQuery {
 		return names;
 	}
 	
+	public boolean hasNoResult() {
+		return noResult;
+	}
+	
 	@FunctionalInterface
 	public interface ResultMapper<T> {
 
 	    T apply(ResultSet rs) throws SQLException;
 	}
 	
-	public boolean hasNoResult() {
-		return noResult;
-	}
 }

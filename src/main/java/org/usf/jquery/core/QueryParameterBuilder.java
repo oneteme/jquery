@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.range;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
+import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.varchar;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
@@ -61,7 +62,7 @@ public final class QueryParameterBuilder {
 	}
 
 	public String appendArray(Object o) {
-		illegalArgumentIf(o == null || !o.getClass().isArray() || getLength(o) == 0, ()-> "require array parameter");
+		illegalArgumentIf(o == null || !o.getClass().isArray(), ()-> "require array parameter");
 		if(dynamic()) {
 			streamArray(o).forEach(args::add);
 			return nParameter(getLength(o));
@@ -97,6 +98,9 @@ public final class QueryParameterBuilder {
 	}
 
 	static String nParameter(int n){
+		if(n < 1){
+			return EMPTY;
+		}
         return n == 1 ? ARG : ARG + (COMA + ARG).repeat(n-1);
     }
 	
@@ -108,7 +112,7 @@ public final class QueryParameterBuilder {
 	}
 	
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null);
+		return new QueryParameterBuilder(null); //no args
 	}
 	
 	public static QueryParameterBuilder parametrized() {

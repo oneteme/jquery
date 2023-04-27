@@ -7,6 +7,6 @@ enum LogicalOperator {
 	AND, OR;
 	
 	public String sql() {
-		return space(this.name());
+		return space(name());
 	}
 }

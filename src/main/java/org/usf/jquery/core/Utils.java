@@ -33,7 +33,6 @@ public final class Utils {
 	public static <T> boolean hasSize(T[] a, int size) {
 		return a != null && a.length == size;
 	}
-	
 
 	public static <T> boolean hasSize(T[] a, IntPredicate size) {
 		return a != null && size.test(a.length);

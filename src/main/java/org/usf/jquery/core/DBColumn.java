@@ -145,6 +145,6 @@ public interface DBColumn extends DBObject, NestedSql {
 	}
 	
 	static boolean isColumnConstant(Object o) {
-		return !(o instanceof DBColumn && !((DBColumn)o).isConstant());
-	}	
+		return !(o instanceof DBColumn) || ((DBColumn)o).isConstant();
+	}
 }
