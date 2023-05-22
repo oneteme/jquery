@@ -1,12 +1,8 @@
 package org.usf.jquery.core;
 
-import static java.lang.System.currentTimeMillis;
-
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
-import java.util.LinkedList;
-import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -26,51 +22,29 @@ public final class ParametredQuery {
 	private final Object[] params;
 	private final boolean noResult;
 	
-	public <T> T execute(DataSource ds, ResultMapper<T> mapper){
-
-		T res = null;
+	public <T> T execute(DataSource ds, ResultMapper<T> mapper) {
 		try(var cn = ds.getConnection()){
+			log.info("preparing statement : {}", query);
 			try(var ps = cn.prepareStatement(query)){
-				log.debug("Executing prepared statement : {}", query);
 				if(params != null) {
 					for(var i=0; i<params.length; i++) {
 						ps.setObject(i+1, params[i]);
 					}						
 				}
-		        log.debug("Using parameters : {}", Arrays.toString(params));
+		        log.info("using parameters : {}", Arrays.toString(params));
 				try(var rs = ps.executeQuery()){
-					if(rs.next()) {
-						res = mapper.apply(rs);
-					}
+					return rs.next() ? mapper.map(rs, columnNames) : null;
 				}
 			}
 		}
-		catch(Exception e) {
+		catch(SQLException e) {
 			throw new RuntimeException(e);
 		}
-		return res;
-	}
-
-	public List<DynamicModel> mapRows(ResultSet rs) throws SQLException {
-		log.debug("Mapping results...");
-		var bg = currentTimeMillis();
-		var results = new LinkedList<DynamicModel>();
-		while(rs.next()) {
-	    	var model = new DynamicModel();
-	        for(var i=0; i<columnNames.length; i++) {
-	        	model.put(columnNames[i], rs.getObject(i+1));
-	        }
-	        results.add(model);
-		}
-		log.debug("{} rows mapped in {} ms", results.size(), currentTimeMillis() - bg);
-        return results;
-	}
-	
+	}	
 	//not used => PG insensitive column case 
 	static String[] columnNames(ResultSet rs) throws SQLException {
-		var n = rs.getMetaData().getColumnCount();
-		var names = new String[n];
-		for(var i=0; i<n; i++) {
+		var names = new String[rs.getMetaData().getColumnCount()];
+		for(var i=0; i<names.length; i++) {
 			names[i] = rs.getMetaData().getColumnLabel(i+1);
 		}
 		return names;
@@ -78,12 +52,6 @@ public final class ParametredQuery {
 	
 	public boolean hasNoResult() {
 		return noResult;
-	}
-	
-	@FunctionalInterface
-	public interface ResultMapper<T> {
-
-	    T apply(ResultSet rs) throws SQLException;
 	}
 	
 }

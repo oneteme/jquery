@@ -123,5 +123,14 @@ public interface DBFunction extends DBOperation {
 	static DBFunction function(final String name) {
 		return ()-> name;
 	}
+
+	static DBFunction lookup(String fn) {
+		try {
+			DBFunction.class.getMethod(fn.toLowerCase(), Object.class);
+			return function(fn);
+		} catch (NoSuchMethodException | SecurityException e) {
+			throw new IllegalArgumentException("unkown function " + fn, e);
+		}
+	}
 	
 }

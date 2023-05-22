@@ -1,10 +1,11 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.requireNonNull;
+import static org.usf.jquery.core.DBComparator.in;
+import static org.usf.jquery.core.DBComparator.equal;
 import static org.usf.jquery.core.Validation.requireLegalAlias;
 
 import org.usf.jquery.core.ComparisonExpression;
-import org.usf.jquery.core.DBComparator;
 import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 
@@ -13,6 +14,10 @@ public interface ColumnDecorator  {
 	String identity(); //URL
 	
 	String reference(); //JSON
+
+	default String title() { //LITERAL
+		return identity();
+	}
 	
 	default TaggableColumn column(TableDecorator table) {
 		var sql = requireLegalAlias(table.columnName(this));
@@ -22,8 +27,8 @@ public interface ColumnDecorator  {
 	default ComparisonExpression expression(TableMetadata meta, String... values) {
     	var parser = requireNonNull(parser(meta));
     	return values.length == 1
-    			? DBComparator.equal(parser.parseArg(values[0]))
-    			: DBComparator.in(parser.parseArgs(values));
+    			? equal(parser.parseArg(values[0]))
+    			: in(parser.parseArgs(values));
 	}
 	
 	default ArgumentParser parser(TableMetadata metadata) {

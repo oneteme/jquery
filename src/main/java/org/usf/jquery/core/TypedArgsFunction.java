@@ -21,7 +21,7 @@ final class TypedArgsFunction implements DBFunction {
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
 		int n = appenders.size();
-		illegalArgumentIf(!hasSize(args, n), ()-> name() + " function takes " + n +" parameters");
+		illegalArgumentIf(!hasSize(args, n), ()-> name() + " function takes " + n + " parameters");
 		return DBFunction.super.sql(builder, args);
 	}
 

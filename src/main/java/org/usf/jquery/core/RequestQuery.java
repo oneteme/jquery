@@ -10,10 +10,8 @@ import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
-import static org.usf.jquery.core.SqlStringBuilder.POINT;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
 import java.util.Collection;
@@ -21,6 +19,7 @@ import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 
@@ -71,24 +70,18 @@ public class RequestQuery {
 	}
 
 	public <T> T execute(String schema, Function<ParametredQuery, T> fn) {
-
-		requireNonNull(fn);
-		log.debug("Building prepared statement...");
-		var bg = currentTimeMillis();
-		var query = build(schema);
-		log.debug("Query built in {} ms", currentTimeMillis() - bg);
-		bg = currentTimeMillis();
-		var rows = fn.apply(query);
-		log.info("{} rows in {} ms", rowCount(rows), currentTimeMillis() - bg);
-		return rows;
+		return requireNonNull(fn).apply(build(schema));
 	}
 
 	public ParametredQuery build(String schema){
 		requireNonEmpty(tables);
     	requireNonEmpty(columns);
+		log.debug("building query...");
+		var bg = currentTimeMillis();
 		var pb = parametrized();
 		var sb = new SqlStringBuilder(500);
 		build(schema, sb, pb);
+		log.debug("query built in {} ms", currentTimeMillis() - bg);
 		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new); //!postgres insensitive case
 		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
 	}
@@ -102,11 +95,11 @@ public class RequestQuery {
 
 	void select(String schema, SqlStringBuilder sb){
 		var pb = addWithValue(); //addWithValue columns (case, constant, Operation, ..)
+		var args = Objects.isNull(schema) ? null : new Object[]{suffix};
     	sb.append("SELECT ")
     	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + o.reference())
     	.append(" FROM ")
-    	.appendIf(!isBlank(schema), ()-> schema + POINT)
-    	.appendEach(tables, SCOMA, o-> o.sql(pb, new Object[]{suffix}) + SPACE + o.reference());
+    	.appendEach(tables, SCOMA, o-> o.sql(pb, args) + SPACE + o.reference());
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){

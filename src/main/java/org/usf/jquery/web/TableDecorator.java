@@ -5,12 +5,18 @@ import static org.usf.jquery.core.DBComparator.equal;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.toMap;
 
+import static org.usf.jquery.core.DBFunction.lookup;
+
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.DBColumn;
+import org.usf.jquery.core.DBFunction;
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.RequestQuery;
+import org.usf.jquery.core.TaggableColumn;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -44,7 +50,7 @@ public interface TableDecorator extends DBTable {
 		flatStream(cols).forEach(p->{
 			var res = parseResource(p, map, false);
 			query.tables(res.getTableDecorator());
-			query.columns(res.getColumnDecorator().column(res.getTableDecorator()));
+			query.columns(res.getColumn());
 		});
 	}
 
@@ -82,44 +88,36 @@ public interface TableDecorator extends DBTable {
 	}
 	
 	default Resource parseResource(String value, Map<String, ColumnDecorator> map, boolean ignoreUnkown) {
-		TableDecorator table;
-		String cn;
-		String fn = null;
-		var arr = value.split("\\.");
-		if(arr.length == 1) {//column
-			table = this;
-			cn = arr[0];
-		}
-		else if(arr.length > 1 && arr.length < 4) {
-			var tn  = formatColumnName(arr[0]);
-			var res = DatabaseScanner.get().tables.stream().filter(t-> t.identity().equals(tn)).findAny();
+		var tab = this;
+		var cn  = value;
+		var fn  = new LinkedList<DBFunction>();
+		if(value.contains(".")) { //expression
+			var arr = value.split("\\.");
+			var cur = 0;
+			var tn  = formatColumnName(arr[cur]);
+			var res = DatabaseScanner.get().tables.stream().filter(t-> t.identity().equals(tn)).findFirst();
 			if(res.isPresent()) { //table.column
-				table = res.get();
-				cn = arr[1];
-				if(arr.length > 2) { //table.column.fn
-					fn = arr[2].toLowerCase();
-				}
+				tab = res.get();
+				cur++;
 			}
-			else { //column.expres
-				table = this;
-				cn = arr[0];
-				fn = arr[1].toLowerCase();
-				if(arr.length > 2) {
-					throw new IllegalArgumentException("invalid resource " + value);
-				}
+			cn = arr[cur];
+			while(++cur < arr.length){
+				fn.add(lookup(arr[cur]));
 			}
 		}
-		else {
-			throw new IllegalArgumentException("invalid resource " + value);
-		}
-		var column = map.get(formatColumnName(cn));
-		if(column == null) {
+		var cd = map.get(formatColumnName(cn));
+		if(cd == null) {
 			if(ignoreUnkown) {
 				return null;
 			}
 			throw new NoSuchElementException(cn + " not found");
 		}
-		return new Resource(table, column, fn);
+		var column = cd.column(tab);
+		DBColumn fc = column;
+		for(var f : fn){
+			fc = f.args(fc);
+		}
+		return new Resource(tab, fc.as(column.reference()));
 	}
 	
 	// move to client side 
@@ -135,7 +133,6 @@ public interface TableDecorator extends DBTable {
     @RequiredArgsConstructor
     static class Resource {
     	private final TableDecorator tableDecorator;
-    	private final ColumnDecorator columnDecorator;
-    	private final String function;
+    	private final TaggableColumn column;
     }
 }
