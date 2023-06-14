@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.toMap;
+import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
@@ -40,7 +41,7 @@ public interface TableDecorator extends DBTable {
 			throw new NoSuchElementException("require " + ant.columnParameter() + " parameter");
 		}
 		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
-		Stream.of(cols).forEach(p->{
+		flatStream(cols).forEach(p->{
 			var rc = RequestColumn.decode(p, this, map);
 			query.tables(rc.getTableDecorator()).columns(rc.column());
 		});

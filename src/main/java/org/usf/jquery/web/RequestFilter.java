@@ -40,19 +40,19 @@ public class RequestFilter {
 	
 	private final RequestColumn requestColumn;
 	private final List<RequestColumn> rightColumns;
-	private final List<String> righhConstants;
+	private final List<String> rightConstants;
 	private final String comparator;
 	
 	public DBFilter[] fitlers() {
 		var cmp = isNull(comparator) ? equal() : comparator(comparator);
 		var column = requestColumn.column();
 		var filters = rightColumns.stream().map(c-> column.filter(cmp.expression(c))).collect(toList());
-		if(righhConstants.size() > 1 && (isNull(comparator) || "not".equals(comparator))) {
+		if(rightConstants.size() > 1 && (isNull(comparator) || "not".equals(comparator))) {
 			var inCmp = isNull(comparator) ? in() : notIn();
-			filters.add(column.filter(inCmp.expression(righhConstants.toArray())));
+			filters.add(column.filter(inCmp.expression(rightConstants.toArray())));
 		}
 		else {
-			righhConstants.stream().map(v-> column.filter(cmp.expression(v))).forEach(filters::add); //parse
+			rightConstants.stream().map(v-> column.filter(cmp.expression(v))).forEach(filters::add); //parse
 		}
 		return filters.toArray(DBFilter[]::new);
 	}
