@@ -9,11 +9,23 @@ import lombok.extern.slf4j.Slf4j;
 
 import static java.lang.System.currentTimeMillis;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Slf4j
 public final class ResultSimpleMapper implements ResultMapper<List<DynamicModel>> {
+	
+	private String[] columnNames;
+	
+	@Override
+	public void declaredColumns(String[] columnNames) {
+		this.columnNames = columnNames;
+	}
 
     @Override
-    public List<DynamicModel> map(ResultSet rs, String[] columnNames) {
+    public List<DynamicModel> map(ResultSet rs) {
         
 		log.debug("mapping results...");
 		var bg = currentTimeMillis();

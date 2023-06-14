@@ -11,15 +11,27 @@ import java.sql.SQLException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Slf4j
 @RequiredArgsConstructor
 public final class ResultCsvExport implements ResultMapper<Void> {
-
+	
 	static final String SEMIC = ";";
     private final Writer writer;
+
+    private String[] columnNames;
+
+	@Override
+	public void declaredColumns(String[] columnNames) {
+		this.columnNames = columnNames;
+	}
     
     @Override
-    public Void map(ResultSet rs, String[] columnNames) {
+    public Void map(ResultSet rs) {
 
 		log.debug("exporting results...");
 		var bg = currentTimeMillis();

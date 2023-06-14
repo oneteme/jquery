@@ -5,6 +5,11 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class NamedColumn implements TaggableColumn {
 

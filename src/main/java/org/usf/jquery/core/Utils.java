@@ -11,6 +11,11 @@ import java.util.stream.Collectors;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Utils {
 	

@@ -6,6 +6,11 @@ import static org.usf.jquery.core.SqlStringBuilder.POINT;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor
 public final class TableColumn implements TaggableColumn {
 

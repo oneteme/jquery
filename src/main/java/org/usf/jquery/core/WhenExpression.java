@@ -6,6 +6,11 @@ import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor
 final class WhenExpression implements DBExpression {
 	

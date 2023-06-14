@@ -9,6 +9,11 @@ import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ColumnSingleFilter implements DBFilter {
 

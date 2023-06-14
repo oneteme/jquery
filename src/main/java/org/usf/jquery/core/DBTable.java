@@ -5,7 +5,11 @@ import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
-
+/**
+ * 
+ * @author u$f
+ *
+ */
 public interface DBTable extends DBObject {
 
 	String reference(); //JSON & TAG

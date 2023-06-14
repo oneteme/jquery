@@ -6,6 +6,11 @@ import static org.usf.jquery.core.SqlStringBuilder.parenthese;
 import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
 public interface InCompartor extends DBComparator {
 

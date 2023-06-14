@@ -7,6 +7,11 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.NonNull;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Validation {
     

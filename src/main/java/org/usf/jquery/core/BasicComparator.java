@@ -3,8 +3,13 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
-interface BasicComparator extends DBComparator {
+public interface BasicComparator extends DBComparator {
 	
 	String symbol();
 

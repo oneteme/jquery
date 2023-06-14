@@ -11,6 +11,11 @@ import java.util.stream.Stream;
 
 import lombok.NonNull;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 //@see ColumnFilterGroup
 public final class ComparisonExpressionGroup implements ComparisonExpression {
 	

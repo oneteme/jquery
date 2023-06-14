@@ -2,8 +2,12 @@ package org.usf.jquery.core;
 
 import java.util.LinkedHashMap;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 //TODO change to List<Entry<String, Object>>
-
 @SuppressWarnings("serial")
 public final class DynamicModel extends LinkedHashMap<String, Object> {
 	

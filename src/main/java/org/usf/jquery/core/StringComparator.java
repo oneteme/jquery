@@ -4,6 +4,11 @@ import static org.usf.jquery.core.SqlStringBuilder.space;
 import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
 public interface StringComparator extends DBComparator {
 	

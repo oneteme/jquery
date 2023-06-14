@@ -1,16 +1,19 @@
 package org.usf.jquery.core;
 
-import static java.util.Collections.singletonList;
+import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.isPresent;
 
-import java.util.List;
-import java.util.function.BiFunction;
+import java.util.Optional;
 import java.util.stream.Stream;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
 public interface DBFunction extends DBOperation {
 
@@ -20,7 +23,7 @@ public interface DBFunction extends DBOperation {
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		return new SqlStringBuilder(name())
 				.append("(")
-				.appendIf(isPresent(args), ()-> appendParameters(builder, args))
+				.appendIf(isPresent(args), ()-> appendParameters(builder, args)) //accept any
 				.append(")")
 				.toString();
 	}
@@ -35,102 +38,82 @@ public interface DBFunction extends DBOperation {
 		return new OperationColumn(this, args);
 	}
 	
-	//aggregate
+	//aggregate funct.
 	
-	static OperationColumn count() {
-		return count(column("*"));
+	static TypedFunction count() {
+		return new TypedFunction("COUNT", true, QueryParameterBuilder::appendParameter); 
 	}
 
-	static OperationColumn count(Object arg) {
-		return aggregate("COUNT", QueryParameterBuilder::appendParameter, arg);
-	}
-
-	static OperationColumn min(Object arg) {
-		return aggregate("MIN", QueryParameterBuilder::appendParameter, arg);
-	}
-
-	static OperationColumn max(Object arg) {
-		return aggregate("MAX", QueryParameterBuilder::appendParameter, arg);
-	}
-
-	static OperationColumn sum(Object arg) {
-		return aggregate("SUM", QueryParameterBuilder::appendNumber, arg);
+	static TypedFunction sum() {
+		return new TypedFunction("SUM", true, QueryParameterBuilder::appendParameter); 
 	}
 	
-	static OperationColumn avg(Object arg) {
-		return aggregate("AVG", QueryParameterBuilder::appendNumber, arg);
-	}
-	
-	//numeric
-	
-	static OperationColumn abs(Object arg) {
-		return function("ABS", QueryParameterBuilder::appendNumber, arg);
-	}
-	
-	static OperationColumn sqrt(Object arg) {
-		return function("SQRT", QueryParameterBuilder::appendNumber, arg);
+	static TypedFunction avg() {
+		return new TypedFunction("SUM", true, QueryParameterBuilder::appendParameter);  
 	}
 
-	static OperationColumn trunc(Object arg) {
-		return function("TRUNC", QueryParameterBuilder::appendNumber, arg);
+	static TypedFunction min() {
+		return new TypedFunction("MIN", true, QueryParameterBuilder::appendNumber);
 	}
 
-	static OperationColumn ceil(Object arg) {
-		return function("CEIL", QueryParameterBuilder::appendNumber, arg);
+	static TypedFunction max() {
+		return new TypedFunction("MAX", true, QueryParameterBuilder::appendNumber);
+	}
+	
+	//numeric funct.
+	
+	static TypedFunction abs() {
+		return new TypedFunction("ABS", false, QueryParameterBuilder::appendNumber); 
+	}
+	
+	static TypedFunction sqrt() {
+		return new TypedFunction("SQRT", false, QueryParameterBuilder::appendNumber); 
 	}
 
-	static OperationColumn floor(Object arg) {
-		return function("FLOOR", QueryParameterBuilder::appendNumber, arg);
-	}
-	
-	//string
-	static OperationColumn trim(Object arg) {
-		return function("TRIM", QueryParameterBuilder::appendString, arg);
+	static TypedFunction trunc() {
+		return new TypedFunction("TRUNC", false, QueryParameterBuilder::appendNumber); 
 	}
 
-	static OperationColumn length(Object arg) {
-		return function("LENGTH", QueryParameterBuilder::appendString, arg);
+	static TypedFunction ceil() {
+		return new TypedFunction("CEIL", false, QueryParameterBuilder::appendNumber); 
 	}
 
-	static OperationColumn upper(Object arg) {
-		return function("UPPER", QueryParameterBuilder::appendString, arg);
+	static TypedFunction floor() {
+		return new TypedFunction("FLOOR", false, QueryParameterBuilder::appendNumber); 
+	}
+	
+	//string funct.
+
+	static TypedFunction length() {
+		return new TypedFunction("LENGTH", false, QueryParameterBuilder::appendString); //return number !!
+	}
+	
+	static TypedFunction trim() {
+		return new TypedFunction("TRIM", false, QueryParameterBuilder::appendString);
+	}
+	
+	static TypedFunction upper() {
+		return new TypedFunction("UPPER", false, QueryParameterBuilder::appendString);
 	}
 
-	static OperationColumn lower(Object arg) {
-		return function("LOWER", QueryParameterBuilder::appendString, arg);
-	}
-	
-	
-	// generic
-	static OperationColumn aggregate(String name, BiFunction<QueryParameterBuilder, Object, String> appender, Object arg) {
-		return function(true, name, singletonList(appender), arg);
-	}
-	
-	static OperationColumn function(String name, BiFunction<QueryParameterBuilder, Object, String> appender, Object arg) {
-		return function(false, name, singletonList(appender), arg);
-	}
-	
-	static OperationColumn function(boolean aggregate, String name, List<BiFunction<QueryParameterBuilder, Object, String>> appenders, Object... args) {
-		if(isEmpty(appenders) && isEmpty(args)) {
-			return function(name).args(args); //no arguments
-		}
-		if(isEmpty(appenders) || isEmpty(args) || appenders.size() != args.length) {
-			throw new IllegalArgumentException("appenders.size != args.size");
-		}
-		return new TypedArgsFunction(name, aggregate, appenders).args(args);
+	static TypedFunction lower() {
+		return new TypedFunction("LOWER", false, QueryParameterBuilder::appendString);
 	}
 	
 	static DBFunction function(final String name) {
 		return ()-> name;
 	}
 
-	static DBFunction lookup(String fn) {
+	static Optional<DBFunction> lookup(String fucntion) {
 		try {
-			DBFunction.class.getMethod(fn.toLowerCase(), Object.class);
-			return function(fn);
-		} catch (NoSuchMethodException | SecurityException e) {
-			throw new IllegalArgumentException("unkown function " + fn, e);
+			var m = DBFunction.class.getMethod(fucntion.toLowerCase());
+			if(isStatic(m.getModifiers()) && m.getReturnType().equals(TypedFunction.class)) { // no private static
+				return Optional.of((DBFunction) m.invoke(null));
+			}
+		} catch (Exception e) {
+			//do nothing here
 		}
+		return empty();
 	}
 	
 }

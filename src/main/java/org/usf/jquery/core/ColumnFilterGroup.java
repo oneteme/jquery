@@ -10,6 +10,11 @@ import java.util.stream.Stream;
 
 import lombok.NonNull;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 //@see ComparisonExpressionGroup
 public final class ColumnFilterGroup implements DBFilter {
 	

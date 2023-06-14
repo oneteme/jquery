@@ -11,6 +11,11 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Slf4j
 @Getter
 @RequiredArgsConstructor
@@ -32,15 +37,23 @@ public final class ParametredQuery {
 					}						
 				}
 		        log.info("using parameters : {}", Arrays.toString(params));
+		        mapper.declaredColumns(columnNames);
 				try(var rs = ps.executeQuery()){
-					return rs.next() ? mapper.map(rs, columnNames) : null;
+					return rs.next() ? mapper.map(rs) : null;
 				}
 			}
 		}
 		catch(SQLException e) {
 			throw new RuntimeException(e);
 		}
-	}	
+	}
+	
+	public ResultSimpleMapper defaultMapper() {
+		var mapper = new ResultSimpleMapper();
+		mapper.declaredColumns(columnNames);
+		return mapper;
+	}
+	
 	//not used => PG insensitive column case 
 	static String[] columnNames(ResultSet rs) throws SQLException {
 		var names = new String[rs.getMetaData().getColumnCount()];
@@ -53,5 +66,4 @@ public final class ParametredQuery {
 	public boolean hasNoResult() {
 		return noResult;
 	}
-	
 }

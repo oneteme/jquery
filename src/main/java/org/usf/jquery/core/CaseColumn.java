@@ -10,6 +10,11 @@ import java.util.LinkedList;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class CaseColumn implements DBColumn {
 

@@ -3,7 +3,7 @@ package org.usf.jquery.web;
 import static java.time.Month.DECEMBER;
 import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
-import static org.usf.jquery.web.TableDecorator.flatStream;
+import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.time.Year;
 import java.time.YearMonth;

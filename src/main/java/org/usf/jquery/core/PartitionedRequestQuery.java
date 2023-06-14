@@ -15,6 +15,11 @@ import java.util.stream.Stream;
 
 import lombok.Getter;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 public final class PartitionedRequestQuery extends RequestQuery {
 	
 	private static final String REVISION_YEAR_TAG = "revisionYear";
