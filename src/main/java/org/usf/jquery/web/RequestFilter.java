@@ -36,37 +36,37 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class RequestFilter {
 	
-	private static final Set<String> compartors = Set.of("gt", "ge", "lt", "le", "not");
+	private static final Set<String> symbols = Set.of("gt", "ge", "lt", "le", "not");
 	
-	private final RequestColumn left;
-	private final List<RequestColumn> rights;
-	private final List<String> values;
+	private final RequestColumn requestColumn;
+	private final List<RequestColumn> rightColumns;
+	private final List<String> righhConstants;
 	private final String comparator;
 	
 	public DBFilter[] fitlers() {
 		var cmp = isNull(comparator) ? equal() : comparator(comparator);
-		var column = left.column();
-		var filters = rights.stream().map(c-> column.filter(cmp.expression(c))).collect(toList());
-		if(values.size() > 1 && (isNull(comparator) || "not".equals(comparator))) {
+		var column = requestColumn.column();
+		var filters = rightColumns.stream().map(c-> column.filter(cmp.expression(c))).collect(toList());
+		if(righhConstants.size() > 1 && (isNull(comparator) || "not".equals(comparator))) {
 			var inCmp = isNull(comparator) ? in() : notIn();
-			filters.add(column.filter(inCmp.expression(values.toArray())));
+			filters.add(column.filter(inCmp.expression(righhConstants.toArray())));
 		}
 		else {
-			values.stream().map(v-> column.filter(cmp.expression(v))).forEach(filters::add); //parse
+			righhConstants.stream().map(v-> column.filter(cmp.expression(v))).forEach(filters::add); //parse
 		}
 		return filters.toArray(DBFilter[]::new);
 	}
 
 	public DBTable[] tables() {
 		Set<DBTable> tables = new LinkedHashSet<>();
-		tables.add(left.getTableDecorator());
-		rights.forEach(c-> tables.add(c.getTableDecorator()));
+		tables.add(requestColumn.getTableDecorator());
+		rightColumns.forEach(c-> tables.add(c.getTableDecorator()));
 		return tables.toArray(DBTable[]::new);
 	}
 	
 	static RequestFilter decode(Entry<String, String[]> entry, TableDecorator defaultTable, Map<String, ColumnDecorator> map) {
 		var arr = entry.getKey().split("\\.");
-		var cmp = compartors.contains(arr[arr.length-1]); //check last entry
+		var cmp = symbols.contains(arr[arr.length-1]); //check last entry
 		var col = RequestColumn.decode(arr, cmp ? arr.length-2 : arr.length-1, defaultTable, map); //ignore comparator 
 		var cols = new LinkedList<RequestColumn>();
 		var vals = new LinkedList<String>();
