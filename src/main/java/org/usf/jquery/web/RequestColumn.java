@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.lang.String.join;
+import static java.sql.Types.JAVA_OBJECT;
 import static java.util.Arrays.copyOfRange;
 import static org.usf.jquery.core.DBFunction.lookup;
 
@@ -9,8 +10,8 @@ import java.util.List;
 import java.util.Map;
 
 import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBFunction;
 import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.TypedFunction;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -27,9 +28,9 @@ public final class RequestColumn {
 	
 	private final TableDecorator tableDecorator;
 	private final ColumnDecorator columnDecorator;
-	private final List<DBFunction> functions = new LinkedList<>();
+	private final List<TypedFunction> functions = new LinkedList<>();
 	
-	public RequestColumn append(DBFunction fn) {
+	public RequestColumn append(TypedFunction fn) {
 		functions.add(fn);
 		return this;
 	}
@@ -43,6 +44,25 @@ public final class RequestColumn {
 			col = fn.args(col);
 		}
 		return col.as(columnDecorator.reference()); // not sure
+	}
+
+	public TableMetadata tableMetadata() {
+		return DatabaseScanner.get().metadata().table(tableDecorator);
+	}
+	
+	public ColumnMetadata columnMetadata() {
+		return tableMetadata().column(columnDecorator);
+	}
+	
+	public int returnedType() {
+		var i = functions.size();
+		while(--i>=0) {
+			var type = functions.get(i).getReturnedType();
+			if(type != JAVA_OBJECT) {
+				return type;
+			}
+		}
+		return DatabaseScanner.get().metadata().table(tableDecorator).getColumns().get(columnDecorator.identity()).getType();
 	}
 	
 	static RequestColumn decode(String value, TableDecorator defaultTable, Map<String, ColumnDecorator> map) {
@@ -70,7 +90,7 @@ public final class RequestColumn {
 		var fn = lookup(value).orElseThrow(()-> unknownEntryException(value));
 		return decode(arr, --limit, defaultTable, map).append(fn);
 	}
-
+	
     private static IllegalArgumentException unknownEntryException(String v) {
     	return new IllegalArgumentException("unknown entry : " + v);
     }

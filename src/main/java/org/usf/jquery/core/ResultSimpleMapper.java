@@ -1,13 +1,13 @@
 package org.usf.jquery.core;
 
+import static java.lang.System.currentTimeMillis;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.LinkedList;
 import java.util.List;
 
 import lombok.extern.slf4j.Slf4j;
-
-import static java.lang.System.currentTimeMillis;
 
 /**
  * 

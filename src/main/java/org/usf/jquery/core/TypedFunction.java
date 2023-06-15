@@ -1,15 +1,17 @@
 package org.usf.jquery.core;
 
+import static java.sql.Types.JAVA_OBJECT;
 import static java.util.Collections.singletonList;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.range;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.Utils.hasSize;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
+import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.List;
 import java.util.function.BiFunction;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -18,22 +20,29 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public final class TypedFunction implements DBFunction {
+public class TypedFunction implements DBFunction {
 	
 	private final String name;
 	private final boolean aggregate;
 	private final List<BiFunction<QueryParameterBuilder, Object, String>> appenders;
+	@Getter
+	private final int returnedType;
 	//n optional parameter 
+	
+	private String prefix;
+	private String suffix;
 
-	//single arg function
 	public TypedFunction(String name, boolean aggregate, BiFunction<QueryParameterBuilder, Object, String> appender) {
-		this(name, aggregate, singletonList(appender));
+		this(name, aggregate, appender, JAVA_OBJECT); //TODO global variable
+	}
+	
+	public TypedFunction(String name, boolean aggregate, BiFunction<QueryParameterBuilder, Object, String> appender, int returnedType) {
+		this(name, aggregate, singletonList(appender), returnedType);
 	}
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		int n = appenders.size();
-		illegalArgumentIf(!hasSize(args, n), ()-> name() + " function takes " + n + " parameters");
+		requireNArgs(appenders.size(), args, ()-> "function " + name());
 		return DBFunction.super.sql(builder, args);
 	}
 
@@ -51,6 +60,16 @@ public final class TypedFunction implements DBFunction {
 	public String appendParameters(QueryParameterBuilder builder, Object[] args) {
 		return range(0, appenders.size())
 			.mapToObj(i-> appenders.get(i).apply(builder, args[i]))
-			.collect(joining(SCOMA));		
+			.collect(joining(SCOMA, requireNonNullElse(prefix, ""), requireNonNullElse(suffix, "")));		
+	}
+	
+	public TypedFunction argsPrefix(String prefix){
+		this.prefix = prefix;
+		return this;
+	}
+		
+	public TypedFunction argsSuffix(String suffix){
+		this.suffix = suffix;
+		return this;
 	}
 }

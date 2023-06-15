@@ -43,7 +43,7 @@ public final class ColumnMetadata implements ArgumentParser {
 	@Override
 	public Object parse(String v) {
 		if(parser == null) {
-			parser = parser(v, type); // load on demand
+			parser = parser(type, reference); // load on demand
 		}
 		return parser.parse(v); //can check string.size < length
 	}
@@ -52,7 +52,7 @@ public final class ColumnMetadata implements ArgumentParser {
 	 * see: https://download.oracle.com/otn-pub/jcp/jdbc-4_2-mrel2-spec/jdbc4.2-fr-spec.pdf?AuthParam=1679342559_531aef55f72b5993f346322f9e9e7fe3
 	 * @return
 	 */
-	static ArgumentParser parser(String name, int type){
+	static ArgumentParser parser(int type, String name){
 		switch(type) {
 		case BOOLEAN:
 		case BIT		  	: return Boolean::parseBoolean;

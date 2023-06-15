@@ -1,8 +1,7 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
+import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,7 +18,7 @@ final class WhenExpression implements DBExpression {
 
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(nonNull(args), "WhenExpression takes no arguments");
+		requireNoArgs(args, ()-> "WhenExpression");
 		return sql(builder);
 	}
 	

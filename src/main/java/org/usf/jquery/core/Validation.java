@@ -1,5 +1,8 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+
 import java.util.Collection;
 import java.util.function.Supplier;
 
@@ -49,6 +52,27 @@ public final class Validation {
 		if(test) {
 			throw new IllegalArgumentException(supplier.get());
 		}
+	}
+
+	
+	public static Object[] requireNoArgs(Object[] args, Supplier<String> name) {
+		illegalArgumentIf(nonNull(args) && args.length > 0, ()-> name.get() + " takes no parameters");
+		return args;
+	}
+
+	public static Object[] requireNArgs(int n, Object[] args, Supplier<String> name) {
+		illegalArgumentIf(isNull(args) || args.length != n, ()-> name.get() + " takes " + n + " parameters");
+		return args;
+	}
+
+	public static Object[] requireAtLeastNArgs(int n, Object[] args, Supplier<String> name) {
+		illegalArgumentIf(isNull(args) || args.length < n, ()-> name.get() + " takes " + n + " parameters");
+		return args;
+	}
+	
+	public static Object[] requireAtMostNArgs(int n, Object[] args, Supplier<String> name) {
+		illegalArgumentIf(nonNull(args) && args.length > n, ()-> name.get() + " takes " + n + " parameters");
+		return args;
 	}
 
 }

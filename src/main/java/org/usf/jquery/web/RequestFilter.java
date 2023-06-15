@@ -49,12 +49,19 @@ public class RequestFilter {
 		var cmp = isNull(comparator) ? equal() : comparator(comparator);
 		var column = requestColumn.column();
 		var filters = rightColumns.stream().map(c-> column.filter(cmp.expression(c.column()))).collect(toList());
-		if(rightConstants.size() > 1 && (isNull(comparator) || "not".equals(comparator))) {
-			var inCmp = isNull(comparator) ? in() : notIn();
-			filters.add(column.filter(inCmp.expression(rightConstants.toArray())));
+		if(isNull(comparator) && requestColumn.getFunctions().isEmpty()) { //no function & no comparator
+			var meta = requestColumn.tableMetadata();
+			filters.add(column.filter(requestColumn.getColumnDecorator().expression(meta, rightConstants.toArray(String[]::new))));
 		}
 		else {
-			rightConstants.stream().map(v-> column.filter(cmp.expression(v))).forEach(filters::add); //parse
+			var parser = ColumnMetadata.parser(requestColumn.returnedType(), requestColumn.getColumnDecorator().reference());
+			if(rightConstants.size() > 1 && (isNull(comparator) || "not".equals(comparator))) {
+				var inCmp = isNull(comparator) ? in() : notIn();
+				filters.add(column.filter(inCmp.expression(parser.parseArgs(rightConstants.toArray(String[]::new)))));
+			}
+			else {
+				rightConstants.stream().map(v-> column.filter(cmp.expression(parser.parseArg(v)))).forEach(filters::add); //parse
+			}
 		}
 		return filters.toArray(DBFilter[]::new);
 	}

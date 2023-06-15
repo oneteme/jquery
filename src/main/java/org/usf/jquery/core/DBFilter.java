@@ -1,9 +1,8 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
+import static org.usf.jquery.core.Validation.requireNoArgs;
 
 /**
  * 
@@ -16,7 +15,7 @@ public interface DBFilter extends DBObject, NestedSql {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(nonNull(args), "DBFilter takes no arguments");
+		requireNoArgs(args, ()-> "DBFilter");
 		return sql(builder);
 	}
 

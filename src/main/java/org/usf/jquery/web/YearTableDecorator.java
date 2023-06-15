@@ -1,8 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.time.Month.DECEMBER;
-import static org.usf.jquery.core.Utils.hasSize;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
+import static org.usf.jquery.core.Validation.requireAtMostNArgs;
 import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.time.Year;
@@ -17,7 +16,7 @@ public interface YearTableDecorator extends TableDecorator {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(!hasSize(args, 1), "YearTableDecorator takes 2 parameters");
+		requireAtMostNArgs(1, args, ()-> "YearTableDecorator" + reference());
 		return TableDecorator.super.sql(builder, args) + "_" + args[0]; //table suffix
 	}
 	

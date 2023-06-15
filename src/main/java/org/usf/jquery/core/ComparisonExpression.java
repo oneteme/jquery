@@ -2,8 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
-import static org.usf.jquery.core.Utils.hasSize;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
+import static org.usf.jquery.core.Validation.requireNArgs;
 
 import lombok.NonNull;
 
@@ -16,7 +15,7 @@ public interface ComparisonExpression extends DBExpression, NestedSql {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(!hasSize(args, 1), "comparison takes one argument");
+		requireNArgs(1, args, ()-> "ComparisonExpression");
 		return sql(builder, args[0]);
 	}
 

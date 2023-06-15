@@ -1,8 +1,7 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
 import static org.usf.jquery.core.Validation.requireLegalAlias;
+import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
 
@@ -20,7 +19,7 @@ public interface DBColumn extends DBObject, NestedSql {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(nonNull(args), "DBColumn takes no arguments");
+		requireNoArgs(args, ()-> "DBColumn");
 		return sql(builder);
 	}
 
