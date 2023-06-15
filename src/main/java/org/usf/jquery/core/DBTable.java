@@ -1,9 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.Utils.hasSize;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
 import static org.usf.jquery.core.Validation.requireAtMostNArgs;
 
 /**
