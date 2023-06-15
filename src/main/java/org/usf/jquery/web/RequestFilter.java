@@ -3,13 +3,15 @@ package org.usf.jquery.web;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.DBComparator.equal;
-import static org.usf.jquery.core.DBComparator.in;
-import static org.usf.jquery.core.DBComparator.notIn;
 import static org.usf.jquery.core.DBComparator.greaterOrEqual;
 import static org.usf.jquery.core.DBComparator.greaterThan;
+import static org.usf.jquery.core.DBComparator.in;
 import static org.usf.jquery.core.DBComparator.lessOrEqual;
 import static org.usf.jquery.core.DBComparator.lessThan;
+import static org.usf.jquery.core.DBComparator.like;
+import static org.usf.jquery.core.DBComparator.iLike;
 import static org.usf.jquery.core.DBComparator.notEqual;
+import static org.usf.jquery.core.DBComparator.notIn;
 
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -36,7 +38,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class RequestFilter {
 	
-	private static final Set<String> symbols = Set.of("gt", "ge", "lt", "le", "not");
+	private static final Set<String> symbols = Set.of("gt", "ge", "lt", "le", "not", "like", "ilike");
 	
 	private final RequestColumn requestColumn;
 	private final List<RequestColumn> rightColumns;
@@ -46,7 +48,7 @@ public class RequestFilter {
 	public DBFilter[] fitlers() {
 		var cmp = isNull(comparator) ? equal() : comparator(comparator);
 		var column = requestColumn.column();
-		var filters = rightColumns.stream().map(c-> column.filter(cmp.expression(c))).collect(toList());
+		var filters = rightColumns.stream().map(c-> column.filter(cmp.expression(c.column()))).collect(toList());
 		if(rightConstants.size() > 1 && (isNull(comparator) || "not".equals(comparator))) {
 			var inCmp = isNull(comparator) ? in() : notIn();
 			filters.add(column.filter(inCmp.expression(rightConstants.toArray())));
@@ -88,6 +90,14 @@ public class RequestFilter {
 		case "lt" : return lessThan();
 		case "le" : return lessOrEqual();
 		case "not": return notEqual();
+		case "like": return (b, args)-> {
+			args[1] = "%" + args[1] + "%"; //not works with columns
+			return like().sql(b, args);
+		};
+		case "ilike": return (b, args)-> {
+			args[1] = "%" + args[1] + "%"; //not works with columns
+			return iLike().sql(b, args);
+		};
 		default: return null;
 		}
 	}

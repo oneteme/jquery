@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Arrays.asList;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
@@ -49,7 +50,7 @@ public interface DBFunction extends DBOperation {
 	}
 	
 	static TypedFunction avg() {
-		return new TypedFunction("SUM", true, QueryParameterBuilder::appendParameter);  
+		return new TypedFunction("AVG", true, QueryParameterBuilder::appendParameter);  
 	}
 
 	static TypedFunction min() {
@@ -82,6 +83,18 @@ public interface DBFunction extends DBOperation {
 		return new TypedFunction("FLOOR", false, QueryParameterBuilder::appendNumber); 
 	}
 	
+	static TypedFunction exp() {
+		return new TypedFunction("EXP", false, QueryParameterBuilder::appendNumber); 
+	}
+	
+	static TypedFunction log() {
+		return new TypedFunction("LOG", false, QueryParameterBuilder::appendNumber); 
+	}
+	
+	static TypedFunction mod() {
+		return new TypedFunction("MOD", false, asList(QueryParameterBuilder::appendNumber, QueryParameterBuilder::appendNumber)); 
+	}
+	
 	//string funct.
 
 	static TypedFunction length() {
@@ -100,15 +113,19 @@ public interface DBFunction extends DBOperation {
 		return new TypedFunction("LOWER", false, QueryParameterBuilder::appendString);
 	}
 	
+	static TypedFunction initcap() {
+		return new TypedFunction("INITCAP", false, QueryParameterBuilder::appendString);
+	}
+	
 	static DBFunction function(final String name) {
 		return ()-> name;
 	}
 
-	static Optional<DBFunction> lookup(String fucntion) {
+	static Optional<TypedFunction> lookup(String fucntion) {
 		try {
 			var m = DBFunction.class.getMethod(fucntion.toLowerCase());
 			if(isStatic(m.getModifiers()) && m.getReturnType().equals(TypedFunction.class)) { // no private static
-				return Optional.of((DBFunction) m.invoke(null));
+				return Optional.of((TypedFunction) m.invoke(null));
 			}
 		} catch (Exception e) {
 			//do nothing here

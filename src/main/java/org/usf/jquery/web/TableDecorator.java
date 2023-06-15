@@ -6,7 +6,6 @@ import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.RequestQuery;
@@ -28,7 +27,6 @@ public interface TableDecorator extends DBTable {
 	String columnName(ColumnDecorator desc);
 	
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		
 		var query = new RequestQuery().select(this);
 		parseColumns(ant, query, parameterMap);
 		parseFilters(ant, query, parameterMap);
@@ -48,7 +46,6 @@ public interface TableDecorator extends DBTable {
 	}
 
 	default void parseFilters(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameterMap) {
-
 		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
     	parameterMap.entrySet().stream()
     	.filter(e-> !ant.columnParameter().equals(e.getKey()) && !ant.revisionParameter().equals(e.getKey()))

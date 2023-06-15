@@ -18,11 +18,12 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-final class TypedFunction implements DBFunction {
+public final class TypedFunction implements DBFunction {
 	
 	private final String name;
 	private final boolean aggregate;
 	private final List<BiFunction<QueryParameterBuilder, Object, String>> appenders;
+	//n optional parameter 
 
 	//single arg function
 	public TypedFunction(String name, boolean aggregate, BiFunction<QueryParameterBuilder, Object, String> appender) {
