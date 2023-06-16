@@ -13,8 +13,9 @@ import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isPresent;
 
 import java.util.Optional;
-import java.util.function.BiFunction;
 import java.util.stream.Stream;
+
+import org.usf.jquery.core.QueryParameterBuilder.Appender;
 
 /**
  * 
@@ -175,7 +176,7 @@ public interface DBFunction extends DBOperation {
 				.argsPrefix(field + " FROM ");
 	}
 	
-	static TypedFunction cast(String type, BiFunction<QueryParameterBuilder, Object, String> appender, int returnedType) {
+	static TypedFunction cast(String type, Appender appender, int returnedType) {
 		return new TypedFunction("CAST", false, appender, returnedType)
 				.argsSuffix(" AS " + type);
 	}

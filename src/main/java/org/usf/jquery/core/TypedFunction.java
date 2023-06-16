@@ -11,6 +11,8 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 import java.util.List;
 import java.util.function.BiFunction;
 
+import org.usf.jquery.core.QueryParameterBuilder.Appender;
+
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -24,7 +26,7 @@ public class TypedFunction implements DBFunction {
 	
 	private final String name;
 	private final boolean aggregate;
-	private final List<BiFunction<QueryParameterBuilder, Object, String>> appenders;
+	private final List<Appender> appenders;
 	@Getter
 	private final int returnedType;
 	//n optional parameter 
@@ -32,11 +34,11 @@ public class TypedFunction implements DBFunction {
 	private String prefix;
 	private String suffix;
 
-	public TypedFunction(String name, boolean aggregate, BiFunction<QueryParameterBuilder, Object, String> appender) {
+	public TypedFunction(String name, boolean aggregate, Appender appender) {
 		this(name, aggregate, appender, JAVA_OBJECT); //TODO global variable
 	}
 	
-	public TypedFunction(String name, boolean aggregate, BiFunction<QueryParameterBuilder, Object, String> appender, int returnedType) {
+	public TypedFunction(String name, boolean aggregate, Appender appender, int returnedType) {
 		this(name, aggregate, singletonList(appender), returnedType);
 	}
 	
@@ -59,7 +61,7 @@ public class TypedFunction implements DBFunction {
 	@Override
 	public String appendParameters(QueryParameterBuilder builder, Object[] args) {
 		return range(0, appenders.size())
-			.mapToObj(i-> appenders.get(i).apply(builder, args[i]))
+			.mapToObj(i-> appenders.get(i).append(builder, args[i]))
 			.collect(joining(SCOMA, requireNonNullElse(prefix, ""), requireNonNullElse(suffix, "")));		
 	}
 	

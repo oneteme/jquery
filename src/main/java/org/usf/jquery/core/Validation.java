@@ -44,17 +44,12 @@ public final class Validation {
 		}
 	}
 
-	public static void illegalArgumentIfNot(boolean test, @NonNull Supplier<String> supplier) {
-		illegalArgumentIf(!test, supplier);
-	}
-
 	public static void illegalArgumentIf(boolean test, @NonNull Supplier<String> supplier) {
 		if(test) {
 			throw new IllegalArgumentException(supplier.get());
 		}
 	}
 
-	
 	public static Object[] requireNoArgs(Object[] args, Supplier<String> name) {
 		illegalArgumentIf(nonNull(args) && args.length > 0, ()-> name.get() + " takes no parameters");
 		return args;

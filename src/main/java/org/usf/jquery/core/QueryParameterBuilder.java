@@ -123,4 +123,11 @@ public final class QueryParameterBuilder {
 	public static QueryParameterBuilder parametrized() {
 		return new QueryParameterBuilder(new LinkedList<>());
 	}
+	
+	@FunctionalInterface
+	static interface Appender {
+		
+		String append(QueryParameterBuilder builder, Object o);
+		
+	}
 }
