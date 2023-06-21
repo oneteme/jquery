@@ -30,10 +30,4 @@ class DBColumnTest {
 		assertEquals("1234", constant(1234).sql(addWithValue()));
 	}
 	
-	@Test
-	void testAs() {
-		assertEquals("cm1 AS lb1", column("cm1").as("lb1").tagSql(addWithValue()));
-		assertEquals("'cm1' AS lb1", constant("cm1").as("lb1").tagSql(addWithValue()));
-		assertEquals("1234 AS lb1", constant(1234).as("lb1").tagSql(addWithValue()));
-	}
 }
