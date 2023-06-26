@@ -16,7 +16,7 @@ public interface YearTableDecorator extends TableDecorator {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireAtMostNArgs(1, args, ()-> "YearTableDecorator" + reference());
+		requireAtMostNArgs(1, args, ()-> "YearTableDecorator " + reference());
 		return TableDecorator.super.sql(builder, args) + "_" + args[0]; //table suffix
 	}
 	
@@ -43,10 +43,10 @@ public interface YearTableDecorator extends TableDecorator {
     }
 
     static YearMonth parseYearMonth(String revision) {
-    	if(revision.matches("[0-9]{4}-[0-9]{2}")) {
+    	if(revision.matches("\\d{4}-\\d{2}")) {
     		return YearMonth.parse(revision);
     	}
-    	if(revision.matches("[0-9]{4}")) {
+    	if(revision.matches("\\d{4}")) {
     		return Year.parse(revision).atMonth(DECEMBER);
     	}
     	throw new IllegalArgumentException("cannot parse revision " + revision);

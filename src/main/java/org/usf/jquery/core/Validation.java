@@ -38,18 +38,6 @@ public final class Validation {
 		return c;
 	}
 
-	public static void illegalArgumentIf(boolean test, String msg) {
-		if(test) {
-			throw new IllegalArgumentException(msg);
-		}
-	}
-
-	public static void illegalArgumentIf(boolean test, @NonNull Supplier<String> supplier) {
-		if(test) {
-			throw new IllegalArgumentException(supplier.get());
-		}
-	}
-
 	public static Object[] requireNoArgs(Object[] args, Supplier<String> name) {
 		illegalArgumentIf(nonNull(args) && args.length > 0, ()-> name.get() + " takes no parameters");
 		return args;
@@ -68,6 +56,18 @@ public final class Validation {
 	public static Object[] requireAtMostNArgs(int n, Object[] args, Supplier<String> name) {
 		illegalArgumentIf(nonNull(args) && args.length > n, ()-> name.get() + " takes " + n + " parameters");
 		return args;
+	}
+
+	public static void illegalArgumentIf(boolean test, String msg) {
+		if(test) {
+			throw new IllegalArgumentException(msg);
+		}
+	}
+
+	public static void illegalArgumentIf(boolean test, @NonNull Supplier<String> supplier) {
+		if(test) {
+			throw new IllegalArgumentException(supplier.get());
+		}
 	}
 
 }

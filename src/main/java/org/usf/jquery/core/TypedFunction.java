@@ -9,7 +9,6 @@ import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.List;
-import java.util.function.BiFunction;
 
 import org.usf.jquery.core.QueryParameterBuilder.Appender;
 
