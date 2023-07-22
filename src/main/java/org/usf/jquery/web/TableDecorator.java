@@ -64,7 +64,7 @@ public interface TableDecorator {
 
 	default void parseFilters(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
-    	.filter(e-> RESERVED_WORDS.contains(e.getKey()))
+    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
     	.forEach(e-> {
     		var rf = decode(e, this); // catch exception => allowUnknownParameters
     		query.tables(rf.tables()).filters(rf.filters());
