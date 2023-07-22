@@ -20,7 +20,6 @@ import static java.sql.Types.TINYINT;
 import static java.sql.Types.VARCHAR;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
-import static org.usf.jquery.core.ComparisonExpression.in;
 import static org.usf.jquery.core.DBComparator.equal;
 import static org.usf.jquery.core.DBComparator.greaterOrEqual;
 import static org.usf.jquery.core.DBComparator.greaterThan;

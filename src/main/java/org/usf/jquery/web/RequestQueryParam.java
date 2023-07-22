@@ -24,15 +24,20 @@ public @interface RequestQueryParam {
 	
 	boolean allowUnknownParameters() default false; //ignoreUnknownParameters
 	
+	String[] ignoreParameters();
+	
 	//TODO sortColumn, ..
 	
+	@Deprecated
 	String columnParameter() default "column"; 
-	
+
+	@Deprecated
 	String revisionParameter() default "revision";
-	
+
+	@Deprecated
 	RevisionMode revisionMode() default STRICT;
 	
-	
+	@Deprecated
 	public enum RevisionMode {
 		
 		STRICT, CLOSEST;

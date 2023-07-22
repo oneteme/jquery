@@ -11,6 +11,7 @@ import java.util.function.Predicate;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.TaggableTable;
 import org.usf.jquery.core.TypedFunction;
 
 import lombok.AccessLevel;
@@ -42,6 +43,10 @@ public final class RequestColumn {
 			col = fn.args(col);
 		}
 		return col.as(columnDecorator.reference()); // not sure
+	}
+
+	public TaggableTable table() {
+		return tableDecorator.table();
 	}
 		
 	public int returnedType() {

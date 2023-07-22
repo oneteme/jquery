@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.web.YearTableMetadata.EMPTY_REVISION;
+import static org.usf.jquery.web.YearTableDecoratorWrapper.EMPTY_REVISION;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -112,7 +112,7 @@ public final class DatabaseScanner {
 					var names = tableNames(e);
 					var colum = columnMetadata(e, e.tableName()+"_20__", declaredColumns);
 					YearMonth[] revs = names.isEmpty() ? null : yearMonthRevisions(e, names);
-					meta.put(e, new YearTableMetadata(unmodifiableMap(colum), revs));
+					meta.put(e, new YearTableDecoratorWrapper(unmodifiableMap(colum), revs));
 				}
 				else {
 					meta.put(t, new TableMetadata(unmodifiableMap(columnMetadata(t, t.tableName(), declaredColumns))));

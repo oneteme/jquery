@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
+import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.RequestColumn.decode;
 import static org.usf.jquery.web.RequestFilter.decode;
@@ -58,7 +59,7 @@ public interface TableDecorator {
 		}
 		flatStream(cols).forEach(p->{
 			var rc = decode(p, this, false);
-			query.tables(rc.getTableDecorator().table()).columns(rc.column());
+			query.tables(rc.table()).columns(rc.column());
 		});
 	}
 
@@ -72,7 +73,7 @@ public interface TableDecorator {
 	}
 
 	default void parseOrders(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
-		var cols = parameters.get("order");
+		var cols = parameters.get(ORDER);
 		if(nonNull(cols)) {
 			flatStream(cols).forEach(p->{
 				var rc = decode(p, this, true);
