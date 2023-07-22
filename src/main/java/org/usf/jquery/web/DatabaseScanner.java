@@ -51,13 +51,13 @@ public final class DatabaseScanner {
 	private final Object sync = new Object();
 
 	private final Configuration config;
-	private DatabaseMetadata metadata;
 	
 	@Deprecated
 	List<ColumnDecorator> columns = emptyList();
 	List<? extends TableDecorator> tables = emptyList();
 	
 	Map<String, ColumnDecorator> columnMap;
+	Map<String, TableDecorator> tableMap;
 
 	DatabaseScanner(Configuration config, DatabaseMetadata metadata) {
 		this(config);
@@ -95,8 +95,8 @@ public final class DatabaseScanner {
 	public void fetch() {
 		requireNonNull(config, "configuration not found");
 		synchronized (sync) {
-			var meta = new LinkedHashMap<TableDecorator, TableMetadata>();
-			for(var t : tables) {
+			var meta = new LinkedHashMap<String, TableDecorator>();
+			for(var t : tableMap.values()) {
 				var declaredColumns = columns.stream()
 						.filter(cd-> {
 							try {
@@ -142,7 +142,7 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private Map<ColumnDecorator, ColumnMetadata> columnMetadata(TableDecorator table, String tablePattern, Map<String, ColumnDecorator> declaredColumns) {
+	private Map<String, ColumnDecorator> columnMetadata(TableDecorator table, String tablePattern, Map<String, ColumnDecorator> declaredColumns) {
 
 		log.info("Scanning '{}' table columns...", table);
 		try(var cn = config.getDataSource().getConnection()){
@@ -227,7 +227,7 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private static void logTableColumns(Map<ColumnDecorator, ColumnMetadata> map) {
+	private static void logTableColumns(Map<String, ColumnDecorator> map) {
 		if(!map.isEmpty()) {
 			var pattern = "|%-20s|%-40s|%-6s|%-12s|";
 			var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
@@ -235,7 +235,7 @@ public final class DatabaseScanner {
 			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
 			log.info(bar);
 			map.entrySet().forEach(e-> 
-			log.info(format(pattern, e.getKey().identity(), e.getValue().getName(), e.getValue().getType(), e.getValue().getLength())));
+			log.info(format(pattern, e.getValue().identity(), e.getKey(), e.getValue().dbType(), e.getValue().dataSize())));
 			log.info(bar);
 		}
 	}

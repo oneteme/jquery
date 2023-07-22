@@ -31,6 +31,7 @@ import static org.usf.jquery.core.DBComparator.like;
 import static org.usf.jquery.core.DBComparator.notEqual;
 import static org.usf.jquery.core.DBComparator.notIn;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
+import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Validation.requireLegalAlias;
 
 import java.math.BigDecimal;
@@ -73,6 +74,11 @@ public interface ColumnDecorator {
 	default int dbType() {
 		return AUTO_TYPE;
 	}
+
+	default int dataSize() {
+		return UNLIMITED;
+	}
+	
 
 	default boolean canSelect() {
 		return true;
@@ -129,8 +135,8 @@ public interface ColumnDecorator {
 			args[1] = "%" + args[1] + "%"; //not works with columns
 			return iLike().sql(b, args);
 		};
+		//isnull
 		default: throw new IllegalArgumentException("unsupported comparator : " + comparator);
 		}
 	}
-	
 }
