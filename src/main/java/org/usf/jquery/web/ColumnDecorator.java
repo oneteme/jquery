@@ -78,7 +78,6 @@ public interface ColumnDecorator {
 	default int dataSize() {
 		return UNLIMITED;
 	}
-	
 
 	default boolean canSelect() {
 		return true;

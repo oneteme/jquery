@@ -33,10 +33,12 @@ public interface YearTableDecorator extends TableDecorator {
 	
 	ColumnDecorator revisionColumn();
 
+    void updateRevisions(YearMonth[] revisions); //cache revisions
+
     default YearMonth[] availableRevisions() {
-    	return EMPTY_REVISION;
+    	return null;
     }
-	
+    
 	@Override
 	default NamedTable table() {
 		return yearTable(tableName()).as(reference());
@@ -63,7 +65,9 @@ public interface YearTableDecorator extends TableDecorator {
 				: flatStream(values)
     			.map(YearTableDecorator::parseYearMonth)
     			.toArray(YearMonth[]::new);
-		return revisionMode(REVISION_MODE).apply(revs);
+		return isNull(availableRevisions())
+				? revs //use window 
+				: revisionMode(REVISION_MODE).apply(revs); //require available revisions
     }
     
     default UnaryOperator<YearMonth[]> revisionMode(String mode) {

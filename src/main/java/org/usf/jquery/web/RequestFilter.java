@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.BasicComparator;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.NamedTable;
 
@@ -33,7 +34,10 @@ public class RequestFilter {
 		var filters = new LinkedList<>();
 		if(!rightColumns.isEmpty()) {
 			var cmp = cd.comparator(requestColumn.getExpression(), 1);
-			rightColumns.stream().map(c-> col.filter(cmp.expression(c.column()))).forEach(filters::add);
+			if(cmp instanceof BasicComparator) {
+				rightColumns.stream().map(c-> col.filter(cmp.expression(c.column()))).forEach(filters::add);
+			}
+			throw new IllegalArgumentException("illegal column comparator " + requestColumn.getExpression());
 		}
 		if(!rightConstants.isEmpty()) {
 			var values = rightConstants.toArray(String[]::new);

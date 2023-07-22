@@ -19,6 +19,7 @@ public final class ColumnDecoratorWrapper implements ColumnDecorator {
 	private final int type;
 	private final int size;
 	private ArgumentParser parser;
+	//index ?o
 	//cache values !? more performance
 	
 	public ColumnDecoratorWrapper(ColumnDecorator column) {
