@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.sql.Types.NULL;
 import static java.util.function.Function.identity;
 
 import java.util.Collection;
@@ -18,6 +19,8 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Utils {
+
+	public static final int AUTO_TYPE = NULL;
 	
 	public static <T> boolean isEmpty(T[] a) {
 		return a == null || a.length == 0;

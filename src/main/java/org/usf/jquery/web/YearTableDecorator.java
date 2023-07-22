@@ -1,33 +1,44 @@
 package org.usf.jquery.web;
 
 import static java.time.Month.DECEMBER;
-import static org.usf.jquery.core.Validation.requireAtMostNArgs;
+import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
+import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
+import static org.usf.jquery.core.PartitionedRequestQuery.yearTable;
 import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.Map;
 
+import org.usf.jquery.core.NamedTable;
 import org.usf.jquery.core.PartitionedRequestQuery;
-import org.usf.jquery.core.QueryParameterBuilder;
 import org.usf.jquery.core.RequestQuery;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 public interface YearTableDecorator extends TableDecorator {
-	
-	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireAtMostNArgs(1, args, ()-> "YearTableDecorator " + reference());
-		return TableDecorator.super.sql(builder, args) + "_" + args[0]; //table suffix
-	}
 	
 	ColumnDecorator revisionColumn();
 	
 	@Override
+	default NamedTable table() {
+		return yearTable(tableName()).as(reference());
+	}
+	
+	@Override
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		var revs = revisionColumn() == null ? null: revisionColumn().column(this);
-		var query = new PartitionedRequestQuery(revs, parseRevisions(ant, parameterMap)).select(this);
+		var query = new PartitionedRequestQuery(parseRevisions(ant, parameterMap)).select(table());
 		parseColumns(ant, query, parameterMap);
 		parseFilters(ant, query, parameterMap);
+		query.columns(yearColumn().as("revisionYear"));
+		if(revisionColumn() != null) { //optional revision column
+			var rev = revisionColumn().column(this);
+			query.columns(rev);
+			query.filters(monthFilter(rev));
+		}
 		return query;
 	}
 
@@ -38,8 +49,7 @@ public interface YearTableDecorator extends TableDecorator {
 				: flatStream(values)
     			.map(YearTableDecorator::parseYearMonth)
     			.toArray(YearMonth[]::new);
-		var meta = DatabaseScanner.get().metadata().table(this);
-    	return meta.filterExistingRevision(ant.revisionMode(), revs);
+    	return metadata().filterExistingRevision(ant.revisionMode(), revs);
     }
 
     static YearMonth parseYearMonth(String revision) {
@@ -51,5 +61,10 @@ public interface YearTableDecorator extends TableDecorator {
     	}
     	throw new IllegalArgumentException("cannot parse revision " + revision);
     }
-
+    
+    @Override
+    default YearTableMetadata metadata() {
+    	return (YearTableMetadata) TableDecorator.super.metadata();
+    }
+    
 }

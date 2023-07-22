@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import lombok.AccessLevel;
+import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
@@ -9,11 +10,12 @@ import lombok.experimental.Delegate;
  * @author u$f
  *
  */
+@EqualsAndHashCode(of = "reference")
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class NamedColumn implements TaggableColumn {
+public final class NamedTable implements TaggableTable {
 
 	@Delegate
-	private final DBColumn column;
+	private final DBTable table;
 	private final String reference;
 
 	@Override
@@ -22,7 +24,7 @@ public final class NamedColumn implements TaggableColumn {
 	}
 	
 	@Override
-	public NamedColumn as(String name) { // map
-		return new NamedColumn(column, name);
+	public NamedTable as(String name) { // map
+		return new NamedTable(table, name);
 	}
 }

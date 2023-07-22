@@ -1,11 +1,11 @@
 package org.usf.jquery.core;
 
-import static java.sql.Types.JAVA_OBJECT;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.range;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.List;
@@ -34,7 +34,7 @@ public class TypedFunction implements DBFunction {
 	private String suffix;
 
 	public TypedFunction(String name, boolean aggregate, Appender appender) {
-		this(name, aggregate, appender, JAVA_OBJECT); //TODO global variable
+		this(name, aggregate, appender, AUTO_TYPE); //TODO global variable
 	}
 	
 	public TypedFunction(String name, boolean aggregate, Appender appender, int returnedType) {

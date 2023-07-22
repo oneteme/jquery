@@ -8,6 +8,11 @@ import org.usf.jquery.core.RequestQuery;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor
 public final class RequestQueryParamResolver {
 	

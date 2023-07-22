@@ -15,13 +15,13 @@ import lombok.NonNull;
 @FunctionalInterface
 public interface DBColumn extends DBObject, NestedSql {
 	
-	String sql(QueryParameterBuilder builder);
-	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireNoArgs(args, ()-> "DBColumn");
 		return sql(builder);
 	}
+	
+	String sql(QueryParameterBuilder builder);
 
 	@Override
 	default boolean isAggregation() {
@@ -34,6 +34,14 @@ public interface DBColumn extends DBObject, NestedSql {
 
 	default NamedColumn as(String name) {
 		return new NamedColumn(this, requireLegalAlias(name));
+	}
+	
+	default OrderColumn order() {
+		return order(null);
+	}
+	
+	default OrderColumn order(Order order) {
+		return new OrderColumn(this, order);
 	}
 
 	// filters

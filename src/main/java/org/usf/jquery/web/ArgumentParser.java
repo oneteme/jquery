@@ -2,6 +2,11 @@ package org.usf.jquery.web;
 
 import java.util.stream.Stream;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
 public interface ArgumentParser {
 	

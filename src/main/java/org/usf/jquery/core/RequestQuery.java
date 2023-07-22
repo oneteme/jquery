@@ -2,8 +2,6 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static java.lang.reflect.Array.getLength;
-import static java.util.Arrays.asList;
-import static java.util.Objects.requireNonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -15,13 +13,11 @@ import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -38,73 +34,80 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class RequestQuery {
 
-	final String suffix;
-	final Set<DBTable> tables;
+	final List<TaggableTable> tables;
 	final List<TaggableColumn> columns;
 	final List<DBFilter> filters;  //WERE & HAVING
+	final List<OrderColumn> orders;
+	boolean distinct;
 	boolean noResult;
 	
 	public RequestQuery() {
-		this.suffix  = null;
-		this.tables  = new HashSet<>();
+		this.tables  = new LinkedList<>();
 		this.columns = new LinkedList<>();
 		this.filters = new LinkedList<>();
+		this.orders  = new LinkedList<>();
+	}
+	
+	public RequestQuery distinct() {
+		distinct = true;
+		return this;
 	}
 
-	public RequestQuery select(DBTable table, TaggableColumn... columns) {
+	public RequestQuery select(TaggableTable table, TaggableColumn... columns) {
 		return tables(table).columns(columns);
 	}
 
-	public RequestQuery tables(@NonNull DBTable... tables) {
-		this.tables.addAll(asList(tables));
+	public RequestQuery tables(@NonNull TaggableTable... tables) {
+		Stream.of(tables).forEach(this.tables::add);
 		return this;
 	}
 	
 	public RequestQuery columns(@NonNull TaggableColumn... columns) {
-		this.columns.addAll(asList(columns));
+		Stream.of(columns).forEach(this.columns::add);
 		return this;
 	}
 
 	public RequestQuery filters(@NonNull DBFilter... filters){
-		this.filters.addAll(asList(filters));
+		Stream.of(filters).forEach(this.filters::add);
+		return this;
+	}
+	
+	public RequestQuery orders(@NonNull OrderColumn... orders) {
+		Stream.of(orders).forEach(this.orders::add);
 		return this;
 	}
 
-	public <T> T execute(Function<ParametredQuery, T> fn) {
-		return execute(null, fn);
+	public <T> T execute(@NonNull Function<ParametredQuery, T> fn) {
+		return fn.apply(build());
 	}
 
-	public <T> T execute(String schema, Function<ParametredQuery, T> fn) {
-		return requireNonNull(fn).apply(build(schema));
-	}
-
-	public ParametredQuery build(String schema){
+	public ParametredQuery build(){
 		requireNonEmpty(tables);
     	requireNonEmpty(columns);
 		log.debug("building query...");
 		var bg = currentTimeMillis();
 		var pb = parametrized();
 		var sb = new SqlStringBuilder(500);
-		build(schema, sb, pb);
+		build(sb, pb);
 		log.debug("query built in {} ms", currentTimeMillis() - bg);
 		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new); //!postgres insensitive case
 		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
 	}
 
-	public final void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
-    	select(schema, sb);
+	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
+    	select(sb);
     	where(sb, pb);
     	groupBy(sb);
     	having(sb, pb);
+    	orderBy(sb, pb);
 	}
 
-	void select(String schema, SqlStringBuilder sb){
+	void select(SqlStringBuilder sb){
 		var pb = addWithValue(); //addWithValue columns (case, constant, Operation, ..)
-		var args = Objects.isNull(schema) ? null : new Object[]{suffix};
     	sb.append("SELECT ")
     	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + o.reference())
     	.append(" FROM ")
-    	.appendEach(tables, SCOMA, o-> o.sql(pb, args) + SPACE + o.reference());
+    	.appendEach(tables, SCOMA, o-> o.sql(pb) + SPACE + o.reference());
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
@@ -139,6 +142,13 @@ public class RequestQuery {
     	if(!having.isEmpty()) {
     		sb.append(" HAVING ")
     		.appendEach(having, AND.sql(), f-> f.sql(pb));
+    	}
+	}
+	
+	void orderBy(SqlStringBuilder sb, QueryParameterBuilder pb) {
+    	if(!orders.isEmpty()) {
+    		sb.append(" ORDER BY ")
+    		.appendEach(orders, SPACE, o-> o.sql(pb));
     	}
 	}
 

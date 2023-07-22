@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.web.TableMetadata.EMPTY_REVISION;
+import static org.usf.jquery.web.YearTableMetadata.EMPTY_REVISION;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -53,9 +53,11 @@ public final class DatabaseScanner {
 	private final Configuration config;
 	private DatabaseMetadata metadata;
 	
-	@Getter
+	@Deprecated
 	List<ColumnDecorator> columns = emptyList();
 	List<? extends TableDecorator> tables = emptyList();
+	
+	Map<String, ColumnDecorator> columnMap;
 
 	DatabaseScanner(Configuration config, DatabaseMetadata metadata) {
 		this(config);
@@ -93,13 +95,13 @@ public final class DatabaseScanner {
 	public void fetch() {
 		requireNonNull(config, "configuration not found");
 		synchronized (sync) {
-			var meta = new LinkedHashMap<String, TableMetadata>();
+			var meta = new LinkedHashMap<TableDecorator, TableMetadata>();
 			for(var t : tables) {
 				var declaredColumns = columns.stream()
 						.filter(cd-> {
 							try {
 								t.columnName(cd);
-							}catch (Exception e) {
+							} catch (Exception e) {
 								return false;
 							}
 							return true;
@@ -108,12 +110,12 @@ public final class DatabaseScanner {
 				if(t instanceof YearTableDecorator) {
 					var e = (YearTableDecorator) t;
 					var names = tableNames(e);
-					var colum = columnMetadata(e, e.sql()+"_20__", declaredColumns);
+					var colum = columnMetadata(e, e.tableName()+"_20__", declaredColumns);
 					YearMonth[] revs = names.isEmpty() ? null : yearMonthRevisions(e, names);
-					meta.put(e.identity(), new TableMetadata(revs, unmodifiableMap(colum)));
+					meta.put(e, new YearTableMetadata(unmodifiableMap(colum), revs));
 				}
 				else {
-					meta.put(t.identity(), new TableMetadata(unmodifiableMap(columnMetadata(t, t.sql(), declaredColumns))));
+					meta.put(t, new TableMetadata(unmodifiableMap(columnMetadata(t, t.tableName(), declaredColumns))));
 				}
 			}
 			this.metadata = new DatabaseMetadata(meta);
@@ -123,11 +125,11 @@ public final class DatabaseScanner {
 	private List<String> tableNames(YearTableDecorator table) {
 		
 		log.info("Scanning '{}' table year partitions...", table);
-		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.sql()+"_20__", null)){
+		try(ResultSet rs = config.getDataSource().getConnection().getMetaData().getTables(null, null, table.tableName()+"_20__", null)){
 			List<String> nName = new LinkedList<>();
 			while(rs.next()) {
 				var tn = rs.getString("TABLE_NAME");
-				if(tn.matches(table.sql() + "_20[0-9]{2}")) { // strict pattern
+				if(tn.matches(table.tableName() + "_20[0-9]{2}")) { // strict pattern
 					nName.add(tn);
 				}
 			}
@@ -140,7 +142,7 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private Map<String, ColumnMetadata> columnMetadata(TableDecorator table, String tablePattern, Map<String, ColumnDecorator> declaredColumns) {
+	private Map<ColumnDecorator, ColumnMetadata> columnMetadata(TableDecorator table, String tablePattern, Map<String, ColumnDecorator> declaredColumns) {
 
 		log.info("Scanning '{}' table columns...", table);
 		try(var cn = config.getDataSource().getConnection()){
@@ -164,7 +166,7 @@ public final class DatabaseScanner {
 	}
 
 	@SuppressWarnings("unchecked")
-	private static Map<String, ColumnMetadata> resolve(List<ColumnType> types, Map<String, ColumnDecorator> declaredColumns){
+	private static Map<ColumnDecorator, ColumnMetadata> resolve(List<ColumnType> types, Map<String, ColumnDecorator> declaredColumns){
 		
 		return Map.ofEntries(types.stream()
 				.collect(groupingBy(ColumnType::getColumn)).entrySet()
@@ -225,7 +227,7 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private static void logTableColumns(Map<String, ColumnMetadata> map) {
+	private static void logTableColumns(Map<ColumnDecorator, ColumnMetadata> map) {
 		if(!map.isEmpty()) {
 			var pattern = "|%-20s|%-40s|%-6s|%-12s|";
 			var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
@@ -233,7 +235,7 @@ public final class DatabaseScanner {
 			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
 			log.info(bar);
 			map.entrySet().forEach(e-> 
-			log.info(format(pattern, e.getKey(), e.getValue().getReference(), e.getValue().getType(), e.getValue().getLength())));
+			log.info(format(pattern, e.getKey().identity(), e.getValue().getName(), e.getValue().getType(), e.getValue().getLength())));
 			log.info(bar);
 		}
 	}

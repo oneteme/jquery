@@ -1,14 +1,10 @@
 package org.usf.jquery.core;
 
-import static java.util.Set.copyOf;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Stream.concat;
-import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.time.YearMonth;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
@@ -22,14 +18,12 @@ import lombok.Getter;
  */
 public final class PartitionedRequestQuery extends RequestQuery {
 	
-	private static final String REVISION_YEAR_TAG = "revisionYear";
+	private static final ThreadLocal<Entry<Integer, List<YearMonth>>> currentRev = new ThreadLocal<>();
 	
-	private final TaggableColumn revisionColumn;
 	@Getter
 	private final YearMonth[] revisions; // nullable
 	
-	public PartitionedRequestQuery(TaggableColumn revisionColumn, YearMonth... revisions) {
-		this.revisionColumn = revisionColumn;
+	public PartitionedRequestQuery(YearMonth... revisions) {
 		this.revisions = revisions;
 		if(isEmpty(revisions)) {
 			this.noResult = true;
@@ -37,37 +31,37 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	}
 	
 	@Override
-	public final ParametredQuery build(String schema){
-		
+	public final ParametredQuery build(){
+		if(isEmpty(revisions)) {
+			super.build(); //throw exception
+		}
 		var pb = parametrized();
 		var sb = new SqlStringBuilder(500); // size ? 
-		if(isEmpty(revisions)) {
-			super.build(schema, sb, pb);
-		}
-		var cols = concat(columns.stream(), Stream.of(additionalColumns(null))) //only tagname
-			.map(TaggableColumn::reference)
-			.toArray(String[]::new);
+		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new);
 		var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
-		sb.forEach(map.entrySet(), " UNION ALL ", e-> query(e).build(schema, sb, pb)); //sequential 
+		sb.forEach(map.entrySet(), " UNION ALL ", e-> {
+			currentRev.set(e);
+			super.build(sb, pb);
+		});
+		currentRev.remove();
 		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
 	}
 	
-	private RequestQuery query(Entry<Integer, List<YearMonth>> entry) {
-		
-		var query = new RequestQuery(entry.getKey().toString(), copyOf(tables), new ArrayList<>(columns), new ArrayList<>(filters))
-			     .columns(additionalColumns(entry.getKey()));
-		if(revisionColumn == null) {
-			return query;
-		}
-		return query.filters(entry.getValue().size() == 1 
-				? revisionColumn.equal(entry.getValue().get(0).getMonthValue())
-				: revisionColumn.in(entry.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new))); //int[] ?
+	public static DBTable yearTable(String name) {
+		return b-> name + "_" + currentRev.get().getKey();
+	}
+
+	public static DBColumn yearColumn() {
+		return b-> currentRev.get().getKey().toString();
 	}
 	
-	private TaggableColumn[] additionalColumns(Integer year) {
-		var yc = constant(year).as(REVISION_YEAR_TAG);
-		return revisionColumn == null 
-				? new TaggableColumn[] {yc} // year revision
-				: new TaggableColumn[] {yc, this.revisionColumn};// year-month revision
+	public static DBFilter monthFilter(DBColumn column) {
+		return b-> {
+			var values = currentRev.get().getValue();
+			var filter = values.size() == 1 
+					? column.equal(values.get(0).getMonthValue())
+					: column.in(values.stream().map(YearMonth::getMonthValue).toArray(Integer[]::new));
+			return filter.sql(b);
+		};
 	}
 }

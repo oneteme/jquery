@@ -128,6 +128,5 @@ public final class QueryParameterBuilder {
 	static interface Appender {
 		
 		String append(QueryParameterBuilder builder, Object o);
-		
 	}
 }

@@ -31,19 +31,25 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Getter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor 
 public final class ColumnMetadata implements ArgumentParser {
 
-	private final String reference;
 	private final int type;
 	private final int length;
+	private final boolean canSelect;
+	private final boolean canFilter;
 	private ArgumentParser parser;
 
 	@Override
 	public Object parse(String v) {
 		if(parser == null) {
-			parser = parser(type, reference); // load on demand
+			parser = parser(type, name); // lazy load
 		}
 		return parser.parse(v); //can check string.size < length
 	}
@@ -78,6 +84,6 @@ public final class ColumnMetadata implements ArgumentParser {
 	
 	@Override
 	public String toString() {
-		return "(name="+ reference + ", type=" + type + ", length=" + length + ")";
+		return "(name="+ name + ", type=" + type + ", length=" + length + ")";
 	}
 }
