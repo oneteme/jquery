@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
-import static org.usf.jquery.core.Utils.UNLIMITED;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
@@ -16,20 +15,14 @@ public final class ColumnDecoratorWrapper implements ColumnDecorator {
 
 	@Delegate
 	private final ColumnDecorator column;
-	private final int type;
-	private final int size;
 	private ArgumentParser parser;
-	//index ?
+	//index column ?
 	//cache values !? more performance
 	
-	public ColumnDecoratorWrapper(ColumnDecorator column) {
-		this(column, column.dbType(), UNLIMITED); //unknown size
-	}
-	
 	@Override
-	public ArgumentParser parser() {
+	public ArgumentParser parser(TableDecorator td) {
 		if(isNull(parser)) {
-			parser = column.parser(); //important! lazy load
+			parser = column.parser(td); //important! lazy load
 		}
 		return parser;
 	}

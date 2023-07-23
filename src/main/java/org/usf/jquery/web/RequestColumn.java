@@ -57,7 +57,7 @@ public final class RequestColumn {
 				return type;
 			}
 		}
-		return columnDecorator.dbType();
+		return columnDecorator.dataType();
 	}
 
 	private RequestColumn append(TypedFunction fn) {

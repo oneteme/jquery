@@ -234,7 +234,7 @@ public final class DatabaseScanner {
 			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
 			log.info(bar);
 			map.entrySet().forEach(e-> 
-			log.info(format(pattern, e.getValue().identity(), e.getKey(), e.getValue().dbType(), e.getValue().dataSize())));
+			log.info(format(pattern, e.getValue().identity(), e.getKey(), e.getValue().dataType(), e.getValue().dataSize())));
 			log.info(bar);
 		}
 	}

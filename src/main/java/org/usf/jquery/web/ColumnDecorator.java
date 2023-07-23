@@ -79,7 +79,7 @@ public interface ColumnDecorator extends ColumnBuilder {
     			: psr.parseArgs(values));
 	}
 	
-	default int dbType() {
+	default int dataType() {
 		return AUTO_TYPE;
 	}
 
@@ -105,7 +105,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 	 * override parser | format | local
 	 */
 	default ArgumentParser parser(TableDecorator td){
-		var type = dbType(); 
+		var type = dataType(); 
 		if(type == AUTO_TYPE && isPhysical()) {//logical column not declared in table
 			type = td.columnType(this);
 		}

@@ -44,7 +44,7 @@ public class RequestFilter {
 		}
 		if(!rightConstants.isEmpty()) {
 			var values = rightConstants.toArray(String[]::new);
-			filters.add(col.filter(cd.expression(requestColumn.getExpression(), values)));
+			filters.add(col.filter(cd.expression(requestColumn.getTableDecorator(), requestColumn.getExpression(), values)));
 		}
 		return filters.toArray(DBFilter[]::new);
 	}
