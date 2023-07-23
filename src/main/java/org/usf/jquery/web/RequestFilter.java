@@ -30,7 +30,7 @@ public class RequestFilter {
 	
 	public DBFilter[] filters() {
 		var cd  = requestColumn.getColumnDecorator();
-		var col = cd.column(requestColumn.getTableDecorator()); 
+		var col = cd.column(requestColumn.getTableDecorator());
 		var filters = new LinkedList<>();
 		if(!rightColumns.isEmpty()) {
 			var cmp = cd.comparator(requestColumn.getExpression(), 1);
@@ -38,6 +38,9 @@ public class RequestFilter {
 				rightColumns.stream().map(c-> col.filter(cmp.expression(c.column()))).forEach(filters::add);
 			}
 			throw new IllegalArgumentException("illegal column comparator " + requestColumn.getExpression());
+		}
+		if(!requestColumn.getFunctions().isEmpty()) {
+			//use RC parser
 		}
 		if(!rightConstants.isEmpty()) {
 			var values = rightConstants.toArray(String[]::new);
@@ -53,13 +56,13 @@ public class RequestFilter {
 		return tables.toArray(NamedTable[]::new);
 	}
 	
-	static RequestFilter decode(Entry<String, String[]> entry, TableDecorator defaultTable) {
-		var col  = RequestColumn.decode(entry.getKey(), defaultTable, true); //allow comparator
+	static RequestFilter decodeFilter(Entry<String, String[]> entry, TableDecorator defaultTable) {
+		var col  = RequestColumn.decodeColumn(entry.getKey(), defaultTable, true); //allow comparator
 		var cols = new LinkedList<RequestColumn>();
 		var vals = new LinkedList<String>();
 		flatStream(entry.getValue()).forEach(v->{
 			if(v.startsWith("$")) { //extract variables
-				cols.add(RequestColumn.decode(v.substring(1), defaultTable, false)); //deny expression
+				cols.add(RequestColumn.decodeColumn(v.substring(1), defaultTable, false)); //deny expression
 			}
 			else {
 				vals.add(v);

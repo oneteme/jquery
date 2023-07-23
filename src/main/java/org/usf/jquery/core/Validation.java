@@ -18,7 +18,7 @@ import lombok.NonNull;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Validation {
     
-    public static String requireLegalAlias(String s) {
+    public static String requireLegalVariable(String s) {
     	illegalArgumentIf(!requireNonBlank(s).matches("\\w+"), ()-> "illegal alias : " + s);
 		return s;
 	}

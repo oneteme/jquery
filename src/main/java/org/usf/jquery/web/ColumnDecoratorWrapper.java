@@ -19,21 +19,11 @@ public final class ColumnDecoratorWrapper implements ColumnDecorator {
 	private final int type;
 	private final int size;
 	private ArgumentParser parser;
-	//index ?o
+	//index ?
 	//cache values !? more performance
 	
 	public ColumnDecoratorWrapper(ColumnDecorator column) {
 		this(column, column.dbType(), UNLIMITED); //unknown size
-	}
-	
-	@Override
-	public int dbType() {
-		return type;
-	}
-
-	@Override
-	public int dataSize() {
-		return size;
 	}
 	
 	@Override

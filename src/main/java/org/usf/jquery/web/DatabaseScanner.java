@@ -23,6 +23,7 @@ import java.sql.SQLException;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
@@ -95,7 +96,6 @@ public final class DatabaseScanner {
 	public void fetch() {
 		requireNonNull(config, "configuration not found");
 		synchronized (sync) {
-			var meta = new LinkedHashMap<String, TableDecorator>();
 			for(var t : tableMap.values()) {
 				var declaredColumns = columns.stream()
 						.filter(cd-> {
@@ -118,7 +118,6 @@ public final class DatabaseScanner {
 					meta.put(t, new TableMetadata(unmodifiableMap(columnMetadata(t, t.tableName(), declaredColumns))));
 				}
 			}
-			this.metadata = new DatabaseMetadata(meta);
 		}
 	}
 	

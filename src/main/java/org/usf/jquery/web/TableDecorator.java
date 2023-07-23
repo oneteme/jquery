@@ -2,13 +2,15 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Utils.AUTO_TYPE;
+import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
-import static org.usf.jquery.web.RequestColumn.decode;
-import static org.usf.jquery.web.RequestFilter.decode;
+import static org.usf.jquery.web.RequestColumn.decodeColumn;
+import static org.usf.jquery.web.RequestFilter.decodeFilter;
 import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.util.Map;
@@ -32,9 +34,17 @@ public interface TableDecorator {
 		return identity();
 	}
 	
-	String tableName(); //
+	String tableName(); //SQL
 	
 	String columnName(ColumnDecorator desc);
+	
+	default int columnType(ColumnDecorator desc) {
+		return AUTO_TYPE;
+	}
+
+	default int columnSize(ColumnDecorator desc) {
+		return UNLIMITED;
+	}
 	
 	default NamedTable table() {
 		DBTable tab = b-> tableName();
@@ -58,7 +68,7 @@ public interface TableDecorator {
 			throw new NoSuchElementException("require " + COLUMN + " parameter");
 		}
 		flatStream(cols).forEach(p->{
-			var rc = decode(p, this, false);
+			var rc = decodeColumn(p, this, false);
 			query.tables(rc.table()).columns(rc.column());
 		});
 	}
@@ -67,7 +77,7 @@ public interface TableDecorator {
     	parameters.entrySet().stream()
     	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
     	.forEach(e-> {
-    		var rf = decode(e, this); // catch exception => allowUnknownParameters
+    		var rf = decodeFilter(e, this); // catch exception => allowUnknownParameters
     		query.tables(rf.tables()).filters(rf.filters());
     	});
 	}
@@ -76,7 +86,7 @@ public interface TableDecorator {
 		var cols = parameters.get(ORDER);
 		if(nonNull(cols)) {
 			flatStream(cols).forEach(p->{
-				var rc = decode(p, this, true);
+				var rc = decodeColumn(p, this, true);
 				var col = rc.column();
 				query.orders(isNull(rc.getExpression()) 
 						? col.order() 

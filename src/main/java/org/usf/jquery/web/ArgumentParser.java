@@ -1,5 +1,8 @@
 package org.usf.jquery.web;
 
+import static java.util.Objects.isNull;
+import static org.usf.jquery.web.Constants.PARSERS;
+
 import java.util.stream.Stream;
 
 /**
@@ -23,5 +26,24 @@ public interface ArgumentParser {
 
 	default Object[] parseArgs(String... args) {
 		return args == null ? null : Stream.of(args).map(this::parseArg).toArray();
+	}
+	
+	static Object tryParse(String value) {
+		if(isNull(value)) {
+			return null;
+		}
+		int i=0;
+		Object o = null;
+		while(i<PARSERS.size() && isNull(o = tryParse(value, PARSERS.get(i++))));
+		return isNull(o) ? value : o;  //default type String
+	}
+
+	private static Object tryParse(String value, ArgumentParser parser) {
+		try {
+			return parser.parse(value);
+		}
+		catch(Exception e) {
+			return null;
+		}
 	}
 }

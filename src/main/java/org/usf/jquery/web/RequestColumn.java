@@ -65,7 +65,7 @@ public final class RequestColumn {
 		return this;
 	}
 
-	static RequestColumn decode(String value, TableDecorator defaultTable, boolean allowedExp) {
+	static RequestColumn decodeColumn(String value, TableDecorator defaultTable, boolean allowedExp) {
 		return decode(value, defaultTable, 
 				allowedExp ? v-> lookup(v).isEmpty() : v-> false); //not function
 	}

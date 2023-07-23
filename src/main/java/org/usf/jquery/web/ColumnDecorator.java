@@ -32,7 +32,7 @@ import static org.usf.jquery.core.DBComparator.notEqual;
 import static org.usf.jquery.core.DBComparator.notIn;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
-import static org.usf.jquery.core.Validation.requireLegalAlias;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -52,20 +52,28 @@ import org.usf.jquery.core.TaggableColumn;
  * @author u$f
  *
  */
-public interface ColumnDecorator {
+public interface ColumnDecorator extends ColumnBuilder {
 	
 	String identity();  //URL
 	
 	String reference(); //JSON
-
-	default TaggableColumn column(TableDecorator table) {
-		var sql = requireLegalAlias(table.columnName(this));
-		return new TableColumn(sql, reference(), table.reference());
+	
+	default ColumnBuilder columnBuilder() {
+		return this;
 	}
 	
-	default ComparisonExpression expression(String comparator, String... values) {
-		var cmp = comparator(comparator, values.length);
-    	var psr = requireNonNull(parser());
+	@Override
+	default TaggableColumn column(TableDecorator table) {
+		if(isPhysical()) {
+			var sql = requireLegalVariable(table.columnName(this));
+			return new TableColumn(sql, reference(), table.reference());
+		}
+		return columnBuilder().column(table).as(reference());
+	}
+	
+	default ComparisonExpression expression(TableDecorator table, String comparator, String... values) {
+		var cmp = requireNonNull(comparator(comparator, values.length));
+    	var psr = requireNonNull(parser(table));
     	return cmp.expression(values.length == 1 
     			? psr.parseArg(values[0]) 
     			: psr.parseArgs(values));
@@ -86,14 +94,27 @@ public interface ColumnDecorator {
 	default boolean canFilter() {
 		return true;
 	}
+	
+	private boolean isPhysical() {
+		return columnBuilder() == this;
+	}
 
 	/**
 	 * see: https://download.oracle.com/otn-pub/jcp/jdbc-4_2-mrel2-spec/jdbc4.2-fr-spec.pdf?AuthParam=1679342559_531aef55f72b5993f346322f9e9e7fe3
-	 * @return
+	 * 
+	 * override parser | format | local
 	 */
-	default ArgumentParser parser(){
-		switch(dbType()) {
-		case BOOLEAN:
+	default ArgumentParser parser(TableDecorator td){
+		var type = dbType(); 
+		if(type == AUTO_TYPE && isPhysical()) {//logical column not declared in table
+			type = td.columnType(this);
+		}
+		if(type == AUTO_TYPE) {
+			//performance : must set db type
+			return ArgumentParser::tryParse;
+		}
+		switch(type) {
+		case BOOLEAN		:
 		case BIT		  	: return Boolean::parseBoolean;
 		case TINYINT  		: return Byte::parseByte;
 		case SMALLINT 		: return Short::parseShort;
@@ -107,12 +128,11 @@ public interface ColumnDecorator {
 		case CHAR  	  		: 
 		case VARCHAR  		:
 		case NVARCHAR  		:
-		case LONGNVARCHAR	: 
-		case AUTO_TYPE		: return v-> v; //String if type=auto
+		case LONGNVARCHAR	: return v-> v;
 		case DATE     		: return v-> Date.valueOf(LocalDate.parse(v));
 		case TIME     		: return v-> Time.valueOf(LocalTime.parse(v));
 		case TIMESTAMP		: return v-> Timestamp.from(Instant.parse(v));
-		default       		: throw new UnsupportedOperationException(identity() + " unsupported dbType " + dbType());
+		default       		: throw new UnsupportedOperationException(identity() + " unsupported dbType " + type);
 		}
 	}
 
@@ -121,12 +141,12 @@ public interface ColumnDecorator {
 			return nArg == 1 ? equal() : in();
 		}
 		switch(comparator) { 
-		case "gt" :	return greaterThan();
-		case "ge" : return greaterOrEqual();
-		case "lt" : return lessThan();
-		case "le" : return lessOrEqual();
-		case "not": return nArg == 1 ? notEqual() : notIn();
-		case "like": return (b, args)-> {
+		case "gt"	: return greaterThan();
+		case "ge"  	: return greaterOrEqual();
+		case "lt"  	: return lessThan();
+		case "le"  	: return lessOrEqual();
+		case "not" 	: return nArg == 1 ? notEqual() : notIn();
+		case "like"	: return (b, args)-> {
 			args[1] = "%" + args[1] + "%"; //not works with columns
 			return like().sql(b, args);
 		};

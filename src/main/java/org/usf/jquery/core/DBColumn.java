@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Validation.requireLegalAlias;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
@@ -33,7 +33,7 @@ public interface DBColumn extends DBObject, NestedSql {
 	}
 
 	default NamedColumn as(String name) {
-		return new NamedColumn(this, requireLegalAlias(name));
+		return new NamedColumn(this, requireLegalVariable(name));
 	}
 	
 	default OrderColumn order() {
