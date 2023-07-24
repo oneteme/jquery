@@ -78,15 +78,12 @@ public final class RequestColumn {
 	
 	static RequestColumn decode(String[] arr, int limit, TableDecorator defaultTable) {
 		var value = arr[limit]; //count | table.count
-		if(DatabaseScanner.get().columnMap.containsKey(value)) {//column found => break recursive call
-			var cd = DatabaseScanner.get().columnMap.get(value);
+		if(DatabaseScanner.get().database().declaredColumn(value)) {//column found => break recursive call
+			var cd = DatabaseScanner.get().database().getColumn(value);
 			if(limit > 1) {
 				throw new IllegalArgumentException("too many prefix : " + join(".", copyOfRange(arr, 0, limit)));
 			}
-			var td = limit == 0 ? defaultTable : DatabaseScanner.get().tables.stream()
-					.filter(t-> t.identity().equals(arr[0]))
-					.findAny()
-					.orElseThrow(()-> unknownEntryException(arr[0]));
+			var td = limit == 0 ? defaultTable : DatabaseScanner.get().database().getTable(arr[0]);
 			return new RequestColumn(td, cd, limit == arr.length-1 ? null : arr[arr.length-1]);
 		}
 		if(limit == 0) {

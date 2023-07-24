@@ -20,9 +20,9 @@ public final class ColumnDecoratorWrapper implements ColumnDecorator {
 	//cache values !? more performance
 	
 	@Override
-	public ArgumentParser parser(TableDecorator td) {
+	public ArgumentParser parser(int type) { //cache parser
 		if(isNull(parser)) {
-			parser = column.parser(td); //important! lazy load
+			parser = column.parser(type); //important! lazy load
 		}
 		return parser;
 	}

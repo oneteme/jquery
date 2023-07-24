@@ -58,10 +58,6 @@ public interface ColumnDecorator extends ColumnBuilder {
 	
 	String reference(); //JSON
 	
-	default ColumnBuilder columnBuilder() {
-		return this;
-	}
-	
 	@Override
 	default TaggableColumn column(TableDecorator table) {
 		if(isPhysical()) {
@@ -73,10 +69,22 @@ public interface ColumnDecorator extends ColumnBuilder {
 	
 	default ComparisonExpression expression(TableDecorator table, String comparator, String... values) {
 		var cmp = requireNonNull(comparator(comparator, values.length));
-    	var psr = requireNonNull(parser(table));
+    	var psr = requireNonNull(parser(resolveType(table)));
     	return cmp.expression(values.length == 1 
     			? psr.parseArg(values[0]) 
     			: psr.parseArgs(values));
+	}
+	
+	default ColumnBuilder columnBuilder() {
+		return this;
+	}
+	
+	private int resolveType(TableDecorator td) {
+		var type = dataType(); //overridden
+		if(type == AUTO_TYPE && isPhysical()) {//logical column not declared in table
+			type = td.columnType(this);
+		}
+		return type;
 	}
 	
 	default int dataType() {
@@ -95,7 +103,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 		return true;
 	}
 	
-	private boolean isPhysical() {
+	default boolean isPhysical() {
 		return columnBuilder() == this;
 	}
 
@@ -104,16 +112,9 @@ public interface ColumnDecorator extends ColumnBuilder {
 	 * 
 	 * override parser | format | local
 	 */
-	default ArgumentParser parser(TableDecorator td){
-		var type = dataType(); 
-		if(type == AUTO_TYPE && isPhysical()) {//logical column not declared in table
-			type = td.columnType(this);
-		}
-		if(type == AUTO_TYPE) {
-			//performance : must set db type
-			return ArgumentParser::tryParse;
-		}
+	default ArgumentParser parser(int type){
 		switch(type) {
+		case AUTO_TYPE		: return ArgumentParser::tryParse; //performance : must set db type
 		case BOOLEAN		:
 		case BIT		  	: return Boolean::parseBoolean;
 		case TINYINT  		: return Byte::parseByte;

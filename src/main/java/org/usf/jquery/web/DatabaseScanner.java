@@ -4,18 +4,18 @@ import static java.lang.String.format;
 import static java.time.Month.DECEMBER;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Map.entry;
 import static java.util.Objects.hash;
-import static java.util.Objects.requireNonNull;
+import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.web.DatabaseMetadata.EMPTY_DATABASE;
 import static org.usf.jquery.web.YearTableDecoratorWrapper.EMPTY_REVISION;
 
 import java.sql.ResultSet;
@@ -23,15 +23,17 @@ import java.sql.SQLException;
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
+
+import org.usf.jquery.web.TableDecoratorWrapper.ColumnMetadata;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -48,22 +50,12 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DatabaseScanner {
 	
-	private static DatabaseScanner instance = new DatabaseScanner(null, new DatabaseMetadata(emptyMap())); //!important : default init
+	private static DatabaseScanner instance; //!important : default init
+	
 	private final Object sync = new Object();
-
+	
 	private final Configuration config;
-	
-	@Deprecated
-	List<ColumnDecorator> columns = emptyList();
-	List<? extends TableDecorator> tables = emptyList();
-	
-	Map<String, ColumnDecorator> columnMap;
-	Map<String, TableDecorator> tableMap;
-
-	DatabaseScanner(Configuration config, DatabaseMetadata metadata) {
-		this(config);
-		this.metadata = metadata;
-	}
+	private DatabaseMetadata database = EMPTY_DATABASE; // by default
 	
 	public static DatabaseScanner configure(String schema, @NonNull DataSource ds) {
 		instance = new DatabaseScanner(new Configuration(schema, ds));
@@ -74,39 +66,38 @@ public final class DatabaseScanner {
 		return instance;
 	}
 	
-	public DatabaseMetadata metadata(){
-		return metadata;
+	public DatabaseMetadata database(){
+		return database;
 	}
 	
-	public DatabaseScanner register(List<? extends TableDecorator> tables, List<ColumnDecorator> columns){
+	public DatabaseScanner register(
+			@NonNull Collection<TableDecorator> tables, 
+			@NonNull Collection<ColumnDecorator> columns){
 		
-		this.tables = unmodifiableList(tables);
-		this.columns = unmodifiableList(columns);
+		var tableMap = tables.stream()
+				.map(v-> new TableDecoratorWrapper(v, emptyMap()))
+				.collect(toMap(TableDecorator::identity, identity()));
+		var columnMap = columns.stream()
+				.map(ColumnDecoratorWrapper::new)
+				.collect(toMap(ColumnDecoratorWrapper::identity, identity()));
+		this.database = new DatabaseMetadata(tableMap, columnMap);
 		return this;
 	}
 	
-	List<ColumnDecorator> columnDescriptors() {
-		return columns;
-	}
-	
-	List<? extends TableDecorator> tableDescriptors() {
-		return tables;
-	}
-	
 	public void fetch() {
-		requireNonNull(config, "configuration not found");
+		if(database == EMPTY_DATABASE) {
+			log.warn("pretty msg !"); //full scan ? next release
+			return;
+		}
 		synchronized (sync) {
-			for(var t : tableMap.values()) {
-				var declaredColumns = columns.stream()
-						.filter(cd-> {
-							try {
-								t.columnName(cd);
-							} catch (Exception e) {
-								return false;
-							}
-							return true;
-						})
-						.collect(toMap(t::columnName, identity()));
+			for(var t : database.tables()) {
+				var declaredColumns = new LinkedHashMap<String, ColumnDecoratorWrapper>();
+				database.columns().forEach(cd-> {
+					var colname = t.columnName(cd);
+					 if(nonNull(colname)) { //should not throw exception
+						 declaredColumns.put(colname, cd);
+					}
+				});
 				if(t instanceof YearTableDecorator) {
 					var e = (YearTableDecorator) t;
 					var names = tableNames(e);
@@ -141,15 +132,15 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private Map<String, ColumnDecorator> columnMetadata(TableDecorator table, String tablePattern, Map<String, ColumnDecorator> declaredColumns) {
+	private Map<String, ColumnDecorator> columnMetadata(TableDecorator table, String tablePattern, Map<String, ColumnDecoratorWrapper> declaredColumns) {//key=columnanme
 
 		log.info("Scanning '{}' table columns...", table);
 		try(var cn = config.getDataSource().getConnection()){
 			try(var rs = cn.getMetaData().getColumns(null, null, tablePattern, null)){
 				var def = new LinkedList<ColumnType>();
 				while(rs.next()) {
-					var col = rs.getString("COLUMN_NAME");
 					var tab = rs.getString("TABLE_NAME");
+					var col = rs.getString("COLUMN_NAME");
 					if(declaredColumns.containsKey(col)) { //regex check table name
 						def.add(new ColumnType(tab, col, rs.getInt("DATA_TYPE"), rs.getInt("COLUMN_SIZE")));
 					}
