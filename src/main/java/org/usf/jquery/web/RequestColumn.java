@@ -4,6 +4,7 @@ import static java.lang.String.join;
 import static java.util.Arrays.copyOfRange;
 import static org.usf.jquery.core.DBFunction.lookup;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
+import static org.usf.jquery.web.DatabaseScanner.database;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -78,12 +79,12 @@ public final class RequestColumn {
 	
 	static RequestColumn decode(String[] arr, int limit, TableDecorator defaultTable) {
 		var value = arr[limit]; //count | table.count
-		if(DatabaseScanner.get().database().declaredColumn(value)) {//column found => break recursive call
-			var cd = DatabaseScanner.get().database().getColumn(value);
+		if(database().isDeclaredColumn(value)) {//column found => break recursive call
+			var cd = database().getColumn(value);
 			if(limit > 1) {
 				throw new IllegalArgumentException("too many prefix : " + join(".", copyOfRange(arr, 0, limit)));
 			}
-			var td = limit == 0 ? defaultTable : DatabaseScanner.get().database().getTable(arr[0]);
+			var td = limit == 0 ? defaultTable : database().getTable(arr[0]);
 			return new RequestColumn(td, cd, limit == arr.length-1 ? null : arr[arr.length-1]);
 		}
 		if(limit == 0) {

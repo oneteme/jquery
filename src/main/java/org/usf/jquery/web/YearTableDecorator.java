@@ -33,10 +33,8 @@ public interface YearTableDecorator extends TableDecorator {
 	
 	ColumnDecorator revisionColumn();
 
-    void updateRevisions(YearMonth[] revisions); //cache revisions
-
     default YearMonth[] availableRevisions() {
-    	return null;
+    	return null; //not set, can be overridden
     }
     
 	@Override
@@ -79,6 +77,10 @@ public interface YearTableDecorator extends TableDecorator {
 		case "closest": return this::closestRevisions; //most recent, previous, next
     	default : throw new IllegalArgumentException("illegal revision mode " + mode);
     	}
+    }
+    
+    default YearMonth latestRevision() {
+    	return null; //TODO
     }
 	
 	private YearMonth[] strictRevisions(YearMonth[] values) {

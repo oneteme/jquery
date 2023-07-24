@@ -1,5 +1,7 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.web.RequestColumn.decodeColumn;
+
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
@@ -62,7 +64,7 @@ public class RequestFilter {
 		var vals = new LinkedList<String>();
 		flatStream(entry.getValue()).forEach(v->{
 			if(v.startsWith("$")) { //extract variables
-				cols.add(RequestColumn.decodeColumn(v.substring(1), defaultTable, false)); //deny expression
+				cols.add(decodeColumn(v.substring(1), defaultTable, false)); //deny expression
 			}
 			else {
 				vals.add(v);

@@ -26,4 +26,8 @@ public final class ColumnDecoratorWrapper implements ColumnDecorator {
 		}
 		return parser;
 	}
+	
+	public ColumnDecorator unwrap() {
+		return column;
+	}
 }

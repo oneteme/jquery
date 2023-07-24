@@ -24,7 +24,7 @@ public @interface RequestQueryParam {
 	
 	boolean allowUnknownParameters() default false; //ignoreUnknownParameters
 	
-	String[] ignoreParameters();
+	String[] ignoreParameters() default {};
 	
 	//TODO sortColumn, ..
 	

@@ -36,7 +36,7 @@ public interface TableDecorator {
 	
 	String tableName(); //SQL
 	
-	String columnName(ColumnDecorator desc);
+	String columnName(ColumnDecorator desc); 
 	
 	default int columnType(ColumnDecorator desc) {
 		return AUTO_TYPE;
@@ -60,10 +60,10 @@ public interface TableDecorator {
 	}
 	
 	default void parseColumns(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
-		if(parameters.containsKey(COLUMN) && parameters.containsKey(COLUMN_DISTINCT)) {
-			throw new IllegalArgumentException(); //message ?
+		var cols = parameters.containsKey(COLUMN_DISTINCT) ? parameters.get(COLUMN_DISTINCT) : parameters.get(COLUMN);
+		if(isEmpty(cols)) {
+			cols = ant.defaultColumns();
 		}
-		var cols = parameters.containsKey(COLUMN) ? parameters.get(COLUMN) : parameters.get(COLUMN_DISTINCT);
 		if(isEmpty(cols)) { //TD check first param isBlank
 			throw new NoSuchElementException("require " + COLUMN + " parameter");
 		}
