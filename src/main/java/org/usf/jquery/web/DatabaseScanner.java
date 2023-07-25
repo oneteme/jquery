@@ -69,6 +69,7 @@ public final class DatabaseScanner {
 			try(var cn = config.getDataSource().getConnection()){
 				var metadata = cn.getMetaData();
 				for(var t : database.tables()) {
+					log.info("Scanning table '{}' metadata...", t.tableName());
 					t.fetch(metadata);
 				}
 				log.info("Completed metadata scan in {} ms", currentTimeMillis() - time);

@@ -57,7 +57,6 @@ public final class YearTableDecoratorWrapper extends TableDecoratorWrapper imple
 		decCols.entrySet().forEach(e->{
 			List<ColumnMetadata> colMetadatas = new LinkedList<>();
 			for(var t : tabCols.entrySet()) {
-				System.out.println(t.getKey() + ":" + e.getKey());
 				colMetadatas.add(t.getValue().stream() //duplicate code
 				.filter(c-> c.getColumnName().equals(e.getKey()))
 				.findAny()
