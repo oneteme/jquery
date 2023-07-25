@@ -29,6 +29,7 @@ public final class DatabaseMetadata {
 		return tableMap.computeIfAbsent(id, k-> {throw new NoSuchElementException(k + " table not found");});
 	}
 	
+	@Deprecated
 	public YearTableDecorator getYearTable(String id) {
 		return (YearTableDecorator) tableMap.computeIfAbsent(id, k-> {throw new NoSuchElementException(k + " table not found");});
 	}

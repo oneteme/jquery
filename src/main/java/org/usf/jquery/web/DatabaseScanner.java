@@ -1,11 +1,20 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
+import static java.util.Comparator.comparing;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.web.DatabaseMetadata.EMPTY_DATABASE;
 
 import java.sql.SQLException;
+import java.time.YearMonth;
 import java.util.Collection;
+import java.util.Map;
+import java.util.Map.Entry;
+import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
@@ -60,7 +69,7 @@ public final class DatabaseScanner {
 	
 	public void fetch() {
 		if(database == EMPTY_DATABASE) {
-			log.warn("pretty msg !"); //full scan ? next release
+			log.warn("no resources !"); //full scan ? next release
 			return;
 		}
 		synchronized (mutex) {
@@ -71,6 +80,13 @@ public final class DatabaseScanner {
 				for(var t : database.tables()) {
 					log.info("Scanning table '{}' metadata...", t.tableName());
 					t.fetch(metadata);
+					logTableColumns(t.tableMetadata.getColumns());
+					if(t instanceof YearTableDecoratorWrapper) {
+						var yt = (YearTableDecoratorWrapper) t;
+						log.info("Scanning table '{}' revisions...", t.tableName());
+						yt.revision(cn);
+						logRevisions(yt.availableRevisions());
+					}
 				}
 				log.info("Completed metadata scan in {} ms", currentTimeMillis() - time);
 			} catch (SQLException e) {
@@ -85,4 +101,30 @@ public final class DatabaseScanner {
 				: new TableDecoratorWrapper(t);
 	}
 
+	static void logTableColumns(Map<String, ColumnMetadata> map) {
+		if(!map.isEmpty()) {
+			var pattern = "|%-20s|%-40s|%-6s|%-12s|";
+			var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
+			log.info(bar);
+			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
+			log.info(bar);
+			map.entrySet().forEach(e-> 
+			log.info(format(pattern, e.getKey(), e.getValue().getColumnName(), e.getValue().getDataType(), e.getValue().getDataSize())));
+			log.info(bar);
+		}
+	}
+	
+	static void logRevisions(YearMonth[] revs) {
+		if(isPresent(revs)) {
+			var pattern = "|%-5s|%-40s|";
+			var bar = format(pattern, "", "").replace("|", "+").replace(" ", "-");
+			var map = Stream.of(revs).collect(groupingBy(YearMonth::getYear));
+			log.info(bar);
+			log.info(format(pattern, "YEAR", "MONTHS"));
+			log.info(bar);
+			map.entrySet().stream().sorted(comparing(Entry::getKey)).forEach(e-> 
+			log.info(format(pattern, e.getKey(), e.getValue().stream().map(o-> o.getMonthValue() + "").collect(joining(", ")))));
+			log.info(bar);
+		}
+	}
 }

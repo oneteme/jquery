@@ -22,6 +22,7 @@ public @interface RequestQueryParam {
 	
 	String[] defaultColumns() default {};
 	
+	@Deprecated
 	boolean allowUnknownParameters() default false; //ignoreUnknownParameters
 	
 	String[] ignoreParameters() default {};

@@ -19,7 +19,7 @@ import lombok.NoArgsConstructor;
 final class Constants {
 	
 	static final String COLUMN = "column"; //columns=collection1
-	static final String COLUMN_DISTINCT = "column.distinct";
+	static final String COLUMN_DISTINCT = "column.distinct"; 
 	static final String ORDER = "order";
 	static final String REVISION = "revision"; //not standard
 	static final String REVISION_MODE = "revision.mode"; //not standard

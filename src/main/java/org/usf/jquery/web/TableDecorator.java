@@ -15,6 +15,7 @@ import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.NamedTable;
@@ -60,12 +61,15 @@ public interface TableDecorator {
 	}
 	
 	default void parseColumns(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
-		var cols = parameters.containsKey(COLUMN_DISTINCT) ? parameters.get(COLUMN_DISTINCT) : parameters.get(COLUMN);
+		var cols = parameters.containsKey(COLUMN_DISTINCT) 
+				? parameters.get(COLUMN_DISTINCT) 
+				: parameters.get(COLUMN);
+		 //can be combined in PG (distinct on)
 		if(isEmpty(cols)) {
 			cols = ant.defaultColumns();
 		}
 		if(isEmpty(cols)) { //TD check first param isBlank
-			throw new NoSuchElementException("require " + COLUMN + " parameter");
+			throw new NoSuchElementException("require " + COLUMN + "|" + COLUMN_DISTINCT + " parameter");
 		}
 		flatStream(cols).forEach(p->{
 			var rc = decodeColumn(p, this, false);
@@ -74,10 +78,12 @@ public interface TableDecorator {
 	}
 
 	default void parseFilters(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
+		var ignoreParams = Set.of(ant.ignoreParameters()); 
     	parameters.entrySet().stream()
     	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
+    	.filter(e-> !ignoreParams.contains(e.getKey()))
     	.forEach(e-> {
-    		var rf = decodeFilter(e, this); // catch exception => allowUnknownParameters
+    		var rf = decodeFilter(e, this);
     		query.tables(rf.tables()).filters(rf.filters());
     	});
 	}
@@ -90,7 +96,7 @@ public interface TableDecorator {
 				var col = rc.column();
 				query.orders(isNull(rc.getExpression()) 
 						? col.order() 
-						: col.order(Order.valueOf(rc.getExpression())));
+						: col.order(Order.valueOf(rc.getExpression()))); //custom exception
 			});
 		}
 	}
