@@ -19,7 +19,11 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 
+ * RequestFilter=val1,val2,tab1.col1,...
+ * 
  * @author u$f
+ * 
+ * @see RequestColumn
  *
  */
 @Getter
@@ -28,7 +32,7 @@ public class RequestFilter {
 	
 	private final RequestColumn requestColumn;
 	private final List<RequestColumn> rightColumns;
-	private final List<String> rightConstants;
+	private final List<String[]> rightValues;
 	
 	public DBFilter[] filters() {
 		var cd  = requestColumn.getColumnDecorator();
@@ -39,14 +43,18 @@ public class RequestFilter {
 			if(cmp instanceof BasicComparator) {
 				rightColumns.stream().map(c-> col.filter(cmp.expression(c.column()))).forEach(filters::add);
 			}
-			throw new IllegalArgumentException("illegal column comparator " + requestColumn.getExpression());
+			else {
+				throw new IllegalArgumentException("illegal column comparator " + requestColumn.getExpression());
+			}
 		}
 		if(!requestColumn.getFunctions().isEmpty()) {
 			//use RC parser
 		}
-		if(!rightConstants.isEmpty()) {
-			var values = rightConstants.toArray(String[]::new);
-			filters.add(col.filter(cd.expression(requestColumn.getTableDecorator(), requestColumn.getExpression(), values)));
+		if(!rightValues.isEmpty()) {
+			rightValues.forEach(arr->
+				filters.add(col.filter(cd.expression(
+						requestColumn.getTableDecorator(), 
+						requestColumn.getExpression(), arr))));
 		}
 		return filters.toArray(DBFilter[]::new);
 	}
@@ -59,21 +67,25 @@ public class RequestFilter {
 	}
 	
 	static RequestFilter decodeFilter(Entry<String, String[]> entry, TableDecorator defaultTable) {
-		var col  = RequestColumn.decodeColumn(entry.getKey(), defaultTable, true); //allow comparator
+		var col  = decodeColumn(entry.getKey(), defaultTable, true); //allow comparator
 		var cols = new LinkedList<RequestColumn>();
-		var vals = new LinkedList<String>();
-		flatStream(entry.getValue()).forEach(v->{
-			if(v.startsWith("$")) { //extract variables
-				cols.add(decodeColumn(v.substring(1), defaultTable, false)); //deny expression
+		var vals = new LinkedList<String[]>();
+		Stream.of(entry.getValue()).forEach(v->{
+			if(v.contains(",")) { //multiple values
+				vals.add(v.split(","));
+			}
+			else if(v.matches("^[_a-zA-Z]\\w*(\\.[_a-zA-Z]\\w*)+$")) { //table.column[.function]*
+				try {
+					cols.add(decodeColumn(v, defaultTable, false)); //deny expression
+				}
+				catch (Exception e) {
+					vals.add(new String[] {v});
+				}
 			}
 			else {
-				vals.add(v);
+				vals.add(new String[] {v});
 			}
 		});
 		return new RequestFilter(col, cols, vals);
 	}
-	
-    static Stream<String> flatStream(String... arr) { //number local separator
-    	return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
-    }
 }

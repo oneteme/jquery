@@ -11,11 +11,11 @@ import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.RequestColumn.decodeColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
-import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.NamedTable;
@@ -37,13 +37,13 @@ public interface TableDecorator {
 	
 	String tableName(); //SQL
 	
-	String columnName(ColumnDecorator desc); 
+	String columnName(ColumnDecorator cd); 
 	
-	default int columnType(ColumnDecorator desc) {
+	default int columnType(ColumnDecorator cd) {
 		return AUTO_TYPE;
 	}
 
-	default int columnSize(ColumnDecorator desc) {
+	default int columnSize(ColumnDecorator cd) {
 		return UNLIMITED;
 	}
 	
@@ -99,5 +99,9 @@ public interface TableDecorator {
 						: col.order(Order.valueOf(rc.getExpression()))); //custom exception
 			});
 		}
+	}
+
+	static Stream<String> flatStream(String... arr) { //number local separator
+		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
 	}
 }

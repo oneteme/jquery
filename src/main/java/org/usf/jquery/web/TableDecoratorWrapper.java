@@ -11,8 +11,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
-import lombok.experimental.Delegate;
-
 /**
  * 
  * @author u$f
@@ -20,13 +18,27 @@ import lombok.experimental.Delegate;
  */
 public class TableDecoratorWrapper implements TableDecorator {
 
-	@Delegate
-	final TableDecorator wrappedTable;
+	final TableDecorator wrappedTable; //do not use Delegate
 	final TableMetadata tableMetadata;
 	
 	public TableDecoratorWrapper(TableDecorator wrappedTable) {
 		this.wrappedTable = wrappedTable;
 		this.tableMetadata = new TableMetadata(tableName());
+	}
+	
+	@Override
+	public String identity() {
+		return wrappedTable.identity();
+	}
+
+	@Override
+	public String tableName() {
+		return wrappedTable.tableName();
+	}
+	
+	@Override
+	public String columnName(ColumnDecorator cd) {
+		return wrappedTable.columnName(cd);
 	}
 
 	@Override

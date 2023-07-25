@@ -19,7 +19,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import lombok.experimental.Delegate;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -36,10 +35,10 @@ public final class YearTableDecoratorWrapper extends TableDecoratorWrapper imple
 	public YearTableDecoratorWrapper(YearTableDecorator table) {
 		super(table);
 	}
-
-	@Delegate
-	YearTableDecorator wrappedYearTable() {
-		return (YearTableDecorator) super.wrappedTable;
+	
+	@Override
+	public ColumnDecorator revisionColumn() {
+		return wrappedYearTable().revisionColumn();
 	}
 	
 	@Override
@@ -106,5 +105,8 @@ public final class YearTableDecoratorWrapper extends TableDecoratorWrapper imple
 			}
 		}
 	}
-	
+
+	YearTableDecorator wrappedYearTable() {
+		return (YearTableDecorator) super.wrappedTable;
+	}	
 }

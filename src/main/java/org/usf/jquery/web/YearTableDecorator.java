@@ -3,6 +3,7 @@ package org.usf.jquery.web;
 import static java.time.Month.DECEMBER;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearTable;
@@ -10,13 +11,13 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
-import static org.usf.jquery.web.RequestFilter.flatStream;
 
 import java.time.Year;
 import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -60,12 +61,16 @@ public interface YearTableDecorator extends TableDecorator {
 		var values = parameterMap.get(REVISION);
 		var revs = isNull(values) 
 				? new YearMonth[0]
-				: flatStream(values)
+				: TableDecorator.flatStream(values)
     			.map(YearTableDecorator::parseYearMonth)
     			.toArray(YearMonth[]::new);
+		var mode = ofNullable(parameterMap.get(REVISION_MODE))
+				.filter(arr-> arr.length == 1)
+				.map(arr-> arr[0])
+				.orElse(null);
 		return isNull(availableRevisions())
 				? revs //use window 
-				: revisionMode(REVISION_MODE).apply(revs); //require available revisions
+				: revisionMode(mode).apply(revs); //require available revisions
     }
     
     default UnaryOperator<YearMonth[]> revisionMode(String mode) {

@@ -32,7 +32,7 @@ final class Constants {
 	static final YearMonth[] EMPTY_REVISION = new YearMonth[0]; //not standard
 	
 	static final List<ArgumentParser> PARSERS = asList(
-			Boolean::parseBoolean,
+//			Boolean::parseBoolean, return false
 			Long::parseLong, // byte, short, integer
 			Double::parseDouble, // float
 			v-> Date.valueOf(LocalDate.parse(v)),
