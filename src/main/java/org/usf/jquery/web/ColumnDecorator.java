@@ -96,11 +96,11 @@ public interface ColumnDecorator extends ColumnBuilder {
 	}
 
 	default boolean canSelect() {
-		return true;
+		throw new UnsupportedOperationException();
 	}
 
 	default boolean canFilter() {
-		return true;
+		throw new UnsupportedOperationException();
 	}
 	
 	default boolean isPhysical() {

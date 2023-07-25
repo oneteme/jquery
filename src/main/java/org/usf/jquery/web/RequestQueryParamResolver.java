@@ -1,5 +1,7 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.web.DatabaseScanner.database;
+
 import java.util.Map;
 
 import org.usf.jquery.core.RequestQuery;
@@ -16,8 +18,7 @@ import lombok.RequiredArgsConstructor;
 public final class RequestQueryParamResolver {
 	
 	public RequestQuery requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
-		return DatabaseScanner.get()
-				.database()
+		return database()
 				.getTable(ant.name())
 				.query(ant, parameterMap);
 	}

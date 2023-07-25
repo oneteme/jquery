@@ -21,10 +21,12 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 
+ * <code>[table.]column[.function]*[.comparator|order][:alias]</code>
+ * 
  * @author u$f
  * 
- * [table.]column[.function]*[.comparator|order]
- *
+ * @see RequestFilter
+ * 
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
@@ -67,17 +69,17 @@ public final class RequestColumn {
 	}
 
 	static RequestColumn decodeColumn(String value, TableDecorator defaultTable, boolean allowedExp) {
-		return decode(value, defaultTable, 
+		return decodeColumn(value, defaultTable, 
 				allowedExp ? v-> lookup(v).isEmpty() : v-> false); //not function
 	}
 	
-	static RequestColumn decode(String value, TableDecorator defaultTable, Predicate<String> allowedExp) {
+	static RequestColumn decodeColumn(String value, TableDecorator defaultTable, Predicate<String> allowedExp) {
 		var arr = value.split("\\.");
 		var limit = arr.length > 1 && allowedExp.test(arr[arr.length-1]) ? arr.length-2 : arr.length-1;
 		return decode(arr, limit, defaultTable);
 	}
 	
-	static RequestColumn decode(String[] arr, int limit, TableDecorator defaultTable) {
+	private static RequestColumn decode(String[] arr, int limit, TableDecorator defaultTable) {
 		var value = arr[limit]; //count | table.count
 		if(database().isDeclaredColumn(value)) {//column found => break recursive call
 			var cd = database().getColumn(value);

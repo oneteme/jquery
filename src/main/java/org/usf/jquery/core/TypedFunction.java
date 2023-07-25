@@ -34,7 +34,7 @@ public class TypedFunction implements DBFunction {
 	private String suffix;
 
 	public TypedFunction(String name, boolean aggregate, Appender appender) {
-		this(name, aggregate, appender, AUTO_TYPE); //TODO global variable
+		this(name, aggregate, appender, AUTO_TYPE);
 	}
 	
 	public TypedFunction(String name, boolean aggregate, Appender appender, int returnedType) {
