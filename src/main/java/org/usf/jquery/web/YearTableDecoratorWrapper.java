@@ -54,7 +54,7 @@ public final class YearTableDecoratorWrapper extends TableDecoratorWrapper imple
 		Map<String, TableMetadata> tables = new LinkedHashMap<>();
 		try(var rs = metadata.getColumns(null, null, tableName() + "_20__", null)){
 			if(!rs.next()) {
-				throw new NoSuchElementException("no tables found with pattern " + tableName() + "_[year]");
+				throw new NoSuchElementException("no tables found with pattern " + tableName() + "_xxxx");
 			}
 			do {
 				var cn = rs.getString("COLUMN_NAME");
@@ -73,7 +73,7 @@ public final class YearTableDecoratorWrapper extends TableDecoratorWrapper imple
 		this.tablenames = tables.keySet();
 	}
 	
-	public void revision(Connection cn) { // data
+	public void revision(Connection cn) { // change this call
 		if(isEmpty(tablenames)) {
 			return;
 		}
