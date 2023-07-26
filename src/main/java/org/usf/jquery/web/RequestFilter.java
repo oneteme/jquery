@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 
- * RequestFilter=val1,val2,tab1.col1,...
+ * RequestColumn=val1,val2,RequestColumn2,...
  * 
  * @author u$f
  * 

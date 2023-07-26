@@ -64,6 +64,33 @@ public interface ColumnDecorator extends ColumnBuilder {
 	
 	String reference(); //JSON
 	
+	default int dataType() {
+		return AUTO_TYPE;
+	}
+
+	default int dataSize() {
+		return UNLIMITED;
+	}
+	
+	default boolean isPhysical() {
+		return this == columnBuilder();
+	}
+	
+	default String pattern() {
+		//improve API security and performance
+		throw new UnsupportedOperationException();
+	}
+
+	default boolean canSelect() {
+		//authorization inject
+		throw new UnsupportedOperationException();
+	}
+
+	default boolean canFilter() {
+		//authorization inject
+		throw new UnsupportedOperationException();
+	}
+	
 	@Override
 	default TaggableColumn column(TableDecorator table) {
 		if(isPhysical()) {
@@ -102,28 +129,6 @@ public interface ColumnDecorator extends ColumnBuilder {
 			type = td.columnType(this);
 		}
 		return type;
-	}
-	
-	default int dataType() {
-		return AUTO_TYPE;
-	}
-
-	default int dataSize() {
-		return UNLIMITED;
-	}
-	
-	default boolean isPhysical() {
-		return this == columnBuilder();
-	}
-
-	default boolean canSelect() {
-		//authorization inject
-		throw new UnsupportedOperationException();
-	}
-
-	default boolean canFilter() {
-		//authorization inject
-		throw new UnsupportedOperationException();
 	}
 
 	/**
