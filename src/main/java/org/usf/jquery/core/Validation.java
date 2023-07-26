@@ -38,22 +38,22 @@ public final class Validation {
 		return c;
 	}
 
-	public static Object[] requireNoArgs(Object[] args, Supplier<String> name) {
+	public static <T> T[] requireNoArgs(T[] args, Supplier<String> name) {
 		illegalArgumentIf(nonNull(args) && args.length > 0, ()-> name.get() + " takes no parameters");
 		return args;
 	}
 
-	public static Object[] requireNArgs(int n, Object[] args, Supplier<String> name) {
+	public static <T> T[] requireNArgs(int n, T[] args, Supplier<String> name) {
 		illegalArgumentIf(isNull(args) || args.length != n, ()-> name.get() + " takes " + n + " parameters");
 		return args;
 	}
 
-	public static Object[] requireAtLeastNArgs(int n, Object[] args, Supplier<String> name) {
+	public static <T> T[] requireAtLeastNArgs(int n, T[] args, Supplier<String> name) {
 		illegalArgumentIf(isNull(args) || args.length < n, ()-> name.get() + " takes " + n + " parameters");
 		return args;
 	}
 	
-	public static Object[] requireAtMostNArgs(int n, Object[] args, Supplier<String> name) {
+	public static <T> T[] requireAtMostNArgs(int n, T[] args, Supplier<String> name) {
 		illegalArgumentIf(nonNull(args) && args.length > n, ()-> name.get() + " takes " + n + " parameters");
 		return args;
 	}

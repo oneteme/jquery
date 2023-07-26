@@ -28,17 +28,17 @@ public @interface RequestQueryParam {
 	String[] ignoreParameters() default {};
 	
 	//TODO sortColumn, ..
-	
-	@Deprecated
+
+	@Deprecated(forRemoval = true)
 	String columnParameter() default "column"; 
 
-	@Deprecated
+	@Deprecated(forRemoval = true)
 	String revisionParameter() default "revision";
 
-	@Deprecated
+	@Deprecated(forRemoval = true)
 	RevisionMode revisionMode() default STRICT;
 	
-	@Deprecated
+	@Deprecated(forRemoval = true)
 	public enum RevisionMode {
 		
 		STRICT, CLOSEST;

@@ -7,7 +7,7 @@ import static org.usf.jquery.core.SqlStringBuilder.space;
  * @author u$f
  *
  */
-enum LogicalOperator {
+public enum LogicalOperator {
 	
 	AND, OR;
 	

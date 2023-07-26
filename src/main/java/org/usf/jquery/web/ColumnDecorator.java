@@ -19,6 +19,7 @@ import static java.sql.Types.TIMESTAMP;
 import static java.sql.Types.TINYINT;
 import static java.sql.Types.VARCHAR;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.DBComparator.equal;
 import static org.usf.jquery.core.DBComparator.greaterOrEqual;
@@ -33,6 +34,7 @@ import static org.usf.jquery.core.DBComparator.notIn;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.web.ComparisonExpressionBuilder.ofComparator;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -44,12 +46,16 @@ import java.time.LocalTime;
 
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBComparator;
+import org.usf.jquery.core.InCompartor;
 import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 
 /**
  * 
  * @author u$f
+ * 
+ * @see TableDecorator
+ * @see ColumnDecoratorWrapper
  *
  */
 public interface ColumnDecorator extends ColumnBuilder {
@@ -66,17 +72,28 @@ public interface ColumnDecorator extends ColumnBuilder {
 		}
 		return columnBuilder().column(table).as(reference());
 	}
-	
-	default ComparisonExpression expression(TableDecorator table, String comparator, String... values) {
-		var cmp = requireNonNull(comparator(comparator, values.length));
-    	var psr = requireNonNull(parser(resolveType(table)));
-    	return cmp.expression(values.length == 1 
-    			? psr.parseArg(values[0]) 
-    			: psr.parseArgs(values));
-	}
-	
+
 	default ColumnBuilder columnBuilder() {
 		return this;
+	}
+	
+	default ComparisonExpression expression(TableDecorator table, String comparator, String... values) {
+		var builder = expressionBuilder(comparator);
+		if(nonNull(builder)) {
+			return builder.build(values);
+		}
+		var cmp = requireNonNull(comparator(comparator, values.length)); //exception
+    	var psr = requireNonNull(parser(resolveType(table))); //exception
+    	if(values.length == 1) {
+    		return cmp.expression(psr.parseArg(values[0]));
+    	}
+		return cmp instanceof InCompartor 
+				? cmp.expression(values)
+				: ofComparator(cmp).build(psr.parseArgs(values));
+	}
+
+	default ComparisonExpressionBuilder<String> expressionBuilder(String exp) {
+		return null;
 	}
 	
 	private int resolveType(TableDecorator td) {
@@ -94,17 +111,19 @@ public interface ColumnDecorator extends ColumnBuilder {
 	default int dataSize() {
 		return UNLIMITED;
 	}
+	
+	default boolean isPhysical() {
+		return this == columnBuilder();
+	}
 
 	default boolean canSelect() {
+		//authorization inject
 		throw new UnsupportedOperationException();
 	}
 
 	default boolean canFilter() {
+		//authorization inject
 		throw new UnsupportedOperationException();
-	}
-	
-	default boolean isPhysical() {
-		return columnBuilder() == this;
 	}
 
 	/**
