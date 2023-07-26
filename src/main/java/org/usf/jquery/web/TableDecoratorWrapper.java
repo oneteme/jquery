@@ -45,7 +45,7 @@ public class TableDecoratorWrapper implements TableDecorator {
 	public int columnType(ColumnDecorator cd) {
 		var type = wrappedTable.columnType(cd); //overridden
 		if(type == AUTO_TYPE && tableMetadata.containsKey(cd)) {
-			type = tableMetadata.get(cd).getDataType();
+			type = tableMetadata.get(cd).getDataType(); //db type
 		}
 		return type;
 	}
@@ -54,7 +54,7 @@ public class TableDecoratorWrapper implements TableDecorator {
 	public int columnSize(ColumnDecorator cd) {
 		var size = wrappedTable.columnSize(cd); //overridden
 		if(size == UNLIMITED && tableMetadata.containsKey(cd)) {
-			size = tableMetadata.get(cd).getDataSize();
+			size = tableMetadata.get(cd).getDataSize(); //db size
 		}
 		return size;
 	}

@@ -183,7 +183,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 	
 	private static DBComparator containsArgPartten(StringComparator fn) {
 		return (b, args)-> {
-			args[1] = "%" + args[1] + "%"; //not works with columns
+			args[1] = "%" + args[1] + "%";
 			return fn.sql(b, args);
 		};
 	}

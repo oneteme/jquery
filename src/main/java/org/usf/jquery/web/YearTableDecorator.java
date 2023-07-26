@@ -106,10 +106,12 @@ public interface YearTableDecorator extends TableDecorator {
 		}
 		List<YearMonth> list = new LinkedList<>();
 		for(var v : values) {
-			Stream.of(revs)
-			.filter(o-> o.compareTo(v) <= 0)
-			.findFirst()
-			.ifPresent(list::add);
+			for(int i=0; i<revs.length; i++) {
+				if(revs[i].compareTo(v) <= 0) {
+					list.add(revs[i]); 
+					break;
+				}
+			}
 		}
 		return list.isEmpty() ? EMPTY_REVISION : list.toArray(YearMonth[]::new);
 	}
@@ -143,5 +145,4 @@ public interface YearTableDecorator extends TableDecorator {
     	}
     	throw new IllegalArgumentException("cannot parse revision " + revision);
     }
-    
 }
