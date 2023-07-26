@@ -30,7 +30,7 @@ import static org.usf.jquery.core.DBComparator.lessOrEqual;
 import static org.usf.jquery.core.DBComparator.lessThan;
 import static org.usf.jquery.core.DBComparator.like;
 import static org.usf.jquery.core.DBComparator.notEqual;
-import static org.usf.jquery.core.DBComparator.notILike;
+import static org.usf.jquery.core.DBComparator.notLike;
 import static org.usf.jquery.core.DBComparator.notIn;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
@@ -175,7 +175,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 		case "not" 		: return nArg == 1 ? notEqual() : notIn();
 		case "like"		: return containsArgPartten(like());
 		case "ilike"	: return containsArgPartten(iLike());
-		case "unlike"	: return containsArgPartten(notILike());
+		case "unlike"	: return containsArgPartten(notLike());
 		//isnull
 		default: throw new IllegalArgumentException("unsupported comparator : " + comparator);
 		}
