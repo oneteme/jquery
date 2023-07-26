@@ -91,5 +91,4 @@ public class TableDecoratorWrapper implements TableDecorator {
 			.ifPresent(cn-> dc.put(cn, cd)));
 		return dc;
 	}
-
 }

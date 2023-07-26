@@ -11,6 +11,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
+import static org.usf.jquery.web.TableDecorator.flatStream;
 
 import java.time.Year;
 import java.time.YearMonth;
@@ -34,7 +35,7 @@ public interface YearTableDecorator extends TableDecorator {
 	ColumnDecorator revisionColumn();
 
     default YearMonth[] availableRevisions() {
-    	return null; //not set, can be overridden
+    	return null; //reduce data revision access
     }
     
 	@Override
@@ -59,27 +60,26 @@ public interface YearTableDecorator extends TableDecorator {
 	default YearMonth[] parseRevisions(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var values = parameterMap.get(REVISION);
 		var revs = isNull(values) 
-				? new YearMonth[0]
-				: TableDecorator.flatStream(values)
+				? null
+				: flatStream(values)
     			.map(YearTableDecorator::parseYearMonth)
     			.toArray(YearMonth[]::new);
 		var mode = ofNullable(parameterMap.get(REVISION_MODE))
 				.filter(arr-> arr.length == 1)
 				.map(arr-> arr[0])
 				.orElse(null);
-		return isNull(availableRevisions())
-				? revs //use window 
-				: revisionMode(mode).apply(revs); //require available revisions
+		return revisionMode(mode).apply(revs); //require available revisions
     }
     
     default UnaryOperator<YearMonth[]> revisionMode(String mode) {
     	if(isNull(mode)) {
-    		return UnaryOperator.identity(); //no filter
+    		return this::strictRevisions; //no filter
     	}
     	switch (mode) {
-		case "strict" : return this::strictRevisions;
-		case "closest": return this::closestRevisions; //most recent, previous, next
-    	default : throw new IllegalArgumentException("illegal revision mode " + mode);
+		case "strict" 		: return this::strictRevisions;
+		case "preceding"	: return this::precedingRevisions;
+		case "succeeding"	: return this::succeedingRevisions;
+    	default 			: throw new IllegalArgumentException("illegal revision mode " + mode);
     	}
     }
     
@@ -96,7 +96,7 @@ public interface YearTableDecorator extends TableDecorator {
 				.toArray(YearMonth[]::new);
 	}
 	
-	private YearMonth[] closestRevisions(YearMonth[] values) {
+	private YearMonth[] precedingRevisions(YearMonth[] values) {
 		var revs = availableRevisions();
 		if(isEmpty(revs)) {
 			return EMPTY_REVISION;
@@ -110,6 +110,26 @@ public interface YearTableDecorator extends TableDecorator {
 			.filter(o-> o.compareTo(v) <= 0)
 			.findFirst()
 			.ifPresent(list::add);
+		}
+		return list.isEmpty() ? EMPTY_REVISION : list.toArray(YearMonth[]::new);
+	}
+	
+	private YearMonth[] succeedingRevisions(YearMonth[] values) {
+		var revs = availableRevisions();
+		if(isEmpty(revs)) {
+			return EMPTY_REVISION;
+		}
+		if(isEmpty(values)) {
+			return new YearMonth[] {revs[0]};
+		}
+		List<YearMonth> list = new LinkedList<>();
+		for(var v : values) {
+			for(int i=revs.length-1; i>=0; i--) {
+				if(revs[i].compareTo(v) >= 0) {
+					list.add(revs[i]); 
+					break;
+				}
+			}
 		}
 		return list.isEmpty() ? EMPTY_REVISION : list.toArray(YearMonth[]::new);
 	}

@@ -30,6 +30,7 @@ import static org.usf.jquery.core.DBComparator.lessOrEqual;
 import static org.usf.jquery.core.DBComparator.lessThan;
 import static org.usf.jquery.core.DBComparator.like;
 import static org.usf.jquery.core.DBComparator.notEqual;
+import static org.usf.jquery.core.DBComparator.notILike;
 import static org.usf.jquery.core.DBComparator.notIn;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
@@ -47,6 +48,7 @@ import java.time.LocalTime;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBComparator;
 import org.usf.jquery.core.InCompartor;
+import org.usf.jquery.core.StringComparator;
 import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 
@@ -166,21 +168,23 @@ public interface ColumnDecorator extends ColumnBuilder {
 			return nArg == 1 ? equal() : in();
 		}
 		switch(comparator) { 
-		case "gt"	: return greaterThan();
-		case "ge"  	: return greaterOrEqual();
-		case "lt"  	: return lessThan();
-		case "le"  	: return lessOrEqual();
-		case "not" 	: return nArg == 1 ? notEqual() : notIn();
-		case "like"	: return (b, args)-> {
-			args[1] = "%" + args[1] + "%"; //not works with columns
-			return like().sql(b, args);
-		};
-		case "ilike": return (b, args)-> {
-			args[1] = "%" + args[1] + "%"; //not works with columns
-			return iLike().sql(b, args);
-		};
+		case "gt"		: return greaterThan();
+		case "ge"  		: return greaterOrEqual();
+		case "lt"  		: return lessThan();
+		case "le"  		: return lessOrEqual();
+		case "not" 		: return nArg == 1 ? notEqual() : notIn();
+		case "like"		: return containsArgPartten(like());
+		case "ilike"	: return containsArgPartten(iLike());
+		case "unlike"	: return containsArgPartten(notILike());
 		//isnull
 		default: throw new IllegalArgumentException("unsupported comparator : " + comparator);
 		}
+	}
+	
+	private static DBComparator containsArgPartten(StringComparator fn) {
+		return (b, args)-> {
+			args[1] = "%" + args[1] + "%"; //not works with columns
+			return fn.sql(b, args);
+		};
 	}
 }
