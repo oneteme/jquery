@@ -20,12 +20,15 @@ public @interface RequestQueryParam {
 
 	String name(); //tablename
 	
+	@Deprecated(forRemoval = true)
 	String[] defaultColumns() default {};
 	
 	@Deprecated
 	boolean allowUnknownParameters() default false; //ignoreUnknownParameters
 	
 	String[] ignoreParameters() default {};
+	
+	boolean aggregationOnly() default false;
 	
 	//TODO sortColumn, ..
 

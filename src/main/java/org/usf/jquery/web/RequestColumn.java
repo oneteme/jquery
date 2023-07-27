@@ -11,12 +11,9 @@ import java.util.List;
 import java.util.function.Predicate;
 
 import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.TaggableColumn;
-import org.usf.jquery.core.TaggableTable;
 import org.usf.jquery.core.TypedFunction;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -28,43 +25,28 @@ import lombok.RequiredArgsConstructor;
  * @see RequestFilter
  * 
  */
-@Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RequestColumn {
 	
-	private final TableDecorator tableDecorator;
-	private final ColumnDecorator columnDecorator;
-	private final List<TypedFunction> functions = new LinkedList<>();
-	private final String expression;
-	
-	public TaggableColumn column() {
-		DBColumn col = columnDecorator.column(tableDecorator);
-		if(functions.isEmpty()) {
-			return (TaggableColumn) col;
-		}
-		for(var fn : functions) {//reduce ?
-			col = fn.args(col);
-		}
-		return col.as(columnDecorator.reference()); // not sure
-	}
+	private final TableDecorator td;
+	private final ColumnDecorator cd;
+	private final List<TypedFunction> fns = new LinkedList<>();
+	private final String exp;
 
-	public TaggableTable table() {
-		return tableDecorator.table();
+	public TableDecorator tableDecorator() {
+		return td;
 	}
-		
-	public int returnedType() {
-		var i = functions.size();
-		while(--i>=0) {
-			var type = functions.get(i).getReturnedType();
-			if(type != AUTO_TYPE) {
-				return type;
-			}
-		}
-		return columnDecorator.dataType();
+	
+	public ColumnDecorator columnDecorator() {
+		return fns.isEmpty() ? cd : wrap(cd, fns);
+	}
+	
+	public String expression() {
+		return exp;
 	}
 
 	private RequestColumn append(TypedFunction fn) {
-		functions.add(fn);
+		fns.add(fn);
 		return this;
 	}
 
@@ -94,6 +76,40 @@ public final class RequestColumn {
 		}
 		var fn = lookup(value).orElseThrow(()-> unknownEntryException(value));
 		return decode(arr, --limit, defaultTable).append(fn);
+	}
+	
+	private static ColumnDecorator wrap(final ColumnDecorator cd, final List<TypedFunction> fns) {
+		
+		return new ColumnDecorator() {
+			
+			@Override
+			public String reference() {
+				return cd.reference(); //add alias
+			}
+			
+			@Override
+			public String identity() {
+				return cd.identity(); //add 
+			}
+			
+			@Override
+			public ColumnBuilder columnBuilder() { //logical column
+				return t-> {
+					DBColumn col = ColumnDecorator.super.column(t);
+					for(var fn : fns) {//reduce ?
+						col = fn.args(col);
+					}
+					return col.as(reference());
+				};
+			}
+			
+			@Override
+			public int dataType() {
+				var i = fns.size();
+				while(--i>=0 && fns.get(i).getReturnedType() == AUTO_TYPE);
+				return i<0 ? cd.dataType() : fns.get(i).getReturnedType();
+			}
+		};
 	}
 	
     private static IllegalArgumentException unknownEntryException(String v) {

@@ -33,37 +33,36 @@ public class RequestFilter {
 	private final RequestColumn requestColumn;
 	private final List<RequestColumn> rightColumns;
 	private final List<String[]> rightValues;
+
+	public NamedTable[] tables() {
+		Set<NamedTable> tables = new LinkedHashSet<>();
+		tables.add(requestColumn.tableDecorator().table());
+		rightColumns.forEach(c-> tables.add(c.tableDecorator().table()));
+		return tables.toArray(NamedTable[]::new);
+	}
 	
-	public DBFilter[] filters() {
-		var cd  = requestColumn.getColumnDecorator();
-		var col = cd.column(requestColumn.getTableDecorator());
+	public DBFilter[] filters() { // do not join filters (WHERE + HAVING)
+		var cd  = requestColumn.columnDecorator();
+		var col = cd.column(requestColumn.tableDecorator());
 		var filters = new LinkedList<>();
 		if(!rightColumns.isEmpty()) {
-			var cmp = cd.comparator(requestColumn.getExpression(), 1);
+			var cmp = cd.comparator(requestColumn.expression(), 1);
 			if(cmp instanceof BasicComparator) {
-				rightColumns.stream().map(c-> col.filter(cmp.expression(c.column()))).forEach(filters::add);
+				rightColumns.stream()
+				.map(c-> col.filter(cmp.expression(c.columnDecorator().column(c.tableDecorator()))))
+				.forEach(filters::add);
 			}
 			else {
-				throw new IllegalArgumentException("illegal column comparator " + requestColumn.getExpression());
+				throw new IllegalArgumentException("illegal column comparator " + requestColumn.expression());
 			}
-		}
-		if(!requestColumn.getFunctions().isEmpty()) {
-			//use RC parser
 		}
 		if(!rightValues.isEmpty()) {
 			rightValues.forEach(arr->
 				filters.add(col.filter(cd.expression(
-						requestColumn.getTableDecorator(), 
-						requestColumn.getExpression(), arr))));
+						requestColumn.tableDecorator(), 
+						requestColumn.expression(), arr))));
 		}
 		return filters.toArray(DBFilter[]::new);
-	}
-
-	public NamedTable[] tables() {
-		Set<NamedTable> tables = new LinkedHashSet<>();
-		tables.add(requestColumn.getTableDecorator().table());
-		rightColumns.forEach(c-> tables.add(c.getTableDecorator().table()));
-		return tables.toArray(NamedTable[]::new);
 	}
 	
 	static RequestFilter decodeFilter(Entry<String, String[]> entry, TableDecorator defaultTable) {

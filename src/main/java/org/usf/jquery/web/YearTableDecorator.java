@@ -11,7 +11,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
-import static org.usf.jquery.web.TableDecorator.flatStream;
+import static org.usf.jquery.web.TableDecorator.flatParameters;
 
 import java.time.Year;
 import java.time.YearMonth;
@@ -61,7 +61,7 @@ public interface YearTableDecorator extends TableDecorator {
 		var values = parameterMap.get(REVISION);
 		var revs = isNull(values) 
 				? null
-				: flatStream(values)
+				: flatParameters(values)
     			.map(YearTableDecorator::parseYearMonth)
     			.toArray(YearMonth[]::new);
 		var mode = ofNullable(parameterMap.get(REVISION_MODE))

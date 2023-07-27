@@ -63,17 +63,14 @@ public interface TableDecorator {
 	default void parseColumns(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
 		var cols = parameters.containsKey(COLUMN_DISTINCT) 
 				? parameters.get(COLUMN_DISTINCT) 
-				: parameters.get(COLUMN);
-		 //can be combined in PG (distinct on)
+				: parameters.get(COLUMN); //can be combined in PG (distinct on)
 		if(isEmpty(cols)) {
-			cols = ant.defaultColumns();
-		}
-		if(isEmpty(cols)) { //TD check first param isBlank
 			throw new NoSuchElementException("require " + COLUMN + "|" + COLUMN_DISTINCT + " parameter");
-		}
-		flatStream(cols).forEach(p->{
+		} //TD check first param !isBlank
+		flatParameters(cols).forEach(p->{
 			var rc = decodeColumn(p, this, false);
-			query.tables(rc.table()).columns(rc.column());
+			var td = rc.tableDecorator();
+			query.tables(td.table()).columns(rc.columnDecorator().column(td));
 		});
 	}
 
@@ -91,17 +88,18 @@ public interface TableDecorator {
 	default void parseOrders(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
 		var cols = parameters.get(ORDER);
 		if(nonNull(cols)) {
-			flatStream(cols).forEach(p->{
+			flatParameters(cols).forEach(p->{
 				var rc = decodeColumn(p, this, true);
-				var col = rc.column();
-				query.orders(isNull(rc.getExpression()) 
-						? col.order() 
-						: col.order(Order.valueOf(rc.getExpression()))); //custom exception
+				var td = rc.tableDecorator();
+				var cd = rc.columnDecorator();
+				query.orders(isNull(rc.expression()) 
+						? cd.column(td).order() 
+						: cd.column(td).order(Order.valueOf(rc.expression()))); //custom exception
 			});
 		}
 	}
 
-	static Stream<String> flatStream(String... arr) { //number local separator
+	static Stream<String> flatParameters(String... arr) { //number local separator
 		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
 	}
 }

@@ -105,6 +105,7 @@ public class RequestQuery {
 	void select(SqlStringBuilder sb){
 		var pb = addWithValue(); //addWithValue columns (case, constant, Operation, ..)
     	sb.append("SELECT ")
+    	.appendIf(distinct, ()-> "DISTINCT ")
     	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + o.reference())
     	.append(" FROM ")
     	.appendEach(tables, SCOMA, o-> o.sql(pb) + SPACE + o.reference());

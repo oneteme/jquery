@@ -84,7 +84,7 @@ public final class DatabaseScanner {
 					if(t instanceof YearTableDecoratorWrapper) {
 						var yt = (YearTableDecoratorWrapper) t;
 						log.info("Scanning table '{}' revisions...", t.tableName());
-						yt.revision(cn);
+						yt.fetchRevisions(cn);
 						logRevisions(yt.availableRevisions());
 					}
 				}
