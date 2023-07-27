@@ -19,6 +19,7 @@ public final class SqlStringBuilder {
 	static final String SPACE = " ";
 	static final String POINT = ".";
 	static final String QUOTE = "'";
+	static final String DQUOT = "\"";
 	static final String SCOMA  = COMA + SPACE;
 	
 	private final StringBuilder sb;
@@ -85,8 +86,12 @@ public final class SqlStringBuilder {
 		return SPACE + op + SPACE;
 	}
 
-	public static String varchar(String op) {
+	public static String quote(String op) {
 		return QUOTE + op + QUOTE;
+	}
+
+	public static String doubleQuote(String op) {
+		return DQUOT + op + DQUOT;
 	}
 
 	public static String parenthese(String op) { 

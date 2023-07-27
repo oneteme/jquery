@@ -3,6 +3,8 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.function.Supplier;
+
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
 
 import lombok.NonNull;
@@ -142,11 +144,15 @@ public interface DBColumn extends DBObject, NestedSql {
 	}
 
 	static DBColumn constant(Object value) {
+		return constant(()-> value);
+	}
+
+	static DBColumn constant(Supplier<Object> value) {
 		return new DBColumn() {
 			
 			@Override
 			public String sql(QueryParameterBuilder arg) {
-				return arg.formatValue(value);
+				return arg.formatValue(value.get());
 			}
 			
 			@Override

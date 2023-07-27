@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.groupingBy;
+import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -52,7 +53,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	}
 
 	public static DBColumn yearColumn() {
-		return b-> currentRev.get().getKey().toString();
+		return constant(()-> currentRev.get().getKey().toString()); //get on build
 	}
 	
 	public static DBFilter monthFilter(DBColumn column) {

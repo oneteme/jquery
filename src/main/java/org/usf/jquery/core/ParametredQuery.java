@@ -37,8 +37,8 @@ public final class ParametredQuery {
 					}						
 				}
 		        log.info("using parameters : {}", Arrays.toString(params));
-		        mapper.declaredColumns(columnNames);
 				try(var rs = ps.executeQuery()){
+					mapper.declaredColumns(columnNames(rs));
 					return rs.next() ? mapper.map(rs) : null;
 				}
 			}

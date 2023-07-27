@@ -21,13 +21,14 @@ import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.NamedTable;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.RequestQuery;
+import org.usf.jquery.core.TableBuilder;
 
 /**
  * 
  * @author u$f
  *
  */
-public interface TableDecorator {
+public interface TableDecorator extends TableBuilder {
 	
 	String identity(); //URL
 	
@@ -47,6 +48,7 @@ public interface TableDecorator {
 		return UNLIMITED;
 	}
 	
+	@Override
 	default NamedTable table() {
 		DBTable tab = b-> tableName();
 		return tab.as(reference());
@@ -56,7 +58,7 @@ public interface TableDecorator {
 		var query = new RequestQuery().select(table());
 		parseColumns(ant, query, parameterMap);
 		parseFilters(ant, query, parameterMap);
-		parseOrders(ant, query, parameterMap);
+		parseOrders (ant, query, parameterMap);
 		return query;
 	}
 	
@@ -67,10 +69,13 @@ public interface TableDecorator {
 		if(isEmpty(cols)) {
 			throw new NoSuchElementException("require " + COLUMN + "|" + COLUMN_DISTINCT + " parameter");
 		} //TD check first param !isBlank
+		if(parameters.containsKey(COLUMN_DISTINCT)){
+			query.distinct();
+		}
 		flatParameters(cols).forEach(p->{
 			var rc = decodeColumn(p, this, false);
 			var td = rc.tableDecorator();
-			query.tables(td.table()).columns(rc.columnDecorator().column(td));
+			query.tablesIfAbsent(td.table()).columns(rc.columnDecorator().column(td));
 		});
 	}
 
@@ -81,7 +86,7 @@ public interface TableDecorator {
     	.filter(e-> !ignoreParams.contains(e.getKey()))
     	.forEach(e-> {
     		var rf = decodeFilter(e, this);
-    		query.tables(rf.tables()).filters(rf.filters());
+    		query.tablesIfAbsent(rf.tables()).filters(rf.filters());
     	});
 	}
 
@@ -90,11 +95,11 @@ public interface TableDecorator {
 		if(nonNull(cols)) {
 			flatParameters(cols).forEach(p->{
 				var rc = decodeColumn(p, this, true);
-				var td = rc.tableDecorator();
-				var cd = rc.columnDecorator();
-				query.orders(isNull(rc.expression()) 
-						? cd.column(td).order() 
-						: cd.column(td).order(Order.valueOf(rc.expression()))); //custom exception
+				var col = rc.columnDecorator().column(rc.tableDecorator());
+				query.tablesIfAbsent(rc.tableDecorator().table())
+				.orders(isNull(rc.expression()) 
+						? col.order() 
+						: col.order(Order.valueOf(rc.expression()))); //custom exception
 			});
 		}
 	}

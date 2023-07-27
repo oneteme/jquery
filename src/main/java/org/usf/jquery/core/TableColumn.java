@@ -22,7 +22,9 @@ public final class TableColumn implements TaggableColumn {
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {
-		return tableRef + POINT + columnName;
+		return arg.alias(tableRef)
+				.map(t-> t + POINT + columnName)
+				.orElse(columnName);
 	}
 
 	@Override

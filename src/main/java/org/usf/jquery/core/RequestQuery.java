@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
-import static java.lang.reflect.Array.getLength;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -10,12 +9,11 @@ import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -47,18 +45,25 @@ public class RequestQuery {
 		this.filters = new LinkedList<>();
 		this.orders  = new LinkedList<>();
 	}
+
+	public RequestQuery select(TaggableTable table, TaggableColumn... columns) {
+		return tables(table).columns(columns);
+	}
 	
 	public RequestQuery distinct() {
 		distinct = true;
 		return this;
 	}
 
-	public RequestQuery select(TaggableTable table, TaggableColumn... columns) {
-		return tables(table).columns(columns);
-	}
-
 	public RequestQuery tables(@NonNull TaggableTable... tables) {
 		Stream.of(tables).forEach(this.tables::add);
+		return this;
+	}
+	
+	public RequestQuery tablesIfAbsent(@NonNull TaggableTable... tables) {
+		Stream.of(tables)
+		.filter(t-> this.tables.stream().noneMatch(tt-> tt.reference().equals(t.reference())))
+		.forEach(this.tables::add);
 		return this;
 	}
 	
@@ -90,23 +95,23 @@ public class RequestQuery {
 		var sb = new SqlStringBuilder(500);
 		build(sb, pb);
 		log.debug("query built in {} ms", currentTimeMillis() - bg);
-		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new); //!postgres insensitive case
+		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new);
 		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
-    	select(sb);
+    	select(sb, pb);
     	where(sb, pb);
     	groupBy(sb);
     	having(sb, pb);
     	orderBy(sb, pb);
 	}
 
-	void select(SqlStringBuilder sb){
-		var pb = addWithValue(); //addWithValue columns (case, constant, Operation, ..)
-    	sb.append("SELECT ")
+	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
+		sb.append("SELECT ")
     	.appendIf(distinct, ()-> "DISTINCT ")
-    	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + o.reference())
+    	//addWithValue columns (WhenCase, ..)
+    	.appendEach(columns, SCOMA, o-> o.sql(addWithValue()) + " AS " + doubleQuote(o.reference()))
     	.append(" FROM ")
     	.appendEach(tables, SCOMA, o-> o.sql(pb) + SPACE + o.reference());
 	}
@@ -126,6 +131,7 @@ public class RequestQuery {
         	var expr = columns.stream()
         			.filter(RequestQuery::groupable)
         			.map(TaggableColumn::reference) //add alias 
+        			.map(SqlStringBuilder::doubleQuote)
         			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {
         		sb.append(" GROUP BY ").append(expr);
@@ -156,19 +162,4 @@ public class RequestQuery {
 	private static boolean groupable(DBColumn column) {
 		return !column.isAggregation() && !column.isConstant();
 	}
-	
-	@SuppressWarnings("rawtypes")
-	private static int rowCount(Object o) {
-		if(o.getClass().isArray()) {
-			return getLength(o);
-		}
-		if(o instanceof Collection) {
-			return ((Collection)o).size();
-		}
-		if(o instanceof Map) {
-			return ((Map)o).size();
-		}
-		return 1; //???
-	}
-		
 }

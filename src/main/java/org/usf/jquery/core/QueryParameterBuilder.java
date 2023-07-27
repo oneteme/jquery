@@ -2,12 +2,15 @@ package org.usf.jquery.core;
 
 import static java.lang.reflect.Array.getLength;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.SqlStringBuilder.varchar;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
 import java.lang.reflect.Array;
@@ -15,23 +18,41 @@ import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 
  * @author u$f
  *
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
 	private static final String ARG = "?";
 	
 	private final Collection<Object> args;
+	private List<String> tableAlias = new LinkedList<>();
+	
+	public QueryParameterBuilder withTables(String... tables) {
+		if(isPresent(tables)){
+			tableAlias = Stream.of(tables).distinct().collect(toList());
+		}
+		return this;
+	}
+	
+	public Optional<String> alias(String tablename) {
+		if(tableAlias.isEmpty()) {
+			return empty();
+		}
+		var idx = tableAlias.indexOf(tablename) + 1;
+		return Optional.of(idx > 0 ? "t"+idx : tablename);
+	}
 
 	public String appendParameter(Object o) {
 		return appendParameter(o, Object.class, v-> v instanceof Number ? formatNumber(v) : formatString(v));
@@ -110,7 +131,7 @@ public final class QueryParameterBuilder {
     }
 	
 	static String formatString(Object o) {
-		return varchar(o.toString());
+		return quote(o.toString());
 	}
 	static String formatNumber(Object o) {
 		return o.toString(); 

@@ -22,7 +22,7 @@ public interface ComparisonExpressionBuilder<T> {
 	
 	ComparisonExpression expression(T arg);
 	
-	default LogicalOperator joiner() {
+	default LogicalOperator combiner() {
 		return OR;
 	}
 	
