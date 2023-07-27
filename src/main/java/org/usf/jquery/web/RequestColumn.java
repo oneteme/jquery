@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.lang.String.join;
 import static java.util.Arrays.copyOfRange;
+import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.DBFunction.lookup;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.web.DatabaseScanner.database;
@@ -31,13 +32,14 @@ public final class RequestColumn {
 	private final ColumnDecorator cd;
 	private final List<TypedFunction> fns = new LinkedList<>();
 	private final String exp;
+	private final String tag;
 
 	public TableDecorator tableDecorator() {
 		return td;
 	}
 	
 	public ColumnDecorator columnDecorator() {
-		return fns.isEmpty() ? cd : wrap(cd, fns);
+		return fns.isEmpty() ? cd : wrapColumn();
 	}
 	
 	public String expression() {
@@ -50,12 +52,27 @@ public final class RequestColumn {
 	}
 
 	static RequestColumn decodeColumn(String value, TableDecorator defaultTable, boolean allowedExp) {
-		var arr = value.split("\\.");
-		var from = arr.length > 1 && allowedExp && lookup(arr[arr.length-1]).isEmpty() ? arr.length-2 : arr.length-1;
-		return decode(arr, from, from, defaultTable);
+		
+		if(!value.matches("^\\w+[\\.\\w+]*(\\:\\w+)?")) {
+			throw new IllegalArgumentException("illegal column expression");
+		}
+		String tag = null;
+		if(value.contains(":")) {
+			var idx = value.lastIndexOf(':');
+			tag = value.substring(idx+1);
+			value = value.substring(0, idx);
+		}
+		var arr  = value.split("\\.");
+		String exp = null;
+		int from = arr.length-1;
+		if(arr.length > 1 && allowedExp && lookup(arr[arr.length-1]).isEmpty()) {
+			exp = arr[arr.length-1];
+			from = arr.length-2;
+		}
+		return decode(arr, from, defaultTable, exp, tag);
 	}
 	
-	private static RequestColumn decode(String[] arr, int from, int index, TableDecorator defaultTable) {
+	private static RequestColumn decode(String[] arr, int index, TableDecorator defaultTable, String exp, String tag) {
 		var value = arr[index]; //count | table.count
 		if(database().isDeclaredColumn(value)) {//column found => break recursive call
 			var cd = database().getColumn(value);
@@ -63,27 +80,27 @@ public final class RequestColumn {
 				throw new IllegalArgumentException("too many prefix : " + join(".", copyOfRange(arr, 0, index)));
 			}
 			var td = index == 0 ? defaultTable : database().getTable(arr[0]);
-			return new RequestColumn(td, cd, from == arr.length-1 ? null : arr[arr.length-1]);
+			return new RequestColumn(td, cd, exp, tag);
 		}
 		if(index == 0) {
 			throw unknownEntryException(value);
 		}
 		var fn = lookup(value).orElseThrow(()-> unknownEntryException(value));
-		return decode(arr, from, index-1, defaultTable).append(fn);
+		return decode(arr, --index, defaultTable, exp, tag).append(fn);
 	}
 	
-	private static ColumnDecorator wrap(final ColumnDecorator cd, final List<TypedFunction> fns) {
+	private ColumnDecorator wrapColumn() {
 		
 		return new ColumnDecorator() {
 			
 			@Override
 			public String reference() {
-				return cd.reference(); //add alias
+				return ofNullable(tag).orElseGet(cd::reference); 
 			}
 			
 			@Override
 			public String identity() {
-				return cd.identity(); //add 
+				return cd.identity(); //unused
 			}
 			
 			@Override
