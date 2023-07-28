@@ -18,9 +18,9 @@ import org.usf.jquery.core.LogicalOperator;
  *
  */
 @FunctionalInterface
-public interface ComparisonExpressionBuilder<T> {
+public interface CriteriaBuilder<T> {
 	
-	ComparisonExpression expression(T arg);
+	ComparisonExpression criteria(T arg);
 	
 	default LogicalOperator combiner() {
 		return OR;
@@ -29,13 +29,13 @@ public interface ComparisonExpressionBuilder<T> {
 	@SuppressWarnings("unchecked")
 	default ComparisonExpression build(T... args) {
 		return Stream.of(requireAtLeastNArgs(1, args, ()-> "pretty msg"))
-				.map(v-> ofNullable(expression(v))
+				.map(v-> ofNullable(criteria(v))
 						.orElseThrow(()-> new IllegalArgumentException("illegal value : " + v)))
 				.reduce(ComparisonExpression::or)
 				.orElseThrow();
 	}
 	
-	public static ComparisonExpressionBuilder<Object> ofComparator(DBComparator cmp) {
+	public static CriteriaBuilder<Object> ofComparator(DBComparator cmp) {
 		return cmp::expression;
 	}
 }

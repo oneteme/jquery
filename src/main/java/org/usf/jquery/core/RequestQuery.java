@@ -5,7 +5,6 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
@@ -95,11 +94,11 @@ public class RequestQuery {
 		var sb = new SqlStringBuilder(500);
 		build(sb, pb);
 		log.debug("query built in {} ms", currentTimeMillis() - bg);
-		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new);
-		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
+		return new ParametredQuery(sb.toString(), pb.args(), noResult);
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
+		pb.withTables(tables.stream().map(TaggableTable::reference).toArray(String[]::new));
     	select(sb, pb);
     	where(sb, pb);
     	groupBy(sb);
@@ -110,10 +109,9 @@ public class RequestQuery {
 	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
 		sb.append("SELECT ")
     	.appendIf(distinct, ()-> "DISTINCT ")
-    	//addWithValue columns (WhenCase, ..)
-    	.appendEach(columns, SCOMA, o-> o.sql(addWithValue()) + " AS " + doubleQuote(o.reference()))
+    	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.reference()))
     	.append(" FROM ")
-    	.appendEach(tables, SCOMA, o-> o.sql(pb) + SPACE + o.reference());
+    	.appendEach(tables, SCOMA, o-> o.sql(pb) + pb.alias(o.reference()).map(v-> SPACE + v).orElse(o.reference()));
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){

@@ -38,14 +38,13 @@ public final class PartitionedRequestQuery extends RequestQuery {
 		}
 		var pb = parametrized();
 		var sb = new SqlStringBuilder(500); // size ? 
-		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new);
 		var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
 		sb.forEach(map.entrySet(), " UNION ALL ", e-> {
 			currentRev.set(e);
 			super.build(sb, pb);
 		});
 		currentRev.remove();
-		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
+		return new ParametredQuery(sb.toString(), pb.args(), noResult);
 	}
 	
 	public static DBTable yearTable(String name) {

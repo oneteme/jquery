@@ -16,30 +16,19 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public final class ResultSimpleMapper implements ResultMapper<List<DynamicModel>> {
-	
-	private String[] columnNames;
-	
-	@Override
-	public void declaredColumns(String[] columnNames) {
-		this.columnNames = columnNames;
-	}
 
     @Override
-    public List<DynamicModel> map(ResultSet rs) {
-        
+    public List<DynamicModel> map(ResultSet rs) throws SQLException {
 		log.debug("mapping results...");
 		var bg = currentTimeMillis();
 		var results = new LinkedList<DynamicModel>();
-        try {
-            while(rs.next()) {
-                var model = new DynamicModel();
-                for(var i=0; i<columnNames.length; i++) {
-                    model.put(columnNames[i], rs.getObject(i+1));
-                }
-                results.add(model);
+    	var columnNames = declaredColumns(rs);
+        while(rs.next()) {
+            var model = new DynamicModel();
+            for(var i=0; i<columnNames.length; i++) {
+                model.put(columnNames[i], rs.getObject(i+1));
             }
-        } catch(SQLException e) {
-            throw new RuntimeException("error while mapping results", e);
+            results.add(model);
         }
 		log.info("{} rows mapped in {} ms", results.size(), currentTimeMillis() - bg);
         return results;

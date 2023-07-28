@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import java.sql.ResultSet;
+import java.sql.SQLException;
 
 /**
  * 
@@ -9,9 +10,15 @@ import java.sql.ResultSet;
  */
 @FunctionalInterface
 public interface ResultMapper<T> {
-	
-	default void declaredColumns(String[] columnNames) { }
 
-    T map(ResultSet rs);
+    T map(ResultSet rs) throws SQLException;
+	
+	default String[] declaredColumns(ResultSet rs) throws SQLException {
+		var names = new String[rs.getMetaData().getColumnCount()];
+		for(var i=0; i<names.length; i++) {
+			names[i] = rs.getMetaData().getColumnLabel(i+1);
+		}
+		return names;
+	}
 
 }

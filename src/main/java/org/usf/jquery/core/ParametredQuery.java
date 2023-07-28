@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Arrays;
 
@@ -23,7 +22,6 @@ public final class ParametredQuery {
 	
 	@NonNull
 	private final String query;
-	private final String[] columnNames;
 	private final Object[] params;
 	private final boolean noResult;
 	
@@ -38,7 +36,6 @@ public final class ParametredQuery {
 				}
 		        log.info("using parameters : {}", Arrays.toString(params));
 				try(var rs = ps.executeQuery()){
-					mapper.declaredColumns(columnNames(rs));
 					return rs.next() ? mapper.map(rs) : null;
 				}
 			}
@@ -49,18 +46,7 @@ public final class ParametredQuery {
 	}
 	
 	public ResultSimpleMapper defaultMapper() {
-		var mapper = new ResultSimpleMapper();
-		mapper.declaredColumns(columnNames);
-		return mapper;
-	}
-	
-	//not used => PG insensitive column case 
-	static String[] columnNames(ResultSet rs) throws SQLException {
-		var names = new String[rs.getMetaData().getColumnCount()];
-		for(var i=0; i<names.length; i++) {
-			names[i] = rs.getMetaData().getColumnLabel(i+1);
-		}
-		return names;
+		return new ResultSimpleMapper();
 	}
 	
 	public boolean hasNoResult() {

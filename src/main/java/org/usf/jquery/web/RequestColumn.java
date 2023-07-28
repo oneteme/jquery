@@ -52,21 +52,20 @@ public final class RequestColumn {
 	}
 
 	static RequestColumn decodeColumn(String value, TableDecorator defaultTable, boolean allowedExp) {
-		
-		if(!value.matches("^\\w+[\\.\\w+]*(\\:\\w+)?")) {
-			throw new IllegalArgumentException("illegal column expression");
+		if(!value.matches("^\\w+[\\.\\w+]*(\\:\\w+)?$")) {
+			throw new IllegalArgumentException("illegal column expression " + value);
 		}
 		String tag = null;
-		if(value.contains(":")) {
-			var idx = value.lastIndexOf(':');
-			tag = value.substring(idx+1);
-			value = value.substring(0, idx);
+		int index = value.lastIndexOf(':');
+		if(index > -1) {
+			tag = value.substring(index+1);
+			value = value.substring(0, index);
 		}
-		var arr  = value.split("\\.");
 		String exp = null;
+		var arr  = value.split("\\.");
 		int from = arr.length-1;
-		if(arr.length > 1 && allowedExp && lookup(arr[arr.length-1]).isEmpty()) {
-			exp = arr[arr.length-1];
+		if(arr.length > 1 && allowedExp && lookup(arr[arr.length-1]).isEmpty()) {//!function
+			exp  = arr[arr.length-1];
 			from = arr.length-2;
 		}
 		return decode(arr, from, defaultTable, exp, tag);
@@ -104,7 +103,7 @@ public final class RequestColumn {
 			}
 			
 			@Override
-			public ColumnBuilder columnBuilder() { //logical column
+			public ColumnBuilder builder() { //logical column
 				return t-> {
 					DBColumn col = cd.column(t);
 					return fns.stream()

@@ -22,7 +22,15 @@ public final class CaseColumn implements DBColumn {
 	
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		return "CASE " + expressions.stream().map(o-> o.sql(builder)).collect(joining(SPACE)) + " END";
+		builder.forceValue(true); //add filters as value
+		try {
+			return expressions.stream()
+			.map(o-> o.sql(builder))
+			.collect(joining(SPACE, "CASE ", " END"));
+		}
+		finally {
+			builder.forceValue(false);
+		}
 	}
 		
 	public CaseColumn append(WhenExpression we) {

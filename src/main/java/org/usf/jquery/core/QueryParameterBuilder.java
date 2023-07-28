@@ -38,6 +38,7 @@ public final class QueryParameterBuilder {
 	
 	private final Collection<Object> args;
 	private List<String> tableAlias = new LinkedList<>();
+	private boolean forceValue = false;
 	
 	public QueryParameterBuilder withTables(String... tables) {
 		if(isPresent(tables)){
@@ -110,8 +111,12 @@ public final class QueryParameterBuilder {
 				: formatString(o);
 	}
 	
+	public void forceValue(boolean forceValue) {
+		this.forceValue = forceValue;
+	}
+	
 	boolean dynamic() {
-		return nonNull(args);
+		return nonNull(args) && !forceValue;
 	}
 	
 	public Object[] args() {

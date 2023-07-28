@@ -20,23 +20,16 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public final class ResultCsvExport implements ResultMapper<Void> {
 	
-	static final String SEMIC = ";";
+	private static final String SEMIC = ";";
     private final Writer writer;
 
-    private String[] columnNames;
-
-	@Override
-	public void declaredColumns(String[] columnNames) {
-		this.columnNames = columnNames;
-	}
-    
     @Override
-    public Void map(ResultSet rs) {
-
+    public Void map(ResultSet rs) throws SQLException {
 		log.debug("exporting results...");
 		var bg = currentTimeMillis();
         var rw = 0;
         try {
+        	var columnNames = declaredColumns(rs);
             for(String c : columnNames) {
                 writer.write(c);
                 writer.write(SEMIC);
@@ -51,7 +44,7 @@ public final class ResultCsvExport implements ResultMapper<Void> {
                 rw++;
             }
         }
-        catch(SQLException | IOException e) {
+        catch(IOException e) {
             throw new RuntimeException("error while exporting results", e);
         }
 		log.info("{} rows exported in {} ms", rw, currentTimeMillis() - bg);

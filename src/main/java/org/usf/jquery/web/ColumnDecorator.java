@@ -30,12 +30,12 @@ import static org.usf.jquery.core.DBComparator.lessOrEqual;
 import static org.usf.jquery.core.DBComparator.lessThan;
 import static org.usf.jquery.core.DBComparator.like;
 import static org.usf.jquery.core.DBComparator.notEqual;
-import static org.usf.jquery.core.DBComparator.notLike;
 import static org.usf.jquery.core.DBComparator.notIn;
+import static org.usf.jquery.core.DBComparator.notLike;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
-import static org.usf.jquery.web.ComparisonExpressionBuilder.ofComparator;
+import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -75,22 +75,19 @@ public interface ColumnDecorator extends ColumnBuilder {
 	}
 	
 	default boolean isPhysical() {
-		return this == columnBuilder();
+		return this == builder();
 	}
 	
 	default String pattern() {
-		//improve API security and performance
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(); //improve API security and performance
 	}
 
 	default boolean canSelect() {
-		//authorization inject
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(); //authorization inject
 	}
 
 	default boolean canFilter() {
-		//authorization inject
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(); //authorization inject
 	}
 	
 	@Override
@@ -99,19 +96,20 @@ public interface ColumnDecorator extends ColumnBuilder {
 			var sql = requireLegalVariable(table.columnName(this));
 			return new TableColumn(sql, reference(), table.reference());
 		}
-		return columnBuilder().column(table).as(reference());
+		return builder().column(table).as(reference());
 	}
 
-	default ColumnBuilder columnBuilder() {
+	default ColumnBuilder builder() {
 		return this;
 	}
 	
-	default ComparisonExpression expression(TableDecorator table, String comparator, String... values) {
-		var builder = expressionBuilder(comparator);
-		if(nonNull(builder)) {
-			return builder.build(values);
+	//expression => criteria | comparator
+	default ComparisonExpression expression(TableDecorator table, String expres, String... values) {
+		var criteria = criteria(expres);
+		if(nonNull(criteria)) {
+			return criteria.build(values);
 		}
-		var cmp = requireNonNull(comparator(comparator, values.length)); //exception
+		var cmp = requireNonNull(comparator(expres, values.length)); //exception
     	var psr = requireNonNull(parser(resolveType(table))); //exception
     	if(values.length == 1) {
     		return cmp.expression(psr.parseArg(values[0]));
@@ -121,14 +119,14 @@ public interface ColumnDecorator extends ColumnBuilder {
 				: ofComparator(cmp).build(psr.parseArgs(values));
 	}
 
-	default ComparisonExpressionBuilder<String> expressionBuilder(String exp) {
+	default CriteriaBuilder<String> criteria(String exp) {
 		return null;
 	}
 	
 	private int resolveType(TableDecorator td) {
 		var type = dataType(); //overridden
-		if(type == AUTO_TYPE && isPhysical()) {//logical column not declared in table
-			type = td.columnType(this);
+		if(type == AUTO_TYPE && isPhysical()) {
+			type = td.columnType(this); //logical column not declared in table
 		}
 		return type;
 	}
@@ -177,7 +175,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 		case "ilike"	: return containsArgPartten(iLike());
 		case "unlike"	: return containsArgPartten(notLike());
 		//isnull
-		default: throw new IllegalArgumentException("unsupported comparator : " + comparator);
+		default: throw new IllegalArgumentException("illegal comparator : " + comparator);
 		}
 	}
 	
