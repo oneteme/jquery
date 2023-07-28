@@ -8,12 +8,20 @@ package org.usf.jquery.web;
 @SuppressWarnings("serial")
 public class ParseException extends IllegalArgumentException {
 
-	private ParseException(String message, Throwable cause) {
-		super(message, cause);
+	public ParseException(String message) {
+		super(message);
 	}
 	
-	static ParseException parseException(String param, Throwable cause) {
-		return new ParseException("cannot parse value '" + param + "'", cause);
+	public ParseException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
+	static ParseException cannotEvaluateException(String type, String expression) {
+		return new ParseException("cannot evaluate " + type +  " '" + expression + "' ");
+	}
+	
+	static ParseException cannotParseException(String type, String value, Throwable cause) {
+		return new ParseException("cannot parse " + type + " '" + value + "' ", cause);
 	}
 
 }

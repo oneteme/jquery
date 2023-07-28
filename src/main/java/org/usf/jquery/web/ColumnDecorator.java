@@ -36,6 +36,8 @@ import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
+import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -109,8 +111,8 @@ public interface ColumnDecorator extends ColumnBuilder {
 		if(nonNull(criteria)) {
 			return criteria.build(values);
 		}
-		var cmp = requireNonNull(comparator(expres, values.length)); //exception
-    	var psr = requireNonNull(parser(resolveType(table))); //exception
+		var cmp = requireNonNull(comparator(expres, values.length));
+    	var psr = requireNonNull(parser(resolveType(table)));
     	if(values.length == 1) {
     		return cmp.expression(psr.parseArg(values[0]));
     	}
@@ -157,7 +159,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 		case DATE     		: return v-> Date.valueOf(LocalDate.parse(v));
 		case TIME     		: return v-> Time.valueOf(LocalTime.parse(v));
 		case TIMESTAMP		: return v-> Timestamp.from(Instant.parse(v));
-		default       		: throw new UnsupportedOperationException(identity() + " unsupported dbType " + type);
+		default       		: throw new UnsupportedOperationException("unsupported '" + identity() +  "' dbType=" + type);
 		}
 	}
 
@@ -165,7 +167,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 		if(isNull(comparator)) {
 			return nArg == 1 ? equal() : in();
 		}
-		switch(comparator) { //is null
+		switch(comparator) {
 		case "gt"		: return greaterThan();
 		case "ge"  		: return greaterOrEqual();
 		case "lt"  		: return lessThan();
@@ -175,7 +177,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 		case "ilike"	: return containsArgPartten(iLike());
 		case "unlike"	: return containsArgPartten(notLike());
 		//isnull
-		default: throw new IllegalArgumentException("illegal comparator : " + comparator);
+		default: throw cannotEvaluateException("comaparator", comparator);
 		}
 	}
 	

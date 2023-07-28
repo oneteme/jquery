@@ -16,15 +16,15 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-final class Constants {
+public final class Constants {
 	
-	static final String COLUMN = "column";
-	static final String COLUMN_DISTINCT = "column.distinct"; 
-	static final String ORDER = "order";
+	public static final String COLUMN = "column";
+	public static final String COLUMN_DISTINCT = "column.distinct"; 
+	public static final String ORDER = "order";
 //	static final String FORMAT = "format"; //CSV|JSON|ASCII
 //	static final String FORMAT_SEPARATOR = "format.separator"; //only for CSV COMA|SEMICOLON
-	static final String REVISION = "revision"; //not standard
-	static final String REVISION_MODE = "revision.mode"; //not standard
+	public static final String REVISION = "revision"; //not standard
+	public static final String REVISION_MODE = "revision.mode"; //not standard
 	
 	static final Set<String> RESERVED_WORDS = 
 			Set.of(COLUMN, COLUMN_DISTINCT, ORDER, REVISION, REVISION_MODE);

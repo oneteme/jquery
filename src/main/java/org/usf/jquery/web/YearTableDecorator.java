@@ -11,6 +11,8 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
+import static org.usf.jquery.web.ParseException.cannotEvaluateException;
+import static org.usf.jquery.web.ParseException.cannotParseException;
 import static org.usf.jquery.web.TableDecorator.flatParameters;
 
 import java.time.Year;
@@ -69,7 +71,7 @@ public interface YearTableDecorator extends TableDecorator {
 		var revs = isNull(values) 
 				? null
 				: flatParameters(values)
-    			.map(YearTableDecorator::parseYearMonth)
+    			.map(this::parseYearMonth)
     			.toArray(YearMonth[]::new);
 		var mode = ofNullable(parameterMap.get(REVISION_MODE))
 				.filter(arr-> arr.length == 1)
@@ -86,7 +88,7 @@ public interface YearTableDecorator extends TableDecorator {
 		case "strict" 		: return this::strictRevisions;
 		case "preceding"	: return this::precedingRevisions;
 		case "succeeding"	: return this::succeedingRevisions;
-    	default 			: throw new IllegalArgumentException("illegal revision mode " + mode);
+    	default 			: throw cannotEvaluateException(REVISION_MODE, mode);
     	}
     }
     
@@ -143,13 +145,15 @@ public interface YearTableDecorator extends TableDecorator {
 		return list.isEmpty() ? EMPTY_REVISION : list.toArray(YearMonth[]::new);
 	}
 	
-    static YearMonth parseYearMonth(String revision) {
-    	if(revision.matches("\\d{4}-\\d{2}")) {
-    		return YearMonth.parse(revision);
-    	}
-    	if(revision.matches("\\d{4}")) {
+    default YearMonth parseYearMonth(String revision) {
+    	if(revision.matches("^\\d{4}$")) {
     		return Year.parse(revision).atMonth(DECEMBER);
     	}
-    	throw new IllegalArgumentException("cannot parse revision " + revision);
+    	try {
+    		return YearMonth.parse(revision);
+    	}
+    	catch (Exception e) {
+    		throw cannotParseException(REVISION_MODE, revision ,e);
+		}
     }
 }

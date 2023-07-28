@@ -3,11 +3,12 @@ package org.usf.jquery.web;
 import static java.lang.String.join;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Optional.ofNullable;
-import static org.usf.jquery.core.DBFunction.count;
+import static org.usf.jquery.core.DBColumn.count;
 import static org.usf.jquery.core.DBFunction.lookup;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.web.DatabaseScanner.database;
+import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.LinkedList;
 import java.util.List;
@@ -30,6 +31,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RequestColumn {
 	
+	private final TableDecorator td;
+	private final ColumnDecorator cd;
+	private final List<TypedFunction> fns = new LinkedList<>();
+	private final String exp;
+	private final String tag;
+	
 	private static final ColumnDecorator countColumn = new ColumnDecorator() {
 		@Override
 		public String identity() {
@@ -41,15 +48,9 @@ public final class RequestColumn {
 		}
 		@Override
 		public ColumnBuilder builder() {
-			return t-> count().args(DBColumn.column("*"));
+			return t-> count();
 		}
 	};
-	
-	private final TableDecorator td;
-	private final ColumnDecorator cd;
-	private final List<TypedFunction> fns = new LinkedList<>();
-	private final String exp;
-	private final String tag;
 
 	public TableDecorator tableDecorator() {
 		return td;
@@ -70,7 +71,7 @@ public final class RequestColumn {
 
 	static RequestColumn decodeColumn(String value, TableDecorator defaultTable, boolean allowedExp) {
 		if(!value.matches("^\\w+[\\.\\w+]*(\\:\\w+)?$")) {
-			throw new IllegalArgumentException("illegal column expression " + value);
+			throw cannotEvaluateException("column expression", value);
 		}
 		String tag = null;
 		int index = value.lastIndexOf(':');
@@ -89,11 +90,11 @@ public final class RequestColumn {
 	}
 	
 	private static RequestColumn decode(String[] arr, int index, TableDecorator defaultTable, String exp, String tag) {
-		var value = arr[index]; //count | table.count
+		var value = arr[index];
 		if(database().isDeclaredColumn(value)) {//column found => break recursive call
 			var cd = database().getColumn(value);
 			if(index > 1) {
-				throw new IllegalArgumentException("too many prefix : " + join(".", copyOfRange(arr, 0, index)));
+				throw cannotEvaluateException("column prefix", join(".", copyOfRange(arr, 0, index))); //too many prefix
 			}
 			var td = index == 0 ? defaultTable : database().getTable(arr[0]);
 			return new RequestColumn(td, cd, exp, tag);
@@ -102,9 +103,9 @@ public final class RequestColumn {
 			if("count".equals(arr[index])) {
 				return new RequestColumn(defaultTable, countColumn, exp, tag);
 			}
-			throw unknownEntryException(value);
+			throw cannotEvaluateException("column expression", value); //column expected
 		}
-		var fn = lookup(value).orElseThrow(()-> unknownEntryException(value));
+		var fn = lookup(value).orElseThrow(()-> cannotEvaluateException("column expression", value)); //function expected
 		return decode(arr, --index, defaultTable, exp, tag).append(fn);
 	}
 	
@@ -119,7 +120,7 @@ public final class RequestColumn {
 			
 			@Override
 			public String reference() {
-				return ofNullable(tag).orElseGet(cd::reference); 
+				return ofNullable(tag).orElseGet(cd::reference); //join function !?
 			}
 			
 			@Override
@@ -127,7 +128,7 @@ public final class RequestColumn {
 				return t-> {
 					DBColumn col = cd.column(t);
 					return fns.stream()
-							.reduce(col, (c, fn)-> fn.args(c), (c1,c2)-> c1) //Sequentially
+							.reduce(col, (c, fn)-> fn.args(c), (c1,c2)-> c1) //sequentially
 							.as(reference());
 				};
 			}
@@ -140,9 +141,5 @@ public final class RequestColumn {
 			}
 		};
 	}
-	
-    private static IllegalArgumentException unknownEntryException(String v) {
-    	return new IllegalArgumentException("unknown entry : " + v);
-    }
     
 }

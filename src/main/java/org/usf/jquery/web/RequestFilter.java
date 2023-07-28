@@ -73,7 +73,7 @@ public class RequestFilter {
 			if(v.contains(",")) { //multiple values
 				vals.add(v.split(","));
 			}
-			else if(v.matches("^[_a-zA-Z]\\w*(\\.[_a-zA-Z]\\w*)+$")) { //table.column[.function]*
+			else if(v.matches("^[a-zA-Z]\\w*(\\.[a-zA-Z]\\w*)+$")) { //table.column[.function]*
 				try {
 					cols.add(decodeColumn(v, defaultTable, false)); //deny expression
 				}

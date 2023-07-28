@@ -48,7 +48,7 @@ public final class PartitionedRequestQuery extends RequestQuery {
 	}
 	
 	public static DBTable yearTable(String name) {
-		return b-> name + "_" + currentRev.get().getKey();
+		return b-> name + "_" + currentRev.get().getKey(); //TODO nullpointer if no revisions
 	}
 
 	public static DBColumn yearColumn() {
