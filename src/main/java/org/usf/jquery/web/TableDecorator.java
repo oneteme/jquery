@@ -99,7 +99,7 @@ public interface TableDecorator extends TableBuilder {
 				query.tablesIfAbsent(rc.tableDecorator().table())
 				.orders(isNull(rc.expression()) 
 						? col.order() 
-						: col.order(Order.valueOf(rc.expression()))); //custom exception
+						: col.order(Order.valueOf(rc.expression().toUpperCase()))); //custom exception
 			});
 		}
 	}
