@@ -119,7 +119,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 				: ofComparator(cmp).build(psr.parseArgs(values));
 	}
 
-	default CriteriaBuilder<String> criteria(String exp) {
+	default CriteriaBuilder<String> criteria(String name) {
 		return null;
 	}
 	
@@ -165,7 +165,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 		if(isNull(comparator)) {
 			return nArg == 1 ? equal() : in();
 		}
-		switch(comparator) { 
+		switch(comparator) { //is null
 		case "gt"		: return greaterThan();
 		case "ge"  		: return greaterOrEqual();
 		case "lt"  		: return lessThan();

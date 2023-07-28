@@ -125,7 +125,7 @@ public class RequestQuery {
 	}
 	
 	void groupBy(SqlStringBuilder sb){
-        if(columns.stream().anyMatch(DBColumn::isAggregation)) {
+        if(isAggregation()) {
         	var expr = columns.stream()
         			.filter(RequestQuery::groupable)
         			.map(TaggableColumn::reference) //add alias 
@@ -155,6 +155,11 @@ public class RequestQuery {
     		sb.append(" ORDER BY ")
     		.appendEach(orders, SPACE, o-> o.sql(pb));
     	}
+	}
+	
+	private boolean isAggregation() {
+		return columns.stream().anyMatch(DBColumn::isAggregation) ||
+				filters.stream().anyMatch(DBFilter::isAggregation);
 	}
 
 	private static boolean groupable(DBColumn column) {

@@ -5,6 +5,7 @@ import static java.util.Arrays.copyOfRange;
 import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.DBFunction.lookup;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
+import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.web.DatabaseScanner.database;
 
 import java.util.LinkedList;
@@ -12,6 +13,7 @@ import java.util.List;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.TypedFunction;
+import org.usf.jquery.core.Utils;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -39,7 +41,7 @@ public final class RequestColumn {
 	}
 	
 	public ColumnDecorator columnDecorator() {
-		return fns.isEmpty() ? cd : wrapColumn();
+		return fns.isEmpty() && isBlank(tag) ? cd : wrapColumn();
 	}
 	
 	public String expression() {
@@ -64,7 +66,7 @@ public final class RequestColumn {
 		String exp = null;
 		var arr  = value.split("\\.");
 		int from = arr.length-1;
-		if(arr.length > 1 && allowedExp && lookup(arr[arr.length-1]).isEmpty()) {//!function
+		if(arr.length > 1 && allowedExp && !database().isDeclaredColumn(arr[arr.length-1]) && lookup(arr[arr.length-1]).isEmpty()) {//!function && !column
 			exp  = arr[arr.length-1];
 			from = arr.length-2;
 		}
