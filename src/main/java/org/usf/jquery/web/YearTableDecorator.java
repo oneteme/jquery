@@ -5,7 +5,6 @@ import static java.time.Month.DECEMBER;
 import static java.time.YearMonth.now;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearTable;
@@ -23,14 +22,12 @@ import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.NamedTable;
 import org.usf.jquery.core.PartitionedRequestQuery;
 import org.usf.jquery.core.RequestQuery;
-import org.usf.jquery.core.Utils;
 
 /**
  * 
