@@ -43,7 +43,8 @@ public final class YearTableDecoratorWrapper extends TableDecoratorWrapper imple
 	
 	@Override
 	public YearMonth[] availableRevisions() {
-		return ofNullable(wrappedYearTable().availableRevisions()).orElse(revisions);// can also be null 
+		return ofNullable(wrappedYearTable().availableRevisions())
+				.orElse(revisions);// can also be null 
 	}
 	
 	@Override

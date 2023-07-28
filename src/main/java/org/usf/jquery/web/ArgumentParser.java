@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static org.usf.jquery.web.Constants.PARSERS;
+import static org.usf.jquery.web.ParseException.parseException;
 
 import java.util.stream.Stream;
 
@@ -20,7 +21,7 @@ public interface ArgumentParser {
 			return parse(arg);
 		}
 		catch(Exception e) {
-			throw new IllegalArgumentException("cannot parse value " + arg, e);
+			throw parseException(arg, e);
 		}
 	}
 
@@ -44,6 +45,7 @@ public interface ArgumentParser {
 		}
 		catch(Exception e) {
 			return null;
+			//do not throw exception
 		}
 	}
 }

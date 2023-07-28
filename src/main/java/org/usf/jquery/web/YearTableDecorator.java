@@ -28,12 +28,19 @@ import org.usf.jquery.core.RequestQuery;
 /**
  * 
  * @author u$f
+ * 
+ * @see ColumnDecorator
+ * @see YearTableDecoratorWrapper
  *
  */
 public interface YearTableDecorator extends TableDecorator {
 	
 	ColumnDecorator revisionColumn();
 
+	/**
+	 * loaded from db if null
+	 * 
+	 */
     default YearMonth[] availableRevisions() {
     	return null; //reduce data revision access
     }

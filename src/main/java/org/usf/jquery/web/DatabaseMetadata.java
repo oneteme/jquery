@@ -4,7 +4,6 @@ import static java.util.Collections.emptyMap;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.NoSuchElementException;
 
 import lombok.RequiredArgsConstructor;
 
@@ -25,13 +24,14 @@ public final class DatabaseMetadata {
 		return tableMap.containsKey(id);
 	}
 	
-	public TableDecorator getTable(String id) {
-		return tableMap.computeIfAbsent(id, k-> {throw new NoSuchElementException(k + " table not found");});
-	}
-	
 	@Deprecated
 	public YearTableDecorator getYearTable(String id) {
-		return (YearTableDecorator) tableMap.computeIfAbsent(id, k-> {throw new NoSuchElementException(k + " table not found");});
+		return (YearTableDecorator) getTable(id);
+	}
+	
+	public TableDecorator getTable(String id) {
+		return tableMap.computeIfAbsent(id, 
+				NoSuchResourceException::throwNoSuchTableException);
 	}
 	
 	public boolean isDeclaredColumn(String id) {
@@ -39,7 +39,8 @@ public final class DatabaseMetadata {
 	}
 	
 	public ColumnDecorator getColumn(String id) {
-		return columnMap.computeIfAbsent(id, k-> {throw new NoSuchElementException(k + " column not found");});
+		return columnMap.computeIfAbsent(id, 
+				NoSuchResourceException::throwNoSuchColumnException);
 	}
 	
 	Collection<TableDecoratorWrapper> tables() {
