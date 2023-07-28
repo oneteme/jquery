@@ -32,12 +32,12 @@ public final class RequestColumn {
 	
 	private static final ColumnDecorator countColumn = new ColumnDecorator() {
 		@Override
-		public String reference() {
-			return "count";
-		}
-		@Override
 		public String identity() {
 			return null;
+		}
+		@Override
+		public String reference() {
+			return "count";
 		}
 		@Override
 		public ColumnBuilder builder() {
