@@ -3,6 +3,7 @@ package org.usf.jquery.web;
 import static java.lang.String.join;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Optional.ofNullable;
+import static org.usf.jquery.core.DBFunction.count;
 import static org.usf.jquery.core.DBFunction.lookup;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isBlank;
@@ -13,7 +14,6 @@ import java.util.List;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.TypedFunction;
-import org.usf.jquery.core.Utils;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -29,6 +29,21 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class RequestColumn {
+	
+	private static final ColumnDecorator countColumn = new ColumnDecorator() {
+		@Override
+		public String reference() {
+			return "count";
+		}
+		@Override
+		public String identity() {
+			return null;
+		}
+		@Override
+		public ColumnBuilder builder() {
+			return t-> count().args(DBColumn.column("*"));
+		}
+	};
 	
 	private final TableDecorator td;
 	private final ColumnDecorator cd;
@@ -84,6 +99,9 @@ public final class RequestColumn {
 			return new RequestColumn(td, cd, exp, tag);
 		}
 		if(index == 0) {
+			if("count".equals(arr[index])) {
+				return new RequestColumn(defaultTable, countColumn, exp, tag);
+			}
 			throw unknownEntryException(value);
 		}
 		var fn = lookup(value).orElseThrow(()-> unknownEntryException(value));
@@ -95,13 +113,13 @@ public final class RequestColumn {
 		return new ColumnDecorator() {
 			
 			@Override
-			public String reference() {
-				return ofNullable(tag).orElseGet(cd::reference); 
+			public String identity() {
+				return null; //unused
 			}
 			
 			@Override
-			public String identity() {
-				return cd.identity(); //unused
+			public String reference() {
+				return ofNullable(tag).orElseGet(cd::reference); 
 			}
 			
 			@Override
