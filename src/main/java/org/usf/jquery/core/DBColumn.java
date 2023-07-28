@@ -42,7 +42,7 @@ public interface DBColumn extends DBObject, NestedSql {
 		return order(null);
 	}
 	
-	default OrderColumn order(Order order) {
+	default OrderColumn order(String order) {
 		return new OrderColumn(this, order);
 	}
 

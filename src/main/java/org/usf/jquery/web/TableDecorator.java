@@ -9,17 +9,17 @@ import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
+import static org.usf.jquery.web.MissingParameterException.missingParameterException;
+import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.RequestColumn.decodeColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
 
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.NamedTable;
-import org.usf.jquery.core.Order;
 import org.usf.jquery.core.RequestQuery;
 import org.usf.jquery.core.TableBuilder;
 
@@ -67,11 +67,11 @@ public interface TableDecorator extends TableBuilder {
 				? parameters.get(COLUMN_DISTINCT) 
 				: parameters.get(COLUMN); //can be combined in PG (distinct on)
 		if(isEmpty(cols)) {
-			throw new NoSuchElementException("require " + COLUMN + "|" + COLUMN_DISTINCT + " parameter");
-		} //TD check first param !isBlank
+			throw missingParameterException(COLUMN + "|" + COLUMN_DISTINCT);
+		}
 		if(parameters.containsKey(COLUMN_DISTINCT)){
 			query.distinct();
-		}
+		}//TD check first param !isBlank
 		flatParameters(cols).forEach(p->{
 			var rc = decodeColumn(p, this, false);
 			var td = rc.tableDecorator();
@@ -99,9 +99,16 @@ public interface TableDecorator extends TableBuilder {
 				query.tablesIfAbsent(rc.tableDecorator().table())
 				.orders(isNull(rc.expression()) 
 						? col.order() 
-						: col.order(Order.valueOf(rc.expression().toUpperCase()))); //custom exception
+						: col.order(parseOrder(rc.expression())));
 			});
 		}
+	}
+	
+	static String parseOrder(String order) {
+		if("desc".equals(order) || "asc".equals(order)) {
+			return order.toUpperCase();
+		}
+		throw cannotEvaluateException(ORDER, order);
 	}
 
 	static Stream<String> flatParameters(String... arr) { //number local separator

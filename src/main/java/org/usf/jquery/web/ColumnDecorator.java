@@ -36,7 +36,6 @@ import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.math.BigDecimal;
@@ -159,7 +158,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 		case DATE     		: return v-> Date.valueOf(LocalDate.parse(v));
 		case TIME     		: return v-> Time.valueOf(LocalTime.parse(v));
 		case TIMESTAMP		: return v-> Timestamp.from(Instant.parse(v));
-		default       		: throw new UnsupportedOperationException("unsupported '" + identity() +  "' dbType=" + type);
+		default       		: throw new UnsupportedOperationException("unsupported dbType=" + type + " parse");
 		}
 	}
 

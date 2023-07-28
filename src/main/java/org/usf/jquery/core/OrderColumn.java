@@ -10,7 +10,7 @@ import lombok.RequiredArgsConstructor;
 public final class OrderColumn implements DBObject {
 
 	private final DBColumn column;
-	private final Order order;
+	private final String order;
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {

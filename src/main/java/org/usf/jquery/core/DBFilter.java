@@ -19,10 +19,9 @@ public interface DBFilter extends DBObject, NestedSql {
 		requireNoArgs(args, ()-> "DBFilter");
 		return sql(builder);
 	}
-
-	//explicitly overridden 
+	 
 	default DBFilter append(LogicalOperator op, DBFilter filter) {
-		throw new UnsupportedOperationException();
+		throw new UnsupportedOperationException(); //explicitly overridden
 	}
 
 	default DBFilter and(DBFilter filter) {

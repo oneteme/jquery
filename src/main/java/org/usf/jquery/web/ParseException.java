@@ -6,7 +6,7 @@ package org.usf.jquery.web;
  *
  */
 @SuppressWarnings("serial")
-public class ParseException extends IllegalArgumentException {
+public final class ParseException extends IllegalArgumentException {
 
 	public ParseException(String message) {
 		super(message);
