@@ -1,12 +1,15 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
+import static java.time.YearMonth.now;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearTable;
+import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
@@ -20,12 +23,14 @@ import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.NamedTable;
 import org.usf.jquery.core.PartitionedRequestQuery;
 import org.usf.jquery.core.RequestQuery;
+import org.usf.jquery.core.Utils;
 
 /**
  * 
@@ -69,19 +74,19 @@ public interface YearTableDecorator extends TableDecorator {
 	default YearMonth[] parseRevisions(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var values = parameterMap.get(REVISION);
 		var revs = isNull(values) 
-				? null
+				? new YearMonth[] {parseYearMonth(null)}
 				: flatParameters(values)
     			.map(this::parseYearMonth)
     			.toArray(YearMonth[]::new);
-		var mode = ofNullable(parameterMap.get(REVISION_MODE))
-				.filter(arr-> arr.length == 1)
-				.map(arr-> arr[0])
-				.orElse(null);
-		return revisionMode(mode).apply(revs); //require available revisions
+		var arr = parameterMap.get(REVISION_MODE);
+		if(nonNull(arr) && arr.length > 1) {
+			throw cannotEvaluateException(REVISION, join(", ", arr));
+		}
+		return revisionMode(isEmpty(arr) ? null : arr[0]).apply(revs); //require available revisions
     }
     
     default UnaryOperator<YearMonth[]> revisionMode(String mode) {
-    	if(isNull(mode)) {
+    	if(isBlank(mode)) {
     		return this::strictRevisions; //no filter
     	}
     	switch (mode) {
@@ -146,6 +151,9 @@ public interface YearTableDecorator extends TableDecorator {
 	}
 	
     default YearMonth parseYearMonth(String revision) {
+    	if(isBlank(revision)) {
+    		return now();
+    	}
     	if(revision.matches("^\\d{4}$")) {
     		return Year.parse(revision).atMonth(DECEMBER);
     	}

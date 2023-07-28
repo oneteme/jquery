@@ -3,15 +3,18 @@ package org.usf.jquery.web;
 import static java.lang.String.join;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Optional.ofNullable;
+import static java.util.regex.Pattern.compile;
 import static org.usf.jquery.core.DBColumn.count;
 import static org.usf.jquery.core.DBFunction.lookup;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isBlank;
+import static org.usf.jquery.core.Validation.VARIABLE_PATTERN;
 import static org.usf.jquery.web.DatabaseScanner.database;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.LinkedList;
 import java.util.List;
+import java.util.function.Predicate;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.TypedFunction;
@@ -36,6 +39,9 @@ public final class RequestColumn {
 	private final List<TypedFunction> fns = new LinkedList<>();
 	private final String exp;
 	private final String tag;
+	
+	private static final Predicate<String> EXPRESSION_MATCHER = 
+			compile(VARIABLE_PATTERN + "(\\." + VARIABLE_PATTERN +")*(\\:" + VARIABLE_PATTERN + ")?").asMatchPredicate();
 	
 	private static final ColumnDecorator countColumn = new ColumnDecorator() {
 		@Override
@@ -70,7 +76,7 @@ public final class RequestColumn {
 	}
 
 	static RequestColumn decodeColumn(String value, TableDecorator defaultTable, boolean allowedExp) {
-		if(!value.matches("^\\w+[\\.\\w+]*(\\:\\w+)?$")) {
+		if(!EXPRESSION_MATCHER.test(value)) {
 			throw cannotEvaluateException("column expression", value);
 		}
 		String tag = null;
