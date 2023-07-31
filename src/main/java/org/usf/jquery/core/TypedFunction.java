@@ -43,7 +43,7 @@ public class TypedFunction implements DBFunction {
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNArgs(appenders.size(), args, ()-> "function " + name());
+		requireNArgs(appenders.size(), args, TypedFunction.class::getSimpleName);
 		return DBFunction.super.sql(builder, args);
 	}
 

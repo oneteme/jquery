@@ -7,14 +7,14 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class OrderColumn implements DBObject {
+public final class DBOrder implements DBObject {
 
 	private final DBColumn column;
 	private final String order;
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, ()-> "order");
+		requireNoArgs(args, DBOrder.class::getSimpleName);
 		return sql(builder);
 	}
 

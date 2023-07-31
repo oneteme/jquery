@@ -16,7 +16,7 @@ public interface DBFilter extends DBObject, NestedSql {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, ()-> "DBFilter");
+		requireNoArgs(args, DBFilter.class::getSimpleName);
 		return sql(builder);
 	}
 	 

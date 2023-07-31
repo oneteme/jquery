@@ -18,7 +18,7 @@ final class WhenExpression implements DBExpression {
 
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, ()-> "WhenExpression");
+		requireNoArgs(args, WhenExpression.class::getSimpleName);
 		return sql(builder);
 	}
 	

@@ -14,7 +14,7 @@ interface DBArithmetic extends DBOperation {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNArgs(2, args, ()-> "operation " + symbol());
+		requireNArgs(2, args, DBArithmetic.class::getSimpleName);
 		return builder.appendNumber(args[0]) + symbol() + builder.appendNumber(args[1]);
 	}
 	

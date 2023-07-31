@@ -29,7 +29,7 @@ public interface CriteriaBuilder<T> {
 	
 	@SuppressWarnings("unchecked")
 	default ComparisonExpression build(T... args) {
-		return Stream.of(requireAtLeastNArgs(1, args, ()-> "colum criteria"))
+		return Stream.of(requireAtLeastNArgs(1, args, CriteriaBuilder.class::getSimpleName))
 				.map(v-> ofNullable(criteria(v))
 						.orElseThrow(()-> cannotEvaluateException("criteria value", v.toString())))
 				.reduce(ComparisonExpression::or)

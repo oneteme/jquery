@@ -13,7 +13,7 @@ public interface DBTable extends DBObject {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, ()-> "DBTable");
+		requireNoArgs(args, DBTable.class::getSimpleName);
 		var sql = sql(builder);
 		return sql.matches("^\\w+$") ? sql : parenthese(sql); //table or query
 	}

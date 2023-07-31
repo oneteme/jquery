@@ -15,7 +15,7 @@ public interface ComparisonExpression extends DBExpression, NestedSql {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNArgs(1, args, ()-> "ComparisonExpression");
+		requireNArgs(1, args, ComparisonExpression.class::getSimpleName);
 		return sql(builder, args[0]);
 	}
 

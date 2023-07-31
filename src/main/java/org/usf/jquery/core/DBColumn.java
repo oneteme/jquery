@@ -19,7 +19,7 @@ public interface DBColumn extends DBObject, NestedSql {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, ()-> "DBColumn");
+		requireNoArgs(args, DBColumn.class::getSimpleName);
 		return sql(builder);
 	}
 	
@@ -38,12 +38,12 @@ public interface DBColumn extends DBObject, NestedSql {
 		return new NamedColumn(this, requireLegalVariable(name));
 	}
 	
-	default OrderColumn order() {
+	default DBOrder order() {
 		return order(null);
 	}
 	
-	default OrderColumn order(String order) {
-		return new OrderColumn(this, order);
+	default DBOrder order(String order) {
+		return new DBOrder(this, order);
 	}
 
 	// filters

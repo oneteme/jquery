@@ -34,7 +34,7 @@ public class RequestQuery {
 	final List<TaggableTable> tables;
 	final List<TaggableColumn> columns;
 	final List<DBFilter> filters;  //WERE & HAVING
-	final List<OrderColumn> orders;
+	final List<DBOrder> orders;
 	boolean distinct;
 	boolean noResult;
 	
@@ -76,7 +76,7 @@ public class RequestQuery {
 		return this;
 	}
 	
-	public RequestQuery orders(@NonNull OrderColumn... orders) {
+	public RequestQuery orders(@NonNull DBOrder... orders) {
 		Stream.of(orders).forEach(this.orders::add);
 		return this;
 	}

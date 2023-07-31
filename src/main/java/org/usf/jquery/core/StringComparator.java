@@ -15,7 +15,7 @@ public interface StringComparator extends DBComparator {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNArgs(2, args, ()-> "comaparator " + name());
+		requireNArgs(2, args, String.class::getSimpleName);
 		return builder.appendString(args[0]) + space(name()) + builder.appendString(args[1]);
 	}
 
