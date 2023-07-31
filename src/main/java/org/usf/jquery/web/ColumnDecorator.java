@@ -113,11 +113,11 @@ public interface ColumnDecorator extends ColumnBuilder {
 		var cmp = requireNonNull(comparator(expres, values.length));
     	var psr = requireNonNull(parser(resolveType(table)));
     	if(values.length == 1) {
-    		return cmp.expression(psr.parseArg(values[0]));
+    		return cmp.expression(psr.parseValue(values[0]));
     	}
 		return cmp instanceof InCompartor 
-				? cmp.expression(values)
-				: ofComparator(cmp).build(psr.parseArgs(values));
+				? cmp.expression(psr.parseValues(values))
+				: ofComparator(cmp).build(psr.parseValues(values));
 	}
 
 	default CriteriaBuilder<String> criteria(String name) {

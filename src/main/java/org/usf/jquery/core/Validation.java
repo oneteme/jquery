@@ -21,7 +21,7 @@ public final class Validation {
 	public static final String VARIABLE_PATTERN = "[a-zA-Z]\\w*";
     
     public static String requireLegalVariable(String s) {
-    	illegalArgumentIf(!requireNonBlank(s).matches(VARIABLE_PATTERN), ()-> "illegal alias : " + s);
+    	illegalArgumentIf(!requireNonBlank(s).matches(VARIABLE_PATTERN), ()-> "illegal variable name : " + s);
 		return s;
 	}
 	

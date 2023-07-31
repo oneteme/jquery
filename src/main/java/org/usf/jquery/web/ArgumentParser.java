@@ -14,19 +14,19 @@ import java.util.stream.Stream;
 @FunctionalInterface
 public interface ArgumentParser {
 	
-	Object parse(String arg);
+	Object parse(String v);
 
-	default Object parseArg(String arg) {
+	default Object parseValue(String v) {
 		try {
-			return parse(arg);
+			return parse(v);
 		}
 		catch(Exception e) {
-			throw cannotParseException("parameter value", arg, e);
+			throw cannotParseException("parameter value", v, e);
 		}
 	}
 
-	default Object[] parseArgs(String... args) {
-		return args == null ? null : Stream.of(args).map(this::parseArg).toArray();
+	default Object[] parseValues(String... args) {
+		return args == null ? null : Stream.of(args).map(this::parseValue).toArray();
 	}
 	
 	static Object tryParse(String value) {
