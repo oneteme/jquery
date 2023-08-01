@@ -8,11 +8,11 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearTable;
-import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.ParseException.cannotParseException;
 import static org.usf.jquery.web.TableDecorator.flatParameters;
@@ -25,7 +25,7 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.NamedTable;
+import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.PartitionedRequestQuery;
 import org.usf.jquery.core.RequestQuery;
 
@@ -50,13 +50,14 @@ public interface YearTableDecorator extends TableDecorator {
     }
     
 	@Override
-	default NamedTable table() {
-		return yearTable(tableName()).as(reference());
+	default DBTable table() {
+		return yearTable(tableName());
 	}
 	
 	@Override
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
 		var query = new PartitionedRequestQuery(parseRevisions(ant, parameterMap)).select(table());
+		parseWindow(ant, query, parameterMap);
 		parseColumns(ant, query, parameterMap);
 		parseFilters(ant, query, parameterMap);
 		parseOrders(ant, query, parameterMap);
@@ -69,24 +70,26 @@ public interface YearTableDecorator extends TableDecorator {
 	}
 
 	default YearMonth[] parseRevisions(RequestQueryParam ant, Map<String, String[]> parameterMap) {
+		var arr = parameterMap.get(REVISION_MODE);
+		if(nonNull(arr) && arr.length > 1) {
+			throw cannotEvaluateException(REVISION, join(", ", arr)); //multiple values
+		}
+		var mod = revisionMode(isEmpty(arr) ? defaultRevisionMode() : arr[0]);
 		var values = parameterMap.get(REVISION);
 		var revs = isNull(values) 
-				? new YearMonth[] {parseYearMonth(null)}
+				? new YearMonth[] {now()}
 				: flatParameters(values)
     			.map(this::parseYearMonth)
     			.toArray(YearMonth[]::new);
-		var arr = parameterMap.get(REVISION_MODE);
-		if(nonNull(arr) && arr.length > 1) {
-			throw cannotEvaluateException(REVISION, join(", ", arr));
+		revs = mod.apply(revs);
+		if(isEmpty(revs)) {
+			throw noSuchResouceException(REVISION, join(", ", values)); //require available revisions
 		}
-		return revisionMode(isEmpty(arr) ? null : arr[0]).apply(revs); //require available revisions
+		return revs;
     }
     
     default UnaryOperator<YearMonth[]> revisionMode(String mode) {
-    	if(isBlank(mode)) {
-    		return this::strictRevisions; //no filter
-    	}
-    	switch (mode) {
+    	switch(mode) {
 		case "strict" 		: return this::strictRevisions;
 		case "preceding"	: return this::precedingRevisions;
 		case "succeeding"	: return this::succeedingRevisions;
@@ -148,9 +151,6 @@ public interface YearTableDecorator extends TableDecorator {
 	}
 	
     default YearMonth parseYearMonth(String revision) {
-    	if(isBlank(revision)) {
-    		return now();
-    	}
     	if(revision.matches("^\\d{4}$")) {
     		return Year.parse(revision).atMonth(DECEMBER);
     	}
@@ -160,5 +160,10 @@ public interface YearTableDecorator extends TableDecorator {
     	catch (Exception e) {
     		throw cannotParseException(REVISION_MODE, revision ,e);
 		}
+    }
+    
+    //TODO delegated not working
+    default String defaultRevisionMode() {
+    	return "strict";
     }
 }

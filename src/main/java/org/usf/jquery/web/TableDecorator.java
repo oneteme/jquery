@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -9,36 +8,37 @@ import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
+import static org.usf.jquery.web.Constants.WINDOW_PARTITION;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.RequestColumn.decodeColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
-import org.usf.jquery.core.NamedTable;
+import org.usf.jquery.core.DBWindow;
 import org.usf.jquery.core.RequestQuery;
-import org.usf.jquery.core.TableBuilder;
 
 /**
  * 
  * @author u$f
  *
  */
-public interface TableDecorator extends TableBuilder {
+public interface TableDecorator {
 	
 	String identity(); //URL
 	
-	default String reference() { //JSON 
+	default String reference() { //JSON
 		return identity();
 	}
 	
 	String tableName(); //SQL
 	
-	String columnName(ColumnDecorator cd); 
+	String columnName(ColumnDecorator cd); //optional
 	
 	default int columnType(ColumnDecorator cd) {
 		return AUTO_TYPE;
@@ -48,18 +48,44 @@ public interface TableDecorator extends TableBuilder {
 		return UNLIMITED;
 	}
 	
-	@Override
-	default NamedTable table() {
-		DBTable tab = b-> tableName();
-		return tab.as(reference());
+	default DBTable table() {
+		return this::tableName;
 	}
 	
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		var query = new RequestQuery().select(table());
+		var query = new RequestQuery();
+		parseWindow (ant, query, parameterMap);
 		parseColumns(ant, query, parameterMap);
 		parseFilters(ant, query, parameterMap);
 		parseOrders (ant, query, parameterMap);
 		return query;
+	}
+	
+	default void parseWindow(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
+		var map = new LinkedHashMap<String, DBWindow>();
+		if(parameters.containsKey(WINDOW_PARTITION)) {
+			flatParameters(parameters.get(WINDOW_PARTITION)).forEach(p->{
+				var rc = decodeColumn(p, this, false);
+				var td = rc.tableDecorator();
+				map.computeIfAbsent(td.tableName(), DBWindow::new).partitions(rc.columnDecorator().column(td));
+			});
+		}
+		if(parameters.containsKey(Constants.WINDOW_ORDER)) {
+			flatParameters(parameters.get(Constants.WINDOW_ORDER)).forEach(p->{
+				var rc = decodeColumn(p, this, true);
+				var td = rc.tableDecorator();
+				var col = rc.columnDecorator().column(td);
+				map.computeIfAbsent(td.tableName(), DBWindow::new).orders(isNull(rc.expression()) 
+						? col.order() 
+						: col.order(parseOrder(rc.expression())));
+			});
+		}
+		if(map.isEmpty()) {
+			query.tables(table());
+		}
+		else {
+			map.values().forEach(w-> query.tables(w).filters(w.filter()));
+		}
 	}
 	
 	default void parseColumns(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
@@ -91,9 +117,8 @@ public interface TableDecorator extends TableBuilder {
 	}
 
 	default void parseOrders(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
-		var cols = parameters.get(ORDER);
-		if(nonNull(cols)) {
-			flatParameters(cols).forEach(p->{
+		if(parameters.containsKey(ORDER)) {
+			flatParameters(parameters.get(ORDER)).forEach(p->{
 				var rc = decodeColumn(p, this, true);
 				var col = rc.columnDecorator().column(rc.tableDecorator());
 				query.tablesIfAbsent(rc.tableDecorator().table())

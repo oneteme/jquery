@@ -8,7 +8,6 @@ import java.util.function.Supplier;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 
 /**
  * 
@@ -55,13 +54,13 @@ public final class Validation {
 		return args;
 	}
 	
-	public static void illegalArgumentIf(boolean test, @NonNull String msg) {
+	public static void illegalArgumentIf(boolean test, String msg) {
 		if(test) {
 			throw new IllegalArgumentException(msg);
 		}
 	}
 
-	public static void illegalArgumentIf(boolean test, @NonNull Supplier<String> supplier) {
+	public static void illegalArgumentIf(boolean test, Supplier<String> supplier) {
 		if(test) {
 			throw new IllegalArgumentException(supplier.get());
 		}

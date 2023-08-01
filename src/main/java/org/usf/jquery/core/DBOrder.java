@@ -6,6 +6,11 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor
 public final class DBOrder implements DBObject {
 

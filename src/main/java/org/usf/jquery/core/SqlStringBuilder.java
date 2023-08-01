@@ -17,7 +17,6 @@ public final class SqlStringBuilder {
 	static final String EMPTY = "";
 	static final String COMA  = ",";
 	static final String SPACE = " ";
-	static final String POINT = ".";
 	static final String QUOTE = "'";
 	static final String DQUOT = "\"";
 	static final String SCOMA  = COMA + SPACE;
@@ -99,6 +98,6 @@ public final class SqlStringBuilder {
 	}
 
 	public static String member(String parent, String child) { 
-		return parent + POINT + child;
+		return parent + "." + child;
 	}
 }

@@ -6,6 +6,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
+import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
@@ -18,7 +19,6 @@ import java.util.stream.Stream;
 
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -28,24 +28,16 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-@RequiredArgsConstructor
 public class RequestQuery {
 
-	final List<TaggableTable> tables;
-	final List<TaggableColumn> columns;
-	final List<DBFilter> filters;  //WERE & HAVING
-	final List<DBOrder> orders;
+	final List<TaggableColumn> columns = new LinkedList<>();
+	final List<TaggableView> tables = new LinkedList<>();
+	final List<DBFilter> filters = new LinkedList<>();  //WERE & HAVING
+	final List<DBOrder> orders = new LinkedList<>();
 	boolean distinct;
 	boolean noResult;
 	
-	public RequestQuery() {
-		this.tables  = new LinkedList<>();
-		this.columns = new LinkedList<>();
-		this.filters = new LinkedList<>();
-		this.orders  = new LinkedList<>();
-	}
-
-	public RequestQuery select(TaggableTable table, TaggableColumn... columns) {
+	public RequestQuery select(TaggableView table, TaggableColumn... columns) {
 		return tables(table).columns(columns);
 	}
 	
@@ -54,12 +46,12 @@ public class RequestQuery {
 		return this;
 	}
 
-	public RequestQuery tables(@NonNull TaggableTable... tables) {
+	public RequestQuery tables(@NonNull TaggableView... tables) {
 		Stream.of(tables).forEach(this.tables::add);
 		return this;
 	}
 	
-	public RequestQuery tablesIfAbsent(@NonNull TaggableTable... tables) {
+	public RequestQuery tablesIfAbsent(@NonNull TaggableView... tables) {
 		Stream.of(tables)
 		.filter(t-> this.tables.stream().noneMatch(tt-> tt.reference().equals(t.reference())))
 		.forEach(this.tables::add);
@@ -98,7 +90,7 @@ public class RequestQuery {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
-		pb.withTables(tables.stream().map(TaggableTable::reference).toArray(String[]::new));
+		pb.tables(tables.stream().map(TaggableView::reference).toArray(String[]::new));
     	select(sb, pb);
     	where(sb, pb);
     	groupBy(sb);
@@ -111,7 +103,7 @@ public class RequestQuery {
     	.appendIf(distinct, ()-> "DISTINCT ")
     	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.reference()))
     	.append(" FROM ")
-    	.appendEach(tables, SCOMA, o-> o.sql(pb) + pb.alias(o.reference()).map(v-> SPACE + v).orElse(o.reference()));
+    	.appendEach(tables, SCOMA, o-> o.sql(pb) + pb.tableAlias(o.reference()).map(v-> SPACE + v).orElse(EMPTY));
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
@@ -129,7 +121,7 @@ public class RequestQuery {
         	var expr = columns.stream()
         			.filter(RequestQuery::groupable)
         			.map(TaggableColumn::reference) //add alias 
-        			.map(SqlStringBuilder::doubleQuote)
+        			.map(SqlStringBuilder::doubleQuote) //sql ??
         			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {
         		sb.append(" GROUP BY ").append(expr);

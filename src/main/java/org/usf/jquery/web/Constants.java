@@ -25,9 +25,14 @@ public final class Constants {
 //	static final String FORMAT_SEPARATOR = "format.separator"; //only for CSV COMA|SEMICOLON
 	public static final String REVISION = "revision"; //not standard
 	public static final String REVISION_MODE = "revision.mode"; //not standard
+
+	public static final String WINDOW_PARTITION = "window.partition";
+	public static final String WINDOW_ORDER = "window.order";
 	
 	static final Set<String> RESERVED_WORDS = 
-			Set.of(COLUMN, COLUMN_DISTINCT, ORDER, REVISION, REVISION_MODE);
+			Set.of(COLUMN, COLUMN_DISTINCT, ORDER, 
+					WINDOW_PARTITION, WINDOW_ORDER, 
+					REVISION, REVISION_MODE);
 	
 	static final YearMonth[] EMPTY_REVISION = new YearMonth[0]; //not standard
 	

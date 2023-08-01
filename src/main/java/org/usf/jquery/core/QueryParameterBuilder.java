@@ -9,6 +9,7 @@ import static java.util.stream.IntStream.range;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.SqlStringBuilder.member;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
@@ -40,16 +41,20 @@ public final class QueryParameterBuilder {
 	private List<String> tableAlias = new LinkedList<>();
 	private boolean forceValue = false;
 	
-	public QueryParameterBuilder withTables(String... tables) {
+	public QueryParameterBuilder tables(String... tables) {
 		if(isPresent(tables)){
 			tableAlias = Stream.of(tables).distinct().collect(toList());
 		}
 		return this;
 	}
+
+	public String columnFullReference(String tablename, String columnRef) {
+		return tableAlias(tablename).map(t-> member(t, columnRef)).orElse(columnRef);
+	}
 	
-	public Optional<String> alias(String tablename) {
-		if(tableAlias.isEmpty()) {
-			return empty();
+	public Optional<String> tableAlias(String tablename) {
+		if(tableAlias.size() < 2) {
+			return empty(); //don't need alias
 		}
 		var idx = tableAlias.indexOf(tablename) + 1;
 		return Optional.of(idx > 0 ? "t"+idx : tablename);

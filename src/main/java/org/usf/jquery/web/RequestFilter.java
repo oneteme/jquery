@@ -11,7 +11,7 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.BasicComparator;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.NamedTable;
+import org.usf.jquery.core.DBTable;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -34,11 +34,11 @@ public class RequestFilter {
 	private final List<RequestColumn> rightColumns;
 	private final List<String[]> rightValues;
 
-	public NamedTable[] tables() {
-		Set<NamedTable> tables = new LinkedHashSet<>();
+	public DBTable[] tables() {
+		Set<DBTable> tables = new LinkedHashSet<>();
 		tables.add(requestColumn.tableDecorator().table());
 		rightColumns.forEach(c-> tables.add(c.tableDecorator().table()));
-		return tables.toArray(NamedTable[]::new);
+		return tables.toArray(DBTable[]::new);
 	}
 	
 	public DBFilter[] filters() { // do not join filters (WHERE + HAVING)
