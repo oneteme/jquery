@@ -47,8 +47,13 @@ public final class PartitionedRequestQuery extends RequestQuery {
 		return new ParametredQuery(sb.toString(), pb.args(), noResult);
 	}
 	
-	public static DBTable yearTable(String name) {
-		return ()-> name + "_" + currentRev.get().getKey(); //TODO nullpointer if no revisions
+	public static DBTable yearTable(String name, String tagname) {
+		return new DBTable(name, tagname) {
+			@Override
+			public String sql(QueryParameterBuilder builder) {
+				return name + "_" + currentRev.get().getKey();
+			}
+		};
 	}
 
 	public static DBColumn yearColumn() {

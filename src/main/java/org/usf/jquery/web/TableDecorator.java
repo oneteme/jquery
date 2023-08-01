@@ -8,6 +8,7 @@ import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
+import static org.usf.jquery.web.Constants.WINDOW_ORDER;
 import static org.usf.jquery.web.Constants.WINDOW_PARTITION;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
@@ -32,10 +33,6 @@ public interface TableDecorator {
 	
 	String identity(); //URL
 	
-	default String reference() { //JSON
-		return identity();
-	}
-	
 	String tableName(); //SQL
 	
 	String columnName(ColumnDecorator cd); //optional
@@ -49,7 +46,7 @@ public interface TableDecorator {
 	}
 	
 	default DBTable table() {
-		return this::tableName;
+		return new DBTable(tableName(), identity());
 	}
 	
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
@@ -67,15 +64,17 @@ public interface TableDecorator {
 			flatParameters(parameters.get(WINDOW_PARTITION)).forEach(p->{
 				var rc = decodeColumn(p, this, false);
 				var td = rc.tableDecorator();
-				map.computeIfAbsent(td.tableName(), DBWindow::new).partitions(rc.columnDecorator().column(td));
+				map.computeIfAbsent(td.identity(), k-> new DBWindow(td.table()))
+				.partitions(rc.columnDecorator().column(td));
 			});
 		}
-		if(parameters.containsKey(Constants.WINDOW_ORDER)) {
-			flatParameters(parameters.get(Constants.WINDOW_ORDER)).forEach(p->{
+		if(parameters.containsKey(WINDOW_ORDER)) {
+			flatParameters(parameters.get(WINDOW_ORDER)).forEach(p->{
 				var rc = decodeColumn(p, this, true);
 				var td = rc.tableDecorator();
 				var col = rc.columnDecorator().column(td);
-				map.computeIfAbsent(td.tableName(), DBWindow::new).orders(isNull(rc.expression()) 
+				map.computeIfAbsent(td.identity(), k-> new DBWindow(td.table()))
+				.orders(isNull(rc.expression()) 
 						? col.order() 
 						: col.order(parseOrder(rc.expression())));
 			});

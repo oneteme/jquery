@@ -53,7 +53,7 @@ public class RequestQuery {
 	
 	public RequestQuery tablesIfAbsent(@NonNull TaggableView... tables) {
 		Stream.of(tables)
-		.filter(t-> this.tables.stream().noneMatch(tt-> tt.reference().equals(t.reference())))
+		.filter(v-> this.tables.stream().noneMatch(t-> t.tagname().equals(v.tagname())))
 		.forEach(this.tables::add);
 		return this;
 	}
@@ -90,7 +90,7 @@ public class RequestQuery {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
-		pb.tables(tables.stream().map(TaggableView::reference).toArray(String[]::new));
+		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
     	select(sb, pb);
     	where(sb, pb);
     	groupBy(sb);
@@ -103,7 +103,7 @@ public class RequestQuery {
     	.appendIf(distinct, ()-> "DISTINCT ")
     	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.reference()))
     	.append(" FROM ")
-    	.appendEach(tables, SCOMA, o-> o.sql(pb) + pb.tableAlias(o.reference()).map(v-> SPACE + v).orElse(EMPTY));
+    	.appendEach(tables, SCOMA, o-> o.sql(pb) + SPACE + pb.tableAlias(o.tagname()));
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){

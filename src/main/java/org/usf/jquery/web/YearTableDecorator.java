@@ -51,12 +51,12 @@ public interface YearTableDecorator extends TableDecorator {
     
 	@Override
 	default DBTable table() {
-		return yearTable(tableName());
+		return yearTable(tableName(), identity());
 	}
 	
 	@Override
 	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		var query = new PartitionedRequestQuery(parseRevisions(ant, parameterMap)).select(table());
+		var query = new PartitionedRequestQuery(parseRevisions(ant, parameterMap));
 		parseWindow(ant, query, parameterMap);
 		parseColumns(ant, query, parameterMap);
 		parseFilters(ant, query, parameterMap);

@@ -22,14 +22,15 @@ public final class DBWindow implements TaggableView {
 	private static final String WIN_FUNCT = "rank()"; //make it variable rank, row_number, ..
 	private static final String COL_NAME  = "row_rank";
 	
-	private final String tablename;
+	private final DBTable table;
 	private final List<DBColumn> partitions = new LinkedList<>();
 	private final List<DBOrder> orders = new LinkedList<>();
 	
 	@Override
 	public String sql(QueryParameterBuilder builder) {
 		var sb = new SqlStringBuilder(100);
-		sb.append("SELECT ").append(tablename).append(".*, ");
+		var tn = table.sql(builder);
+		sb.append("SELECT ").append(tn).append(".*, ");
 		sb.append(WIN_FUNCT).append(" OVER(");
 		if(!partitions.isEmpty()) {
 			sb.append("PARTITION BY ").appendEach(partitions, COMA, o-> o.sql(builder));
@@ -38,7 +39,7 @@ public final class DBWindow implements TaggableView {
 			sb.append(" ORDER BY ").appendEach(orders, COMA, o-> o.sql(builder));
 		}
 		sb.append(") AS ").append(COL_NAME)
-		.append(" FROM ").append(tablename);
+		.append(" FROM ").append(tn);
 		return parenthese(sb.toString());
 	}
 
@@ -53,17 +54,17 @@ public final class DBWindow implements TaggableView {
 	}
 	
 	public DBFilter filter() {
-		return b-> b.columnFullReference(reference(), COL_NAME) + "=1";
+		return b-> b.columnFullReference(tagname(), COL_NAME) + "=1";
 	}
 
 	@Override
-	public String reference() {
-		return tablename;
+	public String tagname() {
+		return table.tagname();
 	}
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), new Object[] {"t1"});
+		return sql(addWithValue());
 	}
 
 }

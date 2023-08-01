@@ -1,22 +1,32 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+
+import lombok.RequiredArgsConstructor;
+
 /**
  * 
  * @author u$f
  *
  */
-@FunctionalInterface
-public interface DBTable extends TaggableView {
+@RequiredArgsConstructor
+public class DBTable implements TaggableView {
+	
+	private final String name;
+	private final String tag;
 	
 	@Override
-	default String sql(QueryParameterBuilder builder) {
-		return tablename();
+	public String sql(QueryParameterBuilder builder) {
+		return name;
 	}
 	
 	@Override 
-	default String reference() {
-		return tablename();
+	public String tagname() {
+		return tag;
 	}
-
-	String tablename();
+	
+	@Override
+	public String toString() {
+		return sql(addWithValue());
+	}	
 }

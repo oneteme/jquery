@@ -41,23 +41,22 @@ public final class QueryParameterBuilder {
 	private List<String> tableAlias = new LinkedList<>();
 	private boolean forceValue = false;
 	
-	public QueryParameterBuilder tables(String... tables) {
-		if(isPresent(tables)){
-			tableAlias = Stream.of(tables).distinct().collect(toList());
+	public QueryParameterBuilder tables(String... tablenames) {
+		if(isPresent(tablenames)){
+			tableAlias = Stream.of(tablenames).distinct().collect(toList());
 		}
 		return this;
 	}
 
 	public String columnFullReference(String tablename, String columnRef) {
-		return tableAlias(tablename).map(t-> member(t, columnRef)).orElse(columnRef);
+		return tableAlias.size() < 2 
+				? columnRef //don't need alias
+				: member(tableAlias(tablename), columnRef);
 	}
 	
-	public Optional<String> tableAlias(String tablename) {
-		if(tableAlias.size() < 2) {
-			return empty(); //don't need alias
-		}
+	public String tableAlias(String tablename) {
 		var idx = tableAlias.indexOf(tablename) + 1;
-		return Optional.of(idx > 0 ? "t"+idx : tablename);
+		return idx > 0 ? "t"+idx : tablename;
 	}
 
 	public String appendParameter(Object o) {
