@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.lang.reflect.Array.getLength;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
@@ -20,7 +19,6 @@ import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Stream;
 

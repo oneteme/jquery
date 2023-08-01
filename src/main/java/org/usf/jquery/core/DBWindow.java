@@ -22,21 +22,22 @@ public final class DBWindow implements TaggableView {
 	private static final String WIN_FUNCT = "rank()"; //make it variable rank, row_number, ..
 	private static final String COL_NAME  = "row_rank";
 	
-	private final DBTable table;
+	private final TaggableView table;
 	private final List<DBColumn> partitions = new LinkedList<>();
 	private final List<DBOrder> orders = new LinkedList<>();
 	
 	@Override
 	public String sql(QueryParameterBuilder builder) {
 		var sb = new SqlStringBuilder(100);
-		var tn = table.sql(builder);
+		var qp = addWithValue(); //no alias
+		var tn = table.sql(builder); //??????
 		sb.append("SELECT ").append(tn).append(".*, ");
 		sb.append(WIN_FUNCT).append(" OVER(");
 		if(!partitions.isEmpty()) {
-			sb.append("PARTITION BY ").appendEach(partitions, COMA, o-> o.sql(builder));
+			sb.append("PARTITION BY ").appendEach(partitions, COMA, o-> o.sql(qp));
 		}
 		if(!orders.isEmpty()) { //require orders
-			sb.append(" ORDER BY ").appendEach(orders, COMA, o-> o.sql(builder));
+			sb.append(" ORDER BY ").appendEach(orders, COMA, o-> o.sql(qp));
 		}
 		sb.append(") AS ").append(COL_NAME)
 		.append(" FROM ").append(tn);
