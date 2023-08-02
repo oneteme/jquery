@@ -1,23 +1,6 @@
 package org.usf.jquery.web;
 
-import static java.sql.Types.BIGINT;
-import static java.sql.Types.BIT;
-import static java.sql.Types.BOOLEAN;
-import static java.sql.Types.CHAR;
-import static java.sql.Types.DATE;
-import static java.sql.Types.DECIMAL;
-import static java.sql.Types.DOUBLE;
-import static java.sql.Types.FLOAT;
-import static java.sql.Types.INTEGER;
-import static java.sql.Types.LONGNVARCHAR;
-import static java.sql.Types.NUMERIC;
-import static java.sql.Types.NVARCHAR;
-import static java.sql.Types.REAL;
-import static java.sql.Types.SMALLINT;
-import static java.sql.Types.TIME;
-import static java.sql.Types.TIMESTAMP;
-import static java.sql.Types.TINYINT;
-import static java.sql.Types.VARCHAR;
+import static java.sql.Types.*;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -36,6 +19,7 @@ import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
+import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.math.BigDecimal;
@@ -94,8 +78,7 @@ public interface ColumnDecorator extends ColumnBuilder {
 	@Override
 	default TaggableColumn column(TableDecorator table) {
 		if(isPhysical()) {
-			var cn = table.columnName(this).orElseThrow(
-					()-> new NoSuchResourceException("column '" + identity() + "' not declared in '" + table.identity() + "' table"));
+			var cn = table.columnName(this).orElseThrow(()-> undeclaredResouceException(table.identity(), identity()));
 			return new TableColumn(requireLegalVariable(cn), reference(), table.identity());
 		}
 		return builder().column(table).as(reference());
@@ -112,24 +95,24 @@ public interface ColumnDecorator extends ColumnBuilder {
 			return criteria.build(values);
 		}
 		var cmp = requireNonNull(comparator(expres, values.length));
-    	var psr = requireNonNull(parser(resolveType(table)));
+    	var prs = requireNonNull(parser(resolveType(table)));
     	if(values.length == 1) {
-    		return cmp.expression(psr.parseValue(values[0]));
+    		return cmp.expression(prs.parseValue(values[0]));
     	}
 		return cmp instanceof InCompartor 
-				? cmp.expression(psr.parseValues(values))
-				: ofComparator(cmp).build(psr.parseValues(values));
+				? cmp.expression(prs.parseValues(values))
+				: ofComparator(cmp).build(prs.parseValues(values));
 	}
 
 	default CriteriaBuilder<String> criteria(String name) {
-		return null;
+		return null; // no criteria by default
 	}
 	
 	private int resolveType(TableDecorator td) {
-		var type = dataType(); //overridden
+		var type = dataType();
 		if(type == AUTO_TYPE && isPhysical()) {
-			type = td.columnType(this); //logical column not declared in table
-		}
+			type = td.columnType(this);
+		}//else : overridden | logical column not declared in table
 		return type;
 	}
 

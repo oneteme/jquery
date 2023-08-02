@@ -27,4 +27,8 @@ public final class NoSuchResourceException extends NoSuchElementException {
 		return new NoSuchResourceException(type + " '" + resource + "' " + "not found");
 	}
 
+	static NoSuchResourceException undeclaredResouceException(String view, String column) {
+		return new NoSuchResourceException("column '" + column + "' is not declared in '" + view + "' view");
+	}
+
 }
