@@ -25,7 +25,7 @@ public final class TableColumn implements TaggableColumn {
 	}
 
 	@Override
-	public String reference() {
+	public String tagname() {
 		return reference;
 	}
 	

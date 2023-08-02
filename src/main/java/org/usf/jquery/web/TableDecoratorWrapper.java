@@ -1,6 +1,5 @@
 package org.usf.jquery.web;
 
-import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.web.DatabaseScanner.database;
@@ -10,6 +9,7 @@ import java.sql.SQLException;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 /**
  * 
@@ -37,7 +37,7 @@ public class TableDecoratorWrapper implements TableDecorator {
 	}
 	
 	@Override
-	public String columnName(ColumnDecorator cd) {
+	public Optional<String> columnName(ColumnDecorator cd) {
 		return wrappedTable.columnName(cd);
 	}
 
@@ -86,9 +86,7 @@ public class TableDecoratorWrapper implements TableDecorator {
 		var dc = new LinkedHashMap<String, ColumnDecorator>();
 		database().columns().stream()
 		.map(ColumnDecoratorWrapper::unwrap)
-		.forEach(cd-> 
-			ofNullable(columnName(cd)) //should not throw any exception
-			.ifPresent(cn-> dc.put(cn, cd)));
+		.forEach(cd-> columnName(cd).ifPresent(cn-> dc.put(cn, cd))); //should not throw any exception
 		return dc;
 	}
 }

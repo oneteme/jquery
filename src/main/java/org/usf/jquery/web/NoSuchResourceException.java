@@ -10,7 +10,7 @@ import java.util.NoSuchElementException;
 @SuppressWarnings("serial")
 public final class NoSuchResourceException extends NoSuchElementException {
 
-	private NoSuchResourceException(String s) {
+	public NoSuchResourceException(String s) {
 		super(s);
 	}
 

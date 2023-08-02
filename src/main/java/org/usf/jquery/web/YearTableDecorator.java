@@ -3,11 +3,12 @@ package org.usf.jquery.web;
 import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.time.YearMonth.now;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearTable;
+import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
@@ -74,16 +75,16 @@ public interface YearTableDecorator extends TableDecorator {
 		if(nonNull(arr) && arr.length > 1) {
 			throw cannotEvaluateException(REVISION, join(", ", arr)); //multiple values
 		}
-		var mod = revisionMode(isEmpty(arr) ? defaultRevisionMode() : arr[0]);
-		var values = parameterMap.get(REVISION);
-		var revs = isNull(values) 
-				? new YearMonth[] {now()}
-				: flatParameters(values)
+		var mod = revisionMode(isEmpty(arr) || isBlank(arr[0]) ? defaultRevisionMode() : arr[0]);
+		var values = parameterMap.containsKey(REVISION) 
+				? flatParameters(parameterMap.get(REVISION))
     			.map(this::parseYearMonth)
-    			.toArray(YearMonth[]::new);
-		revs = mod.apply(revs);
+    			.toArray(YearMonth[]::new)
+    			: new YearMonth[] {now()};
+		var revs = mod.apply(values);
 		if(isEmpty(revs)) {
-			throw noSuchResouceException(REVISION, join(", ", values)); //require available revisions
+			throw noSuchResouceException(REVISION, 
+					Stream.of(values).map(YearMonth::toString).collect(joining(", "))); //require available revisions
 		}
 		return revs;
     }

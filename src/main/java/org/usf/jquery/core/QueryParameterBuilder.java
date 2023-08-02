@@ -36,24 +36,24 @@ public final class QueryParameterBuilder {
 	private static final String ARG = "?";
 	
 	private final Collection<Object> args;
-	private List<String> tableAlias = new LinkedList<>();
+	private List<String> tables = new LinkedList<>();
 	private boolean forceValue = false;
 	
 	public QueryParameterBuilder tables(String... tablenames) {
 		if(isPresent(tablenames)){
-			tableAlias = Stream.of(tablenames).distinct().collect(toList());
+			tables = Stream.of(tablenames).distinct().collect(toList());
 		}
 		return this;
 	}
 
 	public String columnFullReference(String tablename, String columnRef) {
-		return tableAlias.size() < 2 
+		return tables.size() < 2 
 				? columnRef //don't need alias
 				: member(tableAlias(tablename), columnRef);
 	}
 	
 	public String tableAlias(String tablename) {
-		var idx = tableAlias.indexOf(tablename) + 1;
+		var idx = tables.indexOf(tablename) + 1;
 		return idx > 0 ? "t"+idx : tablename;
 	}
 

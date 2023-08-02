@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -47,6 +48,7 @@ final class TableMetadata {
 			throw new NoSuchElementException(declaredCols.stream()
 					.filter(c-> !columns.containsKey(c.identity()))
 					.map(table::columnName)
+					.map(Optional::get) // getOrThrow
 					.collect(joining(", ", "column(s) [", "] not found in " + name)));
 		}
 		else if(columns.size() > declaredCols.size()) {

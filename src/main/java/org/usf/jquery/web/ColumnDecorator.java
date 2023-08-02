@@ -94,8 +94,9 @@ public interface ColumnDecorator extends ColumnBuilder {
 	@Override
 	default TaggableColumn column(TableDecorator table) {
 		if(isPhysical()) {
-			var sql = requireLegalVariable(table.columnName(this));
-			return new TableColumn(sql, reference(), table.identity());
+			var cn = table.columnName(this).orElseThrow(
+					()-> new NoSuchResourceException("column '" + identity() + "' not declared in '" + table.identity() + "' table"));
+			return new TableColumn(requireLegalVariable(cn), reference(), table.identity());
 		}
 		return builder().column(table).as(reference());
 	}

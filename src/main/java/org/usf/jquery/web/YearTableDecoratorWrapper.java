@@ -86,7 +86,8 @@ public final class YearTableDecoratorWrapper extends TableDecoratorWrapper imple
 					.toArray(YearMonth[]::new);
 		}
 		else {
-			var rc = columnName(revisionColumn());
+			var rc = columnName(revisionColumn())
+					.orElseThrow(()-> new IllegalStateException("revision column '"+ revisionColumn().identity() + "' must be declared in '" + identity() + "' table"));
 			var query = tablenames.stream()
 			.map(t-> "SELECT DISTINCT " + rc + ", " + t.substring(t.length()-4) + " FROM " + t)
 			.collect(joining(" UNION ALL "));

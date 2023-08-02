@@ -22,7 +22,7 @@ public final class DBWindow implements TaggableView {
 	private static final String WIN_FUNCT = "rank()"; //make it variable rank, row_number, ..
 	private static final String COL_NAME  = "row_rank";
 	
-	private final TaggableView table;
+	private final DBTable table;
 	private final List<DBColumn> partitions = new LinkedList<>();
 	private final List<DBOrder> orders = new LinkedList<>();
 	
@@ -30,7 +30,7 @@ public final class DBWindow implements TaggableView {
 	public String sql(QueryParameterBuilder builder) {
 		var sb = new SqlStringBuilder(100);
 		var qp = addWithValue(); //no alias
-		var tn = table.sql(builder); //??????
+		var tn = table.sql(builder); //build tablename
 		sb.append("SELECT ").append(tn).append(".*, ");
 		sb.append(WIN_FUNCT).append(" OVER(");
 		if(!partitions.isEmpty()) {

@@ -6,7 +6,6 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
@@ -101,7 +100,7 @@ public class RequestQuery {
 	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
 		sb.append("SELECT ")
     	.appendIf(distinct, ()-> "DISTINCT ")
-    	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.reference()))
+    	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.tagname()))
     	.append(" FROM ")
     	.appendEach(tables, SCOMA, o-> o.sql(pb) + SPACE + pb.tableAlias(o.tagname()));
 	}
@@ -120,7 +119,7 @@ public class RequestQuery {
         if(isAggregation()) {
         	var expr = columns.stream()
         			.filter(RequestQuery::groupable)
-        			.map(TaggableColumn::reference) //add alias 
+        			.map(TaggableColumn::tagname) //add alias 
         			.map(SqlStringBuilder::doubleQuote) //sql ??
         			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {

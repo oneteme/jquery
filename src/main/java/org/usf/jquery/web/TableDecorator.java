@@ -17,6 +17,7 @@ import static org.usf.jquery.web.RequestFilter.decodeFilter;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
@@ -35,7 +36,7 @@ public interface TableDecorator {
 	
 	String tableName(); //SQL
 	
-	String columnName(ColumnDecorator cd); //optional
+	Optional<String> columnName(ColumnDecorator cd); //optional
 	
 	default int columnType(ColumnDecorator cd) {
 		return AUTO_TYPE;

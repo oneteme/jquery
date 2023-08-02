@@ -17,7 +17,7 @@ public final class NamedColumn implements TaggableColumn {
 	private final String reference;
 
 	@Override
-	public String reference() {
+	public String tagname() {
 		return reference;
 	}
 	

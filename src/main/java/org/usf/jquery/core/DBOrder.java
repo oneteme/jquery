@@ -24,8 +24,8 @@ public final class DBOrder implements DBObject {
 	}
 
 	public String sql(QueryParameterBuilder builder) {
-		return isNull(order) 
-				? column.sql(builder) 
+		return isNull(order)
+				? column.sql(builder)
 				: column.sql(builder) + SPACE + order;
 	}
 	
