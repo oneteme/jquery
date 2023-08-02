@@ -1,6 +1,10 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static java.util.stream.Collectors.joining;
+
+import java.util.stream.Stream;
+
+import org.usf.jquery.core.SqlStringBuilder;
 
 /**
  * 
@@ -14,8 +18,9 @@ public final class MissingParameterException extends IllegalArgumentException {
 		super(s);
 	}
 	
-	public static MissingParameterException missingParameterException(String parameter) {
-		return new MissingParameterException("require " + quote(parameter) + " parameter");
+	public static MissingParameterException missingParameterException(String... parameters) {
+		return new MissingParameterException("require " +  
+				Stream.of(parameters).map(SqlStringBuilder::quote).collect(joining(" or ")) + " parameter");
 	}
 
 }
