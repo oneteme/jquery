@@ -1,5 +1,7 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.core.SqlStringBuilder.quote;
+
 /**
  * 
  * @author u$f
@@ -13,7 +15,7 @@ public final class MissingParameterException extends IllegalArgumentException {
 	}
 	
 	public static MissingParameterException missingParameterException(String parameter) {
-		return new MissingParameterException("require " + parameter + " parameter");
+		return new MissingParameterException("require " + quote(parameter) + " parameter");
 	}
 
 }

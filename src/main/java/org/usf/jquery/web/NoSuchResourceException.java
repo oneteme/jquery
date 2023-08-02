@@ -1,5 +1,7 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.core.SqlStringBuilder.quote;
+
 import java.util.NoSuchElementException;
 
 /**
@@ -24,11 +26,11 @@ public final class NoSuchResourceException extends NoSuchElementException {
 	}
 	
 	static NoSuchResourceException noSuchResouceException(String type, String resource) {
-		return new NoSuchResourceException(type + " '" + resource + "' " + "not found");
+		return new NoSuchResourceException(type + " " + quote(resource) + " not found");
 	}
 
 	static NoSuchResourceException undeclaredResouceException(String view, String column) {
-		return new NoSuchResourceException("column '" + column + "' is not declared in '" + view + "' view");
+		return new NoSuchResourceException("column " + quote(column) + " is not declared in " + quote(view) + " view");
 	}
 
 }

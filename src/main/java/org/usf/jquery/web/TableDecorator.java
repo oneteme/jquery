@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -36,7 +37,7 @@ public interface TableDecorator {
 	
 	String tableName(); //SQL
 	
-	Optional<String> columnName(ColumnDecorator cd); //optional
+	Optional<String> columnName(ColumnDecorator cd);
 	
 	default int columnType(ColumnDecorator cd) {
 		return AUTO_TYPE;
@@ -89,6 +90,9 @@ public interface TableDecorator {
 	}
 	
 	default void parseColumns(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
+		if(parameters.containsKey(COLUMN_DISTINCT) && parameters.containsKey(COLUMN)) {
+			throw new IllegalArgumentException("cannot use both parameters " + quote(COLUMN_DISTINCT) + " and " + quote(COLUMN));
+		}
 		var cols = parameters.containsKey(COLUMN_DISTINCT) 
 				? parameters.get(COLUMN_DISTINCT) 
 				: parameters.get(COLUMN); //can be combined in PG (distinct on)

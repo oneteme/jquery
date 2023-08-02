@@ -5,6 +5,7 @@ import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.TableMetadata.requireSameStructure;
 
@@ -87,7 +88,7 @@ public final class YearTableDecoratorWrapper extends TableDecoratorWrapper imple
 		}
 		else {
 			var rc = columnName(revisionColumn())
-					.orElseThrow(()-> new IllegalStateException("revision column '"+ revisionColumn().identity() + "' must be declared in '" + identity() + "' table"));
+					.orElseThrow(()-> new IllegalStateException("revision column "+ quote(revisionColumn().identity()) + " must be declared in " +  quote(identity()) + " table"));
 			var query = tablenames.stream()
 			.map(t-> "SELECT DISTINCT " + rc + ", " + t.substring(t.length()-4) + " FROM " + t)
 			.collect(joining(" UNION ALL "));
