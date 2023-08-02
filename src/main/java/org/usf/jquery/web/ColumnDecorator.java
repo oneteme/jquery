@@ -16,7 +16,6 @@ import static org.usf.jquery.core.DBComparator.notEqual;
 import static org.usf.jquery.core.DBComparator.notIn;
 import static org.usf.jquery.core.DBComparator.notLike;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
-import static org.usf.jquery.core.Utils.UNLIMITED;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;

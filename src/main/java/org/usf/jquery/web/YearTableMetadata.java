@@ -35,13 +35,13 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-@Getter
 public final class YearTableMetadata extends TableMetadata {
 	
 	private static final String PATTERN = "_20**";
 	
 	private final String revisionColumn; //nullable
 	private Set<String> tablenames;
+	@Getter
 	private YearMonth[] revisions;
 	
 	YearTableMetadata(String tablename, String revisionColumn, Map<String, ColumnMetadata> columns) {
@@ -87,7 +87,7 @@ public final class YearTableMetadata extends TableMetadata {
 		this.tablenames = columnTables.values().iterator().next();
 	}
 	
-	public void fetchRevisions(Connection cn) { // change this call
+	void fetchRevisions(Connection cn) { // change this call
 		if(isEmpty(tablenames)) {
 			return;
 		}
@@ -129,7 +129,7 @@ public final class YearTableMetadata extends TableMetadata {
 	}
 
 	@Deprecated
-	public YearMonth latestRevision() {
+	public YearMonth latestRevision() { //optional
 		return revisions[0];
 	}
 }

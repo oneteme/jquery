@@ -14,7 +14,7 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class Resource {
+final class Resource {
 	
 	private final Map<String, TableDecorator> tables;
 	private final Map<String, ColumnDecorator> columns;
