@@ -1,72 +1,56 @@
 package org.usf.jquery.web;
 
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
+import static java.lang.String.join;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
-import lombok.extern.slf4j.Slf4j;
 
-@Slf4j
-@Getter
+@Getter(AccessLevel.PACKAGE)
 @ToString
-@RequiredArgsConstructor
-final class TableMetadata {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+class TableMetadata {
 	
-	private final String name;
-	private final Map<String, ColumnMetadata> columns = new LinkedHashMap<>();
+	private final String tablename;
+	private final Map<String, ColumnMetadata> columns;
 	
-	public void put(ColumnDecorator cd, ColumnMetadata cm) {
-		columns.put(cd.identity(), cm);
-	}
-	
-	public void putAll(Map<String, ColumnMetadata> columns) {
-		this.columns.putAll(columns);
-	}
-	
-	public boolean containsKey(ColumnDecorator cd) {
-		return columns.containsKey(cd.identity());
-	}
-	
-	public ColumnMetadata get(ColumnDecorator cd) {
-		return columns.get(cd.identity());
-	}
-	
-	public void clear() {
-		columns.clear();
-	}
-	
-	void requireColumns(TableDecorator table, Collection<ColumnDecorator> declaredCols) {
-		if(columns.size() < declaredCols.size()) {
-			throw new NoSuchElementException(declaredCols.stream()
-					.filter(c-> !columns.containsKey(c.identity()))
-					.map(table::columnName)
-					.map(Optional::get) // getOrThrow
-					.collect(joining(", ", "column(s) [", "] not found in " + name)));
-		}
-		else if(columns.size() > declaredCols.size()) {
-			throw new IllegalStateException("illegal state");
-		}
-	}
-	
-	static void requireSameStructure(Collection<ColumnDecorator> declaredCols, Collection<TableMetadata> tables) {
-		for(var cd : declaredCols) {
-			var map = tables.stream().collect(groupingBy(t-> t.get(cd)));
-			if(map.size() > 1) {
-				map.entrySet().forEach(e-> 
-				log.warn("column {} defined in table(s) [{}]", e.getKey(), e.getValue().stream()
-						.map(TableMetadata::getName)
-						.collect(joining(", "))));
-				throw new IllegalStateException("pretty msg"); //TODO
+	void fetch(DatabaseMetaData metadata) throws SQLException {
+		var dbMap = columns.values().stream().collect(toMap(ColumnMetadata::getColumnName, identity()));
+		try(var rs = metadata.getColumns(null, null, tablename, null)){
+			if(!rs.next()) {
+				throw new NoSuchElementException(tablename + " table not found");
 			}
+			do {
+				var cn = rs.getString("COLUMN_NAME");
+				if(dbMap.containsKey(cn)) {
+					var meta = dbMap.remove(cn);
+					meta.setDataSize(rs.getInt("COLUMN_SIZE"));
+					meta.setDataType(rs.getInt("DATA_TYPE"));
+				}// else undeclared column
+			} while(rs.next());
 		}
+		if(!dbMap.isEmpty()) {
+			throw new NoSuchElementException("column(s) [" + join(", ", dbMap.keySet()) + "] not found in " + tablename);
+		}
+	}
+	
+	public static TableMetadata yearTableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
+		var map = new LinkedHashMap<String, ColumnMetadata>();
+		columns.stream().forEach(cd-> 
+			table.columnName(cd).ifPresent(cn-> 
+				map.put(cd.identity(), new ColumnMetadata(cn))));
+		return new TableMetadata(table.tableName(), unmodifiableMap(map));
 	}
 
 }

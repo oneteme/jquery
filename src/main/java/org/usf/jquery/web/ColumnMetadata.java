@@ -1,17 +1,32 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.core.Utils.AUTO_TYPE;
+import static org.usf.jquery.core.Utils.UNLIMITED;
+
+import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
+
 @Getter
+@Setter(value = AccessLevel.PACKAGE)
 @ToString
 @EqualsAndHashCode
 @RequiredArgsConstructor
-final class ColumnMetadata {
+@AllArgsConstructor
+class ColumnMetadata {
 	
 	private final String columnName;
-	private final int dataType;
-	private final int dataSize;
+	private int dataType = AUTO_TYPE;
+	private int dataSize = UNLIMITED;
+	
+	ColumnMetadata reset() {
+		this.dataType = AUTO_TYPE;
+		this.dataSize = UNLIMITED;
+		return this;
+	}
 }

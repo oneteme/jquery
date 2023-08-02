@@ -4,6 +4,7 @@ import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.time.YearMonth.now;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
@@ -17,9 +18,11 @@ import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.ParseException.cannotParseException;
 import static org.usf.jquery.web.TableDecorator.flatParameters;
+import static org.usf.jquery.web.YearTableMetadata.yearTableMetadata;
 
 import java.time.Year;
 import java.time.YearMonth;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -35,7 +38,7 @@ import org.usf.jquery.core.RequestQuery;
  * @author u$f
  * 
  * @see ColumnDecorator
- * @see YearTableDecoratorWrapper
+ * @see YearTableMetadata
  *
  */
 public interface YearTableDecorator extends TableDecorator {
@@ -46,8 +49,8 @@ public interface YearTableDecorator extends TableDecorator {
 	 * loaded from db if null
 	 * 
 	 */
-    default YearMonth[] availableRevisions() {
-    	return null; //reduce data revision access
+    default YearMonth[] availableRevisions() {//reduce data revision access
+    	return metadata().getRevisions(); 
     }
     
 	@Override
@@ -162,6 +165,18 @@ public interface YearTableDecorator extends TableDecorator {
     		throw cannotParseException(REVISION, revision ,e);
 		}
     }
+
+    @Override
+    default YearTableMetadata metadata() {
+    	return (YearTableMetadata) TableDecorator.super.metadata();
+    }
+    
+    @Override
+    default YearTableMetadata createMetadata(Collection<ColumnDecorator> columns) {
+    	var rc = ofNullable(revisionColumn()).flatMap(this::columnName).orElse(null);
+    	return yearTableMetadata(this, rc, columns);
+    }
+    
     
     //TODO delegated not working
     default String defaultRevisionMode() {

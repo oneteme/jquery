@@ -3,11 +3,12 @@ package org.usf.jquery.web;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Comparator.comparing;
+import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.Utils.isPresent;
-import static org.usf.jquery.web.DatabaseMetadata.EMPTY_DATABASE;
+import static org.usf.jquery.web.DatabaseMetadata.init;
 
 import java.sql.SQLException;
 import java.time.YearMonth;
@@ -37,38 +38,38 @@ public final class DatabaseScanner {
 	private final Object mutex = new Object();
 	
 	private final Configuration config;
-	private DatabaseMetadata database = EMPTY_DATABASE; // by default
+	private DatabaseMetadata database; // by default
+	private Resource resource;
 	
 	public static DatabaseScanner configure(String schema, @NonNull DataSource ds) {
 		instance = new DatabaseScanner(new Configuration(schema, ds));
 		return instance;
 	}
-	
-	public static DatabaseScanner get() {
+
+	public static DatabaseScanner get(){
 		return instance;
 	}
 	
 	public static DatabaseMetadata database(){
-		return get().database;
+		return requireNonNullElseGet(instance.database, DatabaseMetadata::emptyMetadata);
 	}
 	
-	public static Configuration configuration(){
-		return get().config;
+	public static Resource resource(){
+		return requireNonNullElseGet(instance.resource, Resource::emptyResource);
 	}
-	
+		
 	public DatabaseScanner register(
 			@NonNull Collection<TableDecorator> tables, 
 			@NonNull Collection<ColumnDecorator> columns){
 		synchronized (mutex) {
-			this.database = new DatabaseMetadata(
-					tables.stream().collect(toMap(TableDecorator::identity, DatabaseScanner::wrapp)), 
-					columns.stream().collect(toMap(ColumnDecorator::identity, ColumnDecoratorWrapper::new)));
+			this.database = init(tables, columns);
+			this.resource = Resource.init(tables, columns);
 			return this;
 		}
 	}
-	
+
 	public void fetch() {
-		if(database == EMPTY_DATABASE) {
+		if(isNull(database)) {
 			log.warn("no resources !"); //full scan ? next release
 			return;
 		}
@@ -77,15 +78,15 @@ public final class DatabaseScanner {
 			log.info("Scanning database metadata...");
 			try(var cn = config.getDataSource().getConnection()){
 				var metadata = cn.getMetaData();
-				for(var t : database.tables()) {
-					log.info("Scanning table '{}' metadata...", t.tableName());
+				for(var t : database.getTables().values()) {
+					log.info("Scanning table '{}' metadata...", t.getTablename());
 					t.fetch(metadata);
-					logTableColumns(t.tableMetadata.getColumns());
-					if(t instanceof YearTableDecoratorWrapper) {
-						var yt = (YearTableDecoratorWrapper) t;
-						log.info("Scanning table '{}' revisions...", t.tableName());
+					logTableColumns(t.getColumns());
+					if(t instanceof YearTableMetadata) {
+						var yt = (YearTableMetadata) t;
+						log.info("Scanning table '{}' revisions...", t.getTablename());
 						yt.fetchRevisions(cn);
-						logRevisions(yt.availableRevisions());
+						logRevisions(yt.getRevisions());
 					}
 				}
 				log.info("Completed metadata scan in {} ms", currentTimeMillis() - time);
@@ -95,12 +96,6 @@ public final class DatabaseScanner {
 		}
 	}
 	
-	private static TableDecoratorWrapper wrapp(TableDecorator t) {
-		return t instanceof YearTableDecorator 
-				? new YearTableDecoratorWrapper((YearTableDecorator)t) 
-				: new TableDecoratorWrapper(t);
-	}
-
 	static void logTableColumns(Map<String, ColumnMetadata> map) {
 		if(!map.isEmpty()) {
 			var pattern = "|%-20s|%-40s|%-6s|%-12s|";

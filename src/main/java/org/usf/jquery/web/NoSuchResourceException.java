@@ -17,12 +17,12 @@ public final class NoSuchResourceException extends NoSuchElementException {
 	}
 
 	//pretty exception throw
-	static <T> T throwNoSuchTableException(String resource) {
-		throw noSuchResouceException("table", resource);
+	static NoSuchResourceException throwNoSuchTableException(String resource) {
+		return noSuchResouceException("view", resource);
 	}
 	
-	static <T> T throwNoSuchColumnException(String resource) {
-		throw noSuchResouceException("column", resource);
+	static NoSuchResourceException throwNoSuchColumnException(String resource) {
+		return noSuchResouceException("column", resource);
 	}
 	
 	static NoSuchResourceException noSuchResouceException(String type, String resource) {

@@ -1,10 +1,16 @@
 package org.usf.jquery.web;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.toUnmodifiableMap;
+import static org.usf.jquery.web.NoSuchResourceException.throwNoSuchColumnException;
+import static org.usf.jquery.web.NoSuchResourceException.throwNoSuchTableException;
 
 import java.util.Collection;
 import java.util.Map;
 
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -12,43 +18,36 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor
+@Getter(AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DatabaseMetadata {
 	
-	static final DatabaseMetadata EMPTY_DATABASE = new DatabaseMetadata(emptyMap(), emptyMap());
+	private final Map<String, TableMetadata> tables;
 
-	private final Map<String, TableDecoratorWrapper> tableMap;
-	private final Map<String, ColumnDecoratorWrapper> columnMap;
-
-	public boolean isDeclaredTable(String id) {
-		return tableMap.containsKey(id);
-	}
-	
 	@Deprecated
-	public YearTableDecorator getYearTable(String id) {
-		return (YearTableDecorator) getTable(id);
-	}
-	
-	public TableDecorator getTable(String id) {
-		return tableMap.computeIfAbsent(id, 
-				NoSuchResourceException::throwNoSuchTableException);
-	}
-	
-	public boolean isDeclaredColumn(String id) {
-		return columnMap.containsKey(id);
-	}
-	
-	public ColumnDecorator getColumn(String id) {
-		return columnMap.computeIfAbsent(id, 
-				NoSuchResourceException::throwNoSuchColumnException);
-	}
-	
-	Collection<TableDecoratorWrapper> tables() {
-		return tableMap.values();
+	public YearTableMetadata getYearTable(YearTableDecorator td){
+		return (YearTableMetadata) tableMetada(td);
 	}
 
-	Collection<ColumnDecoratorWrapper> columns() {
-		return columnMap.values();
+	public TableMetadata tableMetada(TableDecorator td){
+		return ofNullable(tables.get(td.identity()))
+				.orElseThrow(()-> throwNoSuchTableException(td.identity()));
 	}
+	
+	public ColumnMetadata columnMetada(TableDecorator td, ColumnDecorator cd){
+		return ofNullable(tableMetada(td).getColumns().get(cd.identity()))
+				.orElseThrow(()-> throwNoSuchColumnException(cd.identity())); //TODO change exception
+	}
+
+	public static DatabaseMetadata init(Collection<TableDecorator> tables, Collection<ColumnDecorator> columns) {
+		return new DatabaseMetadata(tables.stream()
+				.collect(toUnmodifiableMap(TableDecorator::identity, t-> t.createMetadata(columns))));
+	}
+	
+	public static DatabaseMetadata emptyMetadata() {
+		return new DatabaseMetadata(emptyMap());
+	}
+		
+	
 }
 

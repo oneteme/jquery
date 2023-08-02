@@ -55,10 +55,6 @@ public interface ColumnDecorator extends ColumnBuilder {
 		return AUTO_TYPE;
 	}
 
-	default int dataSize() {
-		return UNLIMITED;
-	}
-	
 	default boolean isPhysical() {
 		return this == builder();
 	}
