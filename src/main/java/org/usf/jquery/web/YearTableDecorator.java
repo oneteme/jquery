@@ -159,7 +159,7 @@ public interface YearTableDecorator extends TableDecorator {
     		return YearMonth.parse(revision);
     	}
     	catch (Exception e) {
-    		throw cannotParseException(REVISION_MODE, revision ,e);
+    		throw cannotParseException(REVISION, revision ,e);
 		}
     }
     
