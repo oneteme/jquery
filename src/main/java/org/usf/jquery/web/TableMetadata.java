@@ -5,6 +5,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.DatabaseMetaData;
@@ -21,6 +22,11 @@ import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
+/**
+ * 
+ * @author u$f
+ * 
+ */
 @Getter(AccessLevel.PACKAGE)
 @ToString
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
@@ -32,7 +38,7 @@ public class TableMetadata {
 	@Setter(AccessLevel.PACKAGE)
 	private Instant lastUpdate;
 	
-	public void fetch() throws SQLException { //unitary fetch
+	public void fetch() throws SQLException { //individually fetching
 		try(var cn = database().getDataSource().getConnection()) {
 			fetch(cn.getMetaData());
 		}
@@ -42,7 +48,7 @@ public class TableMetadata {
 		var dbMap = columns.values().stream().collect(toMap(ColumnMetadata::getColumnName, identity()));
 		try(var rs = metadata.getColumns(null, null, tablename, null)){
 			if(!rs.next()) {
-				throw new NoSuchElementException(tablename + " table not found");
+				throw new NoSuchElementException(quote(tablename) + " table not found");
 			}
 			do {
 				var cn = rs.getString("COLUMN_NAME");

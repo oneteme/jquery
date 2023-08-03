@@ -4,7 +4,6 @@ import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.time.YearMonth.now;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
 import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
@@ -14,10 +13,13 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
+import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.ParseException.cannotParseException;
 import static org.usf.jquery.web.TableDecorator.flatParameters;
+import static org.usf.jquery.web.TableMetadata.emptyMetadata;
+import static org.usf.jquery.web.YearTableMetadata.emptyMetadata;
 import static org.usf.jquery.web.YearTableMetadata.yearTableMetadata;
 
 import java.time.Year;
@@ -26,6 +28,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -43,7 +46,7 @@ import org.usf.jquery.core.RequestQuery;
  */
 public interface YearTableDecorator extends TableDecorator {
 	
-	ColumnDecorator revisionColumn();
+	Optional<? extends ColumnDecorator> revisionColumn();
 
 	/**
 	 * loaded from db if null
@@ -66,10 +69,10 @@ public interface YearTableDecorator extends TableDecorator {
 		parseFilters(ant, query, parameterMap);
 		parseOrders(ant, query, parameterMap);
 		query.columns(yearColumn().as("revisionYear"));
-		if(nonNull(revisionColumn())) { //optional revision column
-			var col = revisionColumn().column(this);
+		revisionColumn().ifPresent(rc-> {
+			var col = rc.column(this);
 			query.columns(col).filters(monthFilter(col));
-		}
+		});
 		return query;
 	}
 
@@ -168,15 +171,14 @@ public interface YearTableDecorator extends TableDecorator {
 
     @Override
     default YearTableMetadata metadata() {
-    	return (YearTableMetadata) TableDecorator.super.metadata();
+		return (YearTableMetadata) database().tableMetada(this) 
+				.orElseGet(()-> emptyMetadata(this)); //unregistered table
     }
     
     @Override
     default YearTableMetadata createMetadata(Collection<ColumnDecorator> columns) {
-    	var rc = ofNullable(revisionColumn()).flatMap(this::columnName).orElse(null);
-    	return yearTableMetadata(this, rc, columns);
+    	return yearTableMetadata(this, columns);
     }
-    
     
     //TODO delegated not working
     default String defaultRevisionMode() {
