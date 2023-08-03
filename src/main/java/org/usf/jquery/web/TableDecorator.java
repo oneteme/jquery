@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
@@ -9,12 +10,13 @@ import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.Constants.WINDOW_ORDER;
 import static org.usf.jquery.web.Constants.WINDOW_PARTITION;
-import static org.usf.jquery.web.DatabaseScanner.database;
+import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.RequestColumn.decodeColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
-import static org.usf.jquery.web.TableMetadata.yearTableMetadata;
+import static org.usf.jquery.web.TableMetadata.emptyMetadata;
+import static org.usf.jquery.web.TableMetadata.tableMetadata;
 
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -41,7 +43,9 @@ public interface TableDecorator {
 	Optional<String> columnName(ColumnDecorator cd);
 	
 	default int columnType(ColumnDecorator cd) {
-		return database().columnMetada(this, cd).getDataType();
+		return database().columnMetada(this, cd)
+				.map(ColumnMetadata::getDataType)
+				.orElse(AUTO_TYPE); //unregistered table/column
 	}
 	
 	default DBTable table() {
@@ -131,11 +135,12 @@ public interface TableDecorator {
 	}
 	
 	default TableMetadata metadata() {
-		return database().tableMetada(this);
+		return database().tableMetada(this) 
+				.orElseGet(()-> emptyMetadata(this)); //unregistered table
 	}
 	
 	default TableMetadata createMetadata(Collection<ColumnDecorator> columns) {
-		return yearTableMetadata(this, columns);
+		return tableMetadata(this, columns);
 	}
 	
 	static String parseOrder(String order) {

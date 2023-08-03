@@ -9,7 +9,7 @@ import static org.usf.jquery.core.DBFunction.lookup;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Validation.VARIABLE_PATTERN;
-import static org.usf.jquery.web.DatabaseScanner.resource;
+import static org.usf.jquery.web.JQueryContext.context;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.LinkedList;
@@ -88,7 +88,7 @@ public final class RequestColumn {
 		String exp = null;
 		var arr  = value.split("\\.");
 		int from = arr.length-1;
-		if(arr.length > 1 && allowedExp && !resource().isDeclaredColumn(arr[arr.length-1]) && lookup(arr[arr.length-1]).isEmpty()) {//!function && !column
+		if(arr.length > 1 && allowedExp && !context().isDeclaredColumn(arr[arr.length-1]) && lookup(arr[arr.length-1]).isEmpty()) {//!function && !column
 			exp  = arr[arr.length-1];
 			from = arr.length-2;
 		}
@@ -97,12 +97,12 @@ public final class RequestColumn {
 	
 	private static RequestColumn decode(String[] arr, int index, TableDecorator defaultTable, String exp, String tag) {
 		var value = arr[index];
-		if(resource().isDeclaredColumn(value)) {//column found => break recursive call
-			var cd = resource().getColumn(value);
+		if(context().isDeclaredColumn(value)) {//column found => break recursive call
+			var cd = context().getColumn(value);
 			if(index > 1) {
 				throw cannotEvaluateException("column prefix", join(".", copyOfRange(arr, 0, index))); //too many prefix
 			}
-			var td = index == 0 ? defaultTable : resource().getTable(arr[0]);
+			var td = index == 0 ? defaultTable : context().getTable(arr[0]);
 			return new RequestColumn(td, cd, exp, tag);
 		}
 		if(index == 0) {

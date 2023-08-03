@@ -44,7 +44,7 @@ public final class YearTableMetadata extends TableMetadata {
 	@Getter
 	private YearMonth[] revisions;
 	
-	YearTableMetadata(String tablename, String revisionColumn, Map<String, ColumnMetadata> columns) {
+	private YearTableMetadata(String tablename, String revisionColumn, Map<String, ColumnMetadata> columns) {
 		super(tablename, columns);
 		this.revisionColumn = revisionColumn;
 	}

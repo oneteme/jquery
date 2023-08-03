@@ -1,53 +1,124 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.format;
+import static java.lang.System.currentTimeMillis;
+import static java.time.Instant.now;
 import static java.util.Collections.emptyMap;
+import static java.util.Comparator.comparing;
+import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
+import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableMap;
-import static org.usf.jquery.web.NoSuchResourceException.throwNoSuchColumnException;
-import static org.usf.jquery.web.NoSuchResourceException.throwNoSuchTableException;
+import static org.usf.jquery.core.Utils.isPresent;
 
+import java.sql.SQLException;
+import java.time.Instant;
+import java.time.YearMonth;
 import java.util.Collection;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Optional;
+import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
-@Getter(AccessLevel.PACKAGE)
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DatabaseMetadata {
+
+	private final Object mutex = new Object();
+
+	@Getter(AccessLevel.PACKAGE)
+	private final DataSource dataSource; //nullable if no sync
+	private final Map<String, TableMetadata> tables; //empty if no sync
+	private Instant lastSync;
+
+	public Optional<TableMetadata> tableMetada(TableDecorator td){
+		return ofNullable(tables.get(td.identity()));
+	}
 	
-	private final Map<String, TableMetadata> tables;
-
-	@Deprecated
-	public YearTableMetadata getYearTable(YearTableDecorator td){
-		return (YearTableMetadata) tableMetada(td);
-	}
-
-	public TableMetadata tableMetada(TableDecorator td){
-		return ofNullable(tables.get(td.identity()))
-				.orElseThrow(()-> throwNoSuchTableException(td.identity()));
+	public Optional<ColumnMetadata> columnMetada(TableDecorator td, ColumnDecorator cd){
+		return tableMetada(td).map(t-> t.getColumns().get(cd.identity()));
 	}
 	
-	public ColumnMetadata columnMetada(TableDecorator td, ColumnDecorator cd){
-		return ofNullable(tableMetada(td).getColumns().get(cd.identity()))
-				.orElseThrow(()-> throwNoSuchColumnException(cd.identity())); //TODO change exception
+	public void fetch() {
+		if(isNull(dataSource) || tables.isEmpty()) {
+			log.warn("database resources not initialized"); //full scan ? next release
+			return;
+		}
+		synchronized (mutex) { //thread safe
+			var time = currentTimeMillis();
+			log.info("Scanning database metadata...");
+			try(var cn = dataSource.getConnection()){
+				var metadata = cn.getMetaData();
+				for(var t : tables.values()) {
+					log.info("Scanning table '{}' metadata...", t.getTablename());
+					t.fetch(metadata);
+					logTableColumns(t.getColumns());
+					if(t instanceof YearTableMetadata) {
+						var yt = (YearTableMetadata) t;
+						log.info("Scanning table '{}' revisions...", t.getTablename());
+						yt.fetchRevisions(cn);
+						logRevisions(yt.getRevisions());
+					}
+				}
+				lastSync = now();
+				log.info("Completed metadata scan in {} ms", currentTimeMillis() - time);
+			} catch (SQLException e) {
+				log.error("Error while scanning database metadata", e);
+			}
+		}
+	}
+	
+	static void logTableColumns(Map<String, ColumnMetadata> map) {
+		if(!map.isEmpty()) {
+			var pattern = "|%-20s|%-40s|%-6s|%-12s|";
+			var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
+			log.info(bar);
+			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
+			log.info(bar);
+			map.entrySet().forEach(e-> 
+			log.info(format(pattern, e.getKey(), e.getValue().getColumnName(), e.getValue().getDataType(), e.getValue().getDataSize())));
+			log.info(bar);
+		}
+	}
+	
+	static void logRevisions(YearMonth[] revs) {
+		if(isPresent(revs)) {
+			var pattern = "|%-5s|%-40s|";
+			var bar = format(pattern, "", "").replace("|", "+").replace(" ", "-");
+			var map = Stream.of(revs).collect(groupingBy(YearMonth::getYear));
+			log.info(bar);
+			log.info(format(pattern, "YEAR", "MONTHS"));
+			log.info(bar);
+			map.entrySet().stream().sorted(comparing(Entry::getKey)).forEach(e-> 
+			log.info(format(pattern, e.getKey(), e.getValue().stream().map(o-> o.getMonthValue() + "").collect(joining(", ")))));
+			log.info(bar);
+		}
+	}
+	
+	public Instant lastUpdate() {
+		return lastSync;
 	}
 
-	public static DatabaseMetadata init(Collection<TableDecorator> tables, Collection<ColumnDecorator> columns) {
-		return new DatabaseMetadata(tables.stream()
+	public static DatabaseMetadata create(DataSource ds, Collection<TableDecorator> tables, Collection<ColumnDecorator> columns) {
+		return new DatabaseMetadata(ds, tables.stream()
 				.collect(toUnmodifiableMap(TableDecorator::identity, t-> t.createMetadata(columns))));
 	}
 	
 	public static DatabaseMetadata emptyMetadata() {
-		return new DatabaseMetadata(emptyMap());
+		return new DatabaseMetadata(null, emptyMap());
 	}
-		
-	
 }
 

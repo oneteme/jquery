@@ -1,9 +1,11 @@
 package org.usf.jquery.web;
 
 import static java.lang.String.join;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -20,10 +22,16 @@ import lombok.ToString;
 @Getter(AccessLevel.PACKAGE)
 @ToString
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-class TableMetadata {
+public class TableMetadata {
 	
 	private final String tablename;
 	private final Map<String, ColumnMetadata> columns;
+	
+	public void fetch() throws SQLException { //unitary fetch
+		try(var cn = database().getDataSource().getConnection()) {
+			fetch(cn.getMetaData());
+		}
+	}
 	
 	void fetch(DatabaseMetaData metadata) throws SQLException {
 		var dbMap = columns.values().stream().collect(toMap(ColumnMetadata::getColumnName, identity()));
@@ -45,7 +53,7 @@ class TableMetadata {
 		}
 	}
 	
-	public static TableMetadata yearTableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
+	public static TableMetadata tableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
 		var map = new LinkedHashMap<String, ColumnMetadata>();
 		columns.stream().forEach(cd-> 
 			table.columnName(cd).ifPresent(cn-> 
@@ -53,4 +61,7 @@ class TableMetadata {
 		return new TableMetadata(table.tableName(), unmodifiableMap(map));
 	}
 
+	public static TableMetadata emptyMetadata(TableDecorator table) {
+		return new TableMetadata(table.tableName(), emptyMap());
+	}
 }
