@@ -42,7 +42,8 @@ public final class DatabaseMetadata {
 	@Getter(AccessLevel.PACKAGE)
 	private final DataSource dataSource; //nullable if no sync
 	private final Map<String, TableMetadata> tables; //empty if no sync
-	private Instant lastSync;
+	@Getter
+	private Instant lastUpdate;
 
 	public Optional<TableMetadata> tableMetada(TableDecorator td){
 		return ofNullable(tables.get(td.identity()));
@@ -72,8 +73,9 @@ public final class DatabaseMetadata {
 						yt.fetchRevisions(cn);
 						logRevisions(yt.getRevisions());
 					}
+					t.setLastUpdate(now());
 				}
-				lastSync = now();
+				lastUpdate = now();
 				log.info("Completed metadata scan in {} ms", currentTimeMillis() - time);
 			} catch (SQLException e) {
 				log.error("Error while scanning database metadata", e);
@@ -107,17 +109,13 @@ public final class DatabaseMetadata {
 			log.info(bar);
 		}
 	}
-	
-	public Instant lastUpdate() {
-		return lastSync;
-	}
 
-	public static DatabaseMetadata create(DataSource ds, Collection<TableDecorator> tables, Collection<ColumnDecorator> columns) {
+	static DatabaseMetadata create(DataSource ds, Collection<TableDecorator> tables, Collection<ColumnDecorator> columns) {
 		return new DatabaseMetadata(ds, tables.stream()
 				.collect(toUnmodifiableMap(TableDecorator::identity, t-> t.createMetadata(columns))));
 	}
 	
-	public static DatabaseMetadata emptyMetadata() {
+	static DatabaseMetadata emptyMetadata() {
 		return new DatabaseMetadata(null, emptyMap());
 	}
 }

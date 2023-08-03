@@ -44,8 +44,7 @@ public interface ArgumentParser {
 			return parser.parse(value);
 		}
 		catch(Exception e) {
-			return null;
-			//do not throw exception
+			return null; //do not throw exception
 		}
 	}
 }

@@ -5,20 +5,22 @@ import static org.usf.jquery.core.Utils.UNLIMITED;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
-import lombok.EqualsAndHashCode;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
-
+/**
+ * 
+ * @author u$f
+ * 
+ */
+@ToString
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
-@ToString
-@EqualsAndHashCode
-@RequiredArgsConstructor
 @AllArgsConstructor
-class ColumnMetadata {
+@RequiredArgsConstructor
+public class ColumnMetadata {
 	
 	private final String columnName;
 	private int dataType = AUTO_TYPE;

@@ -9,6 +9,7 @@ import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -17,6 +18,7 @@ import java.util.NoSuchElementException;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 @Getter(AccessLevel.PACKAGE)
@@ -26,6 +28,9 @@ public class TableMetadata {
 	
 	private final String tablename;
 	private final Map<String, ColumnMetadata> columns;
+	@Getter
+	@Setter(AccessLevel.PACKAGE)
+	private Instant lastUpdate;
 	
 	public void fetch() throws SQLException { //unitary fetch
 		try(var cn = database().getDataSource().getConnection()) {
@@ -53,7 +58,7 @@ public class TableMetadata {
 		}
 	}
 	
-	public static TableMetadata tableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
+	static TableMetadata tableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
 		var map = new LinkedHashMap<String, ColumnMetadata>();
 		columns.stream().forEach(cd-> 
 			table.columnName(cd).ifPresent(cn-> 
@@ -61,7 +66,7 @@ public class TableMetadata {
 		return new TableMetadata(table.tableName(), unmodifiableMap(map));
 	}
 
-	public static TableMetadata emptyMetadata(TableDecorator table) {
+	static TableMetadata emptyMetadata(TableDecorator table) {
 		return new TableMetadata(table.tableName(), emptyMap());
 	}
 }
