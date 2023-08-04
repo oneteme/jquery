@@ -3,11 +3,11 @@ package org.usf.jquery.web;
 import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.isNull;
 import static java.util.function.Function.identity;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
@@ -43,9 +43,9 @@ public final class YearTableMetadata extends TableMetadata {
 	private static final String PATTERN = "_20**";
 	
 	private final String revisionColumn; //nullable
+	private final Set<String> tablenames = new LinkedHashSet<String>();
 	@Getter
 	private YearMonth[] revisions;
-	private Set<String> tablenames;
 	
 	private YearTableMetadata(String tablename, String revisionColumn, Map<String, ColumnMetadata> columns) {
 		super(tablename, columns);
@@ -62,9 +62,10 @@ public final class YearTableMetadata extends TableMetadata {
 	
 	@Override
 	void fetch(DatabaseMetaData metadata) throws SQLException  {
+		tablenames.clear();
 		var dbMap = getColumns().values().stream().collect(toMap(ColumnMetadata::getColumnName, ColumnMetadata::reset)); //important! reset columns
+		Set<String> dirtyColumns = new LinkedHashSet<>();
 		Map<String, Set<String>> columnTables = new LinkedHashMap<>();
-		Map<String, Set<String>> dirtyColumns = new LinkedHashMap<>();
 		try(var rs = metadata.getColumns(null, null, getTablename() + "_20__", null)){
 			if(!rs.next()) {
 				throw new NoSuchElementException("no tables found with pattern " + getTablename() + PATTERN);
@@ -73,6 +74,7 @@ public final class YearTableMetadata extends TableMetadata {
 				var tn = rs.getString("TABLE_NAME");
 				var cn = rs.getString("COLUMN_NAME");
 				if(dbMap.containsKey(cn) && tn.matches(getTablename()+ "_20\\d{2}")) {// untyped SQL pattern
+					tablenames.add(tn);
 					columnTables.computeIfAbsent(cn, k-> new LinkedHashSet<>()).add(tn);
 					var type = rs.getInt("DATA_TYPE");
 					var size = rs.getInt("COLUMN_SIZE");
@@ -82,19 +84,22 @@ public final class YearTableMetadata extends TableMetadata {
 						meta.setDataSize(size);
 					}
 					else if(meta.getDataType() != type || meta.getDataSize() != size) {
-						dirtyColumns.computeIfAbsent(tn, k-> new LinkedHashSet<>()).add(cn);
+						dirtyColumns.add(cn);
 					}
 				}//else undeclared column
 			} while(rs.next());
 		}
-		var dirtyDefinition = columnTables.entrySet().stream().filter(e-> e.getValue().equals(getColumns().keySet())).map(Entry::getKey).collect(toList());
-		if(!dirtyDefinition.isEmpty()) {
-			throw new IllegalStateException("columns [" + join(", ", dirtyDefinition) + "] must be present in all tables " + getTablename() + PATTERN);
+		if(!dbMap.keySet().equals(columnTables.keySet())) {
+			var missingCols = dbMap.keySet().stream().filter(not(columnTables.keySet()::contains)).collect(toList());
+			throw new NoSuchElementException("column(s) [" + join(", ", missingCols) + "] not found in any table " + getTablename() + PATTERN);
+		}
+		var missingCols = columnTables.entrySet().stream().filter(e-> !e.getValue().equals(tablenames)).map(Entry::getKey).collect(toList());
+		if(!missingCols.isEmpty()) {
+			throw new IllegalStateException("column(s) [" + join(", ", missingCols) + "] must be present in all tables " + getTablename() + PATTERN);
 		}
 		if(!dirtyColumns.isEmpty()) {
-			throw new IllegalStateException("columns [" + join(", ", dirtyColumns.keySet()) + "] must have the same definition in all tables " + getTablename() + PATTERN);
+			throw new IllegalStateException("column(s) [" + join(", ", dirtyColumns) + "] must have the same definition in all tables " + getTablename() + PATTERN);
 		}
-		this.tablenames = columnTables.values().iterator().next();
 	}
 	
 	void fetchRevisions(Connection cn) { // change this call
@@ -142,12 +147,11 @@ public final class YearTableMetadata extends TableMetadata {
 	static YearTableMetadata emptyMetadata(YearTableDecorator table) {
     	var revisionColumn = table.revisionColumn().flatMap(table::columnName).orElse(null);
 		var meta = new YearTableMetadata(table.tableName(), revisionColumn, emptyMap());
-		meta.tablenames = emptySet(); //avoid NullPointerException
-		meta.revisions = new YearMonth[0];
+		meta.revisions = new YearMonth[0]; //avoid NullPointerException
 		return meta;
 	}
 	
-	@Deprecated
+	@Deprecated(forRemoval = false)
 	public YearMonth latestRevision() { //optional
 		return revisions[0];
 	}

@@ -27,8 +27,8 @@ import lombok.ToString;
  * @author u$f
  * 
  */
-@Getter(AccessLevel.PACKAGE)
 @ToString
+@Getter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class TableMetadata {
 	
