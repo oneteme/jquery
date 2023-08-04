@@ -20,10 +20,9 @@ public @interface RequestQueryParam {
 
 	String name(); //tablename
 	
-	String[] ignoreParameters() default {}; 
-	
-	@Deprecated(forRemoval = true)
 	String[] defaultColumns() default {};
+	
+	String[] ignoreParameters() default {}; 
 	
 	@Deprecated
 	boolean allowUnknownParameters() default false; //ignoreUnknownParameters

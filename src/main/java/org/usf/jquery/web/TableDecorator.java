@@ -98,6 +98,9 @@ public interface TableDecorator {
 				? parameters.get(COLUMN_DISTINCT) 
 				: parameters.get(COLUMN); //can be combined in PG (distinct on)
 		if(isEmpty(cols)) {
+			cols = ant.defaultColumns();
+		}
+		if(isEmpty(cols)) {
 			throw missingParameterException(COLUMN, COLUMN_DISTINCT);
 		}
 		if(parameters.containsKey(COLUMN_DISTINCT)){
