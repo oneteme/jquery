@@ -43,7 +43,7 @@ public final class YearTableMetadata extends TableMetadata {
 	private static final String PATTERN = "_20**";
 	
 	private final String revisionColumn; //nullable
-	private final Set<String> tablenames = new LinkedHashSet<String>();
+	private final Set<String> tablenames = new LinkedHashSet<>();
 	@Getter
 	private YearMonth[] revisions;
 	
