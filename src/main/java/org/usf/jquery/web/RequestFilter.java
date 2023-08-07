@@ -42,14 +42,15 @@ public class RequestFilter {
 	}
 	
 	public DBFilter[] filters() { // do not join filters (WHERE + HAVING)
+		var td  = requestColumn.tableDecorator();
 		var cd  = requestColumn.columnDecorator();
-		var col = cd.column(requestColumn.tableDecorator());
+		var col = td.column(cd);
 		var filters = new LinkedList<>();
 		if(!rightColumns.isEmpty()) {
 			var cmp = cd.comparator(requestColumn.expression(), 1);
 			if(cmp instanceof BasicComparator) {
 				rightColumns.stream()
-				.map(c-> col.filter(cmp.expression(c.columnDecorator().column(c.tableDecorator()))))
+				.map(c-> col.filter(cmp.expression(c.tableDecorator().column(c.columnDecorator()))))
 				.forEach(filters::add);
 			}
 			else {
@@ -58,8 +59,7 @@ public class RequestFilter {
 		}
 		if(!rightValues.isEmpty()) {
 			rightValues.forEach(arr->
-				filters.add(col.filter(cd.expression(
-						requestColumn.tableDecorator(), 
+				filters.add(col.filter(td.expression(cd, 
 						requestColumn.expression(), arr))));
 		}
 		return filters.toArray(DBFilter[]::new);

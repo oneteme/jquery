@@ -2,8 +2,6 @@ package org.usf.jquery.web;
 
 import static java.sql.Types.*;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.DBComparator.equal;
 import static org.usf.jquery.core.DBComparator.greaterOrEqual;
 import static org.usf.jquery.core.DBComparator.greaterThan;
@@ -16,10 +14,6 @@ import static org.usf.jquery.core.DBComparator.notEqual;
 import static org.usf.jquery.core.DBComparator.notIn;
 import static org.usf.jquery.core.DBComparator.notLike;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
-import static org.usf.jquery.core.Validation.requireLegalVariable;
-import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
-import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
-import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -29,12 +23,8 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 
-import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBComparator;
-import org.usf.jquery.core.InCompartor;
 import org.usf.jquery.core.StringComparator;
-import org.usf.jquery.core.TableColumn;
-import org.usf.jquery.core.TaggableColumn;
 
 /**
  * 
@@ -44,7 +34,7 @@ import org.usf.jquery.core.TaggableColumn;
  * @see ColumnDecoratorWrapper
  *
  */
-public interface ColumnDecorator extends ColumnBuilder {
+public interface ColumnDecorator {
 	
 	String identity();  //URL
 	
@@ -52,10 +42,6 @@ public interface ColumnDecorator extends ColumnBuilder {
 	
 	default int dataType() {
 		return AUTO_TYPE;
-	}
-
-	default boolean isPhysical() {
-		return this == builder();
 	}
 	
 	default String pattern() {
@@ -70,47 +56,32 @@ public interface ColumnDecorator extends ColumnBuilder {
 		throw new UnsupportedOperationException(); //authorization inject
 	}
 	
-	@Override
-	default TaggableColumn column(TableDecorator table) {
-		if(isPhysical()) {
-			var cn = table.columnName(this).orElseThrow(()-> undeclaredResouceException(table.identity(), identity()));
-			return new TableColumn(requireLegalVariable(cn), reference(), table.identity());
-		}
-		return builder().column(table).as(reference());
-	}
-
 	default ColumnBuilder builder() {
-		return this;
+		return null; // physical column by default
 	}
 	
-	//expression => criteria | comparator
-	default ComparisonExpression expression(TableDecorator table, String expres, String... values) {
-		var criteria = criteria(expres);
-		if(nonNull(criteria)) {
-			return criteria.build(values);
-		}
-		var cmp = requireNonNull(comparator(expres, values.length));
-    	var prs = requireNonNull(parser(resolveType(table)));
-    	if(values.length == 1) {
-    		return cmp.expression(prs.parseValue(values[0]));
-    	}
-		return cmp instanceof InCompartor 
-				? cmp.expression(prs.parseValues(values))
-				: ofComparator(cmp).build(prs.parseValues(values));
-	}
-
 	default CriteriaBuilder<String> criteria(String name) {
 		return null; // no criteria by default
 	}
-	
-	private int resolveType(TableDecorator td) {
-		var type = dataType();
-		if(type == AUTO_TYPE && isPhysical()) {
-			type = td.columnType(this);
-		}//else : overridden | logical column not declared in table
-		return type;
-	}
 
+	default DBComparator comparator(String comparator, int nArg) {
+		if(isNull(comparator)) {
+			return nArg == 1 ? equal() : in();
+		}
+		switch(comparator) {
+		case "gt"		: return greaterThan();
+		case "ge"  		: return greaterOrEqual();
+		case "lt"  		: return lessThan();
+		case "le"  		: return lessOrEqual();
+		case "not" 		: return nArg == 1 ? notEqual() : notIn();
+		case "like"		: return containsArgPartten(like());
+		case "ilike"	: return containsArgPartten(iLike());
+		case "unlike"	: return containsArgPartten(notLike());
+		default			: return null;
+		//isnull
+		}
+	}
+	
 	/**
 	 * see: https://download.oracle.com/otn-pub/jcp/jdbc-4_2-mrel2-spec/jdbc4.2-fr-spec.pdf?AuthParam=1679342559_531aef55f72b5993f346322f9e9e7fe3
 	 * 
@@ -138,24 +109,6 @@ public interface ColumnDecorator extends ColumnBuilder {
 		case TIME     		: return v-> Time.valueOf(LocalTime.parse(v));
 		case TIMESTAMP		: return v-> Timestamp.from(Instant.parse(v));
 		default       		: throw new UnsupportedOperationException("unsupported dbType=" + type + " parse");
-		}
-	}
-
-	default DBComparator comparator(String comparator, int nArg) {
-		if(isNull(comparator)) {
-			return nArg == 1 ? equal() : in();
-		}
-		switch(comparator) {
-		case "gt"		: return greaterThan();
-		case "ge"  		: return greaterOrEqual();
-		case "lt"  		: return lessThan();
-		case "le"  		: return lessOrEqual();
-		case "not" 		: return nArg == 1 ? notEqual() : notIn();
-		case "like"		: return containsArgPartten(like());
-		case "ilike"	: return containsArgPartten(iLike());
-		case "unlike"	: return containsArgPartten(notLike());
-		//isnull
-		default: throw cannotEvaluateException("comaparator", comparator);
 		}
 	}
 	

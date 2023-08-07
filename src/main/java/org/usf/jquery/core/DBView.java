@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Validation.requireNoArgs;
+import static java.util.Objects.isNull;
+import static org.usf.jquery.core.Validation.requireAtMostNArgs;
 
 /**
  * 
@@ -12,10 +13,10 @@ public interface DBView extends DBObject {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, DBView.class::getSimpleName);
-		return sql(builder);
+		requireAtMostNArgs(1, args, DBView.class::getSimpleName);
+		return sql(builder, isNull(args) ? null : args[0].toString());
 	}
 
-	String sql(QueryParameterBuilder builder);
+	String sql(QueryParameterBuilder builder, String schema);
 	
 }

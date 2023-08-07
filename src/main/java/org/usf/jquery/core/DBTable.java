@@ -18,7 +18,8 @@ public class DBTable implements TaggableView {
 	private final String tag;
 	
 	@Override
-	public String sql(QueryParameterBuilder builder) {
+	public String sql(QueryParameterBuilder builder, String schema) {
+		schema = isBlank(this.schema) ? schema : this.schema;
 		return isBlank(schema) ? name : schema + "." + name;
 	}
 	
@@ -29,6 +30,6 @@ public class DBTable implements TaggableView {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return sql(addWithValue(), "s1");
 	}	
 }

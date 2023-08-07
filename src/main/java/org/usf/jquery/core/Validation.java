@@ -54,6 +54,11 @@ public final class Validation {
 		return args;
 	}
 	
+	public static <T> T[] requireAtMostNArgs(int n, T[] args, Supplier<String> name) {
+		illegalArgumentIf(nonNull(args) && args.length > n, ()-> name.get() + " takes at most" + n + " parameters");
+		return args;
+	}
+
 	public static void illegalArgumentIf(boolean test, String msg) {
 		if(test) {
 			throw new IllegalArgumentException(msg);

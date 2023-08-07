@@ -140,12 +140,12 @@ public final class YearTableMetadata extends TableMetadata {
 		columns.stream().forEach(cd-> 
 			table.columnName(cd).ifPresent(cn-> 
 				map.put(cd.identity(), new ColumnMetadata(cn))));
-    	var revisionColumn = table.revisionColumn().flatMap(table::columnName).orElse(null);
+    	var revisionColumn = table.monthRevision().flatMap(table::columnName).orElse(null);
 		return new YearTableMetadata(table.tableName(), revisionColumn, unmodifiableMap(map));
 	}
 	
 	static YearTableMetadata emptyMetadata(YearTableDecorator table) {
-    	var revisionColumn = table.revisionColumn().flatMap(table::columnName).orElse(null);
+    	var revisionColumn = table.monthRevision().flatMap(table::columnName).orElse(null);
 		var meta = new YearTableMetadata(table.tableName(), revisionColumn, emptyMap());
 		meta.revisions = new YearMonth[0]; //avoid NullPointerException
 		return meta;

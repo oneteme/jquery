@@ -1,25 +1,14 @@
 package org.usf.jquery.core;
 
-import static java.lang.System.currentTimeMillis;
-import static java.util.Objects.isNull;
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
-import static org.usf.jquery.core.Validation.requireNonEmpty;
-
-import java.util.Iterator;
-import java.util.LinkedList;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
-import java.util.function.Function;
-import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -29,143 +18,39 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class RequestQuery {
+@RequiredArgsConstructor
+public final class RequestQuery {
+	
+	@NonNull
+	private final String query;
+	private final Object[] params;
+	
 
-	final List<TaggableColumn> columns = new LinkedList<>();
-	final List<TaggableView> tables = new LinkedList<>();
-	final List<DBFilter> filters = new LinkedList<>();  //WERE & HAVING
-	final List<DBOrder> orders = new LinkedList<>();
-	Iterator<?> it;
-	boolean distinct;
-	
-	public RequestQuery select(TaggableView table, TaggableColumn... columns) {
-		return tables(table).columns(columns);
+	public List<DynamicModel> execute(DataSource ds) {
+		return execute(ds, new ResultSimpleMapper());
 	}
 	
-	public RequestQuery distinct() {
-		distinct = true;
-		return this;
-	}
-
-	public RequestQuery tables(@NonNull TaggableView... tables) {
-		Stream.of(tables).forEach(this.tables::add);
-		return this;
-	}
-	
-	public RequestQuery tablesIfAbsent(@NonNull TaggableView... tables) {
-		Stream.of(tables)
-		.filter(v-> this.tables.stream().noneMatch(t-> t.tagname().equals(v.tagname())))
-		.forEach(this.tables::add);
-		return this;
-	}
-	
-	public RequestQuery columns(@NonNull TaggableColumn... columns) {
-		Stream.of(columns).forEach(this.columns::add);
-		return this;
-	}
-
-	public RequestQuery filters(@NonNull DBFilter... filters){
-		Stream.of(filters).forEach(this.filters::add);
-		return this;
-	}
-	
-	public RequestQuery orders(@NonNull DBOrder... orders) {
-		Stream.of(orders).forEach(this.orders::add);
-		return this;
-	}
-	
-	public RequestQuery repeat(@NonNull Iterator<?> it) {
-		this.it = it;
-		return this;
-	}
-
-	public <T> T execute(@NonNull Function<ParametredQuery, T> fn) {
-		return fn.apply(build());
-	}
-
-	public ParametredQuery build(){
-		requireNonEmpty(tables);
-    	requireNonEmpty(columns);
-		log.debug("building query...");
-		var bg = currentTimeMillis();
-		var pb = parametrized();
-		var sb = new SqlStringBuilder(1000); //avg
-		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
-		if(isNull(it)) {
-			build(sb, pb);
+	public <T> T execute(DataSource ds, ResultMapper<T> mapper) {
+		try(var cn = ds.getConnection()){
+			log.info("preparing statement : {}", query);
+			try(var ps = cn.prepareStatement(query)){
+				if(params != null) {
+					for(var i=0; i<params.length; i++) {
+						ps.setObject(i+1, params[i]);
+					}						
+				}
+		        log.info("using parameters : {}", Arrays.toString(params));
+				try(var rs = ps.executeQuery()){
+					return mapper.map(rs);
+				}
+			}
 		}
-		else {
-			sb.forEach(it, " UNION ALL ", o-> build(sb, pb));
+		catch(SQLException e) {
+			throw new RuntimeException(e);
 		}
-		log.debug("query built in {} ms", currentTimeMillis() - bg);
-		return new ParametredQuery(sb.toString(), pb.args());
-	}
-
-	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
-    	select(sb, pb);
-    	where(sb, pb);
-    	groupBy(sb);
-    	having(sb, pb);
-    	orderBy(sb, pb);
-	}
-
-	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
-		sb.append("SELECT ")
-    	.appendIf(distinct, ()-> "DISTINCT ")
-    	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.tagname()))
-    	.append(" FROM ")
-    	.appendEach(tables, SCOMA, o-> o.sql(pb) + SPACE + pb.tableAlias(o.tagname()));
-	}
-
-	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
-		var expr = filters.stream()
-				.filter(not(DBFilter::isAggregation))
-				.map(f-> f.sql(pb))
-    			.collect(joining(AND.sql()));
-    	if(!expr.isEmpty()) {
-    		sb.append(" WHERE ").append(expr);
-    	}
 	}
 	
-	void groupBy(SqlStringBuilder sb){
-        if(isAggregation()) {
-        	var expr = columns.stream()
-        			.filter(RequestQuery::groupable)
-        			.map(TaggableColumn::tagname) //add alias 
-        			.map(SqlStringBuilder::doubleQuote) //sql ??
-        			.collect(joining(SCOMA));
-        	if(!expr.isEmpty()) {
-        		sb.append(" GROUP BY ").append(expr);
-        	}
-        	else if(columns.size() > 1) {
-        		//throw new RuntimeException("require groupBy columns"); CONST !?
-        	}
-        }
-	}
-	
-	void having(SqlStringBuilder sb, QueryParameterBuilder pb){
-		var having = filters.stream()
-				.filter(DBFilter::isAggregation)
-				.collect(toList());
-    	if(!having.isEmpty()) {
-    		sb.append(" HAVING ")
-    		.appendEach(having, AND.sql(), f-> f.sql(pb));
-    	}
-	}
-	
-	void orderBy(SqlStringBuilder sb, QueryParameterBuilder pb) {
-    	if(!orders.isEmpty()) {
-    		sb.append(" ORDER BY ")
-    		.appendEach(orders, SPACE, o-> o.sql(pb));
-    	}
-	}
-	
-	public boolean isAggregation() {
-		return columns.stream().anyMatch(DBColumn::isAggregation) ||
-				filters.stream().anyMatch(DBFilter::isAggregation);
-	}
-
-	private static boolean groupable(DBColumn column) {
-		return !column.isAggregation() && !column.isConstant();
+	public ResultSimpleMapper defaultMapper() {
+		return new ResultSimpleMapper();
 	}
 }

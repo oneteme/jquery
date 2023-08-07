@@ -132,7 +132,7 @@ public final class RequestColumn {
 			@Override
 			public ColumnBuilder builder() { //logical column
 				return t-> {
-					DBColumn col = cd.column(t);
+					DBColumn col = t.column(cd);
 					return fns.stream() //TD check types
 							.reduce(col, (c, fn)-> fn.args(c), (c1,c2)-> c1) //sequentially
 							.as(reference());

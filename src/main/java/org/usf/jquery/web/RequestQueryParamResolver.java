@@ -5,10 +5,11 @@ import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.JQueryContext.context;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.RequestQuery;
+import org.usf.jquery.core.RequestQueryBuilder;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -21,8 +22,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class RequestQueryParamResolver {
 	
-	public RequestQuery requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
+	public RequestQueryBuilder requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
 		if(!parameterMap.containsKey(COLUMN) && !parameterMap.containsKey(COLUMN_DISTINCT)) {
+			parameterMap = new LinkedHashMap<>(parameterMap); //unmodifiable map
 			parameterMap.put(COLUMN, ant.defaultColumns());
 		}
 		if(isPresent(ant.ignoreParameters())) {

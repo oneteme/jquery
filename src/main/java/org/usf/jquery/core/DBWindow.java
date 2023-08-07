@@ -27,10 +27,10 @@ public final class DBWindow implements TaggableView {
 	private final List<DBOrder> orders = new LinkedList<>();
 	
 	@Override
-	public String sql(QueryParameterBuilder builder) {
+	public String sql(QueryParameterBuilder builder, String schema) {
 		var sb = new SqlStringBuilder(100);
 		var qp = addWithValue(); //no alias
-		var tn = table.sql(builder); //build tablename
+		var tn = table.sql(builder, schema); //build tablename
 		sb.append("SELECT ").append(tn).append(".*, ");
 		sb.append(WIN_FUNCT).append(" OVER(");
 		if(!partitions.isEmpty()) {
@@ -65,7 +65,7 @@ public final class DBWindow implements TaggableView {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return sql(addWithValue(), "s1");
 	}
 
 }

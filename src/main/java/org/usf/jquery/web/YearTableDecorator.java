@@ -33,7 +33,8 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
-import org.usf.jquery.core.RequestQuery;
+import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.TaggableColumn;
 
 /**
  * 
@@ -46,9 +47,9 @@ import org.usf.jquery.core.RequestQuery;
 public interface YearTableDecorator extends TableDecorator {
 	
 	
-	Optional<? extends ColumnDecorator> revisionColumn();
+	Optional<? extends ColumnDecorator> monthRevision();
 
-	ColumnDecorator revisionYear(); // !table column
+	ColumnDecorator yearRevision(); // !table column
 
 	/**
 	 * loaded from db if null
@@ -64,13 +65,10 @@ public interface YearTableDecorator extends TableDecorator {
 	}
 	
 	@Override
-	default RequestQuery query(Map<String, String[]> parameterMap) {
+	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
 		var query = TableDecorator.super.query(parameterMap);
-		query.columns(yearColumn().as(revisionYear().reference()));
-		revisionColumn().ifPresent(rc-> {
-			var col = rc.column(this);
-			query.columns(col).filters(monthFilter(col));
-		});
+		monthRevision().map(this::column)
+		.ifPresent(c-> query.filters(monthFilter(c)));
 		return query.repeat(iterator(parseRevisions(parameterMap)));
 	}
 
@@ -92,6 +90,13 @@ public interface YearTableDecorator extends TableDecorator {
 		}
 		return revs;
     }
+	
+	@Override
+	default TaggableColumn column(ColumnDecorator column) {
+		return column == yearRevision() 
+				? yearColumn().as(yearRevision().reference()) 
+				: TableDecorator.super.column(column);
+	}
     
     default UnaryOperator<YearMonth[]> revisionMode(String mode) {
     	switch(mode) {
@@ -102,10 +107,6 @@ public interface YearTableDecorator extends TableDecorator {
     	}
     }
     
-    default YearMonth latestRevision() {
-    	return null; //TODO
-    }
-	
 	private YearMonth[] strictRevisions(YearMonth[] values) {
 		var revs = availableRevisions();
 		return isEmpty(revs) || isEmpty(values) 
