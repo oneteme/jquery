@@ -5,9 +5,6 @@ import static java.time.Month.DECEMBER;
 import static java.time.YearMonth.now;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.PartitionedRequestQuery.monthFilter;
-import static org.usf.jquery.core.PartitionedRequestQuery.yearColumn;
-import static org.usf.jquery.core.PartitionedRequestQuery.yearTable;
 import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
@@ -17,8 +14,11 @@ import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.ParseException.cannotParseException;
+import static org.usf.jquery.web.RevisionIterator.iterator;
+import static org.usf.jquery.web.RevisionIterator.monthFilter;
+import static org.usf.jquery.web.RevisionIterator.yearColumn;
+import static org.usf.jquery.web.RevisionIterator.yearTable;
 import static org.usf.jquery.web.TableDecorator.flatParameters;
-import static org.usf.jquery.web.TableMetadata.emptyMetadata;
 import static org.usf.jquery.web.YearTableMetadata.emptyMetadata;
 import static org.usf.jquery.web.YearTableMetadata.yearTableMetadata;
 
@@ -33,7 +33,6 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
-import org.usf.jquery.core.PartitionedRequestQuery;
 import org.usf.jquery.core.RequestQuery;
 
 /**
@@ -46,7 +45,10 @@ import org.usf.jquery.core.RequestQuery;
  */
 public interface YearTableDecorator extends TableDecorator {
 	
+	
 	Optional<? extends ColumnDecorator> revisionColumn();
+
+	ColumnDecorator revisionYear(); // !table column
 
 	/**
 	 * loaded from db if null
@@ -58,25 +60,21 @@ public interface YearTableDecorator extends TableDecorator {
     
 	@Override
 	default DBTable table() {
-		return yearTable(tableName(), identity());
+		return yearTable(schema().orElse(null), tableName(), identity());
 	}
 	
 	@Override
-	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		var query = new PartitionedRequestQuery(parseRevisions(ant, parameterMap));
-		parseWindow(ant, query, parameterMap);
-		parseColumns(ant, query, parameterMap);
-		parseFilters(ant, query, parameterMap);
-		parseOrders(ant, query, parameterMap);
-		query.columns(yearColumn().as("revisionYear"));
+	default RequestQuery query(Map<String, String[]> parameterMap) {
+		var query = TableDecorator.super.query(parameterMap);
+		query.columns(yearColumn().as(revisionYear().reference()));
 		revisionColumn().ifPresent(rc-> {
 			var col = rc.column(this);
 			query.columns(col).filters(monthFilter(col));
 		});
-		return query;
+		return query.repeat(iterator(parseRevisions(parameterMap)));
 	}
 
-	default YearMonth[] parseRevisions(RequestQueryParam ant, Map<String, String[]> parameterMap) {
+	default YearMonth[] parseRevisions(Map<String, String[]> parameterMap) {
 		var arr = parameterMap.get(REVISION_MODE);
 		if(nonNull(arr) && arr.length > 1) {
 			throw cannotEvaluateException(REVISION, join(", ", arr)); //multiple values
@@ -171,8 +169,8 @@ public interface YearTableDecorator extends TableDecorator {
 
     @Override
     default YearTableMetadata metadata() {
-		return (YearTableMetadata) database().tableMetada(this) 
-				.orElseGet(()-> emptyMetadata(this)); //unregistered table
+		return (YearTableMetadata) database().tableMetada(this) //safe cast
+				.orElseGet(()-> emptyMetadata(this)); //not binded
     }
     
     @Override
@@ -180,8 +178,8 @@ public interface YearTableDecorator extends TableDecorator {
     	return yearTableMetadata(this, columns);
     }
     
-    //TODO delegated not working
     default String defaultRevisionMode() {
     	return "strict";
     }
+
 }

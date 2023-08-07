@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
+import static java.util.Objects.isNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -11,6 +12,7 @@ import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
@@ -33,8 +35,8 @@ public class RequestQuery {
 	final List<TaggableView> tables = new LinkedList<>();
 	final List<DBFilter> filters = new LinkedList<>();  //WERE & HAVING
 	final List<DBOrder> orders = new LinkedList<>();
+	Iterator<?> it;
 	boolean distinct;
-	boolean noResult;
 	
 	public RequestQuery select(TaggableView table, TaggableColumn... columns) {
 		return tables(table).columns(columns);
@@ -71,6 +73,11 @@ public class RequestQuery {
 		Stream.of(orders).forEach(this.orders::add);
 		return this;
 	}
+	
+	public RequestQuery repeat(@NonNull Iterator<?> it) {
+		this.it = it;
+		return this;
+	}
 
 	public <T> T execute(@NonNull Function<ParametredQuery, T> fn) {
 		return fn.apply(build());
@@ -82,14 +89,19 @@ public class RequestQuery {
 		log.debug("building query...");
 		var bg = currentTimeMillis();
 		var pb = parametrized();
-		var sb = new SqlStringBuilder(500);
-		build(sb, pb);
+		var sb = new SqlStringBuilder(1000); //avg
+		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
+		if(isNull(it)) {
+			build(sb, pb);
+		}
+		else {
+			sb.forEach(it, " UNION ALL ", o-> build(sb, pb));
+		}
 		log.debug("query built in {} ms", currentTimeMillis() - bg);
-		return new ParametredQuery(sb.toString(), pb.args(), noResult);
+		return new ParametredQuery(sb.toString(), pb.args());
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
-		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
     	select(sb, pb);
     	where(sb, pb);
     	groupBy(sb);
@@ -148,7 +160,7 @@ public class RequestQuery {
     	}
 	}
 	
-	private boolean isAggregation() {
+	public boolean isAggregation() {
 		return columns.stream().anyMatch(DBColumn::isAggregation) ||
 				filters.stream().anyMatch(DBFilter::isAggregation);
 	}

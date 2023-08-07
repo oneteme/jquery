@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.Utils.isBlank;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,12 +13,13 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class DBTable implements TaggableView {
 	
+	private final String schema;
 	private final String name;
 	private final String tag;
 	
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		return name;
+		return isBlank(schema) ? name : schema + "." + name;
 	}
 	
 	@Override 

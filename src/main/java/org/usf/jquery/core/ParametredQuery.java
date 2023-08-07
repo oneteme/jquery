@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.sql.DataSource;
 
@@ -23,7 +24,11 @@ public final class ParametredQuery {
 	@NonNull
 	private final String query;
 	private final Object[] params;
-	private final boolean noResult;
+	
+
+	public List<DynamicModel> execute(DataSource ds) {
+		return execute(ds, new ResultSimpleMapper());
+	}
 	
 	public <T> T execute(DataSource ds, ResultMapper<T> mapper) {
 		try(var cn = ds.getConnection()){
@@ -36,7 +41,7 @@ public final class ParametredQuery {
 				}
 		        log.info("using parameters : {}", Arrays.toString(params));
 				try(var rs = ps.executeQuery()){
-					return rs.next() ? mapper.map(rs) : null;
+					return mapper.map(rs);
 				}
 			}
 		}
@@ -47,9 +52,5 @@ public final class ParametredQuery {
 	
 	public ResultSimpleMapper defaultMapper() {
 		return new ResultSimpleMapper();
-	}
-	
-	public boolean hasNoResult() {
-		return noResult;
 	}
 }

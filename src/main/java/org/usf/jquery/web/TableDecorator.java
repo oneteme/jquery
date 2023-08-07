@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
+import static java.util.Optional.empty;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -22,7 +23,6 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
@@ -42,6 +42,10 @@ public interface TableDecorator {
 	
 	Optional<String> columnName(ColumnDecorator cd);
 	
+	default Optional<String> schema() {
+		return empty();
+	}
+	
 	default int columnType(ColumnDecorator cd) {
 		return database().columnMetada(this, cd)
 				.map(ColumnMetadata::getDataType)
@@ -49,19 +53,19 @@ public interface TableDecorator {
 	}
 	
 	default DBTable table() {
-		return new DBTable(tableName(), identity());
+		return new DBTable(schema().orElse(null), tableName(), identity());
 	}
 	
-	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
+	default RequestQuery query(Map<String, String[]> parameterMap) {
 		var query = new RequestQuery();
-		parseWindow (ant, query, parameterMap);
-		parseColumns(ant, query, parameterMap);
-		parseFilters(ant, query, parameterMap);
-		parseOrders (ant, query, parameterMap);
+		parseWindow (query, parameterMap);
+		parseColumns(query, parameterMap);
+		parseFilters(query, parameterMap);
+		parseOrders (query, parameterMap);
 		return query;
 	}
 	
-	default void parseWindow(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
+	default void parseWindow(RequestQuery query, Map<String, String[]> parameters) {
 		var map = new LinkedHashMap<String, DBWindow>();
 		if(parameters.containsKey(WINDOW_PARTITION)) {
 			flatParameters(parameters.get(WINDOW_PARTITION)).forEach(p->{
@@ -90,16 +94,13 @@ public interface TableDecorator {
 		}
 	}
 	
-	default void parseColumns(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
+	default void parseColumns(RequestQuery query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(COLUMN_DISTINCT) && parameters.containsKey(COLUMN)) {
 			throw new IllegalArgumentException("cannot use both parameters " + quote(COLUMN_DISTINCT) + " and " + quote(COLUMN));
 		}
 		var cols = parameters.containsKey(COLUMN_DISTINCT) 
 				? parameters.get(COLUMN_DISTINCT) 
 				: parameters.get(COLUMN); //can be combined in PG (distinct on)
-		if(isEmpty(cols)) {
-			cols = ant.defaultColumns();
-		}
 		if(isEmpty(cols)) {
 			throw missingParameterException(COLUMN, COLUMN_DISTINCT);
 		}
@@ -113,18 +114,16 @@ public interface TableDecorator {
 		});
 	}
 
-	default void parseFilters(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
-		var ignoreParams = Set.of(ant.ignoreParameters()); 
+	default void parseFilters(RequestQuery query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
     	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
-    	.filter(e-> !ignoreParams.contains(e.getKey()))
     	.forEach(e-> {
     		var rf = decodeFilter(e, this);
     		query.tablesIfAbsent(rf.tables()).filters(rf.filters());
     	});
 	}
 
-	default void parseOrders(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameters) {
+	default void parseOrders(RequestQuery query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(ORDER)) {
 			flatParameters(parameters.get(ORDER)).forEach(p->{
 				var rc = decodeColumn(p, this, true);
@@ -139,7 +138,7 @@ public interface TableDecorator {
 	
 	default TableMetadata metadata() {
 		return database().tableMetada(this) 
-				.orElseGet(()-> emptyMetadata(this)); //unregistered table
+				.orElseGet(()-> emptyMetadata(this)); // not binded
 	}
 	
 	default TableMetadata createMetadata(Collection<ColumnDecorator> columns) {

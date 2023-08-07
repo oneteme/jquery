@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.util.function.Function.identity;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -59,15 +60,14 @@ public final class SqlStringBuilder {
 		return this;
 	}
 
-	public <T> SqlStringBuilder forEach(Collection<T> list, String separator, Consumer<T> cons) {
-		if(!list.isEmpty()) {
-			var it = list.iterator();
+	public <T> SqlStringBuilder forEach(Iterator<T> it, String separator, Consumer<T> cons) {
+		if(it.hasNext()) {
 			cons.accept(it.next());
 			while(it.hasNext()) {
 				this.sb.append(separator);
 				cons.accept(it.next());
 			}
-		}
+		} 
 		return this;
 	}
 	

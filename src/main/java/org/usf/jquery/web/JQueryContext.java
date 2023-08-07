@@ -31,14 +31,14 @@ public final class JQueryContext {
 	private final Map<String, TableDecorator> tables;
 	private final Map<String, ColumnDecorator> columns;
 	
-	private DatabaseMetadata database; // by default
+	private DatabaseMetadata database;
 	
 	public static JQueryContext context(){
 		return requireNonNull(instance, ()-> "jquery context not initialized");
 	}
 	
 	public static DatabaseMetadata database(){
-		return requireNonNullElseGet(context().database, DatabaseMetadata::emptyMetadata);
+		return requireNonNullElseGet(context().database, DatabaseMetadata::emptyMetadata);  // by default
 	}
 
 	public static JQueryContext register(

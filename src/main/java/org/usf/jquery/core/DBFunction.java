@@ -143,11 +143,11 @@ public interface DBFunction extends DBOperation {
 		return extract("DAY");
 	}
 	
-	static TypedFunction dow() {
+	static TypedFunction dow() {//!Teradata
 		return extract("DOW");
 	}
 	
-	static TypedFunction doy() {
+	static TypedFunction doy() {//!Teradata
 		return extract("DOY");
 	}
 
@@ -163,7 +163,7 @@ public interface DBFunction extends DBOperation {
 		return extract("SECOND");
 	}
 	
-	static TypedFunction epoch() {
+	static TypedFunction epoch() { //!Teradata
 		return extract("EPOCH");
 	}
 	
@@ -181,7 +181,6 @@ public interface DBFunction extends DBOperation {
 				.argsSuffix(" AS " + type);
 	}
 
-	
 	static DBFunction function(final String name) {
 		return ()-> name;
 	}

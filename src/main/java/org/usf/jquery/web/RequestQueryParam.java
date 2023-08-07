@@ -24,13 +24,15 @@ public @interface RequestQueryParam {
 	
 	String[] ignoreParameters() default {}; 
 	
-	@Deprecated
-	boolean allowUnknownParameters() default false; //ignoreUnknownParameters
-	
 	boolean aggregationOnly() default false; 
 	
-	//TODO sortColumn, ..
-
+	/**
+	 * 
+	 * @see RequestQueryParam::ignoreParameters
+	 */
+	@Deprecated(forRemoval = true)
+	boolean allowUnknownParameters() default false; //ignoreUnknownParameters
+	
 	@Deprecated(forRemoval = true)
 	String columnParameter() default "column"; 
 
