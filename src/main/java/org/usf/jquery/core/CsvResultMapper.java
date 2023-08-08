@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class ResultCsvExport implements ResultMapper<Void> {
+public final class CsvResultMapper implements ResultMapper<Void> {
 	
 	private static final String SEMIC = ";";
     private final DataWriter writer;

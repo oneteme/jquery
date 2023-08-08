@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @FunctionalInterface
 public interface ResultMapper<T> {
 	
-    T map(ResultSet rs) throws SQLException;
+    T map(ResultSet rs) throws SQLException; //SQLException only
 	
 	default String[] declaredColumns(ResultSet rs) throws SQLException {
 		var names = new String[rs.getMetaData().getColumnCount()];

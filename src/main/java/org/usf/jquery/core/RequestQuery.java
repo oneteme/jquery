@@ -32,7 +32,7 @@ public final class RequestQuery {
 	private final Object[] params;
 	
 	public List<DynamicModel> execute(DataSource ds) {
-		return execute(ds, new ResultSimpleMapper());
+		return execute(ds, new SimpleResultMapper());
 	}
 	
 	public <T> T execute(DataSource ds, ResultMapper<T> mapper) {
@@ -64,7 +64,7 @@ public final class RequestQuery {
 	}
 
 	public void toCsv(DataSource ds, DataWriter out) {
-		execute(ds, new ResultCsvExport(out));
+		execute(ds, new CsvResultMapper(out));
 	}
 
 	public void toAscii(DataSource ds, Writer w) {
@@ -72,14 +72,14 @@ public final class RequestQuery {
 	}
 	
 	public void toAscii(DataSource ds, DataWriter out) {
-		execute(ds, new ResultAsciiExport(out));
+		execute(ds, new AsciiResultMapper(out));
 	}
 	
 	public void logResult(DataSource ds) {
-		execute(ds, new ResultAsciiExport(usingRowWriter(log::debug)));
+		execute(ds, new AsciiResultMapper(usingRowWriter(log::debug)));
 	}
 	
-	public ResultSimpleMapper defaultMapper() {
-		return new ResultSimpleMapper();
+	public SimpleResultMapper defaultMapper() {
+		return new SimpleResultMapper();
 	}
 }

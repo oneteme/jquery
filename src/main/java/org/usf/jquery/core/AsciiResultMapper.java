@@ -34,14 +34,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class ResultAsciiExport implements ResultMapper<Void> {
+public final class AsciiResultMapper implements ResultMapper<Void> {
 	
 	private static final int MAX_LENGTH = 50;
 
     private final DataWriter writer;
     private final Map<String, String> columns;
     
-	public ResultAsciiExport(DataWriter writer) {
+	public AsciiResultMapper(DataWriter writer) {
 		this(writer, emptyMap());
 	}
 
