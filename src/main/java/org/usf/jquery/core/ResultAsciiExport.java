@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.String.format;
+import static java.lang.System.currentTimeMillis;
 import static java.sql.Types.*;
 import static java.util.Collections.emptyMap;
 import static java.util.Objects.nonNull;
@@ -14,12 +15,14 @@ import java.util.Map;
 import java.util.stream.IntStream;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
+@Slf4j
 @RequiredArgsConstructor
 public final class ResultAsciiExport implements ResultMapper<Void> {
 	
@@ -34,7 +37,9 @@ public final class ResultAsciiExport implements ResultMapper<Void> {
 
 	@Override
 	public Void map(ResultSet rs) throws SQLException {
-		
+		log.debug("exporting results...");
+		var bg = currentTimeMillis();
+        var rw = 0;
 		var names = new String[rs.getMetaData().getColumnCount()];
 		var sb = new StringBuilder(MAX_LENGTH * names.length).append("|");
 		for(var i=0; i<names.length; i++) {
@@ -68,11 +73,13 @@ public final class ResultAsciiExport implements ResultMapper<Void> {
 					}
 				}
 				writer.write(format(pattern, data));
+                rw++;
 			}
 			writer.write(div);
 		} catch (IOException e) {
             throw new RuntimeException("error while exporting results", e);
 		}
+		log.info("{} rows exported in {} ms", rw, currentTimeMillis() - bg);
 		return null;
 	}
 	
