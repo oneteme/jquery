@@ -11,7 +11,6 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
-import org.usf.jquery.core.ResultMapper.RowWriter;
 
 import lombok.Getter;
 import lombok.NonNull;

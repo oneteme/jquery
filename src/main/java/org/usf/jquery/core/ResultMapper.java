@@ -8,8 +8,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.function.Consumer;
 
-import org.usf.jquery.core.ResultMapper.RowWriter;
-
 import lombok.RequiredArgsConstructor;
 
 /**
