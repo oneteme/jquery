@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -48,6 +49,19 @@ public final class RequestQuery {
 		catch(SQLException e) {
 			throw new RuntimeException(e);
 		}
+	}
+	
+	public void toCsv(DataSource ds, Writer w) {
+		execute(ds, new ResultCsvExport(w));
+	}
+	
+	//dev mode only
+	public void printResult(DataSource ds) {
+		execute(ds, new ResultAsciiExport(System.out::println));
+	}
+
+	public void debugResult(DataSource ds) {
+		execute(ds, new ResultAsciiExport(log::debug));
 	}
 	
 	public ResultSimpleMapper defaultMapper() {
