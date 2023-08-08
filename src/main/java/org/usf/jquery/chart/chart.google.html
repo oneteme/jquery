@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<script src="https://www.gstatic.com/charts/loader.js"></script>
+<script>
+google.charts.load('current', {'packages':['corechart']});
+google.charts.setOnLoadCallback(drawChart);
+function drawChart() {
+new google.visualization.PieChart(document.getElementById('chart'))
+.draw(google.visualization.arrayToDataTable([$chart_data]), { title:'World Wide Wine Production' });
+}
+window.onresize = drawChart
+</script>
+<body>
+<div id="chart" style="width:100%; height:100vh;"></div>
+</body>
+</html>

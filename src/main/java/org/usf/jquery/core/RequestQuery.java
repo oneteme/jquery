@@ -11,6 +11,8 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
+import org.usf.jquery.web.Chart;
+import org.usf.jquery.web.Table;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -58,6 +60,7 @@ public final class RequestQuery {
 		}
 	}
 
+	/* experimental */
 	
 	public void toCsv(DataSource ds, Writer w) {
 		toCsv(ds, w::write);
@@ -73,6 +76,14 @@ public final class RequestQuery {
 	
 	public void toAscii(DataSource ds, DataWriter out) {
 		execute(ds, new AsciiResultMapper(out));
+	}
+	
+	public void toChart(DataSource ds, Writer w) {
+		execute(ds, new Chart(w, "host", "countRows"));
+	}
+	
+	public void toTable(DataSource ds, Writer w) {
+		execute(ds, new Table(w));
 	}
 	
 	public void logResult(DataSource ds) {
