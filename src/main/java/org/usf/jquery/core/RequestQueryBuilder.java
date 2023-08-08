@@ -155,7 +155,7 @@ public class RequestQueryBuilder {
 	void orderBy(SqlStringBuilder sb, QueryParameterBuilder pb) {
     	if(!orders.isEmpty()) {
     		sb.append(" ORDER BY ")
-    		.appendEach(orders, SPACE, o-> o.sql(pb));
+    		.appendEach(orders, SCOMA, o-> o.sql(pb));
     	}
 	}
 	

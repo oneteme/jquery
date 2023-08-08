@@ -46,7 +46,7 @@ public final class RequestColumn {
 	private static final ColumnDecorator countColumn = new ColumnDecorator() {
 		@Override
 		public String identity() {
-			return null;
+			return null; //unused
 		}
 		@Override
 		public String reference() {

@@ -1,11 +1,18 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.ResultMapper.RowWriter.lineSeparator;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.sql.DataSource;
+
+import org.usf.jquery.core.ResultMapper.RowWriter;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -26,7 +33,6 @@ public final class RequestQuery {
 	private final String query;
 	private final Object[] params;
 	
-
 	public List<DynamicModel> execute(DataSource ds) {
 		return execute(ds, new ResultSimpleMapper());
 	}
@@ -40,7 +46,7 @@ public final class RequestQuery {
 						ps.setObject(i+1, params[i]);
 					}						
 				}
-		        log.info("using parameters : {}", Arrays.toString(params));
+		        log.info("with parameters : {}", Arrays.toString(params));
 				try(var rs = ps.executeQuery()){
 					return mapper.map(rs);
 				}
@@ -50,16 +56,24 @@ public final class RequestQuery {
 			throw new RuntimeException(e);
 		}
 	}
+
 	
 	public void toCsv(DataSource ds, Writer w) {
-		execute(ds, new ResultCsvExport(w));
-	}
-	
-	//dev mode only
-	public void printResult(DataSource ds) {
-		execute(ds, new ResultAsciiExport(System.out::println));
+		toCsv(ds, lineSeparator(w::write));
 	}
 
+	public void toCsv(DataSource ds, RowWriter out) {
+		execute(ds, new ResultCsvExport(out));
+	}
+
+	public void toAscii(DataSource ds, Writer w) {
+		toAscii(ds, lineSeparator(w::write));
+	}
+	
+	public void toAscii(DataSource ds, RowWriter out) {
+		execute(ds, new ResultAsciiExport(out));
+	}
+	
 	public void debugResult(DataSource ds) {
 		execute(ds, new ResultAsciiExport(log::debug));
 	}

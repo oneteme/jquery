@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+
+import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -10,7 +12,7 @@ import java.sql.SQLException;
  */
 @FunctionalInterface
 public interface ResultMapper<T> {
-
+	
     T map(ResultSet rs) throws SQLException;
 	
 	default String[] declaredColumns(ResultSet rs) throws SQLException {
@@ -20,5 +22,17 @@ public interface ResultMapper<T> {
 		}
 		return names;
 	}
-
+	
+	interface RowWriter {
+		
+		void writeLine(String s) throws IOException;
+		
+		static RowWriter lineSeparator(RowWriter w) {
+			return lineSeparator(w, System.lineSeparator());
+		}
+		
+		static RowWriter lineSeparator(RowWriter w, String separator) {
+			return s-> w.writeLine(s + separator);
+		}
+	}
 }

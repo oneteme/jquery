@@ -1,10 +1,8 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
-import static java.lang.System.lineSeparator;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
@@ -21,33 +19,33 @@ import lombok.extern.slf4j.Slf4j;
 public final class ResultCsvExport implements ResultMapper<Void> {
 	
 	private static final String SEMIC = ";";
-    private final Writer writer;
+    private final RowWriter writer;
 
     @Override
     public Void map(ResultSet rs) throws SQLException {
-		log.debug("exporting results...");
+		log.debug("mapping results...");
 		var bg = currentTimeMillis();
         var rw = 0;
         try {
         	var columnNames = declaredColumns(rs);
+        	StringBuilder sb = new StringBuilder();
             for(String c : columnNames) {
-                writer.write(c);
-                writer.write(SEMIC);
+            	sb.append(c).append(SEMIC);
             }
-            writer.write(lineSeparator());
+            writer.writeLine(sb.toString());
             while(rs.next()) {
+            	sb.delete(0, sb.length()); //hold capacity
                 for(var i=0; i<columnNames.length; i++) {
-                    writer.write(String.valueOf(rs.getObject(i+1)));
-                    writer.write(SEMIC);
+                	sb.append(rs.getObject(i+1)).append(SEMIC);
                 }
-                writer.write(lineSeparator());
+                writer.writeLine(sb.toString());
                 rw++;
             }
         }
         catch(IOException e) {
-            throw new RuntimeException("error while exporting results", e);
+            throw new RuntimeException("error while mapping results", e);
         }
-		log.info("{} rows exported in {} ms", rw, currentTimeMillis() - bg);
+		log.info("{} rows mapped in {} ms", rw, currentTimeMillis() - bg);
         return null;
     }
     
