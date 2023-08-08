@@ -38,10 +38,10 @@ public final class ResultAsciiExport implements ResultMapper<Void> {
 	
 	private static final int MAX_LENGTH = 50;
 
-    private final RowWriter writer;
+    private final DataWriter writer;
     private final Map<String, String> columns;
     
-	public ResultAsciiExport(RowWriter writer) {
+	public ResultAsciiExport(DataWriter writer) {
 		this(writer, emptyMap());
 	}
 

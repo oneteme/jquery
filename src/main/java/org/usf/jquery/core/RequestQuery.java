@@ -1,10 +1,8 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.ResultMapper.RowWriter.lineSeparator;
+import static java.lang.System.currentTimeMillis;
+import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -12,6 +10,7 @@ import java.util.List;
 
 import javax.sql.DataSource;
 
+import org.usf.jquery.core.ResultMapper.DataWriter;
 import org.usf.jquery.core.ResultMapper.RowWriter;
 
 import lombok.Getter;
@@ -39,15 +38,18 @@ public final class RequestQuery {
 	
 	public <T> T execute(DataSource ds, ResultMapper<T> mapper) {
 		try(var cn = ds.getConnection()){
-			log.info("preparing statement : {}", query);
+			log.debug("preparing statement : {}", query);
 			try(var ps = cn.prepareStatement(query)){
 				if(params != null) {
 					for(var i=0; i<params.length; i++) {
 						ps.setObject(i+1, params[i]);
 					}						
 				}
-		        log.info("with parameters : {}", Arrays.toString(params));
+		        log.debug("with parameters : {}", Arrays.toString(params));
+		        log.debug("executing SQL query...");
+		        var bg = currentTimeMillis();
 				try(var rs = ps.executeQuery()){
+			        log.debug("query executed in {} ms", currentTimeMillis() - bg);
 					return mapper.map(rs);
 				}
 			}
@@ -59,23 +61,23 @@ public final class RequestQuery {
 
 	
 	public void toCsv(DataSource ds, Writer w) {
-		toCsv(ds, lineSeparator(w::write));
+		toCsv(ds, w::write);
 	}
 
-	public void toCsv(DataSource ds, RowWriter out) {
+	public void toCsv(DataSource ds, DataWriter out) {
 		execute(ds, new ResultCsvExport(out));
 	}
 
 	public void toAscii(DataSource ds, Writer w) {
-		toAscii(ds, lineSeparator(w::write));
+		toAscii(ds, w::write);
 	}
 	
-	public void toAscii(DataSource ds, RowWriter out) {
+	public void toAscii(DataSource ds, DataWriter out) {
 		execute(ds, new ResultAsciiExport(out));
 	}
 	
-	public void debugResult(DataSource ds) {
-		execute(ds, new ResultAsciiExport(log::debug));
+	public void logResult(DataSource ds) {
+		execute(ds, new ResultAsciiExport(usingRowWriter(log::debug)));
 	}
 	
 	public ResultSimpleMapper defaultMapper() {

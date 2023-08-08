@@ -19,7 +19,7 @@ import lombok.extern.slf4j.Slf4j;
 public final class ResultCsvExport implements ResultMapper<Void> {
 	
 	private static final String SEMIC = ";";
-    private final RowWriter writer;
+    private final DataWriter writer;
 
     @Override
     public Void map(ResultSet rs) throws SQLException {
@@ -28,17 +28,17 @@ public final class ResultCsvExport implements ResultMapper<Void> {
         var rw = 0;
         try {
         	var columnNames = declaredColumns(rs);
-        	StringBuilder sb = new StringBuilder();
             for(String c : columnNames) {
-            	sb.append(c).append(SEMIC);
+            	writer.write(c);
+            	writer.write(SEMIC);
             }
-            writer.writeLine(sb.toString());
+            writer.writeLine();
             while(rs.next()) {
-            	sb.delete(0, sb.length()); //hold capacity
                 for(var i=0; i<columnNames.length; i++) {
-                	sb.append(rs.getObject(i+1)).append(SEMIC);
+                	writer.write(String.valueOf(rs.getObject(i+1)));
+                	writer.write(SEMIC);
                 }
-                writer.writeLine(sb.toString());
+                writer.writeLine();
                 rw++;
             }
         }
