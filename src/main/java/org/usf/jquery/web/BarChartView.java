@@ -38,8 +38,9 @@ public final class BarChartView implements ResultWebView {
 	private static final String CHART_DATA = "$data";
 	private static final String CHART_TYPE = "$chart";
 
+	private final String type;
     private final Writer writer;
-	
+    
     //https://developers.google.com/chart/interactive/docs/gallery/columnchart?hl=fr#data-format
     public Void map(ResultSet rs) throws SQLException {
 		log.debug("mapping results...");
@@ -77,9 +78,9 @@ public final class BarChartView implements ResultWebView {
 		}
 		try {
 			writer.write(readString(Paths.get(getClass().getResource("../chart/chart.google.html").toURI()))
-					.replace(CHART_TYPE, "BarChart")
+					.replace(CHART_TYPE, type)
 					.replace(CHART_DATA, sb.toString()
-							.replace(lineSeparator(), "")));
+					.replace(lineSeparator(), "")));
 		} catch (IOException | URISyntaxException e) {
 			throw new RuntimeException("error while mapping results", e);
 		}
@@ -105,6 +106,14 @@ public final class BarChartView implements ResultWebView {
 			}
 		}
 		throw new IllegalStateException("");
+    }
+    
+    public static final BarChartView barChart(Writer w) {
+    	return new BarChartView("BarChart", w);
+    }
+
+    public static final BarChartView columnChart(Writer w) {
+    	return new BarChartView("ColumnChart", w);
     }
 
 }

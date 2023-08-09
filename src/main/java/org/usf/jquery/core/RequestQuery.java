@@ -2,6 +2,8 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
+import static org.usf.jquery.web.BarChartView.barChart;
+import static org.usf.jquery.web.BarChartView.columnChart;
 
 import java.io.Writer;
 import java.sql.SQLException;
@@ -11,7 +13,6 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
-import org.usf.jquery.web.BarChartView;
 import org.usf.jquery.web.PieChartView;
 import org.usf.jquery.web.ResultWebView;
 import org.usf.jquery.web.TableView;
@@ -97,7 +98,8 @@ public final class RequestQuery {
 		switch (view) {
 		case "table": return new TableView(w);
 		case "pie"	: return new PieChartView(w);
-		case "bar"	: return new BarChartView(w);
+		case "bar"	: return barChart(w);
+		case "column"	: return columnChart(w);
 		default: throw new IllegalArgumentException(view);
 		}
 	}
