@@ -11,8 +11,10 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
-import org.usf.jquery.web.Chart;
-import org.usf.jquery.web.Table;
+import org.usf.jquery.web.BarChartView;
+import org.usf.jquery.web.PieChartView;
+import org.usf.jquery.web.ResultWebView;
+import org.usf.jquery.web.TableView;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -78,16 +80,26 @@ public final class RequestQuery {
 		execute(ds, new AsciiResultMapper(out));
 	}
 	
-	public void toChart(DataSource ds, Writer w) {
-		execute(ds, new Chart(w, "host", "countRows"));
+	public void toChart(DataSource ds, Writer w, String view) {
+		execute(ds, chart(view, w));
 	}
 	
 	public void toTable(DataSource ds, Writer w) {
-		execute(ds, new Table(w));
+		execute(ds, new TableView(w));
 	}
 	
 	public void logResult(DataSource ds) {
 		execute(ds, new AsciiResultMapper(usingRowWriter(log::debug)));
+	}
+	
+
+	public ResultWebView chart(String view, Writer w) {
+		switch (view) {
+		case "table": return new TableView(w);
+		case "pie"	: return new PieChartView(w);
+		case "bar"	: return new BarChartView(w);
+		default: throw new IllegalArgumentException(view);
+		}
 	}
 	
 	public SimpleResultMapper defaultMapper() {

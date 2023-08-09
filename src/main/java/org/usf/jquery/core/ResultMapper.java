@@ -68,6 +68,5 @@ public interface ResultMapper<T> {
 			writer.accept(sb.append(s).toString());
 			this.sb.delete(0, sb.length()); //clear
 		}
-
 	}
 }

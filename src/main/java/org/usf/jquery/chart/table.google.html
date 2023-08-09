@@ -1,19 +1,8 @@
-<html>
-<head>
-<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
-<script type="text/javascript">
+<!DOCTYPE html><html><head><title>JQuery</title><script src="https://www.gstatic.com/charts/loader.js"></script><script>
 google.charts.load('current', {'packages':['table']});
-google.charts.setOnLoadCallback(drawTable);
-function drawTable() {
-var data = new google.visualization.DataTable();
-[$columns].forEach(a=>data.addColumn(a[0], a[1]));
-data.addRows([$data]);
-var table = new google.visualization.Table(document.getElementById('table_div'));
-table.draw(data, {showRowNumber: true, width: '100%', height: '100%'});
+google.charts.setOnLoadCallback(draw);
+function draw() {
+var data = new google.visualization.DataTable();[$columns].forEach(a=>data.addColumn(a[0], a[1]));data.addRows([$data]);
+new google.visualization.Table(document.getElementById('table')).draw(data, {showRowNumber:true, width:'100%'});
 }
-</script>
-</head>
-<body>
-<div id="table_div"></div>
-</body>
-</html>
+</script></head><body><div id="table"></div></body></html>
