@@ -107,7 +107,7 @@ public interface YearTableDecorator extends TableDecorator {
     	}
     }
     
-	private YearMonth[] strictRevisions(YearMonth[] values) {
+	default YearMonth[] strictRevisions(YearMonth[] values) {
 		var revs = availableRevisions();
 		return isEmpty(revs) || isEmpty(values) 
 				? EMPTY_REVISION 
@@ -116,7 +116,7 @@ public interface YearTableDecorator extends TableDecorator {
 				.toArray(YearMonth[]::new);
 	}
 	
-	private YearMonth[] precedingRevisions(YearMonth[] values) {
+	default YearMonth[] precedingRevisions(YearMonth[] values) {
 		var revs = availableRevisions();
 		if(isEmpty(revs)) {
 			return EMPTY_REVISION;
@@ -136,7 +136,7 @@ public interface YearTableDecorator extends TableDecorator {
 		return list.isEmpty() ? EMPTY_REVISION : list.toArray(YearMonth[]::new);
 	}
 	
-	private YearMonth[] succeedingRevisions(YearMonth[] values) {
+	default YearMonth[] succeedingRevisions(YearMonth[] values) {
 		var revs = availableRevisions();
 		if(isEmpty(revs)) {
 			return EMPTY_REVISION;
