@@ -147,5 +147,9 @@ public interface ResultWebView extends ResultMapper<Void>  {
 		public static <T> Formatter<Collection<T>> formatCollection(String delimiter) {
 			return c-> STRING.format(c.stream().map(Object::toString).collect(joining(delimiter)));
 		}
+		
+		public static <T> Formatter<Collection<T>> formatFirstItem(Formatter<T> f) {
+			return c-> f.format(c.iterator().next());
+		}
 	}
 }

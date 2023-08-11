@@ -8,6 +8,7 @@ import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.web.ResultWebView.columns;
 import static org.usf.jquery.web.ResultWebView.Formatter.formatCollection;
+import static org.usf.jquery.web.ResultWebView.Formatter.formatFirstItem;
 import static org.usf.jquery.web.ResultWebView.WebType.NUMBER;
 
 import java.io.IOException;
@@ -45,7 +46,9 @@ public final class BarChartView implements ResultWebView {
         var rw = 0;
 		var yCols = requireNumberColumns(rs.getMetaData());
 		var xCols = columns(rs.getMetaData(), not(yCols::contains)); //other
-		var xType = formatCollection("_");
+		var xType = "LineChart".equals(type) && xCols.size() == 1
+				? formatFirstItem(typeOf(rs.getMetaData(), xCols.get(0)))
+				: formatCollection("_");
 		var sb = new StringBuilder()
 				.append("[").append(quote(join("_", xCols)));
 		yCols.forEach(y-> sb.append(",").append(quote(y)));
@@ -92,6 +95,21 @@ public final class BarChartView implements ResultWebView {
     	}
     	return columns;
 	}
+	
+
+    private WebType typeOf(ResultSetMetaData rsm, String cn) throws SQLException {
+
+		for(var i=0; i<rsm.getColumnCount(); i++) {
+			if(rsm.getColumnName(i+1).equals(cn)) {
+				return WebType.typeOf(rsm.getColumnType(i+1));
+			}
+		}
+		throw new IllegalStateException("");
+    }
+    
+    public static final BarChartView areaChart(Writer w) {
+    	return new BarChartView("AreaChart", w);
+    }
     
     public static final BarChartView barChart(Writer w) {
     	return new BarChartView("BarChart", w);
@@ -99,6 +117,10 @@ public final class BarChartView implements ResultWebView {
 
     public static final BarChartView columnChart(Writer w) {
     	return new BarChartView("ColumnChart", w);
+    }
+
+    public static final BarChartView lineChart(Writer w) {
+    	return new BarChartView("LineChart", w);
     }
 
 }
