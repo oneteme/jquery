@@ -1,0 +1,12 @@
+<!DOCTYPE html><html><head><title>JQuery</title><script src="https://www.gstatic.com/charts/loader.js"></script><script>
+google.charts.load("current", {packages:["calendar"]});
+google.charts.setOnLoadCallback(draw);
+function draw() {
+var data = new google.visualization.DataTable();
+[$columns].forEach(a=>data.addColumn(a[0], a[1]));data.addRows([$data]);
+var chart = new google.visualization.Calendar(document.getElementById('calendar'));
+var options = {
+title: "",
+};
+chart.draw(data, options);}
+</script></head><body><div id="calendar" style="width: 1000px; height: 350px;"></div></body></html>

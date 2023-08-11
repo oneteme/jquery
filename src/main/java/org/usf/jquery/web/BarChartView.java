@@ -6,10 +6,9 @@ import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.readString;
 import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.web.ResultWebView.columns;
 import static org.usf.jquery.web.ResultWebView.Formatter.formatCollection;
-import static org.usf.jquery.web.ResultWebView.Formatter.formatFirstItem;
 import static org.usf.jquery.web.ResultWebView.WebType.NUMBER;
-import static org.usf.jquery.web.ResultWebView.WebType.STRING;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -18,10 +17,8 @@ import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Predicate;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,22 +43,11 @@ public final class BarChartView implements ResultWebView {
 		log.debug("mapping results...");
 		var bg = currentTimeMillis();
         var rw = 0;
-		var sb = new StringBuilder();
-		var xCols = columns(rs.getMetaData(), not(NUMBER::equals)); //TD numeric columns : STATUS, ...
-		Formatter<Collection<Object>> xType;
-		if(xCols.isEmpty()) {
-			xType = o-> STRING.format("");
-		}
-		else {
-			xType = xCols.size() > 1
-					? formatCollection()
-					: formatFirstItem(typeOf(rs.getMetaData(), xCols.get(0))::format);
-		}
-		var yCols = columns(rs.getMetaData(), NUMBER::equals);
-		if(yCols.isEmpty()) {
-			throw new RuntimeException("xAxis required");
-		}
-		sb.append("[").append(quote(join("_", xCols)));
+		var yCols = requireNumberColumns(rs.getMetaData());
+		var xCols = columns(rs.getMetaData(), not(yCols::contains)); //other
+		var xType = formatCollection("_");
+		var sb = new StringBuilder()
+				.append("[").append(quote(join("_", xCols)));
 		yCols.forEach(y-> sb.append(",").append(quote(y)));
 		sb.append("]");
 		while(rs.next()) {
@@ -88,25 +74,24 @@ public final class BarChartView implements ResultWebView {
 		return null;
     }
     
-    private List<String> columns(ResultSetMetaData rsm, Predicate<WebType> test) throws SQLException {
-    	List<String> columns = new LinkedList<>();
-		for(var i=0; i<rsm.getColumnCount(); i++) {
-			if(test.test(WebType.typeOf(rsm.getColumnType(i+1)))) {
-				columns.add(rsm.getColumnName(i+1));
-			}
-		}
-		return columns;
+	static List<String> requireNumberColumns(ResultSetMetaData rsm) throws SQLException {
+    	var last = rsm.getColumnCount();
+    	var columns = new LinkedList<String>();
+    	while(last > 1 && WebType.typeOf(rsm.getColumnType(last)) == NUMBER) {
+    		columns.add(rsm.getColumnName(last--));
+    	}
+    	if(columns.isEmpty()) { //any numeric
+    		for(var i=0; i<rsm.getColumnCount(); i++) {
+    			if(WebType.typeOf(rsm.getColumnType(i+1)) == NUMBER) {
+    				columns.add(rsm.getColumnName(i+1));
+    			}
+    		}
+    	}
+    	if(columns.isEmpty()) {
+    		throw new IllegalArgumentException("numeric column expected");
+    	}
+    	return columns;
 	}
-
-    private WebType typeOf(ResultSetMetaData rsm, String cn) throws SQLException {
-
-		for(var i=0; i<rsm.getColumnCount(); i++) {
-			if(rsm.getColumnName(i+1).equals(cn)) {
-				return WebType.typeOf(rsm.getColumnType(i+1));
-			}
-		}
-		throw new IllegalStateException("");
-    }
     
     public static final BarChartView barChart(Writer w) {
     	return new BarChartView("BarChart", w);

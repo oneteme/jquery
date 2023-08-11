@@ -4,7 +4,8 @@ import static java.lang.System.currentTimeMillis;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.readString;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.web.ResultWebView.WebType.typeOf;
+import static org.usf.jquery.web.ResultWebView.requireDateColumn;
+import static org.usf.jquery.web.ResultWebView.requireNumberColumn;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -23,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class TableView implements ResultWebView {
+public final class CalendarView implements ResultWebView {
 	
 	private static final String DATA = "$data";
 	private static final String COLUMN = "$columns";
@@ -34,28 +35,24 @@ public final class TableView implements ResultWebView {
 		log.debug("mapping results...");
 		var bg = currentTimeMillis();
         var rw = 0;
-        var nc = rs.getMetaData().getColumnCount();
-		var sb1 = new StringBuilder(nc * 20);
-		var types = new WebType[nc];
-		for(var i=0; i<nc; i++) {
-			var name = rs.getMetaData().getColumnLabel(i+1);
-			types[i] = typeOf(rs.getMetaData().getColumnType(i+1));
-			sb1.append("[")
-			.append(quote(types[i].typeName())).append(",")
-			.append(quote(name)).append("],");
-		}
-		sb1.deleteCharAt(sb1.length()-1); //dirty but less code
-		var sb2 = new StringBuilder(nc * 100);
+        var xCol = requireDateColumn(rs.getMetaData());
+		var yCol = requireNumberColumn(rs.getMetaData());
+		var sb1 = new StringBuilder(100)
+		.append("[")
+		.append(quote(xCol.getValue().typeName())).append(",")
+		.append(quote(xCol.getKey())).append("],")
+		.append("[")
+		.append(quote(yCol.getValue().typeName())).append(",")
+		.append(quote(yCol.getKey())).append("]");
+		var sb2 = new StringBuilder(1000);
 		while(rs.next()) {
-			sb2.append("[").append(types[0].format(rs.getObject(1)));
-			for(int i=1; i<types.length; i++) {
-				sb2.append(",").append(types[i].format(rs.getObject(i+1)));
-			}
-			sb2.append("],");
+			sb2.append("[")
+			.append(xCol.getValue().format(rs.getObject(xCol.getKey()))).append(",")
+			.append(yCol.getValue().format(rs.getObject(yCol.getKey()))).append("],");
 		}
 		sb2.deleteCharAt(sb2.length()-1); //dirty but less code
 		try {
-			writer.write(readString(Paths.get(getClass().getResource("../chart/table.google.html").toURI()))
+			writer.write(readString(Paths.get(getClass().getResource("../chart/calendar.google.html").toURI()))
 					.replace(COLUMN, sb1.toString()) //TD optim this
 					.replace(DATA, sb2.toString())
 					.replace(lineSeparator(), ""));

@@ -13,6 +13,7 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
+import org.usf.jquery.web.CalendarView;
 import org.usf.jquery.web.PieChartView;
 import org.usf.jquery.web.ResultWebView;
 import org.usf.jquery.web.TableView;
@@ -85,10 +86,6 @@ public final class RequestQuery {
 		execute(ds, chart(view, w));
 	}
 	
-	public void toTable(DataSource ds, Writer w) {
-		execute(ds, new TableView(w));
-	}
-	
 	public void logResult(DataSource ds) {
 		execute(ds, new AsciiResultMapper(usingRowWriter(log::debug)));
 	}
@@ -100,6 +97,7 @@ public final class RequestQuery {
 		case "pie"	: return new PieChartView(w);
 		case "bar"	: return barChart(w);
 		case "column"	: return columnChart(w);
+		case "calendar"	: return new CalendarView(w);
 		default: throw new IllegalArgumentException(view);
 		}
 	}
