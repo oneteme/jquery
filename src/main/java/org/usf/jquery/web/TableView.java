@@ -19,14 +19,16 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 
  * @author u$f
+ * 
+ * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/table?hl=fr#data-format">table</a>
  *
  */
 @Slf4j
 @RequiredArgsConstructor
 public final class TableView implements ResultWebView {
 	
+	private static final String COLS = "$columns";
 	private static final String DATA = "$data";
-	private static final String COLUMN = "$columns";
 
     private final Writer writer;
 	
@@ -56,7 +58,7 @@ public final class TableView implements ResultWebView {
 		sb2.deleteCharAt(sb2.length()-1); //dirty but less code
 		try {
 			writer.write(readString(Paths.get(getClass().getResource("../chart/table.google.html").toURI()))
-					.replace(COLUMN, sb1.toString()) //TD optim this
+					.replace(COLS, sb1.toString()) //TD optim this
 					.replace(DATA, sb2.toString())
 					.replace(lineSeparator(), ""));
 		} catch (IOException | URISyntaxException e) {

@@ -96,12 +96,12 @@ public final class RequestQuery {
 
 	public ResultWebView chart(String view, Writer w) {
 		switch (view) {
-		case "table": return new TableView(w);
-		case "pie"	: return new PieChartView(w);
-		case "bar"	: return barChart(w);
-		case "area"	: return areaChart(w);
+		case "table"	: return new TableView(w);
+		case "pie"		: return new PieChartView(w);
 		case "column"	: return columnChart(w);
-		case "line"	: return lineChart(w);
+		case "bar"		: return barChart(w);
+		case "area"		: return areaChart(w);
+		case "line"		: return lineChart(w);
 		case "calendar"	: return new CalendarView(w);
 		default: throw new IllegalArgumentException(view);
 		}

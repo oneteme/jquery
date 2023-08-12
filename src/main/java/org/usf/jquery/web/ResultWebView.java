@@ -31,12 +31,13 @@ import lombok.RequiredArgsConstructor;
  * 
  * @author u$f
  *
+ *
  */
 public interface ResultWebView extends ResultMapper<Void>  {
 	
 	static Entry<String, WebType> requireNumberColumn(ResultSetMetaData rsm) throws SQLException {
-    	var last = rsm.getColumnCount();
-    	var yCol = entry(rsm.getColumnName(last), typeOf(rsm.getColumnType(last))); //y column
+    	var idx  = rsm.getColumnCount();
+    	var yCol = entry(rsm.getColumnName(idx), typeOf(rsm.getColumnType(idx))); //y column
 		return yCol.getValue() == NUMBER ? yCol : requireColumn(rsm, NUMBER::equals);
 	}
 	
@@ -146,10 +147,6 @@ public interface ResultWebView extends ResultMapper<Void>  {
 		
 		public static <T> Formatter<Collection<T>> formatCollection(String delimiter) {
 			return c-> STRING.format(c.stream().map(Object::toString).collect(joining(delimiter)));
-		}
-		
-		public static <T> Formatter<Collection<T>> formatFirstItem(Formatter<T> f) {
-			return c-> f.format(c.iterator().next());
 		}
 	}
 }

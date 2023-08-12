@@ -25,17 +25,19 @@ import lombok.extern.slf4j.Slf4j;
  * 
  * @author u$f
  *
+ * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/piechart?hl=fr#data-format">piechart</a>
+ *
  */
 @Slf4j
 @RequiredArgsConstructor
 public final class PieChartView implements ResultWebView {
 	
-	private static final String CHART_DATA = "$data";
-	private static final String CHART_TYPE = "$chart";
+	private static final String DATA = "$data";
+	private static final String TYPE = "$chart";
 
     private final Writer writer;
 	
-    //https://developers.google.com/chart/interactive/docs/gallery/piechart?hl=fr#data-format
+    
     public Void map(ResultSet rs) throws SQLException {
 		log.debug("mapping results...");
 		var bg = currentTimeMillis();
@@ -43,8 +45,8 @@ public final class PieChartView implements ResultWebView {
 		var yCols = requireNumberColumn(rs.getMetaData());
 		var xCols = columns(rs.getMetaData(), not(yCols.getKey()::equals));
 		var xType = formatCollection("_"); //join empty
-		var sb = new StringBuilder()
-				.append("[").append(quote(join("_", xCols))).append(",")
+		var sb = new StringBuilder("[")
+				.append(quote(join("_", xCols))).append(",")
 				.append(quote(yCols.getKey())).append("]");
 		while(rs.next()) {
 			sb.append(",[");
@@ -57,9 +59,9 @@ public final class PieChartView implements ResultWebView {
 			.append("]");
 		}
 		try {
-			writer.write(readString(Paths.get(getClass().getResource("../chart/chart.google.html").toURI()))
-					.replace(CHART_TYPE, "PieChart")
-					.replace(CHART_DATA, sb.toString())
+			writer.write(readString(Paths.get(getClass().getResource("../chart/pie.google.html").toURI()))
+					.replace(TYPE, "PieChart")
+					.replace(DATA, sb.toString())
 					.replace(lineSeparator(), ""));
 		} catch (IOException | URISyntaxException e) {
 			throw new RuntimeException("error while mapping results", e);

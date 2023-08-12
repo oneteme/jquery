@@ -20,14 +20,16 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * 
  * @author u$f
+ * 
+ * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/calendar?hl=fr">calendar</a>
  *
  */
 @Slf4j
 @RequiredArgsConstructor
 public final class CalendarView implements ResultWebView {
 	
+	private static final String COLS = "$columns";
 	private static final String DATA = "$data";
-	private static final String COLUMN = "$columns";
 
     private final Writer writer;
 	
@@ -53,7 +55,7 @@ public final class CalendarView implements ResultWebView {
 		sb2.deleteCharAt(sb2.length()-1); //dirty but less code
 		try {
 			writer.write(readString(Paths.get(getClass().getResource("../chart/calendar.google.html").toURI()))
-					.replace(COLUMN, sb1.toString()) //TD optim this
+					.replace(COLS, sb1.toString()) //TD optim this
 					.replace(DATA, sb2.toString())
 					.replace(lineSeparator(), ""));
 		} catch (IOException | URISyntaxException e) {
