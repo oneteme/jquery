@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class BarChartView implements ResultWebView {
+public final class Chart2DView implements ResultWebView {
 	
 	private static final String COLS = "$columns";
 	private static final String DATA = "$data";
@@ -48,7 +48,6 @@ public final class BarChartView implements ResultWebView {
 	private final String type;
     private final Writer writer;
     
-    //https://developers.google.com/chart/interactive/docs/gallery/columnchart?hl=fr#data-format
     public Void map(ResultSet rs) throws SQLException {
 		log.debug("mapping results...");
 		var bg = currentTimeMillis();
@@ -92,7 +91,9 @@ public final class BarChartView implements ResultWebView {
     		sb2.append("[")
     		.append(xType.format(e.getKey())).append(",")
     		.append(NUMBER.format(e.getValue())).append("],"));
-		sb2.deleteCharAt(sb2.length()-1); //dirty but less code
+    	if(!sb2.isEmpty()) {
+    		sb2.deleteCharAt(sb2.length()-1); //dirty but less code
+    	}
 		return new StringBuilder[]{sb1, sb2};
 	}
 
@@ -135,20 +136,20 @@ public final class BarChartView implements ResultWebView {
 		return new StringBuilder[]{sb1, sb2};
 	}
     
-    public static final BarChartView areaChart(Writer w) {
-    	return new BarChartView("AreaChart", w);
+    public static final Chart2DView areaChart(Writer w) {
+    	return new Chart2DView("AreaChart", w);
     }
     
-    public static final BarChartView barChart(Writer w) {
-    	return new BarChartView("BarChart", w);
+    public static final Chart2DView barChart(Writer w) {
+    	return new Chart2DView("BarChart", w);
     }
 
-    public static final BarChartView columnChart(Writer w) {
-    	return new BarChartView("ColumnChart", w);
+    public static final Chart2DView columnChart(Writer w) {
+    	return new Chart2DView("ColumnChart", w);
     }
 
-    public static final BarChartView lineChart(Writer w) {
-    	return new BarChartView("LineChart", w);
+    public static final Chart2DView lineChart(Writer w) {
+    	return new Chart2DView("LineChart", w);
     }
     
     @Getter

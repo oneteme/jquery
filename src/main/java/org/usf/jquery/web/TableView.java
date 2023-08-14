@@ -55,7 +55,9 @@ public final class TableView implements ResultWebView {
 			}
 			sb2.append("],");
 		}
-		sb2.deleteCharAt(sb2.length()-1); //dirty but less code
+		if(!sb2.isEmpty()) {
+			sb2.deleteCharAt(sb2.length()-1); //dirty but less code
+		}
 		try {
 			writer.write(readString(Paths.get(getClass().getResource("../chart/table.google.html").toURI()))
 					.replace(COLS, sb1.toString()) //TD optim this

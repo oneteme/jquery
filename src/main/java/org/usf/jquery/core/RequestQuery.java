@@ -2,10 +2,10 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
-import static org.usf.jquery.web.BarChartView.areaChart;
-import static org.usf.jquery.web.BarChartView.barChart;
-import static org.usf.jquery.web.BarChartView.columnChart;
-import static org.usf.jquery.web.BarChartView.lineChart;
+import static org.usf.jquery.web.Chart2DView.areaChart;
+import static org.usf.jquery.web.Chart2DView.barChart;
+import static org.usf.jquery.web.Chart2DView.columnChart;
+import static org.usf.jquery.web.Chart2DView.lineChart;
 
 import java.io.Writer;
 import java.sql.SQLException;
@@ -15,7 +15,6 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
-import org.usf.jquery.web.BarChartView;
 import org.usf.jquery.web.CalendarView;
 import org.usf.jquery.web.PieChartView;
 import org.usf.jquery.web.ResultWebView;
@@ -92,7 +91,6 @@ public final class RequestQuery {
 	public void logResult(DataSource ds) {
 		execute(ds, new AsciiResultMapper(usingRowWriter(log::debug)));
 	}
-	
 
 	public ResultWebView chart(String view, Writer w) {
 		switch (view) {

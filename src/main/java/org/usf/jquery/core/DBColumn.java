@@ -229,4 +229,8 @@ public interface DBColumn extends DBObject, NestedSql {
 	static OperationColumn lower(Object arg) {
 		return DBFunction.lower().args(arg);
 	}
+	
+	static OperationColumn subString(Object arg, int start, int length) {
+		return DBFunction.subString().args(arg, start, length);
+	}
 }

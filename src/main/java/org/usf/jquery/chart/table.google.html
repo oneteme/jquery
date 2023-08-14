@@ -1,6 +1,5 @@
 <!DOCTYPE html><html><head><title>JQuery</title><script src="https://www.gstatic.com/charts/loader.js"></script><script>
-google.charts.load('current', {'packages':['table']});
-google.charts.setOnLoadCallback(draw);
+google.charts.load('current',{callback:'draw','packages':['table']});
 function draw() {
 var data = new google.visualization.DataTable();[$columns].forEach(a=>data.addColumn(a[0], a[1]));data.addRows([$data]);
 new google.visualization.Table(document.getElementById('table')).draw(data, {showRowNumber:true, width:'100%'});

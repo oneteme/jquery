@@ -124,6 +124,13 @@ public interface DBFunction extends DBOperation {
 	static TypedFunction initcap() {
 		return new TypedFunction("INITCAP", false, QueryParameterBuilder::appendString, VARCHAR);
 	}
+	
+	static TypedFunction subString() { //int start, int length
+		return new TypedFunction("SUBSTRING", false, 
+				asList(QueryParameterBuilder::appendString, 
+						QueryParameterBuilder::appendNumber,
+						QueryParameterBuilder::appendNumber), VARCHAR);
+	}
 
 	//temporal funct.
 	
