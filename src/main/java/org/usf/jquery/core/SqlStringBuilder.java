@@ -31,6 +31,10 @@ public final class SqlStringBuilder {
 	public SqlStringBuilder(String v) { //buffer++
 		this.sb = new StringBuilder(v.length() + 50).append(v);
 	}
+
+	public SqlStringBuilder appendIf(boolean condition, String s) {
+		return condition ? append(s) : this;
+	}
 	
 	public SqlStringBuilder appendIf(boolean condition, Supplier<String> sup) {
 		return condition ? append(sup.get()) : this;
