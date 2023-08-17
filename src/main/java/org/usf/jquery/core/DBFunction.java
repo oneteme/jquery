@@ -16,6 +16,7 @@ import static org.usf.jquery.core.CastFunction.castFunction;
 import static org.usf.jquery.core.ExtractFunction.extractFunction;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.SqlStringBuilder.parenthese;
 import static org.usf.jquery.core.TypedFunction.autoTypeReturn;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isPresent;
@@ -233,10 +234,10 @@ public interface DBFunction extends DBOperation {
 				requireNArgs(2, args, ()-> "over function"); //NamedColumn | OperationColumn
 				illegalArgumentIf(!(args[0] instanceof DBColumn), "over function require DBColumn @1st parameter");
 				illegalArgumentIf(!(args[1] instanceof OverClause), "over function require OverClause @2nd parameter");
-				return builder.appendParameter(args[0]) + SPACE + ((OverClause)args[1]).sql(builder);
+				return builder.appendParameter(args[0]) + SPACE + name() + parenthese(((OverClause)args[1]).sql(builder));
 			}
 		};
-		return new TypedFunction(NULL, fn, AUTO_TYPE, AUTO_TYPE) {
+		return new TypedFunction(NULL, fn, AUTO_TYPE, AUTO_TYPE) { //TODO check null usage
 			@Override
 			public OperationColumn args(Object... args) {
 				return new OverColumn(this, args); 

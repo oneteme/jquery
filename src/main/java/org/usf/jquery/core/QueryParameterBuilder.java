@@ -19,6 +19,7 @@ import static java.sql.Types.TIME;
 import static java.sql.Types.TIMESTAMP;
 import static java.sql.Types.TINYINT;
 import static java.sql.Types.VARCHAR;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -78,52 +79,45 @@ public final class QueryParameterBuilder {
 	}
 
 	public String appendParameter(Object o) {
-		return appendParameter(o, Object.class);
+		return appendParameter(o, Object.class, false);
 	}
 	
 	public String appendNumber(Object o) {
-		return appendParameter(o, Number.class);
+		return appendParameter(o, Number.class, false);
 	}
 	
 	public String appendString(Object o) {
-		return appendParameter(o, String.class);
+		return appendParameter(o, String.class, false);
 	}
 
 	public String appendDate(Object o) {
-		return appendParameter(o, Date.class);
+		return appendParameter(o, Date.class, false);
 	}
 
 	public String appendTimestamp(Object o) {
-		return appendParameter(o, Timestamp.class);
+		return appendParameter(o, Timestamp.class, false);
 	}
 
 	public String append(Object o, int type) {
-		return appendParameter(o, javaType(type));
+		return appendParameter(o, javaType(type), false);
 	}
 
 	public String appendLitteral(Object o, int type) {
-		var cur = forceValue;
-		try {
-			forceValue(true);
-			return appendParameter(o, javaType(type)); 
-		}
-		finally {
-			forceValue(cur);
-		}
+		return appendParameter(o, javaType(type), true); 
 	}
 
-	private String appendParameter(Object o, Class<?> type) {
-		if(o == null) {
-			return dynamic() ? appendArg(null) : "null";
+	private String appendParameter(Object o, Class<?> type, boolean addWithValue) {
+		if(isNull(o)) {
+			return dynamic() && !addWithValue ? appendArg(null) : "null";
 		}
 		if(o instanceof DBColumn) { //check type !?
 			return ((DBColumn)o).sql(this);
 		}
 		if(type.isInstance(o)) {
-			if(dynamic()) {
+			if(dynamic() && !addWithValue) {
 				return appendArg(o);
 			}
-			return o instanceof Number ? formatNumber(o) : formatString(o);
+			return formatValue(o);
 		}
 		throw new IllegalArgumentException("require " + type.getSimpleName().toLowerCase() + " parameter");
 	}
@@ -151,6 +145,7 @@ public final class QueryParameterBuilder {
 				: formatString(o);
 	}
 	
+	@Deprecated
 	public void forceValue(boolean forceValue) {
 		this.forceValue = forceValue;
 	}

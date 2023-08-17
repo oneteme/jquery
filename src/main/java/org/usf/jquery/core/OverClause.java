@@ -39,7 +39,7 @@ public final class OverClause implements DBObject {
 	
 	public String sql(QueryParameterBuilder builder) {
 		var qp = addWithValue(); //no alias
-		var sb = new SqlStringBuilder(100).append("OVER(");
+		var sb = new SqlStringBuilder(100);
 		if(!partitions.isEmpty()) {
 			sb.append("PARTITION BY ").appendEach(partitions, COMA, o-> o.sql(qp));
 		}
@@ -47,6 +47,6 @@ public final class OverClause implements DBObject {
 			sb.appendIf(!partitions.isEmpty(), SPACE)
 			.append("ORDER BY ").appendEach(orders, COMA, o-> o.sql(qp));
 		}
-		return sb.append(")").toString();
+		return sb.toString();
 	}
 }

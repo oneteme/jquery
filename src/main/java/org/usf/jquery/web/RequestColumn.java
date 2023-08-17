@@ -4,7 +4,6 @@ import static java.lang.String.join;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Optional.ofNullable;
 import static java.util.regex.Pattern.compile;
-import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.DBFunction.lookupFunction;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isBlank;
@@ -14,7 +13,6 @@ import static org.usf.jquery.web.JQueryContext.context;
 import static org.usf.jquery.web.LinkedRequestEntry.parseEntries;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Predicate;

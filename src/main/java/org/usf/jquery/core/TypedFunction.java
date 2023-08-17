@@ -24,7 +24,7 @@ public class TypedFunction implements DBFunction {
 	@Getter
 	private final int returnedType;
 	
-	private Object[] args;
+	private Object[] additionalArgs;
 	
 	public TypedFunction(DBFunction fn) {
 		this(AUTO_TYPE, fn);
@@ -37,7 +37,7 @@ public class TypedFunction implements DBFunction {
 	}
 	
 	public TypedFunction usingArgs(Object... args) {
-		this.args = args;
+		this.additionalArgs = args;
 		return this;
 	}
 	
@@ -48,7 +48,7 @@ public class TypedFunction implements DBFunction {
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		args = mergeArrays(args, this.args);
+		args = mergeArrays(args, this.additionalArgs);
 		return fn.sql(builder, isEmpty(argTypes) 
 				? requireNoArgs(args, fn::name)
 				: requireNArgs(argTypes.length, args, fn::name), i-> argTypes[i]);
