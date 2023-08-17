@@ -20,6 +20,7 @@ import static org.usf.jquery.web.MissingParameterException.missingParameterExcep
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.RequestColumn.decodeColumn;
+import static org.usf.jquery.web.RequestColumn.decodeColumns;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
 import static org.usf.jquery.web.TableMetadata.emptyMetadata;
 import static org.usf.jquery.web.TableMetadata.tableMetadata;
@@ -116,8 +117,7 @@ public interface TableDecorator {
 		if(parameters.containsKey(COLUMN_DISTINCT)){
 			query.distinct();
 		}//TD check first param !isBlank
-		flatParameters(cols).forEach(p->{
-			var rc = decodeColumn(p, this, false);
+		Stream.of(cols).flatMap(c-> decodeColumns(c, this, false)).forEach(rc->{
 			var td = rc.tableDecorator();
 			query.tablesIfAbsent(td.table()).columns(td.column(rc.columnDecorator()));
 		});

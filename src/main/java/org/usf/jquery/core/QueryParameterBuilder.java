@@ -1,6 +1,24 @@
 package org.usf.jquery.core;
 
 import static java.lang.reflect.Array.getLength;
+import static java.sql.Types.BIGINT;
+import static java.sql.Types.BIT;
+import static java.sql.Types.BOOLEAN;
+import static java.sql.Types.CHAR;
+import static java.sql.Types.DATE;
+import static java.sql.Types.DECIMAL;
+import static java.sql.Types.DOUBLE;
+import static java.sql.Types.FLOAT;
+import static java.sql.Types.INTEGER;
+import static java.sql.Types.LONGNVARCHAR;
+import static java.sql.Types.NUMERIC;
+import static java.sql.Types.NVARCHAR;
+import static java.sql.Types.REAL;
+import static java.sql.Types.SMALLINT;
+import static java.sql.Types.TIME;
+import static java.sql.Types.TIMESTAMP;
+import static java.sql.Types.TINYINT;
+import static java.sql.Types.VARCHAR;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -10,11 +28,13 @@ import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.member;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
 import java.lang.reflect.Array;
 import java.sql.Date;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.util.Collection;
 import java.util.LinkedList;
@@ -58,34 +78,52 @@ public final class QueryParameterBuilder {
 	}
 
 	public String appendParameter(Object o) {
-		return appendParameter(o, Object.class, v-> v instanceof Number ? formatNumber(v) : formatString(v));
+		return appendParameter(o, Object.class);
 	}
 	
 	public String appendNumber(Object o) {
-		return appendParameter(o, Number.class, QueryParameterBuilder::formatNumber);
+		return appendParameter(o, Number.class);
 	}
 	
 	public String appendString(Object o) {
-		return appendParameter(o, String.class, QueryParameterBuilder::formatString);
+		return appendParameter(o, String.class);
 	}
 
 	public String appendDate(Object o) {
-		return appendParameter(o, Date.class, QueryParameterBuilder::formatString);
+		return appendParameter(o, Date.class);
 	}
 
 	public String appendTimestamp(Object o) {
-		return appendParameter(o, Timestamp.class, QueryParameterBuilder::formatString);
+		return appendParameter(o, Timestamp.class);
 	}
 
-	public String appendParameter(Object o, Class<?> type, Function<Object, String> fn) {
+	public String append(Object o, int type) {
+		return appendParameter(o, javaType(type));
+	}
+
+	public String appendLitteral(Object o, int type) {
+		var cur = forceValue;
+		try {
+			forceValue(true);
+			return appendParameter(o, javaType(type)); 
+		}
+		finally {
+			forceValue(cur);
+		}
+	}
+
+	private String appendParameter(Object o, Class<?> type) {
 		if(o == null) {
 			return dynamic() ? appendArg(null) : "null";
 		}
-		if(o instanceof DBColumn) {
+		if(o instanceof DBColumn) { //check type !?
 			return ((DBColumn)o).sql(this);
 		}
 		if(type.isInstance(o)) {
-			return dynamic() ? appendArg(o) : fn.apply(o);
+			if(dynamic()) {
+				return appendArg(o);
+			}
+			return o instanceof Number ? formatNumber(o) : formatString(o);
 		}
 		throw new IllegalArgumentException("require " + type.getSimpleName().toLowerCase() + " parameter");
 	}
@@ -152,9 +190,28 @@ public final class QueryParameterBuilder {
 		return new QueryParameterBuilder(new LinkedList<>());
 	}
 	
-	@FunctionalInterface
-	static interface Appender {
-		
-		String append(QueryParameterBuilder builder, Object o);
+	static Class<?> javaType(int type){
+		switch(type) {
+		case AUTO_TYPE		: return Object.class;
+		case BOOLEAN		: return Boolean.class;
+		case BIT		  	:
+		case TINYINT  		:
+		case SMALLINT 		:
+		case INTEGER  		:
+		case BIGINT   		:
+		case REAL 	  		:
+		case FLOAT	  		:
+		case DOUBLE  		:
+		case NUMERIC 		: 
+		case DECIMAL  		: return Number.class;
+		case CHAR  	  		: 
+		case VARCHAR  		:
+		case NVARCHAR  		:
+		case LONGNVARCHAR	: return String.class;
+		case DATE     		: return Date.class;
+		case TIME     		: return Time.class;
+		case TIMESTAMP		: return Timestamp.class; 
+		default       		: throw new UnsupportedOperationException("unsupported dbType=" + type + " parse");
+		}
 	}
 }

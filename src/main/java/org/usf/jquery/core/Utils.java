@@ -23,6 +23,10 @@ public final class Utils {
 	public static final int AUTO_TYPE = NULL;
 	public static final int UNLIMITED = -1;
 	
+	public static boolean isEmpty(int[] a) {
+		return a == null || a.length == 0;
+	}
+	
 	public static <T> boolean isEmpty(T[] a) {
 		return a == null || a.length == 0;
 	}

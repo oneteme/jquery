@@ -1,76 +1,74 @@
 package org.usf.jquery.core;
 
-import static java.util.Collections.singletonList;
-import static java.util.Objects.requireNonNullElse;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.IntStream.range;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static java.util.stream.Stream.concat;
 import static org.usf.jquery.core.Utils.AUTO_TYPE;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
+import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.List;
-
-import org.usf.jquery.core.QueryParameterBuilder.Appender;
+import java.util.stream.Stream;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
+import lombok.experimental.Delegate;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor
 public class TypedFunction implements DBFunction {
 	
-	private final String name;
-	private final boolean aggregate;
-	private final List<Appender> appenders;
+	@Delegate
+	private final DBFunction fn;
+	private final int[] argTypes;
 	@Getter
 	private final int returnedType;
-	//n optional parameter 
 	
-	private String prefix;
-	private String suffix;
-
-	public TypedFunction(String name, boolean aggregate, Appender appender) {
-		this(name, aggregate, appender, AUTO_TYPE);
+	private Object[] args;
+	
+	public TypedFunction(DBFunction fn) {
+		this(AUTO_TYPE, fn);
 	}
 	
-	public TypedFunction(String name, boolean aggregate, Appender appender, int returnedType) {
-		this(name, aggregate, singletonList(appender), returnedType);
+	public TypedFunction(int returnedType, DBFunction fn, int... argTypes) {
+		this.returnedType = returnedType;
+		this.fn = fn;
+		this.argTypes = argTypes;
+	}
+	
+	public TypedFunction usingArgs(Object... args) {
+		this.args = args;
+		return this;
+	}
+	
+	//do not delegate this
+	public OperationColumn args(Object... args) {
+		return DBFunction.super.args(args);
 	}
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNArgs(appenders.size(), args, TypedFunction.class::getSimpleName);
-		return DBFunction.super.sql(builder, args);
-	}
-
-	@Override
-	public String name() {
-		return name;
+		args = mergeArrays(args, this.args);
+		return fn.sql(builder, isEmpty(argTypes) 
+				? requireNoArgs(args, fn::name)
+				: requireNArgs(argTypes.length, args, fn::name), i-> argTypes[i]);
 	}
 	
-	@Override
-	public boolean isAggregation() {
-		return aggregate;
+	public Class<? extends DBFunction> functionType() {
+		return fn.getClass();
 	}
 	
-	@Override
-	public String appendParameters(QueryParameterBuilder builder, Object[] args) {
-		return range(0, appenders.size())
-			.mapToObj(i-> appenders.get(i).append(builder, args[i]))
-			.collect(joining(SCOMA, requireNonNullElse(prefix, ""), requireNonNullElse(suffix, "")));		
+	public static TypedFunction autoTypeReturn(DBFunction fn, int... argTypes) {
+		return new TypedFunction(AUTO_TYPE, fn, argTypes);
 	}
 	
-	public TypedFunction argsPrefix(String prefix){
-		this.prefix = prefix;
-		return this;
-	}
-		
-	public TypedFunction argsSuffix(String suffix){
-		this.suffix = suffix;
-		return this;
+	private static Object[] mergeArrays(Object[] a1, Object[] a2) {
+		if(isEmpty(a1)) {
+			return a2;
+		}
+		if(isEmpty(a2)) {
+			return a1;
+		}
+		return concat(Stream.of(a1), Stream.of(a2)).toArray();
 	}
 }

@@ -34,6 +34,8 @@ public final class Constants {
 	public static final String WINDOW_PARTITION = "window.partition";
 	public static final String WINDOW_ORDER = "window.order";
 	
+	public static final String PARTITION = "partition"; //not res
+	
 	static final Set<String> RESERVED_WORDS = 
 			Set.of(COLUMN, COLUMN_DISTINCT, ORDER, 
 					WINDOW_PARTITION, WINDOW_ORDER, 

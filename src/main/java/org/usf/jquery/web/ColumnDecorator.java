@@ -19,6 +19,7 @@ import static java.sql.Types.TIMESTAMP;
 import static java.sql.Types.TINYINT;
 import static java.sql.Types.VARCHAR;
 import static java.util.Objects.isNull;
+import static org.usf.jquery.core.DBColumn.count;
 import static org.usf.jquery.core.DBComparator.equal;
 import static org.usf.jquery.core.DBComparator.greaterOrEqual;
 import static org.usf.jquery.core.DBComparator.greaterThan;
@@ -133,6 +134,27 @@ public interface ColumnDecorator {
 		return (b, args)-> {
 			args[1] = "%" + args[1] + "%";
 			return fn.sql(b, args);
+		};
+	}
+	
+	public static ColumnDecorator countColumn() {
+		return of("count", t-> count());
+	}
+
+	public static ColumnDecorator of(String ref, ColumnBuilder cb) {
+		return new ColumnDecorator() {
+			@Override
+			public String identity() {
+				return null; //unused
+			}
+			@Override
+			public String reference() {
+				return ref;
+			}
+			@Override
+			public ColumnBuilder builder() {
+				return cb;
+			}
 		};
 	}
 }

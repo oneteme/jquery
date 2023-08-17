@@ -230,7 +230,7 @@ public interface DBColumn extends DBObject, NestedSql {
 		return DBFunction.lower().args(arg);
 	}
 	
-	static OperationColumn subString(Object arg, int start, int length) {
-		return DBFunction.subString().args(arg, start, length);
+	static OperationColumn substring(Object arg, int start, int length) {
+		return DBFunction.substring().args(arg, start, length);
 	}
 }

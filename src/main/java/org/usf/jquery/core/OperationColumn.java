@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class OperationColumn implements DBColumn {
+public class OperationColumn implements DBColumn {
 
 	@NonNull
 	private final DBOperation operation;

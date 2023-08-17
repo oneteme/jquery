@@ -3,19 +3,28 @@ package org.usf.jquery.core;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.sql.Types.BIGINT;
 import static java.sql.Types.DATE;
-import static java.sql.Types.DOUBLE;
+import static java.sql.Types.DECIMAL;
 import static java.sql.Types.INTEGER;
+import static java.sql.Types.NULL;
+import static java.sql.Types.TIMESTAMP;
 import static java.sql.Types.VARCHAR;
-import static java.util.Arrays.asList;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.IntStream.range;
+import static org.usf.jquery.core.AggregationFunction.aggregationFunction;
+import static org.usf.jquery.core.CastFunction.castFunction;
+import static org.usf.jquery.core.ExtractFunction.extractFunction;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.TypedFunction.autoTypeReturn;
+import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isPresent;
+import static org.usf.jquery.core.Validation.illegalArgumentIf;
+import static org.usf.jquery.core.Validation.requireNArgs;
+import static org.usf.jquery.core.WindowFunction.windowFunction;
 
 import java.util.Optional;
-import java.util.stream.Stream;
-
-import org.usf.jquery.core.QueryParameterBuilder.Appender;
+import java.util.function.IntUnaryOperator;
 
 /**
  * 
@@ -26,182 +35,226 @@ import org.usf.jquery.core.QueryParameterBuilder.Appender;
 public interface DBFunction extends DBOperation {
 
 	String name();
-	
+
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
+		return sql(builder, args, i-> AUTO_TYPE);
+	}
+
+	default String sql(QueryParameterBuilder builder, Object[] args, IntUnaryOperator indexedType) { //arg type inject
 		return new SqlStringBuilder(name())
 				.append("(")
-				.appendIf(isPresent(args), ()-> appendParameters(builder, args)) //accept any
+				.appendIf(isPresent(args), ()-> range(0, args.length)
+						.mapToObj(i-> builder.appendLitteral(args[i], indexedType.applyAsInt(i)))
+						.collect(joining(SCOMA))) //accept any
 				.append(")")
 				.toString();
-	}
-	
-	default String appendParameters(QueryParameterBuilder builder, Object[] args) {
-		return Stream.of(args)
-				.map(builder::appendParameter)
-				.collect(joining(SCOMA));
 	}
 	
 	default OperationColumn args(Object... args) {
 		return new OperationColumn(this, args);
 	}
 	
-	//aggregate funct.
-	
-	static TypedFunction count() {
-		return new TypedFunction("COUNT", true, QueryParameterBuilder::appendParameter, DOUBLE); 
-	}
-
-	static TypedFunction sum() {
-		return new TypedFunction("SUM", true, QueryParameterBuilder::appendParameter, DOUBLE); 
-	}
-	
-	static TypedFunction avg() {
-		return new TypedFunction("AVG", true, QueryParameterBuilder::appendParameter, DOUBLE);  
-	}
-
-	static TypedFunction min() {
-		return new TypedFunction("MIN", true, QueryParameterBuilder::appendNumber); //depends on parameter type
-	}
-
-	static TypedFunction max() {
-		return new TypedFunction("MAX", true, QueryParameterBuilder::appendNumber); //depends on parameter type
-	}
-	
 	//numeric funct.
-	
-	static TypedFunction abs() {
-		return new TypedFunction("ABS", false, QueryParameterBuilder::appendNumber, DOUBLE); 
-	}
-	
-	static TypedFunction sqrt() {
-		return new TypedFunction("SQRT", false, QueryParameterBuilder::appendNumber, DOUBLE); 
-	}
 
 	static TypedFunction trunc() {
-		return new TypedFunction("TRUNC", false, QueryParameterBuilder::appendNumber); //depends on parameter type
+		return new TypedFunction(INTEGER, function("TRUNC"), DECIMAL); 
 	}
 
 	static TypedFunction ceil() {
-		return new TypedFunction("CEIL", false, QueryParameterBuilder::appendNumber, DOUBLE); 
+		return new TypedFunction(INTEGER, function("CEIL"), DECIMAL); 
 	}
 
 	static TypedFunction floor() {
-		return new TypedFunction("FLOOR", false, QueryParameterBuilder::appendNumber, DOUBLE); 
+		return new TypedFunction(INTEGER, function("FLOOR"), DECIMAL); 
+	}
+	
+	static TypedFunction sqrt() {
+		return new TypedFunction(DECIMAL, function("SQRT"), DECIMAL); 
 	}
 	
 	static TypedFunction exp() {
-		return new TypedFunction("EXP", false, QueryParameterBuilder::appendNumber, DOUBLE); 
+		return new TypedFunction(DECIMAL, function("EXP"), DECIMAL); 
 	}
 	
 	static TypedFunction log() {
-		return new TypedFunction("LOG", false, QueryParameterBuilder::appendNumber, DOUBLE); 
+		return new TypedFunction(DECIMAL, function("LOG"), DECIMAL); 
+	}
+	
+	static TypedFunction abs() {
+		return autoTypeReturn(function("ABS"), DECIMAL); //INTEGER | DECIMAL
 	}
 	
 	static TypedFunction mod() {
-		return new TypedFunction("MOD", false, 
-				asList(QueryParameterBuilder::appendNumber, QueryParameterBuilder::appendNumber), BIGINT); 
+		return autoTypeReturn(function("MOD"), DECIMAL, DECIMAL);  //INTEGER | DECIMAL
 	}
 	
 	//string funct.
 
 	static TypedFunction length() {
-		return new TypedFunction("LENGTH", false, QueryParameterBuilder::appendString, INTEGER);
+		return new TypedFunction(INTEGER, function("LENGTH"), VARCHAR);
 	}
 	
 	static TypedFunction trim() {
-		return new TypedFunction("TRIM", false, QueryParameterBuilder::appendString, VARCHAR);
+		return new TypedFunction(VARCHAR, function("TRIM"), VARCHAR);
 	}
 	
 	static TypedFunction upper() {
-		return new TypedFunction("UPPER", false, QueryParameterBuilder::appendString, VARCHAR);
+		return new TypedFunction(VARCHAR, function("UPPER"), VARCHAR);
 	}
 
 	static TypedFunction lower() {
-		return new TypedFunction("LOWER", false, QueryParameterBuilder::appendString, VARCHAR);
+		return new TypedFunction(VARCHAR, function("LOWER"), VARCHAR);
 	}
 	
 	static TypedFunction initcap() {
-		return new TypedFunction("INITCAP", false, QueryParameterBuilder::appendString, VARCHAR);
+		return new TypedFunction(VARCHAR, function("INITCAP"), VARCHAR);
 	}
 	
-	static TypedFunction subString() { //int start, int length
-		return new TypedFunction("SUBSTRING", false, 
-				asList(QueryParameterBuilder::appendString, 
-						QueryParameterBuilder::appendNumber,
-						QueryParameterBuilder::appendNumber), VARCHAR);
+	static TypedFunction replace() { //int start, int length
+		return new TypedFunction(VARCHAR, function("REPLACE"), VARCHAR, VARCHAR, VARCHAR); //!teradata
+	}
+	
+	static TypedFunction oreplace() { //int start, int length
+		return new TypedFunction(VARCHAR, function("OREPLACE"), VARCHAR, VARCHAR, VARCHAR);
+	}
+	
+	static TypedFunction substring() { //int start, int length
+		return new TypedFunction(VARCHAR, function("SUBSTRING"), VARCHAR, INTEGER, INTEGER);
 	}
 
 	//temporal funct.
 	
 	static TypedFunction year() {
-		return extract("YEAR");
+		return new TypedFunction(INTEGER, extractFunction("YEAR"), AUTO_TYPE);
 	}
 	
 	static TypedFunction month() {
-		return extract("MONTH");
+		return new TypedFunction(INTEGER, extractFunction("MONTH"), AUTO_TYPE);
 	}
 
 	static TypedFunction week() {
-		return extract("WEEK");
+		return new TypedFunction(INTEGER, extractFunction("WEEK"), AUTO_TYPE);
 	}
 	
 	static TypedFunction day() {
-		return extract("DAY");
+		return new TypedFunction(INTEGER, extractFunction("DAY"), AUTO_TYPE);
 	}
 	
-	static TypedFunction dow() {//!Teradata
-		return extract("DOW");
+	static TypedFunction dow() {
+		return new TypedFunction(INTEGER, extractFunction("DOW"), AUTO_TYPE); //!Teradata
 	}
 	
-	static TypedFunction doy() {//!Teradata
-		return extract("DOY");
+	static TypedFunction doy() {
+		return new TypedFunction(INTEGER, extractFunction("DOY"), AUTO_TYPE); //!Teradata
 	}
 
 	static TypedFunction hour() {
-		return extract("HOUR");
+		return new TypedFunction(INTEGER, extractFunction("HOUR"), AUTO_TYPE);
 	}
 
 	static TypedFunction minute() {
-		return extract("MINUTE");
+		return new TypedFunction(INTEGER, extractFunction("MINUTE"), AUTO_TYPE);
 	}
 	
 	static TypedFunction second() {
-		return extract("SECOND");
+		return new TypedFunction(INTEGER, extractFunction("SECOND"), AUTO_TYPE);
 	}
 	
-	static TypedFunction epoch() { //!Teradata
-		return extract("EPOCH");
+	static TypedFunction epoch() {
+		return new TypedFunction(INTEGER, extractFunction("EPOCH"), AUTO_TYPE); //!Teradata
+	}
+
+	//cast funct.
+
+	static TypedFunction varchar() {
+		return new TypedFunction(VARCHAR, castFunction("VARCHAR"), AUTO_TYPE, INTEGER); //any
 	}
 	
 	static TypedFunction date() {
-		return cast("DATE", QueryParameterBuilder::appendTimestamp, DATE);
-	}
-
-	private static TypedFunction extract(String field) {
-		return new TypedFunction("EXTRACT", false, QueryParameterBuilder::appendTimestamp, INTEGER)
-				.argsPrefix(field + " FROM ");
+		return new TypedFunction(DATE, castFunction("DATE"), TIMESTAMP); // + string !?
 	}
 	
-	static TypedFunction cast(String type, Appender appender, int returnedType) {
-		return new TypedFunction("CAST", false, appender, returnedType)
-				.argsSuffix(" AS " + type);
+	static TypedFunction integer() {
+		return new TypedFunction(INTEGER, castFunction("INTEGER"), VARCHAR); // + string !?
+	}
+	
+	static TypedFunction bigint() {
+		return new TypedFunction(BIGINT, castFunction("BIGINT"), VARCHAR); // + string !?
+	}
+	
+	//aggregate funct.
+
+	
+	static TypedFunction count() {
+		return new TypedFunction(BIGINT, aggregationFunction("COUNT"), AUTO_TYPE); 
+	}
+	
+	static TypedFunction min() {
+		return autoTypeReturn(aggregationFunction("MIN"), AUTO_TYPE); 
+	}
+
+	static TypedFunction max() {
+		return autoTypeReturn(aggregationFunction("MAX"), AUTO_TYPE); 
+	}
+
+	static TypedFunction sum() {
+		return autoTypeReturn(aggregationFunction("SUM"), DECIMAL); //INTEGER | DECIMAL
+	}
+	
+	static TypedFunction avg() {
+		return autoTypeReturn(aggregationFunction("AVG"), DECIMAL); //INTEGER | DECIMAL
+	}
+
+	//window funct.
+	
+	static TypedFunction rank() {
+		return new TypedFunction(INTEGER, windowFunction("RANK"));
+	}
+	
+	static TypedFunction rowNumber() {
+		return new TypedFunction(INTEGER, windowFunction("ROW_NUMBER"));
+	}
+	
+	static TypedFunction denseRank() {
+		return new TypedFunction(INTEGER, windowFunction("DENSE_RANK"));
+	}
+	
+	static TypedFunction over() {
+		var fn = new DBFunction() {
+			
+			@Override
+			public String name() {
+				return "OVER";
+			}
+			
+			@Override
+			public String sql(QueryParameterBuilder builder, Object[] args, IntUnaryOperator indexedType) {
+				requireNArgs(2, args, ()-> "over function"); //NamedColumn | OperationColumn
+				illegalArgumentIf(!(args[0] instanceof DBColumn), "over function require DBColumn @1st parameter");
+				illegalArgumentIf(!(args[1] instanceof OverClause), "over function require OverClause @2nd parameter");
+				return builder.appendParameter(args[0]) + SPACE + ((OverClause)args[1]).sql(builder);
+			}
+		};
+		return new TypedFunction(NULL, fn, AUTO_TYPE, AUTO_TYPE) {
+			@Override
+			public OperationColumn args(Object... args) {
+				return new OverColumn(this, args); 
+			}
+		};
 	}
 
 	static DBFunction function(final String name) {
 		return ()-> name;
 	}
 
-	static Optional<TypedFunction> lookup(String fucntion) {
+	static Optional<TypedFunction> lookupFunction(String fn) {
 		try {
-			var m = DBFunction.class.getMethod(fucntion.toLowerCase());
-			if(isStatic(m.getModifiers()) && m.getReturnType().isAssignableFrom(TypedFunction.class)) { // no private static
+			var m = DBFunction.class.getMethod(fn);
+			if(isStatic(m.getModifiers()) && m.getReturnType() == TypedFunction.class) { // no private static
 				return Optional.of((TypedFunction) m.invoke(null));
 			}
-		} catch (Exception e) {
-			//do nothing here
-		}
+		} catch (Exception e) {/*do not throw exception*/}
 		return empty();
 	}
-	
 }
