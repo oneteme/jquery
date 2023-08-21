@@ -128,13 +128,13 @@ public final class RequestColumn implements ColumnDecorator {
 			if(type == AUTO_TYPE) { // logical column type can be set in table
 				type = td.columnType(this).orElse(type);
 			} //else : overridden
-	    	var prs = requireNonNull(parser(type));
+	    	var pars = requireNonNull(parser(type));
 	    	if(values.length == 1) {
-	    		return cmp.expression(prs.parse(values[0]));
+	    		return cmp.expression(pars.parse(values[0]));
 	    	}
 			return cmp instanceof InCompartor 
-					? cmp.expression(prs.parseAll(values))
-					: ofComparator(cmp).build(prs.parseAll(values));
+					? cmp.expression(pars.parseAll(values))
+					: ofComparator(cmp).build(pars.parseAll(values));
 		}
 		throw cannotEvaluateException("expression", exp);
 	}

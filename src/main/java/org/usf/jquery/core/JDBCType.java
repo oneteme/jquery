@@ -20,7 +20,7 @@ import lombok.ToString;
 @RequiredArgsConstructor
 public enum JDBCType implements SQLType {
 	
-	AUTO_TYPE(Utils.AUTO_TYPE, Object.class), //replace by array type
+	AUTO_TYPE(Types.NULL, Object.class), //replace by array type
 	BOOLEAN(Types.BOOLEAN, Boolean.class),
 	BIT(Types.BIT, Boolean.class),
 	TINYINT(Types.TINYINT, Byte.class),

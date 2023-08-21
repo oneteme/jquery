@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.sql.Types.NULL;
-
 import java.util.Collection;
 import java.util.Map;
 
@@ -16,7 +14,6 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Utils {
 
-	public static final int AUTO_TYPE = NULL;
 	public static final int UNLIMITED = -1;
 	
 	public static boolean isEmpty(int[] a) {
