@@ -11,8 +11,9 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.web.ParsableJDBCType.AUTO_TYPE;
+import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.Connection;
@@ -80,10 +81,10 @@ public final class YearTableMetadata extends TableMetadata {
 					var size = rs.getInt("COLUMN_SIZE");
 					var meta = dbMap.get(cn);
 					if(meta.getDataType() == AUTO_TYPE) { //first time
-						meta.setDataType(type);
+						meta.setDataType(typeOf(type));
 						meta.setDataSize(size);
 					}
-					else if(meta.getDataType() != type || meta.getDataSize() != size) {
+					else if(meta.getDataType().getValue() != type || meta.getDataSize() != size) {
 						dirtyColumns.add(cn);
 					}
 				}//else undeclared column

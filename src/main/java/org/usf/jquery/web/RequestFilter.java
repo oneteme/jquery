@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.web.RequestColumn.decodeColumn;
+import static org.usf.jquery.web.RequestColumn.decodeSingleColumn;
 
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.BasicComparator;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBTable;
 
@@ -28,63 +27,44 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public class RequestFilter {
+public final class RequestFilter {
 	
-	private final RequestColumn requestColumn;
-	private final List<RequestColumn> rightColumns;
-	private final List<String[]> rightValues;
+	private final RequestColumn rc;
+	private final List<String[]> constants;
+	private final List<RequestColumn> columns;
 
 	public DBTable[] tables() {
 		Set<DBTable> tables = new LinkedHashSet<>();
-		tables.add(requestColumn.tableDecorator().table());
-		rightColumns.forEach(c-> tables.add(c.tableDecorator().table()));
+		tables.add(rc.tableDecorator().table());
+		columns.forEach(c-> tables.add(c.tableDecorator().table()));
 		return tables.toArray(DBTable[]::new);
 	}
 	
-	public DBFilter[] filters() { // do not join filters (WHERE + HAVING)
-		var td  = requestColumn.tableDecorator();
-		var cd  = requestColumn.columnDecorator();
-		var col = td.column(cd);
+	public DBFilter[] filters() {
+		var col = rc.dbColumn();
 		var filters = new LinkedList<>();
-		if(!rightColumns.isEmpty()) {
-			var cmp = cd.comparator(requestColumn.expression(), 1);
-			if(cmp instanceof BasicComparator) {
-				rightColumns.stream()
-				.map(c-> col.filter(cmp.expression(c.tableDecorator().column(c.columnDecorator()))))
-				.forEach(filters::add);
-			}
-			else {
-				throw new IllegalArgumentException("illegal column comparator " + requestColumn.expression());
-			}
+		if(!columns.isEmpty()) {
+			rc.expression(columns).map(col::filter).forEach(filters::add);
 		}
-		if(!rightValues.isEmpty()) {
-			rightValues.forEach(arr->
-				filters.add(col.filter(td.expression(cd, 
-						requestColumn.expression(), arr))));
+		if(!constants.isEmpty()) {
+			constants.forEach(arr-> filters.add(col.filter(rc.expression(arr))));
 		}
-		return filters.toArray(DBFilter[]::new);
+		return filters.toArray(DBFilter[]::new);  // do not join filters (WHERE & HAVING)
 	}
 	
 	static RequestFilter decodeFilter(Entry<String, String[]> entry, TableDecorator defaultTable) {
-		var col  = decodeColumn(entry.getKey(), defaultTable, true); //allow comparator
-		var cols = new LinkedList<RequestColumn>();
-		var vals = new LinkedList<String[]>();
+		var col = decodeSingleColumn(entry.getKey(), defaultTable, true); //allow comparator
+		var columns = new LinkedList<RequestColumn>();
+		var constants = new LinkedList<String[]>();
 		Stream.of(entry.getValue()).forEach(v->{
-			if(v.contains(",")) { //multiple values
-				vals.add(v.split(","));
+			try {//TODO pattern
+				columns.add(decodeSingleColumn(v, defaultTable, false)); //deny expression
 			}
-			else if(v.matches("^[a-zA-Z]\\w*(\\.[a-zA-Z]\\w*)+$")) { //table.column[.function]*
-				try {
-					cols.add(decodeColumn(v, defaultTable, false)); //deny expression
-				}
-				catch (Exception e) {
-					vals.add(new String[] {v});
-				}
-			}
-			else {
-				vals.add(new String[] {v});
+			catch (Exception e) { //TODO 
+				constants.add(v.contains(",") ? v.split(",") : new String[] {v}); //check values
 			}
 		});
-		return new RequestFilter(col, cols, vals);
+		return new RequestFilter(col, constants, columns);
 	}
+	
 }

@@ -1,31 +1,30 @@
 package org.usf.jquery.core;
 
 import static java.lang.reflect.Modifier.isStatic;
-import static java.sql.Types.BIGINT;
-import static java.sql.Types.DATE;
-import static java.sql.Types.DECIMAL;
-import static java.sql.Types.INTEGER;
-import static java.sql.Types.NULL;
-import static java.sql.Types.TIMESTAMP;
-import static java.sql.Types.VARCHAR;
 import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.IntStream.range;
 import static org.usf.jquery.core.AggregationFunction.aggregationFunction;
 import static org.usf.jquery.core.CastFunction.castFunction;
 import static org.usf.jquery.core.ExtractFunction.extractFunction;
+import static org.usf.jquery.core.JDBCType.AUTO_TYPE;
+import static org.usf.jquery.core.JDBCType.BIGINT;
+import static org.usf.jquery.core.JDBCType.DATE;
+import static org.usf.jquery.core.JDBCType.DECIMAL;
+import static org.usf.jquery.core.JDBCType.INTEGER;
+import static org.usf.jquery.core.JDBCType.TIMESTAMP;
+import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.parenthese;
 import static org.usf.jquery.core.TypedFunction.autoTypeReturn;
-import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.core.WindowFunction.windowFunction;
 
 import java.util.Optional;
-import java.util.function.IntUnaryOperator;
+import java.util.function.IntFunction;
 
 /**
  * 
@@ -42,11 +41,11 @@ public interface DBFunction extends DBOperation {
 		return sql(builder, args, i-> AUTO_TYPE);
 	}
 
-	default String sql(QueryParameterBuilder builder, Object[] args, IntUnaryOperator indexedType) { //arg type inject
+	default String sql(QueryParameterBuilder builder, Object[] args, IntFunction<SQLType> indexedType) { //arg type inject
 		return new SqlStringBuilder(name())
 				.append("(")
 				.appendIf(isPresent(args), ()-> range(0, args.length)
-						.mapToObj(i-> builder.appendLitteral(args[i], indexedType.applyAsInt(i)))
+						.mapToObj(i-> builder.appendLitteral(args[i], indexedType.apply(i)))
 						.collect(joining(SCOMA))) //accept any
 				.append(")")
 				.toString();
@@ -127,7 +126,7 @@ public interface DBFunction extends DBOperation {
 	//temporal funct.
 	
 	static TypedFunction year() {
-		return new TypedFunction(INTEGER, extractFunction("YEAR"), AUTO_TYPE);
+		return new TypedFunction(INTEGER, extractFunction("YEAR"), AUTO_TYPE); //DATE & TIMESTAMP
 	}
 	
 	static TypedFunction month() {
@@ -230,14 +229,14 @@ public interface DBFunction extends DBOperation {
 			}
 			
 			@Override
-			public String sql(QueryParameterBuilder builder, Object[] args, IntUnaryOperator indexedType) {
+			public String sql(QueryParameterBuilder builder, Object[] args, IntFunction<SQLType> indexedType) {
 				requireNArgs(2, args, ()-> "over function"); //NamedColumn | OperationColumn
 				illegalArgumentIf(!(args[0] instanceof DBColumn), "over function require DBColumn @1st parameter");
 				illegalArgumentIf(!(args[1] instanceof OverClause), "over function require OverClause @2nd parameter");
 				return builder.appendParameter(args[0]) + SPACE + name() + parenthese(((OverClause)args[1]).sql(builder));
 			}
 		};
-		return new TypedFunction(NULL, fn, AUTO_TYPE, AUTO_TYPE) { //TODO check null usage
+		return new TypedFunction(AUTO_TYPE, fn, AUTO_TYPE, AUTO_TYPE) {
 			@Override
 			public OperationColumn args(Object... args) {
 				return new OverColumn(this, args); 

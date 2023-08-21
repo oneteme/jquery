@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Validation.requireNArgs;
 
-import java.util.function.IntUnaryOperator;
+import java.util.function.IntFunction;
 
 /**
  * 
@@ -20,10 +20,10 @@ public interface ExtractFunction extends DBFunction {
 	}
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args, IntUnaryOperator indexedType) {
+	default String sql(QueryParameterBuilder builder, Object[] args, IntFunction<SQLType> indexedType) {
 		requireNArgs(1, args, this::name);
 		return name() + "(" + field() + " FROM " + 
-				builder.appendLitteral(args[0], indexedType.applyAsInt(0)) + ")";
+				builder.appendLitteral(args[0], indexedType.apply(0)) + ")";
 	}
 
 	static ExtractFunction extractFunction(String type) {

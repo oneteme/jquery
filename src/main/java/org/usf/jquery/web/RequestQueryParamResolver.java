@@ -1,6 +1,5 @@
 package org.usf.jquery.web;
 
-import static java.util.Collections.unmodifiableMap;
 import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
@@ -33,7 +32,7 @@ public final class RequestQueryParamResolver {
 		}
 		var req = context()
 				.getTable(ant.name())
-				.query(unmodifiableMap(parameterMap));
+				.query(parameterMap); //may edit map
 		if(ant.aggregationOnly() && !req.isAggregation()) {
 			throw new IllegalDataAccessException("non aggregation query");
 		}

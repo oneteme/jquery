@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Stream.concat;
-import static org.usf.jquery.core.Utils.AUTO_TYPE;
+import static org.usf.jquery.core.JDBCType.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -16,49 +16,49 @@ import lombok.experimental.Delegate;
  * @author u$f
  *
  */
+@Getter
 public class TypedFunction implements DBFunction {
 	
 	@Delegate
 	private final DBFunction fn;
-	private final int[] argTypes;
-	@Getter
-	private final int returnedType;
+	private final SQLType[] argTypes;
+	private final SQLType returnedType;
 	
 	private Object[] additionalArgs;
 	
-	public TypedFunction(DBFunction fn) {
-		this(AUTO_TYPE, fn);
-	}
-	
-	public TypedFunction(int returnedType, DBFunction fn, int... argTypes) {
+	public TypedFunction(SQLType returnedType, DBFunction fn, SQLType... argTypes) {
 		this.returnedType = returnedType;
 		this.fn = fn;
 		this.argTypes = argTypes;
 	}
 	
-	public TypedFunction usingArgs(Object... args) {
+	public TypedFunction additionalArgs(Object... args) {
 		this.additionalArgs = args;
 		return this;
 	}
 	
-	//do not delegate this
+	@Override //do not delegate this
 	public OperationColumn args(Object... args) {
 		return DBFunction.super.args(args);
 	}
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		args = mergeArrays(args, this.additionalArgs);
+		args = mergeArrays(args, additionalArgs);
 		return fn.sql(builder, isEmpty(argTypes) 
 				? requireNoArgs(args, fn::name)
 				: requireNArgs(argTypes.length, args, fn::name), i-> argTypes[i]);
 	}
 	
-	public Class<? extends DBFunction> functionType() {
-		return fn.getClass();
+	public int argumentCount() {
+		return isEmpty(argTypes) ? 0 : argTypes.length;
 	}
 	
-	public static TypedFunction autoTypeReturn(DBFunction fn, int... argTypes) {
+	public boolean isWindowFunction() {
+		return fn instanceof WindowFunction;
+	}
+	
+	public static TypedFunction autoTypeReturn(DBFunction fn, SQLType... argTypes) {
 		return new TypedFunction(AUTO_TYPE, fn, argTypes);
 	}
 	

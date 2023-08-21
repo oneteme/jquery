@@ -30,7 +30,6 @@ public final class JQueryContext {
 
 	private final Map<String, TableDecorator> tables;
 	private final Map<String, ColumnDecorator> columns;
-	
 	private DatabaseMetadata database;
 	
 	public static JQueryContext context(){
@@ -71,5 +70,13 @@ public final class JQueryContext {
 	public ColumnDecorator getColumn(String value) {
 		return ofNullable(columns.get(value))
 				.orElseThrow(()-> throwNoSuchColumnException(value));
+	}
+	
+	public Collection<TableDecorator> tables(){
+		return tables.values();
+	}
+
+	public Collection<ColumnDecorator> columns(){
+		return columns.values();
 	}
 }

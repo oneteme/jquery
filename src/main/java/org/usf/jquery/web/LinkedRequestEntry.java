@@ -1,5 +1,6 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.join;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
@@ -7,14 +8,15 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.regex.Pattern.compile;
 import static org.usf.jquery.core.DBFunction.lookupFunction;
-import static org.usf.jquery.core.DBFunction.over;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isBlank;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
-import static org.usf.jquery.web.ArgumentParser.tryParse;
 import static org.usf.jquery.web.ColumnDecorator.countColumn;
+import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.PARTITION;
+import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 import static org.usf.jquery.web.JQueryContext.context;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
@@ -26,21 +28,26 @@ import java.util.Map;
 import java.util.regex.Matcher;
 
 import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBFunction;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.OverClause;
 import org.usf.jquery.core.TypedFunction;
-import org.usf.jquery.core.WindowFunction;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-
+/**
+ * 
+ * <code>[table.]column[.function([arg1][,arg2]*)]*[.comparator|criteria|order][:alias]</code>
+ * 
+ * @author u$f
+ * 
+ * 
+ */
 public final class LinkedRequestEntry {
 
 	private static final String ARRAY_ARGS_KEY = "$args";
 	
-	private String tag; //optional
 	private final LinkedList<RequestEntry> entries = new LinkedList<>();
+	private String tag; //optional
 
 	public void appendEntry(String name) {
 		entries.add(new RequestEntry(name));
@@ -50,13 +57,13 @@ public final class LinkedRequestEntry {
 		entries.getLast().args = args;
 	}
 	
-	public RequestColumn toRequestColumn(TableDecorator defaultTable, boolean allowedExp) {
+	public RequestColumn toRequestColumn(TableDecorator defaultTable, boolean allowedExp) { //predicate
 		if(entries.isEmpty()) {
 			throw new IllegalArgumentException("empty");
 		}
 		else if(entries.size() == 1) {
 			var cd = requireColumn(entries.getFirst());
-			return new RequestColumn(defaultTable, cd, null, tag);
+			return new RequestColumn(defaultTable, cd, emptyList(), null, tag);
 		}
 		else {
 			var arr = new ArrayList<>(entries); //improve indexing
@@ -71,21 +78,19 @@ public final class LinkedRequestEntry {
 				cd = requireColumn(arr.get(--idx));
 			}
 			var limit = allowedExp ? arr.size() - 1 : arr.size();
-			var fn = new LinkedList<DBFunction>();
-			for(var i=++idx; i<limit; i++) {
-				fn.add(requireFunction(arr.get(i), defaultTable));
+			var fn = new LinkedList<TypedFunction>();
+			for(++idx; idx<limit; idx++) {
+				fn.add(requireFunction(arr.get(idx), defaultTable));
 			}
-			if(limit < arr.size()) {
+			if(idx < arr.size()) {
 				try {
-					fn.add(requireFunction(arr.get(limit), defaultTable));
+					fn.add(requireFunction(arr.get(idx), defaultTable));
 				}
 				catch(Exception e) {
-					exp = arr.get(limit).getName();
+					exp = arr.get(limit).requireFiedName(); // comparator | expression | order
 				}
 			}
-			var rc = new RequestColumn(defaultTable, cd, exp, tag);
-			fn.forEach(f-> rc.append((TypedFunction) f));
-			return rc;
+			return new RequestColumn(defaultTable, cd, fn, exp, tag);
 		}
 	}
 	
@@ -109,76 +114,101 @@ public final class LinkedRequestEntry {
 			return countColumn();
 		}
 		var fn = lookupFunction(snakeToCamelCase(re.getName()));
-		if(fn.isPresent() && fn.get().functionType() == WindowFunction.class) {
-			return ColumnDecorator.of(re.requireNoArgFunction().toLowerCase(), fn.get()::args); 
+		if(fn.filter(TypedFunction::isWindowFunction).isPresent()) {
+			return ofColumn(re.requireNoArgFunction().toLowerCase(), t-> fn.get().args()); 
 		}
-		throw cannotEvaluateException("column expression", re.getName()); //column expected
+		throw cannotEvaluateException("column expression", re.toString()); //column expected
 	}
 
 	/**
 	 * <ol>
-	 * 	<li> over function</li>
 	 * 	<li> std functions </li>
+	 * 	<li> over function</li>
 	 * </ol>
 	 */
-	private static DBFunction requireFunction(RequestEntry re, TableDecorator td) {
-		if("over".equals(re.getName())) {
-			if(re.hasArgMap()) {
-				return overFunction(td, re.getArgs()); //use named arguments
-			}
-			throw new UnsupportedOperationException("window functions require named args");
-		}
+	private static TypedFunction requireFunction(RequestEntry re, TableDecorator td) {
 		var fn = lookupFunction(re.getName())
 				.orElseThrow(()-> cannotEvaluateException("function expression", re.getName()));
-		var args = re.arrayArgs();
-		if(args.isEmpty()) {
-			return fn;
+		if("OVER".equals(fn.name())) {
+			var args = re.getArgs();
+			if(isNull(args) || !args.containsKey(ARRAY_ARGS_KEY)) { //named arguments function
+				return fn.additionalArgs(overClause(td, isNull(args) ? emptyMap() : args));
+			}
+			throw new UnsupportedOperationException("over function require named args");
 		}
-		if(re.hasArgArray()) {
-			return fn.usingArgs(re.hasArgArray() ? re.arrayArgs().stream().map(o-> parseEntry(o, td)).toArray() : null);
-		}
-		throw new UnsupportedOperationException("functions does not support named args");
+		//array arguments functions
+		parseEntry(fn, re, td);
+		return fn;
 	}
 
-	private static TypedFunction overFunction(TableDecorator td, Map<String, List<String>> args) {
+	private static void parseEntry(TypedFunction fn, RequestEntry re, TableDecorator td){
+		if(!isEmpty(re.getArgs()) && !re.getArgs().containsKey(ARRAY_ARGS_KEY)) {
+			throw new UnsupportedOperationException("functions does not support named args");
+		}
+		if(fn.argumentCount() <= 1) { //1st argument ignored
+			if(!isEmpty(re.getArgs())) {
+				throw new IllegalArgumentException(fn.name() + " takes no arguments");
+			}
+		}
+		else {
+			var n = fn.argumentCount()-1;
+			if(nonNull(re.getArgs()) 
+					&& re.getArgs().containsKey(ARRAY_ARGS_KEY) 
+					&& re.getArgs().get(ARRAY_ARGS_KEY).size() == n) {
+				var params = re.getArgs().get(ARRAY_ARGS_KEY);
+				var args = new LinkedList<Object>();
+				for(int i=1; i<fn.getArgTypes().length; i++) { //skip first argument
+					var s = params.get(i-1);
+					try {
+						args.add(typeOf(fn.getArgTypes()[i]).parse(s));
+					}
+					catch (Exception e) {
+						try {
+							args.add(parseSingleLinkedEntry(s).toRequestColumn(td, false).dbColumn());
+						}
+						catch(Exception e2) {
+							throw e; //first exception
+						}
+					}
+				}
+				fn.additionalArgs(args.toArray());
+			}
+			else {
+				throw new IllegalArgumentException(fn.name() + " takes " + n + " argument(s)");
+			}
+		}
+	}
+
+	private static OverClause overClause(TableDecorator td, Map<String, List<String>> args) {
 		var clause = new OverClause();
 		if(args.containsKey(PARTITION)) {
 			clause.partitions(args.get(PARTITION).stream()
-					.map(LinkedRequestEntry::linkedEntry)
+					.map(LinkedRequestEntry::parseSingleLinkedEntry)
 					.map(o-> o.toRequestColumn(td, false))
 					.map(RequestColumn::dbColumn)
 					.toArray(DBColumn[]::new));
 		}
 		if(args.containsKey(ORDER)) {
 			clause.orders(args.get(ORDER).stream()
-					.map(LinkedRequestEntry::linkedEntry)
+					.map(LinkedRequestEntry::parseSingleLinkedEntry)
 					.map(o-> o.toRequestColumn(td, true)) //ASC | DESC
 					.map(RequestColumn::dbOrder)
 					.toArray(DBOrder[]::new));
 		}
-		return over().usingArgs(clause);
+		return clause;
 	}
 	
-	private static Object parseEntry(String s, TableDecorator td){
-		try {
-			return linkedEntry(s).toRequestColumn(td, false).dbColumn();
-		}
-		catch(Exception e) {
-			return tryParse(s);
-		}
-	}
-
-	private static LinkedRequestEntry linkedEntry(String s) {
-		var arr = parseEntries(s);
-		if(arr.size() == 1) {
-			return arr.get(0);
-		}
-		throw new IllegalStateException("expect one entry");
+	static LinkedRequestEntry parseSingleLinkedEntry(String s) {
+		return parseLinkedEntries(s, false).get(0);
 	}
 	
-	public static List<LinkedRequestEntry> parseEntries(String s) {
+	static List<LinkedRequestEntry> parseLinkedEntries(String s) {
+		return parseLinkedEntries(s, true);
+	}
+	
+	private static List<LinkedRequestEntry> parseLinkedEntries(String s, boolean multiple) {
 		if(isBlank(s)) {
-			return emptyList();
+			throw new IllegalArgumentException("empty");
 		}
 		var res = new LinkedList<LinkedRequestEntry>();
 		res.add(new LinkedRequestEntry());
@@ -201,7 +231,7 @@ public final class LinkedRequestEntry {
 					res.getLast().appendEntryArgs(parseArgs(s.substring(to, jmp)));
 				}
 				else {
-					throw new IllegalArgumentException("')' expected after index=" + jmp);	
+					throw new IllegalArgumentException("')' expected after index=" + --to);	
 				}
 				if((to = ++jmp) == s.length()) {
 					break;
@@ -219,7 +249,7 @@ public final class LinkedRequestEntry {
 				}
 				c = s.charAt(to);
 			}
-			if(c == ',') {
+			if(c == ',' && multiple) {
 				res.add(new LinkedRequestEntry());
 			}
 			else if(c != '.') {
@@ -229,11 +259,10 @@ public final class LinkedRequestEntry {
 				throw new IllegalArgumentException("'" + s.charAt(to-1) + "' not allowed at the end");
 			}
 		}
-		System.out.println(s+ " => " + res);
 		return res;
 	}
 	
-	private static final String ARG_PATTERN = "\\w+(\\.\\w+)*";
+	private static final String ARG_PATTERN = "\\w+(\\.\\w*)*";
 	
 	private static Map<String, List<String>> parseArgs(String s) {
 		if(isBlank(s)) {
@@ -261,7 +290,7 @@ public final class LinkedRequestEntry {
 				last.add(sub); //sonar dummy sequential analyze !?
 				break;
 			}
-			if(c == ':') {
+			if(c == ':') { //!!!!! timestamp argument 
 				last = map.computeIfAbsent((key = sub), k-> new LinkedList<>());
 			}
 			else if(c == ',') {
@@ -311,29 +340,16 @@ public final class LinkedRequestEntry {
 			throw new IllegalArgumentException(quote(name) + " function takes no args");
 		}
 		
-		public List<String> arrayArgs() {
-			return hasArgArray() ? args.get(ARRAY_ARGS_KEY) : emptyList();
-		}
-
-		public boolean hasArgs() {
-			return nonNull(args);
-		}
-		
-		public boolean hasArgArray() {
-			return hasArgs() && args.containsKey(ARRAY_ARGS_KEY);
-		}
-		
-		public boolean hasArgMap() {
-			return hasArgs() && !args.containsKey(ARRAY_ARGS_KEY);
-		}
-		
-		public int argCount() {
-			return hasArgs() ? args.size() : 0;
-		}
-		
 		@Override
 		public String toString() {
-			return hasArgs() ? name + "(" + args + ")" :  name; 
+			if(isNull(args)) {
+				return name;
+			}
+			var s =  name + "(";
+			if(!args.isEmpty()) {
+				s+= args.containsKey(ARRAY_ARGS_KEY) ? join(", ", args.get(ARRAY_ARGS_KEY)) : args;
+			}
+			return s + ")";
 		}
 	}
 	

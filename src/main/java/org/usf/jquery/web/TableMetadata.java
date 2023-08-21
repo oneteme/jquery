@@ -6,6 +6,7 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.DatabaseMetaData;
@@ -38,7 +39,7 @@ public class TableMetadata {
 	@Setter(AccessLevel.PACKAGE)
 	private Instant lastUpdate;
 	
-	public void fetch() throws SQLException { //individually fetching
+	public void fetch() throws SQLException { //individually table fetching
 		try(var cn = database().getDataSource().getConnection()) {
 			fetch(cn.getMetaData());
 		}
@@ -54,8 +55,8 @@ public class TableMetadata {
 				var cn = rs.getString("COLUMN_NAME");
 				if(dbMap.containsKey(cn)) {
 					var meta = dbMap.remove(cn);
+					meta.setDataType(typeOf(rs.getInt("DATA_TYPE")));
 					meta.setDataSize(rs.getInt("COLUMN_SIZE"));
-					meta.setDataType(rs.getInt("DATA_TYPE"));
 				}// else undeclared column
 			} while(rs.next());
 		}

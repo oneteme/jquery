@@ -2,10 +2,10 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
-import static org.usf.jquery.web.Chart2DView.areaChart;
-import static org.usf.jquery.web.Chart2DView.barChart;
-import static org.usf.jquery.web.Chart2DView.columnChart;
-import static org.usf.jquery.web.Chart2DView.lineChart;
+import static org.usf.jquery.web.view.Chart2DView.areaChart;
+import static org.usf.jquery.web.view.Chart2DView.barChart;
+import static org.usf.jquery.web.view.Chart2DView.columnChart;
+import static org.usf.jquery.web.view.Chart2DView.lineChart;
 
 import java.io.Writer;
 import java.sql.SQLException;
@@ -15,10 +15,10 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
-import org.usf.jquery.web.CalendarView;
-import org.usf.jquery.web.PieChartView;
-import org.usf.jquery.web.ResultWebView;
-import org.usf.jquery.web.TableView;
+import org.usf.jquery.web.view.CalendarView;
+import org.usf.jquery.web.view.PieChartView;
+import org.usf.jquery.web.view.ResultWebView;
+import org.usf.jquery.web.view.TableView;
 
 import lombok.Getter;
 import lombok.NonNull;

@@ -1,10 +1,11 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.UNLIMITED;
+import static org.usf.jquery.web.ParsableJDBCType.AUTO_TYPE;
+
+import org.usf.jquery.core.SQLType;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -18,12 +19,11 @@ import lombok.ToString;
 @ToString
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
-@AllArgsConstructor
 @RequiredArgsConstructor
 public class ColumnMetadata {
 	
 	private final String columnName;
-	private int dataType = AUTO_TYPE;
+	private SQLType dataType = AUTO_TYPE;
 	private int dataSize = UNLIMITED;
 	
 	ColumnMetadata reset() {

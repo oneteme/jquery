@@ -1,43 +1,40 @@
 package org.usf.jquery.web;
 
-import static java.util.Objects.isNull;
+import static java.lang.String.join;
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 import static java.util.Optional.empty;
+import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.core.Utils.AUTO_TYPE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
-import static org.usf.jquery.web.Constants.WINDOW_ORDER;
-import static org.usf.jquery.web.Constants.WINDOW_PARTITION;
-import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
+import static org.usf.jquery.web.JQueryContext.context;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
-import static org.usf.jquery.web.RequestColumn.decodeColumn;
 import static org.usf.jquery.web.RequestColumn.decodeColumns;
+import static org.usf.jquery.web.RequestColumn.decodeSingleColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
 import static org.usf.jquery.web.TableMetadata.emptyMetadata;
 import static org.usf.jquery.web.TableMetadata.tableMetadata;
 
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBTable;
-import org.usf.jquery.core.DBWindow;
-import org.usf.jquery.core.InCompartor;
+import org.usf.jquery.core.SQLType;
+import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.OverColumn;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.WindowView;
 
 /**
  * 
@@ -56,51 +53,66 @@ public interface TableDecorator {
 		return empty();
 	}
 	
-	default int columnType(ColumnDecorator cd) {
-		return database().columnMetada(this, cd)
-				.map(ColumnMetadata::getDataType)
-				.orElse(AUTO_TYPE); //not binded
-	}
-	
 	default DBTable table() {
 		return new DBTable(schema().orElse(null), tableName(), identity());
 	}
 	
+	default Optional<SQLType> columnType(ColumnDecorator cd) {
+		return database().columnMetada(this, cd)
+				.map(ColumnMetadata::getDataType); //not binded
+	}
+
+	default TaggableColumn column(ColumnDecorator column) {
+		if(nonNull(column.builder())) {
+			return column.builder().column(this).as(column.reference());
+		}
+		var cn = columnName(column);
+		if(cn.isPresent()) {
+			return new TableColumn(requireLegalVariable(cn.get()), column.reference(), identity());
+		}
+		throw undeclaredResouceException(identity(), column.identity());
+	}
+	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
 		var query = new RequestQueryBuilder();
-		parseWindow (query, parameterMap);
+		parseViews (query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseFilters(query, parameterMap);
 		parseOrders (query, parameterMap);
 		return query;
 	}
 	
-	default void parseWindow(RequestQueryBuilder query, Map<String, String[]> parameters) {
-		var map = new LinkedHashMap<String, DBWindow>();
-		if(parameters.containsKey(WINDOW_PARTITION)) {
-			flatParameters(parameters.get(WINDOW_PARTITION)).forEach(p->{
-				var rc = decodeColumn(p, this, false);
-				var td = rc.tableDecorator();
-				map.computeIfAbsent(td.identity(), k-> new DBWindow(td.table()))
-				.partitions(td.column(rc.columnDecorator()));
-			});
-		}
-		if(parameters.containsKey(WINDOW_ORDER)) {
-			flatParameters(parameters.get(WINDOW_ORDER)).forEach(p->{
-				var rc = decodeColumn(p, this, true);
-				var td = rc.tableDecorator();
-				var col = rc.tableDecorator().column(rc.columnDecorator());
-				map.computeIfAbsent(td.identity(), k-> new DBWindow(td.table()))
-				.orders(isNull(rc.expression()) 
-						? col.order() 
-						: col.order(parseOrder(rc.expression())));
-			});
-		}
-		if(map.isEmpty()) {
-			query.tables(table());
-		}
-		else {
-			map.values().forEach(w-> query.tables(w).filters(w.filter()));
+	default void parseViews(RequestQueryBuilder query, Map<String, String[]> parameters) {
+		var exp = "(" + join("|", "rank", "row_number", "dense_rank") + ")" + "(\\(\\))?\\.over.*"; //almost
+		for(var t : context().tables()) {
+			var pr = "^(" + t.identity() + "\\.)";
+			if(t == this) {
+				pr += "?";
+			}
+			var pattern = pr + exp;
+			var c = parameters.entrySet().stream()
+			.filter(e-> e.getKey().matches(pattern))
+			.collect(toList());
+			if(!c.isEmpty()) {
+				if(c.size() == 1 && c.get(0).getValue().length == 1) {
+					var entry = c.get(0);
+					var col = decodeSingleColumn(entry.getKey(), this, true); //allow comparator
+					var nc = (NamedColumn) col.dbColumn();
+					var oc = nc.unwrap();
+					if(oc instanceof OverColumn) {
+						var wv = new WindowView(col.tableDecorator().table(), (OverColumn) oc, 
+								nc.tagname(), col.expression(entry.getValue()));
+						query.tables(wv).filters(wv.filter());
+						parameters.remove(entry.getKey());
+					}
+					else {
+						throw new IllegalStateException("OverColumn expected");
+					}
+				}
+				else {
+					throw new UnsupportedOperationException("multiple window function");
+				}
+			}
 		}
 	}
 	
@@ -116,11 +128,10 @@ public interface TableDecorator {
 		}
 		if(parameters.containsKey(COLUMN_DISTINCT)){
 			query.distinct();
-		}//TD check first param !isBlank
-		Stream.of(cols).flatMap(c-> decodeColumns(c, this, false)).forEach(rc->{
-			var td = rc.tableDecorator();
-			query.tablesIfAbsent(td.table()).columns(td.column(rc.columnDecorator()));
-		});
+		}
+		Stream.of(cols)
+		.flatMap(c-> decodeColumns(c, this, false))
+		.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).columns(rc.dbColumn()));
 	}
 
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
@@ -134,49 +145,18 @@ public interface TableDecorator {
 
 	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(ORDER)) {
-			flatParameters(parameters.get(ORDER)).forEach(p->{
-				var rc = decodeColumn(p, this, true);
-				var col = rc.tableDecorator().column(rc.columnDecorator());
-				query.tablesIfAbsent(rc.tableDecorator().table())
-				.orders(isNull(rc.expression()) 
-						? col.order() 
-						: col.order(parseOrder(rc.expression())));
-			});
+			Stream.of(parameters.get(ORDER))
+			.flatMap(c-> decodeColumns(c, this, true))
+			.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).orders(rc.dbOrder()));
 		}
 	}
 
-	default TaggableColumn column(ColumnDecorator column) {
-		if(nonNull(column.builder())) {
-			return column.builder().column(this).as(column.reference());
+	@Deprecated
+	static String parseOrder(String order) {
+		if("desc".equals(order) || "asc".equals(order)) {
+			return order.toUpperCase();
 		}
-		var cn = columnName(column);
-		if(cn.isPresent()) {
-			return new TableColumn(requireLegalVariable(cn.get()), column.reference(), identity());
-		}
-		throw undeclaredResouceException(identity(), column.identity());
-	}
-	
-	//expression => criteria | comparator
-	default ComparisonExpression expression(ColumnDecorator column, String expres, String... values) {
-		var criteria = column.criteria(expres);
-		if(nonNull(criteria)) {
-			return criteria.build(values);
-		}
-		var cmp = column.comparator(expres, values.length);
-		if(nonNull(cmp)) {
-			var type = column.dataType();
-			if(type == AUTO_TYPE) { // logical column type can be set in table
-				type = columnType(column);
-			}//else : overridden
-	    	var prs = requireNonNull(column.parser(type));
-	    	if(values.length == 1) {
-	    		return cmp.expression(prs.parseValue(values[0]));
-	    	}
-			return cmp instanceof InCompartor 
-					? cmp.expression(prs.parseValues(values))
-					: ofComparator(cmp).build(prs.parseValues(values));
-		}
-		throw cannotEvaluateException("expression", expres);
+		throw cannotEvaluateException(ORDER, order);
 	}
 	
 	default TableMetadata metadata() {
@@ -186,13 +166,6 @@ public interface TableDecorator {
 	
 	default TableMetadata createMetadata(Collection<ColumnDecorator> columns) {
 		return tableMetadata(this, columns);
-	}
-	
-	static String parseOrder(String order) {
-		if("desc".equals(order) || "asc".equals(order)) {
-			return order.toUpperCase();
-		}
-		throw cannotEvaluateException(ORDER, order);
 	}
 
 	static Stream<String> flatParameters(String... arr) { //number local separator
