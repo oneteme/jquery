@@ -1,14 +1,35 @@
 package org.usf.jquery.core;
 
-public interface DBTable extends DBObject {
+import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.Utils.isBlank;
 
-	String reference(); //JSON & TAG
+import lombok.RequiredArgsConstructor;
+
+/**
+ * 
+ * @author u$f
+ *
+ */
+@RequiredArgsConstructor
+public class DBTable implements TaggableView {
 	
-	String sql();
+	private final String schema;
+	private final String name;
+	private final String tag;
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {//schema, suffix ?
-		return sql();
+	public String sql(QueryParameterBuilder builder, String schema) {
+		schema = isBlank(this.schema) ? schema : this.schema;
+		return isBlank(schema) ? name : schema + "." + name;
 	}
 	
+	@Override 
+	public String tagname() {
+		return tag;
+	}
+	
+	@Override
+	public String toString() {
+		return sql(addWithValue(), "s1");
+	}	
 }

@@ -1,23 +1,29 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
-import static org.usf.jquery.core.Validation.requireLegalAlias;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.core.Validation.requireNoArgs;
+
+import java.util.function.Supplier;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
 
 import lombok.NonNull;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
 public interface DBColumn extends DBObject, NestedSql {
 	
-	String sql(QueryParameterBuilder builder);
-	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(nonNull(args), "DBColumn takes no arguments");
+		requireNoArgs(args, DBColumn.class::getSimpleName);
 		return sql(builder);
 	}
+	
+	String sql(QueryParameterBuilder builder);
 
 	@Override
 	default boolean isAggregation() {
@@ -29,66 +35,74 @@ public interface DBColumn extends DBObject, NestedSql {
 	}
 
 	default NamedColumn as(String name) {
-		return new NamedColumn(this, requireLegalAlias(name));
+		return new NamedColumn(this, requireLegalVariable(name));
+	}
+	
+	default DBOrder order() {
+		return order(null);
+	}
+	
+	default DBOrder order(String order) {
+		return new DBOrder(this, order);
 	}
 
 	// filters
 	default ColumnSingleFilter equal(Object value) {
-		return filter(DBComparator.equal(value));
+		return filter(ComparisonExpression.equal(value));
 	}
 
 	default ColumnSingleFilter notEqual(Object value) {
-		return filter(DBComparator.notEqual(value));
+		return filter(ComparisonExpression.notEqual(value));
 	}
 
 	default ColumnSingleFilter greaterThan(Object value) {
-		return filter(DBComparator.greaterThan(value));
+		return filter(ComparisonExpression.greaterThan(value));
 	}
 
 	default ColumnSingleFilter greaterOrEqual(Object value) {
-		return filter(DBComparator.greaterOrEqual(value));
+		return filter(ComparisonExpression.greaterOrEqual(value));
 	}
 
 	default ColumnSingleFilter lessThan(Object value) {
-		return filter(DBComparator.lessThan(value));
+		return filter(ComparisonExpression.lessThan(value));
 	}
 
 	default ColumnSingleFilter lessOrEqual(Object value) {
-		return filter(DBComparator.lessOrEqual(value));
+		return filter(ComparisonExpression.lessOrEqual(value));
 	}
 
 	default ColumnSingleFilter like(Object value) {
-		return filter(DBComparator.like(value));
+		return filter(ComparisonExpression.like(value));
 	}
 
 	default ColumnSingleFilter notLike(Object value) {
-		return filter(DBComparator.notLike(value));
+		return filter(ComparisonExpression.notLike(value));
 	}
 
 	default ColumnSingleFilter ilike(Object value) {
-		return filter(DBComparator.iLike(value));
+		return filter(ComparisonExpression.iLike(value));
 	}
 
 	default ColumnSingleFilter notILike(Object value) {
-		return filter(DBComparator.notILike(value));
+		return filter(ComparisonExpression.notILike(value));
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter in(T... values) {
-		return filter(DBComparator.in(values));
+		return filter(ComparisonExpression.in(values));
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter notIn(T... values) {
-		return filter(DBComparator.notIn(values));
+		return filter(ComparisonExpression.notIn(values));
 	}
 
 	default ColumnSingleFilter isNull() {
-		return filter(DBComparator.isNull());
+		return filter(ComparisonExpression.isNull());
 	}
 
 	default ColumnSingleFilter isNotNull() {
-		return filter(DBComparator.isNotNull());
+		return filter(ComparisonExpression.isNotNull());
 	}
 
 	default ColumnSingleFilter filter(ComparisonExpression exp) {
@@ -130,11 +144,15 @@ public interface DBColumn extends DBObject, NestedSql {
 	}
 
 	static DBColumn constant(Object value) {
+		return constant(()-> value);
+	}
+
+	static DBColumn constant(Supplier<Object> value) {
 		return new DBColumn() {
 			
 			@Override
 			public String sql(QueryParameterBuilder arg) {
-				return arg.formatValue(value);
+				return arg.formatValue(value.get());
 			}
 			
 			@Override
@@ -145,6 +163,74 @@ public interface DBColumn extends DBObject, NestedSql {
 	}
 	
 	static boolean isColumnConstant(Object o) {
-		return !(o instanceof DBColumn && !((DBColumn)o).isConstant());
-	}	
+		return !(o instanceof DBColumn) || ((DBColumn)o).isConstant();
+	}
+	
+
+	static OperationColumn count() {
+		return count(column("*"));
+	}
+
+	static OperationColumn count(Object arg) {
+		return DBFunction.count().args(arg);
+	}
+
+	static OperationColumn min(Object arg) {
+		return DBFunction.min().args(arg);
+	}
+
+	static OperationColumn max(Object arg) {
+		return DBFunction.max().args(arg);
+	}
+
+	static OperationColumn sum(Object arg) {
+		return DBFunction.sum().args(arg);
+	}
+	
+	static OperationColumn avg(Object arg) {
+		return DBFunction.avg().args(arg);
+	}
+	
+	//numeric
+	
+	static OperationColumn abs(Object arg) {
+		return DBFunction.abs().args(arg);
+	}
+	
+	static OperationColumn sqrt(Object arg) {
+		return DBFunction.sqrt().args(arg);
+	}
+
+	static OperationColumn trunc(Object arg) {
+		return DBFunction.trunc().args(arg);
+	}
+
+	static OperationColumn ceil(Object arg) {
+		return DBFunction.ceil().args(arg);
+	}
+
+	static OperationColumn floor(Object arg) {
+		return DBFunction.floor().args(arg);
+	}
+	
+	//string
+	static OperationColumn trim(Object arg) {
+		return DBFunction.trim().args(arg);
+	}
+
+	static OperationColumn length(Object arg) {
+		return DBFunction.length().args(arg);
+	}
+
+	static OperationColumn upper(Object arg) {
+		return DBFunction.upper().args(arg);
+	}
+
+	static OperationColumn lower(Object arg) {
+		return DBFunction.lower().args(arg);
+	}
+	
+	static OperationColumn substring(Object arg, int start, int length) {
+		return DBFunction.substring().args(arg, start, length);
+	}
 }

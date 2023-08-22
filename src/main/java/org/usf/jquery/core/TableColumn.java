@@ -1,11 +1,15 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.SqlStringBuilder.POINT;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor
 public final class TableColumn implements TaggableColumn {
 
@@ -17,11 +21,11 @@ public final class TableColumn implements TaggableColumn {
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {
-		return tableRef + POINT + columnName;
+		return arg.columnFullReference(tableRef, columnName);
 	}
 
 	@Override
-	public String reference() {
+	public String tagname() {
 		return reference;
 	}
 	

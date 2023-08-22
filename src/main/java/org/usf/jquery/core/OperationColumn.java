@@ -8,8 +8,13 @@ import lombok.AccessLevel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class OperationColumn implements DBColumn {
+public class OperationColumn implements DBColumn {
 
 	@NonNull
 	private final DBOperation operation;

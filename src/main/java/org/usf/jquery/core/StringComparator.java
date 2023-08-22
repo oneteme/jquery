@@ -1,9 +1,13 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.SqlStringBuilder.space;
-import static org.usf.jquery.core.Utils.hasSize;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
+import static org.usf.jquery.core.Validation.requireNArgs;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
 public interface StringComparator extends DBComparator {
 	
@@ -11,7 +15,7 @@ public interface StringComparator extends DBComparator {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		illegalArgumentIf(!hasSize(args, 2),  ()-> name() + " comparator takes 2 parameters");
+		requireNArgs(2, args, String.class::getSimpleName);
 		return builder.appendString(args[0]) + space(name()) + builder.appendString(args[1]);
 	}
 

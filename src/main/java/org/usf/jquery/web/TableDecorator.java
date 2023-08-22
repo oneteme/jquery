@@ -1,141 +1,174 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.join;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
-import static org.usf.jquery.core.DBComparator.equal;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Utils.toMap;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.web.Constants.COLUMN;
+import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
+import static org.usf.jquery.web.Constants.ORDER;
+import static org.usf.jquery.web.Constants.RESERVED_WORDS;
+import static org.usf.jquery.web.JQueryContext.context;
+import static org.usf.jquery.web.JQueryContext.database;
+import static org.usf.jquery.web.MissingParameterException.missingParameterException;
+import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
+import static org.usf.jquery.web.ParseException.cannotEvaluateException;
+import static org.usf.jquery.web.RequestColumn.decodeColumns;
+import static org.usf.jquery.web.RequestColumn.decodeSingleColumn;
+import static org.usf.jquery.web.RequestFilter.decodeFilter;
+import static org.usf.jquery.web.TableMetadata.emptyMetadata;
+import static org.usf.jquery.web.TableMetadata.tableMetadata;
 
+import java.util.Collection;
 import java.util.Map;
-import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
-import org.usf.jquery.core.RequestQuery;
+import org.usf.jquery.core.SQLType;
+import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.OverColumn;
+import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.TableColumn;
+import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.WindowView;
 
-import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-
-public interface TableDecorator extends DBTable {
+/**
+ * 
+ * @author u$f
+ *
+ */
+public interface TableDecorator {
 	
 	String identity(); //URL
 	
-	@Override
-	default String reference() { //JSON & TAG == URL 
-		return identity();
+	String tableName(); //SQL
+	
+	Optional<String> columnName(ColumnDecorator cd);
+	
+	default Optional<String> schema() {
+		return empty();
 	}
 	
-	String columnName(ColumnDecorator desc);
+	default DBTable table() {
+		return new DBTable(schema().orElse(null), tableName(), identity());
+	}
 	
-	default RequestQuery query(RequestQueryParam ant, Map<String, String[]> parameterMap) {
-		
-		var query = new RequestQuery().select(this);
-		parseColumns(ant, query, parameterMap);
-		parseFilters(ant, query, parameterMap);
+	default Optional<SQLType> columnType(ColumnDecorator cd) {
+		return database().columnMetada(this, cd)
+				.map(ColumnMetadata::getDataType); //not binded
+	}
+
+	default TaggableColumn column(ColumnDecorator column) {
+		if(nonNull(column.builder())) {
+			return column.builder().column(this).as(column.reference());
+		}
+		var cn = columnName(column);
+		if(cn.isPresent()) {
+			return new TableColumn(requireLegalVariable(cn.get()), column.reference(), identity());
+		}
+		throw undeclaredResouceException(identity(), column.identity());
+	}
+	
+	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
+		var query = new RequestQueryBuilder();
+		parseViews (query, parameterMap);
+		parseColumns(query, parameterMap);
+		parseFilters(query, parameterMap);
+		parseOrders (query, parameterMap);
 		return query;
 	}
 	
-	default void parseColumns(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameterMap) {
-
-		var cols = parameterMap.getOrDefault(ant.columnParameter(), ant.defaultColumns());
-		if(isEmpty(cols)) { //TD check first param isBlank
-			throw new IllegalArgumentException("require " + ant.columnParameter() + " parameter");
-		}
-		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
-		flatStream(cols).forEach(p->{
-			var res = parseResource(p, map, false);
-			query.tables(res.getTableDecorator());
-			query.columns(res.getColumnDecorator().column(res.getTableDecorator()));
-		});
-	}
-
-	default void parseFilters(RequestQueryParam ant, RequestQuery query, Map<String, String[]> parameterMap) {
-
-		var map = toMap(DatabaseScanner.get().getColumns(), ColumnDecorator::identity);
-    	parameterMap.entrySet().stream()
-    	.filter(e-> !ant.columnParameter().equals(e.getKey()) && !ant.revisionParameter().equals(e.getKey()))
-    	.forEach(e->{
-			var left = parseResource(e.getKey(), map, ant.allowUnknownParameters());
-			if(left != null) {
-				var column = left.getColumnDecorator().column(left.getTableDecorator());
-				var values = flatStream(e.getValue()).collect(toList());
-				var variables = values.stream().filter(o-> o.startsWith("$")).collect(toList());
-				if(!variables.isEmpty()) {
-					for(var v : variables) {
- 						var right = parseResource(v.substring(1), map, false);
- 						var exprs = equal(right.getColumnDecorator().column(right.getTableDecorator()));
- 	 					query.tables(right.getTableDecorator());
- 	 					query.filters(column.filter(exprs));
+	default void parseViews(RequestQueryBuilder query, Map<String, String[]> parameters) {
+		var exp = "(" + join("|", "rank", "row_number", "dense_rank") + ")" + "(\\(\\))?\\.over.*"; //almost
+		for(var t : context().tables()) {
+			var pr = "^(" + t.identity() + "\\.)";
+			if(t == this) {
+				pr += "?";
+			}
+			var pattern = pr + exp;
+			var c = parameters.entrySet().stream()
+			.filter(e-> e.getKey().matches(pattern))
+			.collect(toList());
+			if(!c.isEmpty()) {
+				if(c.size() == 1 && c.get(0).getValue().length == 1) {
+					var entry = c.get(0);
+					var col = decodeSingleColumn(entry.getKey(), this, true); //allow comparator
+					var nc = (NamedColumn) col.dbColumn();
+					var oc = nc.unwrap();
+					if(oc instanceof OverColumn) {
+						var wv = new WindowView(col.tableDecorator().table(), (OverColumn) oc, 
+								nc.tagname(), col.expression(entry.getValue()));
+						query.tables(wv).filters(wv.filter());
+						parameters.remove(entry.getKey());
 					}
-					values.removeIf(o-> o.startsWith("$"));
+					else {
+						throw new IllegalStateException("OverColumn expected");
+					}
 				}
-				if(!values.isEmpty()) {
- 					var meta = DatabaseScanner.get().metadata().table(left.getTableDecorator()); 
-					var expres = left.getColumnDecorator().expression(meta, values.toArray(String[]::new));
- 					query.filters(column.filter(expres));
+				else {
+					throw new UnsupportedOperationException("multiple window function");
 				}
 			}
+		}
+	}
+	
+	default void parseColumns(RequestQueryBuilder query, Map<String, String[]> parameters) {
+		if(parameters.containsKey(COLUMN_DISTINCT) && parameters.containsKey(COLUMN)) {
+			throw new IllegalArgumentException("cannot use both parameters " + quote(COLUMN_DISTINCT) + " and " + quote(COLUMN));
+		}
+		var cols = parameters.containsKey(COLUMN_DISTINCT) 
+				? parameters.get(COLUMN_DISTINCT) 
+				: parameters.get(COLUMN); //can be combined in PG (distinct on)
+		if(isEmpty(cols)) {
+			throw missingParameterException(COLUMN, COLUMN_DISTINCT);
+		}
+		if(parameters.containsKey(COLUMN_DISTINCT)){
+			query.distinct();
+		}
+		Stream.of(cols)
+		.flatMap(c-> decodeColumns(c, this, false))
+		.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).columns(rc.dbColumn()));
+	}
+
+	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
+    	parameters.entrySet().stream()
+    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
+    	.forEach(e-> {
+    		var rf = decodeFilter(e, this);
+    		query.tablesIfAbsent(rf.tables()).filters(rf.filters());
     	});
 	}
-	
-	default void parseFilters() {
-		
+
+	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {
+		if(parameters.containsKey(ORDER)) {
+			Stream.of(parameters.get(ORDER))
+			.flatMap(c-> decodeColumns(c, this, true))
+			.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).orders(rc.dbOrder()));
+		}
+	}
+
+	@Deprecated
+	static String parseOrder(String order) {
+		if("desc".equals(order) || "asc".equals(order)) {
+			return order.toUpperCase();
+		}
+		throw cannotEvaluateException(ORDER, order);
 	}
 	
-	default Resource parseResource(String value, Map<String, ColumnDecorator> map, boolean ignoreUnkown) {
-		TableDecorator table;
-		String cn;
-		String fn = null;
-		var arr = value.split("\\.");
-		if(arr.length == 1) {//column
-			table = this;
-			cn = arr[0];
-		}
-		else if(arr.length > 1 && arr.length < 4) {
-			var tn  = formatColumnName(arr[0]);
-			var res = DatabaseScanner.get().tables.stream().filter(t-> t.identity().equals(tn)).findAny();
-			if(res.isPresent()) { //table.column
-				table = res.get();
-				cn = arr[1];
-				if(arr.length > 2) { //table.column.fn
-					fn = arr[2].toLowerCase();
-				}
-			}
-			else { //column.expres
-				table = this;
-				cn = arr[0];
-				fn = arr[1].toLowerCase();
-				if(arr.length > 2) {
-					throw new IllegalArgumentException("invalid resource " + value);
-				}
-			}
-		}
-		else {
-			throw new IllegalArgumentException("invalid resource " + value);
-		}
-		var column = map.get(formatColumnName(cn));
-		if(column == null) {
-			if(ignoreUnkown) {
-				return null;
-			}
-			throw new NoSuchElementException(cn + " not found");
-		}
-		return new Resource(table, column, fn);
+	default TableMetadata metadata() {
+		return database().tableMetada(this) 
+				.orElseGet(()-> emptyMetadata(this)); // not binded
 	}
 	
-	// move to client side 
-	default String formatColumnName(String v) {
-		return v.replace("-", "_").toUpperCase();
+	default TableMetadata createMetadata(Collection<ColumnDecorator> columns) {
+		return tableMetadata(this, columns);
 	}
-	
-    static Stream<String> flatStream(String... arr) { //number local separator
-    	return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
-    }
-    
-    @Getter
-    @RequiredArgsConstructor
-    static class Resource {
-    	private final TableDecorator tableDecorator;
-    	private final ColumnDecorator columnDecorator;
-    	private final String function;
-    }
+
+	static Stream<String> flatParameters(String... arr) { //number local separator
+		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
+	}
 }

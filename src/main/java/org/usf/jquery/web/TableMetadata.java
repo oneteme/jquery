@@ -1,76 +1,79 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.join;
 import static java.util.Collections.emptyMap;
-import static org.usf.jquery.core.Utils.isEmpty;
+import static java.util.Collections.unmodifiableMap;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.web.ParsableJDBCType.typeOf;
+import static org.usf.jquery.web.JQueryContext.database;
 
-import java.time.YearMonth;
-import java.util.LinkedList;
-import java.util.List;
+import java.sql.DatabaseMetaData;
+import java.sql.SQLException;
+import java.time.Instant;
+import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Stream;
+import java.util.NoSuchElementException;
 
-import org.usf.jquery.web.RequestQueryParam.RevisionMode;
-
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
-@Getter
-@ToString(includeFieldNames = false)
-@RequiredArgsConstructor
-public final class TableMetadata {
+/**
+ * 
+ * @author u$f
+ * 
+ */
+@ToString
+@Getter(AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+public class TableMetadata {
 	
-	static final YearMonth[] EMPTY_REVISION = new YearMonth[0];
-	
-	private final YearMonth[] revisions; //nullable
+	private final String tablename;
 	private final Map<String, ColumnMetadata> columns;
-
-	TableMetadata(Map<String, ColumnMetadata> columns) {
-		this(null, columns);
-	}
-
-	public ColumnMetadata column(ColumnDecorator cd) {
-		return columns.get(cd.identity());
-	}
-
-	public YearMonth latestRevision() {
-		return isEmpty(revisions) ? null : revisions[0];
+	@Getter
+	@Setter(AccessLevel.PACKAGE)
+	private Instant lastUpdate;
+	
+	public void fetch() throws SQLException { //individually table fetching
+		try(var cn = database().getDataSource().getConnection()) {
+			fetch(cn.getMetaData());
+		}
 	}
 	
-	public YearMonth[] filterExistingRevision(RevisionMode mode, YearMonth[] revs) {
-		switch (mode) {//switch lambda in java14
-		case STRICT  : return findStrictRevision(revs);
-		case CLOSEST : return findClosestRevision(revs);
-		default : throw new UnsupportedOperationException(mode.toString());
+	void fetch(DatabaseMetaData metadata) throws SQLException {
+		var dbMap = columns.values().stream().collect(toMap(ColumnMetadata::getColumnName, identity()));
+		try(var rs = metadata.getColumns(null, null, tablename, null)){
+			if(!rs.next()) {
+				throw new NoSuchElementException(quote(tablename) + " table not found");
+			}
+			do {
+				var cn = rs.getString("COLUMN_NAME");
+				if(dbMap.containsKey(cn)) {
+					var meta = dbMap.remove(cn);
+					meta.setDataType(typeOf(rs.getInt("DATA_TYPE")));
+					meta.setDataSize(rs.getInt("COLUMN_SIZE"));
+				}// else undeclared column
+			} while(rs.next());
 		}
-	}
-		
-	private YearMonth[] findStrictRevision(YearMonth[] values) {
-		return isEmpty(revisions) || isEmpty(values) 
-				? EMPTY_REVISION 
-				: Stream.of(values)
-				.filter(v-> Stream.of(revisions).anyMatch(o-> o.equals(v)))
-				.toArray(YearMonth[]::new);
+		if(!dbMap.isEmpty()) {
+			throw new NoSuchElementException("column(s) [" + join(", ", dbMap.keySet()) + "] not found in " + tablename);
+		}
 	}
 	
-	private YearMonth[] findClosestRevision(YearMonth[] values) {
-		if(isEmpty(revisions)) {
-			return EMPTY_REVISION;
-		}
-		if(isEmpty(values)) {
-			return new YearMonth[]{ latestRevision() };
-		}
-		List<YearMonth> list = new LinkedList<>();
-		for(var v : values) {
-			Stream.of(revisions)
-			.filter(o-> o.compareTo(v) <= 0)
-			.findFirst()
-			.ifPresent(list::add);
-		}
-		return list.isEmpty() ? EMPTY_REVISION : list.toArray(YearMonth[]::new);
+	static TableMetadata tableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
+		var map = new LinkedHashMap<String, ColumnMetadata>();
+		columns.stream().forEach(cd-> 
+			table.columnName(cd).ifPresent(cn-> 
+				map.put(cd.identity(), new ColumnMetadata(cn))));
+		return new TableMetadata(table.tableName(), unmodifiableMap(map));
 	}
 
-	static final TableMetadata defaultTableMetadata() {
-		return new TableMetadata(emptyMap());
+	static TableMetadata emptyMetadata(TableDecorator table) {
+		return new TableMetadata(table.tableName(), emptyMap());
 	}
 }

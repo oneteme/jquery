@@ -7,6 +7,11 @@ import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @AllArgsConstructor
 public final class CaseSingleColumnBuilder {
 

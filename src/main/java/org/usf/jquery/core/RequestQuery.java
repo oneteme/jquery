@@ -1,165 +1,111 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
-import static java.lang.reflect.Array.getLength;
-import static java.util.Arrays.asList;
-import static java.util.Objects.requireNonNull;
-import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
-import static org.usf.jquery.core.SqlStringBuilder.POINT;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.Utils.isBlank;
-import static org.usf.jquery.core.Validation.requireNonEmpty;
+import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
+import static org.usf.jquery.web.view.Chart2DView.areaChart;
+import static org.usf.jquery.web.view.Chart2DView.barChart;
+import static org.usf.jquery.web.view.Chart2DView.columnChart;
+import static org.usf.jquery.web.view.Chart2DView.lineChart;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.LinkedList;
+import java.io.Writer;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Function;
+
+import javax.sql.DataSource;
+
+import org.usf.jquery.core.ResultMapper.DataWriter;
+import org.usf.jquery.web.view.CalendarView;
+import org.usf.jquery.web.view.PieChartView;
+import org.usf.jquery.web.view.ResultWebView;
+import org.usf.jquery.web.view.TableView;
 
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public class RequestQuery {
-
-	final String suffix;
-	final Set<DBTable> tables;
-	final List<TaggableColumn> columns;
-	final List<DBFilter> filters;  //WERE & HAVING
-	boolean noResult;
+public final class RequestQuery {
 	
-	public RequestQuery() {
-		this.suffix  = null;
-		this.tables  = new HashSet<>();
-		this.columns = new LinkedList<>();
-		this.filters = new LinkedList<>();
-	}
-
-	public RequestQuery select(DBTable table, TaggableColumn... columns) {
-		return tables(table).columns(columns);
-	}
-
-	public RequestQuery tables(@NonNull DBTable... tables) {
-		this.tables.addAll(asList(tables));
-		return this;
+	@NonNull
+	private final String query;
+	private final Object[] params;
+	
+	public List<DynamicModel> execute(DataSource ds) {
+		return execute(ds, new SimpleResultMapper());
 	}
 	
-	public RequestQuery columns(@NonNull TaggableColumn... columns) {
-		this.columns.addAll(asList(columns));
-		return this;
-	}
-
-	public RequestQuery filters(@NonNull DBFilter... filters){
-		this.filters.addAll(asList(filters));
-		return this;
-	}
-
-	public <T> T execute(Function<ParametredQuery, T> fn) {
-		return execute(null, fn);
-	}
-
-	public <T> T execute(String schema, Function<ParametredQuery, T> fn) {
-
-		requireNonNull(fn);
-		log.debug("Building prepared statement...");
-		var bg = currentTimeMillis();
-		var query = build(schema);
-		log.debug("Query built in {} ms", currentTimeMillis() - bg);
-		bg = currentTimeMillis();
-		var rows = fn.apply(query);
-		log.info("{} rows in {} ms", rowCount(rows), currentTimeMillis() - bg);
-		return rows;
-	}
-
-	public ParametredQuery build(String schema){
-		requireNonEmpty(tables);
-    	requireNonEmpty(columns);
-		var pb = parametrized();
-		var sb = new SqlStringBuilder(500);
-		build(schema, sb, pb);
-		String[] cols = columns.stream().map(TaggableColumn::reference).toArray(String[]::new); //!postgres insensitive case
-		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
-	}
-
-	public final void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
-    	select(schema, sb);
-    	where(sb, pb);
-    	groupBy(sb);
-    	having(sb, pb);
-	}
-
-	void select(String schema, SqlStringBuilder sb){
-		var pb = addWithValue(); //addWithValue columns (case, constant, Operation, ..)
-    	sb.append("SELECT ")
-    	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + o.reference())
-    	.append(" FROM ")
-    	.appendIf(!isBlank(schema), ()-> schema + POINT)
-    	.appendEach(tables, SCOMA, o-> o.sql(pb, new Object[]{suffix}) + SPACE + o.reference());
-	}
-
-	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
-		var expr = filters.stream()
-				.filter(not(DBFilter::isAggregation))
-				.map(f-> f.sql(pb))
-    			.collect(joining(AND.sql()));
-    	if(!expr.isEmpty()) {
-    		sb.append(" WHERE ").append(expr);
-    	}
-	}
-	
-	void groupBy(SqlStringBuilder sb){
-        if(columns.stream().anyMatch(DBColumn::isAggregation)) {
-        	var expr = columns.stream()
-        			.filter(RequestQuery::groupable)
-        			.map(TaggableColumn::reference) //add alias 
-        			.collect(joining(SCOMA));
-        	if(!expr.isEmpty()) {
-        		sb.append(" GROUP BY ").append(expr);
-        	}
-        	else if(columns.size() > 1) {
-        		//throw new RuntimeException("require groupBy columns"); CONST !?
-        	}
-        }
-	}
-	
-	void having(SqlStringBuilder sb, QueryParameterBuilder pb){
-		var having = filters.stream()
-				.filter(DBFilter::isAggregation)
-				.collect(toList());
-    	if(!having.isEmpty()) {
-    		sb.append(" HAVING ")
-    		.appendEach(having, AND.sql(), f-> f.sql(pb));
-    	}
-	}
-
-	private static boolean groupable(DBColumn column) {
-		return !column.isAggregation() && !column.isConstant();
-	}
-	
-	@SuppressWarnings("rawtypes")
-	private static int rowCount(Object o) {
-		if(o.getClass().isArray()) {
-			return getLength(o);
+	public <T> T execute(DataSource ds, ResultMapper<T> mapper) {
+		try(var cn = ds.getConnection()){
+			log.debug("preparing statement : {}", query);
+			try(var ps = cn.prepareStatement(query)){
+				if(params != null) {
+					for(var i=0; i<params.length; i++) {
+						ps.setObject(i+1, params[i]);
+					}						
+				}
+		        log.debug("with parameters : {}", Arrays.toString(params));
+		        log.debug("executing SQL query...");
+		        var bg = currentTimeMillis();
+				try(var rs = ps.executeQuery()){
+			        log.debug("query executed in {} ms", currentTimeMillis() - bg);
+					return mapper.map(rs);
+				}
+			}
 		}
-		if(o instanceof Collection) {
-			return ((Collection)o).size();
+		catch(SQLException e) {
+			throw new RuntimeException(e);
 		}
-		if(o instanceof Map) {
-			return ((Map)o).size();
-		}
-		return 1; //???
 	}
-		
+
+	/* experimental */
+	
+	public void toCsv(DataSource ds, Writer w) {
+		toCsv(ds, w::write);
+	}
+
+	public void toCsv(DataSource ds, DataWriter out) {
+		execute(ds, new CsvResultMapper(out));
+	}
+
+	public void toAscii(DataSource ds, Writer w) {
+		toAscii(ds, w::write);
+	}
+	
+	public void toAscii(DataSource ds, DataWriter out) {
+		execute(ds, new AsciiResultMapper(out));
+	}
+	
+	public void toChart(DataSource ds, Writer w, String view) {
+		execute(ds, chart(view, w));
+	}
+	
+	public void logResult(DataSource ds) {
+		execute(ds, new AsciiResultMapper(usingRowWriter(log::debug)));
+	}
+
+	public ResultWebView chart(String view, Writer w) {
+		switch (view) {
+		case "table"	: return new TableView(w);
+		case "pie"		: return new PieChartView(w);
+		case "column"	: return columnChart(w);
+		case "bar"		: return barChart(w);
+		case "area"		: return areaChart(w);
+		case "line"		: return lineChart(w);
+		case "calendar"	: return new CalendarView(w);
+		default: throw new IllegalArgumentException(view);
+		}
+	}
+	
+	public SimpleResultMapper defaultMapper() {
+		return new SimpleResultMapper();
+	}
 }

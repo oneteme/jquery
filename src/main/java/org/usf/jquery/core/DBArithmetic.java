@@ -1,17 +1,21 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Utils.hasSize;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
+import static org.usf.jquery.core.Validation.requireNArgs;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
 interface DBArithmetic extends DBOperation {
 	
 	String symbol();
 	
 	@Override
-	default String sql(QueryParameterBuilder ph, Object[] args) {
-		illegalArgumentIf(!hasSize(args, 2), ()-> symbol() + " operation takes two parameters");
-		return ph.appendNumber(args[0]) + symbol() + ph.appendNumber(args[1]);
+	default String sql(QueryParameterBuilder builder, Object[] args) {
+		requireNArgs(2, args, DBArithmetic.class::getSimpleName);
+		return builder.appendNumber(args[0]) + symbol() + builder.appendNumber(args[1]);
 	}
 	
 	default OperationColumn args(Object left, Object right) {

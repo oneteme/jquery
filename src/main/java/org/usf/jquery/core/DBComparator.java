@@ -5,71 +5,72 @@ import static org.usf.jquery.core.InCompartor.inComparator;
 import static org.usf.jquery.core.NullComparator.nullComparator;
 import static org.usf.jquery.core.StringComparator.stringComparator;
 
-import lombok.NonNull;
-
+/**
+ * 
+ * @author u$f
+ *
+ */
 @FunctionalInterface
 public interface DBComparator extends DBCallable {
 	
-	default ComparisonExpression args(Object right) {
+	default ComparisonExpression expression(Object right) {
 		return new ComparisonSingleExpression(this, right);
 	}
 	
-	static ComparisonExpression equal(Object right) {
-		return basicComparator("=").args(right);
+	static BasicComparator equal() {
+		return basicComparator("=");
 	}
 
-	static ComparisonExpression notEqual(Object right) {
-		return basicComparator("<>").args(right);
+	static BasicComparator notEqual() {
+		return basicComparator("<>");
 	}
 	
-	static ComparisonExpression lessThan(Object right) {
-		return basicComparator("<").args(right);
+	static BasicComparator lessThan() {
+		return basicComparator("<");
 	}
 
-	static ComparisonExpression lessOrEqual(Object right) {
-		return basicComparator("<=").args(right);
+	static BasicComparator lessOrEqual() {
+		return basicComparator("<=");
 	}
 
-	static ComparisonExpression greaterThan(Object right) {
-		return basicComparator(">").args(right);
+	static BasicComparator greaterThan() {
+		return basicComparator(">");
 	}
 
-	static ComparisonExpression greaterOrEqual(Object right) {
-		return basicComparator(">=").args(right);
+	static BasicComparator greaterOrEqual() {
+		return basicComparator(">=");
 	}
 	
-	static ComparisonExpression like(Object right) {
-		return stringComparator("LIKE").args(right);
+	static StringComparator like() {
+		return stringComparator("LIKE");
 	}
 	
-	static ComparisonExpression iLike(Object right) {
-		return stringComparator("ILIKE").args(right);
+	static StringComparator iLike() {
+		return stringComparator("ILIKE");
 	}
 
-	static ComparisonExpression notLike(Object right) {
-		return stringComparator("NOT LIKE").args(right);
+	static StringComparator notLike() {
+		return stringComparator("NOT LIKE");
 	}
 
-	static ComparisonExpression notILike(Object right) {
-		return stringComparator("NOT ILIKE").args(right);
+	static StringComparator notILike() {
+		return stringComparator("NOT ILIKE");
 	}
 
-	static ComparisonExpression isNull() {
-		return nullComparator("IS NULL").args(null);
+	static NullComparator isNull() {
+		return nullComparator("IS NULL");
 	}
 
-	static ComparisonExpression isNotNull() {
-		return nullComparator("IS NOT NULL").args(null);
+	static NullComparator isNotNull() {
+		return nullComparator("IS NOT NULL");
 	}
 
-	@SuppressWarnings("unchecked")
-	static <T> ComparisonExpression in(@NonNull T... right) {
-		return inComparator("IN").args(right);
+	static InCompartor in() {
+		return inComparator("IN");
 	}
 	
-	@SuppressWarnings("unchecked")
-	static <T> ComparisonExpression notIn(@NonNull T... right) {
-		return inComparator("NOT IN").args(right);
+	static InCompartor notIn() {
+		return inComparator("NOT IN");
 	}
 
 }
