@@ -12,9 +12,9 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.ParsableJDBCType.AUTO_TYPE;
 import static org.usf.jquery.web.ParsableJDBCType.typeOf;
-import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;

@@ -4,7 +4,6 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
-import static org.usf.jquery.core.JDBCType.AUTO_TYPE;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 import static org.usf.jquery.web.LinkedRequestEntry.parseLinkedEntries;
@@ -125,7 +124,7 @@ public final class RequestColumn implements ColumnDecorator {
 		var cmp = comparator(exp, values.length);
 		if(nonNull(cmp)) {
 			var type = dataType();
-			if(type == AUTO_TYPE) { // logical column type can be set in table
+			if(type.isAutoType()) { // logical column type can be set in table
 				type = td.columnType(this).orElse(type);
 			} //else : overridden
 	    	var pars = requireNonNull(parser(type));

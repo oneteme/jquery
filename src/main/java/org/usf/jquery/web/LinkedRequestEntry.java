@@ -16,8 +16,8 @@ import static org.usf.jquery.web.ColumnDecorator.countColumn;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.PARTITION;
-import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 import static org.usf.jquery.web.JQueryContext.context;
+import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.ArrayList;

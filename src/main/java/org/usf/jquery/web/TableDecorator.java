@@ -28,10 +28,10 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
-import org.usf.jquery.core.SQLType;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OverColumn;
 import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.SQLType;
 import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.WindowView;

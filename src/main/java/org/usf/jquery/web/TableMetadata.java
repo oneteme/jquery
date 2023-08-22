@@ -6,8 +6,8 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 import static org.usf.jquery.web.JQueryContext.database;
+import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
