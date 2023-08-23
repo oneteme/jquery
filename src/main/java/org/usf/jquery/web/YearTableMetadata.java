@@ -6,6 +6,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.isNull;
+import static java.util.Optional.empty;
 import static java.util.function.Function.identity;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
@@ -28,7 +29,10 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
+
+import org.usf.jquery.core.Utils;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -152,8 +156,7 @@ public final class YearTableMetadata extends TableMetadata {
 		return meta;
 	}
 	
-	@Deprecated(forRemoval = false)
-	public YearMonth latestRevision() { //optional
-		return revisions[0];
+	public Optional<YearMonth> latestRevision() { //optional
+		return isEmpty(revisions) ? empty() : Optional.of(revisions[0]);
 	}
 }
