@@ -1,16 +1,15 @@
 package org.usf.jquery.web.view;
 
-import static java.lang.Math.max;
 import static java.lang.String.join;
 import static java.lang.String.valueOf;
 import static java.time.ZoneId.systemDefault;
+import static java.util.Collections.emptyList;
 import static java.util.Map.entry;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isBlank;
-import static org.usf.jquery.web.view.ResultWebView.TableColumnBind.bindColumns;
 import static org.usf.jquery.web.view.ResultWebView.WebType.NUMBER;
 import static org.usf.jquery.web.view.ResultWebView.WebType.STRING;
 import static org.usf.jquery.web.view.ResultWebView.WebType.typeOf;
@@ -28,17 +27,14 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.IntFunction;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import org.usf.jquery.core.ResultMapper;
 import org.usf.jquery.core.SqlStringBuilder;
-import org.usf.jquery.core.Utils;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -187,16 +183,14 @@ public interface ResultWebView extends ResultMapper<Void>  {
     	
     	private final TableColumn xAxis;
     	private final List<TableColumn> yAxis;
-    	private final TableColumn over;
-    	private final List<List<String>> rows;
+    	private final List<List<Entry<String, String>>> rows = new LinkedList<>();
     	
     	public void append(ResultSet rs) throws SQLException {
-    		var arr = new ArrayList<String>(yAxis.size()+ 1);
+    		var arr = new ArrayList<Entry<String, String>>(yAxis.size()+ 1);
 			arr.add(xAxis.format(rs));
     		for(var c : yAxis) {
     			arr.add(c.format(rs));
     		}
-			arr.add(over.format(rs));
     		rows.add(arr);
     	}
     	
@@ -206,33 +200,31 @@ public interface ResultWebView extends ResultMapper<Void>  {
     		var dimen = new LinkedList<TableColumn>();
     		if(rsm.getColumnCount() == 1) {
     			if(xAxis.getType() == NUMBER) {
-    				yAxis.add(xAxis);
+    				yAxis.add(new TableColumn(xAxis.getName(), xAxis.getType()));
     			}
+        		xAxis.prefixed("x-"+xAxis.getName()); //avoid same yAxis name
     		}
     		else {
         		for(var i=1; i<rsm.getColumnCount(); i++) {//require xAxis first column
         			var tc = new TableColumn(rsm.getColumnName(i+1), typeOf(rsm.getColumnType(i+1)));
         			(tc.getType() == NUMBER ? yAxis : dimen).add(tc);
         		}
+        		xAxis.prefixed();
     		}
     		if(yAxis.isEmpty()) {
     			throw new IllegalArgumentException("require number column");
     		}
-    		TableColumn over;
-    		if(dimen.isEmpty()) {
-    			var v = yAxis.size() == 1 ? yAxis.get(0).getName() : "";
-    			over = new TableColumn("", null) {
-    				@Override
-    				public String format(ResultSet rs) throws SQLException { return v; }
-    			};
+    		if(yAxis.size() > 1 || dimen.isEmpty()) {
+				yAxis.forEach(TableColumn::prefixed);
     		}
-    		else {
-    			over = dimen.size() == 1 ? dimen.get(0) : bindColumns(dimen); //join xAxis
+    		if(!dimen.isEmpty()) {
+    			var over = dimen.stream().map(TableColumn::getName).collect(toList());
+				yAxis.forEach(c-> c.setOver(over));
     		}
-    		return new DataTable(xAxis, yAxis, over, new LinkedList<>());
+    		return new DataTable(xAxis, yAxis);
     	}
     }
-    
+
     @Getter
     @ToString
     @RequiredArgsConstructor
@@ -240,36 +232,27 @@ public interface ResultWebView extends ResultMapper<Void>  {
 
     	private final String name;
     	private final WebType type;
+        @Setter
+    	private List<String> over = emptyList(); 
+    	private String prefixed = "";
     	
-		public String format(ResultSet rs) throws SQLException {
-			return type.format(rs.getObject(name));
+		public Entry<String, String> format(ResultSet rs) throws SQLException {
+			var arr = new LinkedList<String>();
+			for(var s : over) {
+				arr.add(valueOf(rs.getObject(s)));
+			}
+			if(!isBlank(prefixed)) { //optim this
+				arr.add(0, prefixed);
+			}
+			return entry(join("_", arr), type.format(rs.getObject(name)));
+		}
+
+		public void prefixed() {
+			prefixed(name);
+		}
+		
+		public void prefixed(String v) {
+			this.prefixed = v;
 		}
     }
-    
-    @Getter
-    static final class TableColumnBind extends TableColumn {
-    	
-    	private final List<String> columns;
-    	
-    	private TableColumnBind(String name, WebType type, List<String> columns) {
-    		super(name, type);
-    		this.columns = columns;
-    	}
-    	
-    	@Override
-    	public String format(ResultSet rs) throws SQLException {
-    		var arr = new ArrayList<String>(columns.size());
-    		for(var c : columns) {
-    			arr.add(valueOf(rs.getObject(c)));
-    		}
-    		return getType().format(join("_", arr));
-		}
-    	
-    	public static TableColumnBind bindColumns(List<TableColumn> childs) {
-    		var cols = childs.stream().map(TableColumn::getName).collect(toList());
-    		var name = String.join("_", cols);
-    		return new TableColumnBind(name, STRING, cols);
-    	}
-    }
-	
 }
