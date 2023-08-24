@@ -5,7 +5,7 @@ import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.readString;
 import static java.util.Map.ofEntries;
 import static java.util.stream.Collectors.toList;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.web.view.ResultWebView.WebType.NUMBER;
 
 import java.io.IOException;
@@ -52,10 +52,10 @@ public final class Chart2DView implements ResultWebView {
 		}
 		var sb1 = new StringBuilder();
 		var xAxis = dt.getXAxis();
-		sb1.append("[").append(quote(xAxis.getType().typeName())).append(",").append(quote(xAxis.getName())).append("]");
+		sb1.append("[").append(doubleQuote(xAxis.getType().typeName())).append(",").append(doubleQuote(xAxis.getName())).append("]");
 		var cols = dt.getRows().stream().flatMap(c-> c.stream().skip(1)).map(Entry::getKey).distinct().sorted().collect(toList());
 		for(var c : cols) {
-			sb1.append(",[").append(quote(NUMBER.typeName())).append(",").append(quote(c)).append("]");
+			sb1.append(",[").append(doubleQuote(NUMBER.typeName())).append(",").append(doubleQuote(c)).append("]");
 		}
 		var sb2 = new StringBuilder();
 		for(var r : dt.getRows()) {
