@@ -1,7 +1,5 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.web.RequestQueryParam.RevisionMode.STRICT;
-
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -18,33 +16,11 @@ import java.lang.annotation.Target;
 @Documented
 public @interface RequestQueryParam {
 
-	String name(); //tablename
+	String name(); //table identity
 	
 	String[] defaultColumns() default {};
 	
-	String[] ignoreParameters() default {}; 
+	String[] ignoreParameters() default {}; //should not be parsed by JQuery
 	
-	boolean aggregationOnly() default false; 
-	
-	/**
-	 * 
-	 * @see RequestQueryParam::ignoreParameters
-	 */
-	@Deprecated(forRemoval = true)
-	boolean allowUnknownParameters() default false; //ignoreUnknownParameters
-	
-	@Deprecated(forRemoval = true)
-	String columnParameter() default "column"; 
-
-	@Deprecated(forRemoval = true)
-	String revisionParameter() default "revision";
-
-	@Deprecated(forRemoval = true)
-	RevisionMode revisionMode() default STRICT;
-	
-	@Deprecated(forRemoval = true)
-	public enum RevisionMode {
-		
-		STRICT, CLOSEST;
-	} 	
+	boolean aggregationOnly() default false; // else throw IllegalDataAccessException
 }

@@ -93,11 +93,11 @@ public interface ColumnDecorator {
 		};
 	}
 	
-	public static ColumnDecorator countColumn() {
+	static ColumnDecorator countColumn() {
 		return ofColumn(DBFunction.count().name(), t-> count());
 	}
 
-	public static ColumnDecorator ofColumn(String ref, ColumnBuilder cb) {
+	static ColumnDecorator ofColumn(String ref, ColumnBuilder cb) {
 		return new ColumnDecorator() {
 			@Override
 			public String identity() {

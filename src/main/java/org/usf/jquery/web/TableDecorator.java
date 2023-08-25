@@ -58,8 +58,8 @@ public interface TableDecorator {
 	}
 	
 	default Optional<SQLType> columnType(ColumnDecorator cd) {
-		return database().columnMetada(this, cd)
-				.map(ColumnMetadata::getDataType); //not binded
+		return metadata().columnMetada(cd)
+				.map(ColumnMetadata::getDataType); //else not binded
 	}
 
 	default TaggableColumn column(ColumnDecorator column) {

@@ -13,6 +13,7 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.ParsableJDBCType.AUTO_TYPE;
 import static org.usf.jquery.web.ParsableJDBCType.typeOf;
@@ -31,8 +32,6 @@ import java.util.Map.Entry;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
-
-import org.usf.jquery.core.Utils;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -120,7 +119,7 @@ public final class YearTableMetadata extends TableMetadata {
 					.toArray(YearMonth[]::new);
 		}
 		else {
-			var query = tablenames.stream()
+			var query = tablenames.stream() //use JQuery
 			.map(t-> "SELECT DISTINCT " + revisionColumn + ", " + t.substring(t.length()-4) + " FROM " + t)
 			.collect(joining(" UNION ALL "));
 			var yearMonths = new LinkedList<YearMonth>();
@@ -152,7 +151,7 @@ public final class YearTableMetadata extends TableMetadata {
 	static YearTableMetadata emptyMetadata(YearTableDecorator table) {
     	var revisionColumn = table.monthRevision().flatMap(table::columnName).orElse(null);
 		var meta = new YearTableMetadata(table.tableName(), revisionColumn, emptyMap());
-		meta.revisions = new YearMonth[0]; //avoid NullPointerException
+		meta.revisions = EMPTY_REVISION; //avoid NullPointerException
 		return meta;
 	}
 	

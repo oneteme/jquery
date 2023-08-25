@@ -3,6 +3,7 @@ package org.usf.jquery.web;
 import static java.lang.String.join;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Optional.empty;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
@@ -16,6 +17,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -38,6 +40,10 @@ public class TableMetadata {
 	@Getter
 	@Setter(AccessLevel.PACKAGE)
 	private Instant lastUpdate;
+	
+	public Optional<ColumnMetadata> columnMetada(ColumnDecorator cd){
+		return columns.containsKey(cd.identity()) ? empty() : Optional.of(columns.get(cd.identity()));
+	}
 	
 	public void fetch() throws SQLException { //individually table fetching
 		try(var cn = database().getDataSource().getConnection()) {
