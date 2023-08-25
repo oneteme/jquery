@@ -3,18 +3,20 @@ package org.usf.jquery.web;
 import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
 import static java.util.function.Function.identity;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.web.Constants.EMPTY_REVISION;
+import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.ParsableJDBCType.AUTO_TYPE;
 import static org.usf.jquery.web.ParsableJDBCType.typeOf;
-import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -28,6 +30,7 @@ import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 import java.util.Set;
 
 import lombok.Getter;
@@ -51,6 +54,11 @@ public final class YearTableMetadata extends TableMetadata {
 	private YearTableMetadata(String tablename, String revisionColumn, Map<String, ColumnMetadata> columns) {
 		super(tablename, columns);
 		this.revisionColumn = revisionColumn;
+		this.revisions = EMPTY_REVISION;  //by default avoid NullPointerException
+	}
+	
+	public Optional<YearMonth> latestRevision() {
+		return isEmpty(revisions) ? empty() : Optional.of(revisions[0]);
 	}
 	
 	@Override
@@ -73,19 +81,18 @@ public final class YearTableMetadata extends TableMetadata {
 			}
 			do {
 				var tn = rs.getString("TABLE_NAME");
-				var cn = rs.getString("COLUMN_NAME");
-				if(dbMap.containsKey(cn) && tn.matches(getTablename()+ "_20\\d{2}")) {// untyped SQL pattern
+				var cm = dbMap.get(rs.getString("COLUMN_NAME"));
+				if(nonNull(cm) && tn.matches(getTablename() + "_20\\d{2}")) {// untyped SQL pattern
 					tablenames.add(tn);
-					columnTables.computeIfAbsent(cn, k-> new LinkedHashSet<>()).add(tn);
+					columnTables.computeIfAbsent(cm.getColumnName(), k-> new LinkedHashSet<>()).add(tn);
 					var type = rs.getInt("DATA_TYPE");
 					var size = rs.getInt("COLUMN_SIZE");
-					var meta = dbMap.get(cn);
-					if(meta.getDataType() == AUTO_TYPE) { //first time
-						meta.setDataType(typeOf(type));
-						meta.setDataSize(size);
+					if(cm.getDataType() == AUTO_TYPE) { //first time
+						cm.setDataType(typeOf(type));
+						cm.setDataSize(size);
 					}
-					else if(meta.getDataType().getValue() != type || meta.getDataSize() != size) {
-						dirtyColumns.add(cn);
+					else if(cm.getDataType().getValue() != type || cm.getDataSize() != size) {
+						dirtyColumns.add(cm.getColumnName());
 					}
 				}//else undeclared column
 			} while(rs.next());
@@ -112,11 +119,11 @@ public final class YearTableMetadata extends TableMetadata {
 					.map(n-> n.substring(n.length()-4))
 					.map(Year::parse)
 					.sorted(reverseOrder())
-					.map(y-> y.atMonth(DECEMBER))
+					.map(y-> y.atMonth(DECEMBER)) //or JUNARY !?
 					.toArray(YearMonth[]::new);
 		}
 		else {
-			var query = tablenames.stream()
+			var query = tablenames.stream() //use JQuery
 			.map(t-> "SELECT DISTINCT " + revisionColumn + ", " + t.substring(t.length()-4) + " FROM " + t)
 			.collect(joining(" UNION ALL "));
 			var yearMonths = new LinkedList<YearMonth>();
@@ -131,29 +138,20 @@ public final class YearTableMetadata extends TableMetadata {
 			}
 			catch(SQLException e) {
 				log.error(identity() + " : cannot fetch month revisions", e);
-				this.revisions = null; 
+				this.revisions = EMPTY_REVISION; 
 			}
 		}
 	}
 
 	static YearTableMetadata yearTableMetadata(YearTableDecorator table, Collection<ColumnDecorator> columns) {
-		var map = new LinkedHashMap<String, ColumnMetadata>();
-		columns.stream().forEach(cd-> 
-			table.columnName(cd).ifPresent(cn-> 
-				map.put(cd.identity(), new ColumnMetadata(cn))));
-    	var revisionColumn = table.monthRevision().flatMap(table::columnName).orElse(null);
-		return new YearTableMetadata(table.tableName(), revisionColumn, unmodifiableMap(map));
+		return new YearTableMetadata(table.tableName(), 
+				table.monthRevision().flatMap(table::columnName).orElse(null), 
+				declaredColumns(table, columns));
 	}
 	
 	static YearTableMetadata emptyMetadata(YearTableDecorator table) {
-    	var revisionColumn = table.monthRevision().flatMap(table::columnName).orElse(null);
-		var meta = new YearTableMetadata(table.tableName(), revisionColumn, emptyMap());
-		meta.revisions = new YearMonth[0]; //avoid NullPointerException
-		return meta;
-	}
-	
-	@Deprecated(forRemoval = false)
-	public YearMonth latestRevision() { //optional
-		return revisions[0];
+		return new YearTableMetadata(table.tableName(), 
+				table.monthRevision().flatMap(table::columnName).orElse(null), 
+				emptyMap());
 	}
 }

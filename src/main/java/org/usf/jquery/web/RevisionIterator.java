@@ -53,8 +53,8 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 		throw new IllegalArgumentException("no revision");
 	}
 
-	static DBTable yearTable(String schema, String name, String tagname) {
-		return new DBTable(schema, name, tagname) {
+	static DBTable yearTable(String name, String tagname) {
+		return new DBTable(name, tagname) {
 			@Override
 			public String sql(QueryParameterBuilder builder, String schema) {
 				return super.sql(builder, schema) + "_" + currentRev.get().getKey();

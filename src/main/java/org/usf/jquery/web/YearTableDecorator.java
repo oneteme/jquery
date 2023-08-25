@@ -46,7 +46,6 @@ import org.usf.jquery.core.TaggableColumn;
  */
 public interface YearTableDecorator extends TableDecorator {
 	
-	
 	Optional<? extends ColumnDecorator> monthRevision();
 
 	ColumnDecorator yearRevision(); // !table column
@@ -61,7 +60,7 @@ public interface YearTableDecorator extends TableDecorator {
     
 	@Override
 	default DBTable table() {
-		return yearTable(schema().orElse(null), tableName(), identity());
+		return yearTable(tableName(), identity());
 	}
 	
 	@Override

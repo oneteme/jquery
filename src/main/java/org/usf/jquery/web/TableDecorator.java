@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.lang.String.join;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -15,7 +14,6 @@ import static org.usf.jquery.web.JQueryContext.context;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
-import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.RequestColumn.decodeColumns;
 import static org.usf.jquery.web.RequestColumn.decodeSingleColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
@@ -28,10 +26,10 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBTable;
-import org.usf.jquery.core.SQLType;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OverColumn;
 import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.SQLType;
 import org.usf.jquery.core.TableColumn;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.WindowView;
@@ -45,21 +43,17 @@ public interface TableDecorator {
 	
 	String identity(); //URL
 	
-	String tableName(); //SQL
+	String tableName(); //SQL check schema.table 
 	
 	Optional<String> columnName(ColumnDecorator cd);
 	
-	default Optional<String> schema() {
-		return empty();
-	}
-	
 	default DBTable table() {
-		return new DBTable(schema().orElse(null), tableName(), identity());
+		return new DBTable(tableName(), identity());
 	}
 	
 	default Optional<SQLType> columnType(ColumnDecorator cd) {
-		return database().columnMetada(this, cd)
-				.map(ColumnMetadata::getDataType); //not binded
+		return metadata().columnMetada(cd)
+				.map(ColumnMetadata::getDataType); //else not binded
 	}
 
 	default TaggableColumn column(ColumnDecorator column) {
@@ -96,12 +90,12 @@ public interface TableDecorator {
 			if(!c.isEmpty()) {
 				if(c.size() == 1 && c.get(0).getValue().length == 1) {
 					var entry = c.get(0);
-					var col = decodeSingleColumn(entry.getKey(), this, true); //allow comparator
-					var nc = (NamedColumn) col.dbColumn();
+					var rc = decodeSingleColumn(entry.getKey(), this, true); //allow comparator
+					var nc = (NamedColumn) rc.toColumn();
 					var oc = nc.unwrap();
 					if(oc instanceof OverColumn) {
-						var wv = new WindowView(col.tableDecorator().table(), (OverColumn) oc, 
-								nc.tagname(), col.expression(entry.getValue()));
+						var wv = new WindowView(rc.tableDecorator().table(), (OverColumn) oc, 
+								nc.tagname(), rc.expression(entry.getValue()));
 						query.tables(wv).filters(wv.filter());
 						parameters.remove(entry.getKey());
 					}
@@ -131,7 +125,7 @@ public interface TableDecorator {
 		}
 		Stream.of(cols)
 		.flatMap(c-> decodeColumns(c, this, false))
-		.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).columns(rc.dbColumn()));
+		.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).columns(rc.toColumn()));
 	}
 
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
@@ -147,18 +141,10 @@ public interface TableDecorator {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.get(ORDER))
 			.flatMap(c-> decodeColumns(c, this, true))
-			.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).orders(rc.dbOrder()));
+			.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).orders(rc.toOrder()));
 		}
 	}
 
-	@Deprecated
-	static String parseOrder(String order) {
-		if("desc".equals(order) || "asc".equals(order)) {
-			return order.toUpperCase();
-		}
-		throw cannotEvaluateException(ORDER, order);
-	}
-	
 	default TableMetadata metadata() {
 		return database().tableMetada(this) 
 				.orElseGet(()-> emptyMetadata(this)); // not binded

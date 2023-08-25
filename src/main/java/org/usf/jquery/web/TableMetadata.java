@@ -3,11 +3,13 @@ package org.usf.jquery.web;
 import static java.lang.String.join;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 import static org.usf.jquery.web.JQueryContext.database;
+import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -16,6 +18,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Optional;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -39,6 +42,10 @@ public class TableMetadata {
 	@Setter(AccessLevel.PACKAGE)
 	private Instant lastUpdate;
 	
+	public Optional<ColumnMetadata> columnMetada(ColumnDecorator cd){
+		return columns.containsKey(cd.identity()) ? Optional.of(columns.get(cd.identity())) : empty();
+	}
+	
 	public void fetch() throws SQLException { //individually table fetching
 		try(var cn = database().getDataSource().getConnection()) {
 			fetch(cn.getMetaData());
@@ -52,9 +59,8 @@ public class TableMetadata {
 				throw new NoSuchElementException(quote(tablename) + " table not found");
 			}
 			do {
-				var cn = rs.getString("COLUMN_NAME");
-				if(dbMap.containsKey(cn)) {
-					var meta = dbMap.remove(cn);
+				var meta = dbMap.remove(rs.getString("COLUMN_NAME"));
+				if(nonNull(meta)) {
 					meta.setDataType(typeOf(rs.getInt("DATA_TYPE")));
 					meta.setDataSize(rs.getInt("COLUMN_SIZE"));
 				}// else undeclared column
@@ -66,14 +72,17 @@ public class TableMetadata {
 	}
 	
 	static TableMetadata tableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
-		var map = new LinkedHashMap<String, ColumnMetadata>();
-		columns.stream().forEach(cd-> 
-			table.columnName(cd).ifPresent(cn-> 
-				map.put(cd.identity(), new ColumnMetadata(cn))));
-		return new TableMetadata(table.tableName(), unmodifiableMap(map));
+		return new TableMetadata(table.tableName(), declaredColumns(table, columns));
 	}
 
 	static TableMetadata emptyMetadata(TableDecorator table) {
 		return new TableMetadata(table.tableName(), emptyMap());
+	}
+	
+	static Map<String, ColumnMetadata> declaredColumns(TableDecorator table, Collection<ColumnDecorator> columns){
+		return unmodifiableMap(columns.stream().reduce(new LinkedHashMap<String, ColumnMetadata>(), (m, cd)-> {
+			table.columnName(cd).map(ColumnMetadata::new).ifPresent(cm-> m.put(cd.identity(), cm));
+			return m;
+		}, (m1, m2)-> m1));
 	}
 }

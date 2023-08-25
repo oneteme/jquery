@@ -42,6 +42,7 @@ public interface DBColumn extends DBObject, NestedSql {
 		return order(null);
 	}
 	
+	@Deprecated(forRemoval = false) //unsafe value
 	default DBOrder order(String order) {
 		return new DBOrder(this, order);
 	}

@@ -40,6 +40,6 @@ public final class WindowView implements TaggableView {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), "v1");
+		return sql(addWithValue(), "<schema>"); 
 	}
 }

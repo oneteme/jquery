@@ -17,11 +17,11 @@ public final class TableColumn implements TaggableColumn {
 	private final String columnName;
 	@NonNull
 	private final String reference;
-	private final String tableRef;
+	private final String tablename;
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {
-		return arg.columnFullReference(tableRef, columnName);
+		return arg.columnFullReference(tablename, columnName);
 	}
 
 	@Override

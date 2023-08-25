@@ -2,10 +2,6 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
-import static org.usf.jquery.web.view.Chart2DView.areaChart;
-import static org.usf.jquery.web.view.Chart2DView.barChart;
-import static org.usf.jquery.web.view.Chart2DView.columnChart;
-import static org.usf.jquery.web.view.Chart2DView.lineChart;
 
 import java.io.Writer;
 import java.sql.SQLException;
@@ -15,10 +11,6 @@ import java.util.List;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
-import org.usf.jquery.web.view.CalendarView;
-import org.usf.jquery.web.view.PieChartView;
-import org.usf.jquery.web.view.ResultWebView;
-import org.usf.jquery.web.view.TableView;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -84,27 +76,10 @@ public final class RequestQuery {
 		execute(ds, new AsciiResultMapper(out));
 	}
 	
-	public void toChart(DataSource ds, Writer w, String view) {
-		execute(ds, chart(view, w));
-	}
-	
 	public void logResult(DataSource ds) {
 		execute(ds, new AsciiResultMapper(usingRowWriter(log::debug)));
 	}
 
-	public ResultWebView chart(String view, Writer w) {
-		switch (view) {
-		case "table"	: return new TableView(w);
-		case "pie"		: return new PieChartView(w);
-		case "column"	: return columnChart(w);
-		case "bar"		: return barChart(w);
-		case "area"		: return areaChart(w);
-		case "line"		: return lineChart(w);
-		case "calendar"	: return new CalendarView(w);
-		default: throw new IllegalArgumentException(view);
-		}
-	}
-	
 	public SimpleResultMapper defaultMapper() {
 		return new SimpleResultMapper();
 	}
