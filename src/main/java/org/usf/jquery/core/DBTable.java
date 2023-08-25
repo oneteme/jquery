@@ -29,6 +29,6 @@ public class DBTable implements TaggableView {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), "<schema>");
+		return sql(addWithValue(), "");
 	}	
 }

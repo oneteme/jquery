@@ -128,7 +128,7 @@ public final class LinkedRequestEntry {
 	 */
 	private static TypedFunction requireFunction(RequestEntry re, TableDecorator td) {
 		var fn = lookupFunction(re.getName())
-				.orElseThrow(()-> cannotEvaluateException("function expression", re.getName()));
+				.orElseThrow(()-> cannotEvaluateException("function", re.getName()));
 		if("OVER".equals(fn.name())) {
 			var args = re.getArgs();
 			if(isNull(args) || !args.containsKey(ARRAY_ARGS_KEY)) { //named arguments function
@@ -164,7 +164,7 @@ public final class LinkedRequestEntry {
 					}
 					catch (Exception e) {
 						try {
-							args.add(parseSingleLinkedEntry(s).toRequestColumn(td, false).dbColumn());
+							args.add(parseSingleLinkedEntry(s).toRequestColumn(td, false).toColumn());
 						}
 						catch(Exception e2) {
 							throw e; //first exception
@@ -185,14 +185,14 @@ public final class LinkedRequestEntry {
 			clause.partitions(args.get(PARTITION).stream()
 					.map(LinkedRequestEntry::parseSingleLinkedEntry)
 					.map(o-> o.toRequestColumn(td, false))
-					.map(RequestColumn::dbColumn)
+					.map(RequestColumn::toColumn)
 					.toArray(DBColumn[]::new));
 		}
 		if(args.containsKey(ORDER)) {
 			clause.orders(args.get(ORDER).stream()
 					.map(LinkedRequestEntry::parseSingleLinkedEntry)
 					.map(o-> o.toRequestColumn(td, true)) //ASC | DESC
-					.map(RequestColumn::dbOrder)
+					.map(RequestColumn::toOrder)
 					.toArray(DBOrder[]::new));
 		}
 		return clause;
