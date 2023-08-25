@@ -49,10 +49,6 @@ public final class DatabaseMetadata {
 		return ofNullable(tables.get(td.identity()));
 	}
 	
-	public Optional<ColumnMetadata> columnMetada(TableDecorator td, ColumnDecorator cd){
-		return tableMetada(td).map(t-> t.getColumns().get(cd.identity()));
-	}
-	
 	public void fetch() {
 		if(isNull(dataSource) || tables.isEmpty()) {
 			log.warn("database resources not initialized"); //full scan ? next release

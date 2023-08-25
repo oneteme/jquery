@@ -33,7 +33,7 @@ public final class JQueryContext {
 	private DatabaseMetadata database;
 	
 	public static JQueryContext context(){
-		return requireNonNull(instance, ()-> "jquery context not initialized");
+		return requireNonNull(instance, ()-> "JQuery has not been initialized");
 	}
 	
 	public static DatabaseMetadata database(){

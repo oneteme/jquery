@@ -5,6 +5,11 @@ import org.usf.jquery.core.SQLType;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ * 
+ */
 public interface ParsableSQLType extends SQLType, ArgumentParser {
 	
 	public static ParsableSQLType unparsableType(int type) {
@@ -17,14 +22,14 @@ public interface ParsableSQLType extends SQLType, ArgumentParser {
 
 	@Getter
 	@RequiredArgsConstructor
-	public class UnparsableJDBCType implements ParsableSQLType {
+	class UnparsableJDBCType implements ParsableSQLType {
 		
 		private final int value;
 		private final Class<?> javaType;
 		
 		@Override
 		public Object nativeParse(String v) {
-			throw new UnsupportedOperationException("unsupported SQLType=" + value + " parse");
+			throw new UnsupportedOperationException("unsupported SQLType=" + value);
 		}
 	}
 }
