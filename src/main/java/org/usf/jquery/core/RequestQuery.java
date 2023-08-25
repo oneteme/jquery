@@ -5,6 +5,7 @@ import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
 import static org.usf.jquery.web.view.Chart2DView.areaChart;
 import static org.usf.jquery.web.view.Chart2DView.barChart;
 import static org.usf.jquery.web.view.Chart2DView.columnChart;
+import static org.usf.jquery.web.view.Chart2DView.comboChart;
 import static org.usf.jquery.web.view.Chart2DView.lineChart;
 
 import java.io.Writer;
@@ -16,9 +17,11 @@ import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
 import org.usf.jquery.web.view.CalendarView;
+import org.usf.jquery.web.view.Chart2DView;
 import org.usf.jquery.web.view.PieChartView;
 import org.usf.jquery.web.view.ResultWebView;
 import org.usf.jquery.web.view.TableView;
+import org.usf.jquery.web.view.TimelineChartView;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -99,7 +102,9 @@ public final class RequestQuery {
 		case "column"	: return columnChart(w);
 		case "bar"		: return barChart(w);
 		case "area"		: return areaChart(w);
+		case "combo"	: return comboChart(w);
 		case "line"		: return lineChart(w);
+		case "timeline"	: return new TimelineChartView(w);
 		case "calendar"	: return new CalendarView(w);
 		default: throw new IllegalArgumentException(view);
 		}

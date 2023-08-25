@@ -4,8 +4,8 @@ import static java.lang.System.currentTimeMillis;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.readString;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.web.view.ResultWebView.requireDateColumn;
-import static org.usf.jquery.web.view.ResultWebView.requireNumberColumn;
+import static org.usf.jquery.web.view.ResultWebView.TableColumn.columns;
+import static org.usf.jquery.web.view.ResultWebView.WebType.NUMBER;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -13,6 +13,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,25 +35,33 @@ public final class CalendarView implements ResultWebView {
     private final Writer writer;
 	
     public Void map(ResultSet rs) throws SQLException {
+    	if(rs.getMetaData().getColumnCount() != 2) {
+    		throw new IllegalArgumentException("require 2 columns [DATE, NUMBER]");
+    	}
 		log.debug("mapping results...");
 		var bg = currentTimeMillis();
         var rw = 0;
-        var xCol = requireDateColumn(rs.getMetaData());
-		var yCol = requireNumberColumn(rs.getMetaData());
+        var cols = columns(rs.getMetaData());
+        var xCol = Stream.of(cols).filter(c-> c.getType().isDate()).findAny().orElseThrow(()-> new IllegalArgumentException("require date column"));
+		var yCol = Stream.of(cols).filter(c-> c.getType() == NUMBER).findAny().orElseThrow(()-> new IllegalArgumentException("require number column"));
+		
 		var sb1 = new StringBuilder(100)
 		.append("[")
-		.append(quote(xCol.getValue().typeName())).append(",")
-		.append(quote(xCol.getKey())).append("],")
+		.append(quote(xCol.getType().typeName())).append(",")
+		.append(quote(xCol.getName())).append("],")
 		.append("[")
-		.append(quote(yCol.getValue().typeName())).append(",")
-		.append(quote(yCol.getKey())).append("]");
+		.append(quote(yCol.getType().typeName())).append(",")
+		.append(quote(yCol.getName())).append("]");
 		var sb2 = new StringBuilder(1000);
 		while(rs.next()) {
 			sb2.append("[")
-			.append(xCol.getValue().format(rs.getObject(xCol.getKey()))).append(",")
-			.append(yCol.getValue().format(rs.getObject(yCol.getKey()))).append("],");
+			.append(xCol.getType().format(rs.getObject(xCol.getName()))).append(",")
+			.append(yCol.getType().format(rs.getObject(yCol.getName()))).append("],");
+			rw++;
 		}
-		sb2.deleteCharAt(sb2.length()-1); //dirty but less code
+		if(!sb2.isEmpty()) { //no data
+			sb2.deleteCharAt(sb2.length()-1); //dirty but less code
+		}
 		try {
 			writer.write(readString(Paths.get(getClass().getResource("./calendar.google.html").toURI()))
 					.replace(COLS, sb1.toString()) //TD optim this

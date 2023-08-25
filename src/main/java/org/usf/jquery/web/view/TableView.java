@@ -54,8 +54,9 @@ public final class TableView implements ResultWebView {
 				sb2.append(",").append(types[i].format(rs.getObject(i+1)));
 			}
 			sb2.append("],");
+			rw++;
 		}
-		if(!sb2.isEmpty()) {
+		if(!sb2.isEmpty()) { //no data
 			sb2.deleteCharAt(sb2.length()-1); //dirty but less code
 		}
 		try {

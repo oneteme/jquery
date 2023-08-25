@@ -22,12 +22,9 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
-import java.util.function.Predicate;
 
 import org.usf.jquery.core.ResultMapper;
 import org.usf.jquery.core.SqlStringBuilder;
@@ -44,46 +41,6 @@ import lombok.ToString;
  *
  */
 public interface ResultWebView extends ResultMapper<Void>  {
-	
-	static Entry<String, WebType> requireNumberColumn(ResultSetMetaData rsm) throws SQLException {
-    	var idx  = rsm.getColumnCount();
-    	var yCol = entry(rsm.getColumnName(idx), typeOf(rsm.getColumnType(idx))); //y column
-		return yCol.getValue() == NUMBER ? yCol : requireColumn(rsm, NUMBER::equals);
-	}
-	
-	static Entry<String, WebType> requireDateColumn(ResultSetMetaData rsm) throws SQLException {
-    	var yCol = entry(rsm.getColumnName(1), typeOf(rsm.getColumnType(1)));  //x column
-		return yCol.getValue().isDate() ? yCol : requireColumn(rsm, WebType::isDate);
-	}
-	
-	static Entry<String, WebType> requireColumn(ResultSetMetaData rsm, Predicate<WebType> type) throws SQLException {
-		var cols = columns(rsm).entrySet().stream()
-				.filter(e-> type.test(e.getValue()))
-				.collect(toList());
-		if(cols.size() == 1) {
-			return  cols.get(0);
-		}
-		throw new IllegalArgumentException("require one ?? column"); //TODO
-	}
-
-    static Map<String, WebType> columns(ResultSetMetaData rsm) throws SQLException {
-    	var map = new LinkedHashMap<String, WebType>();
-		for(var i=0; i<rsm.getColumnCount(); i++) {
-			map.put(rsm.getColumnName(i+1), typeOf(rsm.getColumnType(i+1)));
-		}
-		return map;
-    }
-	
-    static List<String> columns(ResultSetMetaData rsm, Predicate<String> test) throws SQLException {
-    	List<String> columns = new LinkedList<>();
-		for(var i=0; i<rsm.getColumnCount(); i++) {
-			var cn = rsm.getColumnName(i+1);
-			if(test.test(cn)) {
-				columns.add(cn);
-			}
-		}
-		return columns;
-	}
 	
 	@RequiredArgsConstructor
 	enum WebType implements Formatter<Object> {
@@ -161,22 +118,6 @@ public interface ResultWebView extends ResultMapper<Void>  {
 	}
 	
 	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	
-	  
     @Getter
     @RequiredArgsConstructor
     static final class DataTable {
@@ -185,7 +126,7 @@ public interface ResultWebView extends ResultMapper<Void>  {
     	private final List<TableColumn> yAxis;
     	private final List<List<Entry<String, String>>> rows = new LinkedList<>();
     	
-    	public void append(ResultSet rs) throws SQLException {
+    	public void fetchRow(ResultSet rs) throws SQLException {
     		var arr = new ArrayList<Entry<String, String>>(yAxis.size()+ 1);
 			arr.add(xAxis.format(rs));
     		for(var c : yAxis) {
@@ -194,7 +135,7 @@ public interface ResultWebView extends ResultMapper<Void>  {
     		rows.add(arr);
     	}
     	
-    	public static DataTable init(ResultSetMetaData rsm) throws SQLException {
+    	public static DataTable fromMetaData(ResultSetMetaData rsm) throws SQLException {
     		var xAxis = new TableColumn(rsm.getColumnName(1), typeOf(rsm.getColumnType(1)));
     		var yAxis = new LinkedList<TableColumn>();
     		var dimen = new LinkedList<TableColumn>();
@@ -254,5 +195,14 @@ public interface ResultWebView extends ResultMapper<Void>  {
 		public void prefixed(String v) {
 			this.prefixed = v;
 		}
+		
+		static TableColumn[] columns(ResultSetMetaData rsm) throws SQLException {
+	    	var arr = new TableColumn[rsm.getColumnCount()];
+	    	for(var i=0; i<rsm.getColumnCount(); i++) {
+	    		arr[i] = new TableColumn(rsm.getColumnName(i+1), typeOf(rsm.getColumnType(i+1)));
+			}
+			return arr;
+	    }
+
     }
 }

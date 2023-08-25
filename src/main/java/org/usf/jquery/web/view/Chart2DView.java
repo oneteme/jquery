@@ -6,6 +6,7 @@ import static java.nio.file.Files.readString;
 import static java.util.Map.ofEntries;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
+import static org.usf.jquery.web.view.ResultWebView.DataTable.fromMetaData;
 import static org.usf.jquery.web.view.ResultWebView.WebType.NUMBER;
 
 import java.io.IOException;
@@ -28,6 +29,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/barchart?hl=fr#data-format">barchart</a>
  * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/linechart?hl=fr#data-format">linechart</a>
  * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/areachart?hl=fr#data-format">areachart</a>
+ * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/combochart?hl=fr#data-format">areachart</a>
  *
  */
 @Slf4j
@@ -44,29 +46,35 @@ public final class Chart2DView implements ResultWebView {
     public Void map(ResultSet rs) throws SQLException {
 		log.debug("mapping results...");
 		var bg = currentTimeMillis();
-        var rw = 0;
-		var dt = DataTable.init(rs.getMetaData());
+		var dt = fromMetaData(rs.getMetaData());
 		while(rs.next()) {
-			dt.append(rs);
-			rw++;
+			dt.fetchRow(rs);
 		}
 		var sb1 = new StringBuilder();
 		var xAxis = dt.getXAxis();
 		sb1.append("[").append(doubleQuote(xAxis.getType().typeName())).append(",").append(doubleQuote(xAxis.getName())).append("]");
 		var cols = dt.getRows().stream().flatMap(c-> c.stream().skip(1)).map(Entry::getKey).distinct().sorted().collect(toList());
-		for(var c : cols) {
-			sb1.append(",[").append(doubleQuote(NUMBER.typeName())).append(",").append(doubleQuote(c)).append("]");
+		if(cols.isEmpty()) { //no data
+			for(var c : dt.getYAxis()) {
+				sb1.append(",[").append(doubleQuote(NUMBER.typeName())).append(",").append(doubleQuote(c.getName())).append("]");
+			}		
+		}
+		else {
+			for(var c : cols) {
+				sb1.append(",[").append(doubleQuote(NUMBER.typeName())).append(",").append(doubleQuote(c)).append("]");
+			}	
 		}
 		var sb2 = new StringBuilder();
 		for(var r : dt.getRows()) {
+			@SuppressWarnings("unchecked")
 			var map = (Map<String, String>) ofEntries(r.toArray(Entry[]::new));
 			sb2.append("[").append(map.get(xAxis.getName()));
-			for(var c : cols) {
-				sb2.append(",").append(map.getOrDefault(c, "0"));
-			}
-			sb2.append("],"); //dirty but less code
+			cols.forEach(c-> sb2.append(",").append(map.getOrDefault(c, "0")));
+			sb2.append("],");
 		}
-		sb2.deleteCharAt(sb2.length()-1);
+		if(!sb2.isEmpty()) { //no data
+			sb2.deleteCharAt(sb2.length()-1); //dirty but less code
+		}
 		try {
 			writer.write(readString(Paths.get(getClass().getResource("./chart.google.html").toURI()))
 					.replace(TYPE, type)
@@ -76,7 +84,7 @@ public final class Chart2DView implements ResultWebView {
 		} catch (IOException | URISyntaxException e) {
 			throw new RuntimeException("error while mapping results", e);
 		}
-		log.info("{} rows mapped in {} ms", rw, currentTimeMillis() - bg);
+		log.info("{} rows mapped in {} ms", dt.getRows().size(), currentTimeMillis() - bg);
 		return null;
     }
     
@@ -94,6 +102,10 @@ public final class Chart2DView implements ResultWebView {
 
     public static final Chart2DView lineChart(Writer w) {
     	return new Chart2DView("LineChart", w);
+    }
+    
+    public static final Chart2DView comboChart(Writer w) {
+    	return new Chart2DView("ComboChart", w);
     }
     
 }
