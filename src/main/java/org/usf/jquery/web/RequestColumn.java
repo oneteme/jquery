@@ -65,7 +65,7 @@ public final class RequestColumn implements ColumnDecorator {
 	
 	@Override
 	public String identity() {
-		return null; //unused
+		return cd.identity();
 	}
 
 	@Override
