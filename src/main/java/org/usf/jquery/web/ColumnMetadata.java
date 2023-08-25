@@ -20,7 +20,7 @@ import lombok.ToString;
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor
-public class ColumnMetadata {
+public final class ColumnMetadata {
 	
 	private final String columnName;
 	private SQLType dataType = AUTO_TYPE;
