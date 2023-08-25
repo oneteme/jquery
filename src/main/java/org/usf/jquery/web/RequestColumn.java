@@ -109,7 +109,7 @@ public final class RequestColumn implements ColumnDecorator {
 		if(nonNull(cmp)) {
 			var type = dataType();
 			if(type.isAutoType()) { // logical column type can be set in table
-				type = td.columnType(this).orElse(type);
+				type = td.columnType(cd).orElse(type);
 			} //else : overridden
 	    	var pars = requireNonNull(parser(type));
 	    	if(values.length == 1) {

@@ -42,7 +42,7 @@ public class TableMetadata {
 	private Instant lastUpdate;
 	
 	public Optional<ColumnMetadata> columnMetada(ColumnDecorator cd){
-		return columns.containsKey(cd.identity()) ? empty() : Optional.of(columns.get(cd.identity()));
+		return columns.containsKey(cd.identity()) ? Optional.of(columns.get(cd.identity())) : empty();
 	}
 	
 	public void fetch() throws SQLException { //individually table fetching
