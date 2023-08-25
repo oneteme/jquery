@@ -48,9 +48,9 @@ public final class RequestFilter {
 			rc.expression(columns).map(col::filter).forEach(filters::add);
 		}
 		if(!constants.isEmpty()) {
-			constants.forEach(arr-> filters.add(col.filter(rc.expression(arr))));
+			constants.stream().map(rc::expression).map(col::filter).forEach(filters::add);
 		}
-		return filters.toArray(DBFilter[]::new);  // do not join filters (WHERE + HAVING)
+		return filters.toArray(DBFilter[]::new);// do not join filters (WHERE + HAVING)
 	}
 	
 	static RequestFilter decodeFilter(Entry<String, String[]> entry, TableDecorator defaultTable) {
@@ -67,5 +67,4 @@ public final class RequestFilter {
 		});
 		return new RequestFilter(col, constants, columns);
 	}
-	
 }
