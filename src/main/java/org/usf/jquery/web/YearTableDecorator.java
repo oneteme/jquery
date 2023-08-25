@@ -46,7 +46,6 @@ import org.usf.jquery.core.TaggableColumn;
  */
 public interface YearTableDecorator extends TableDecorator {
 	
-	
 	Optional<? extends ColumnDecorator> monthRevision();
 
 	ColumnDecorator yearRevision(); // !table column

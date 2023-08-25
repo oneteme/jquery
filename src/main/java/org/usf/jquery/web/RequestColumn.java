@@ -27,8 +27,6 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 
- * <code>[table.]column[.function]*[.comparator|order][:alias]</code>
- * 
  * @author u$f
  * 
  * @see RequestFilter
@@ -38,28 +36,13 @@ import lombok.RequiredArgsConstructor;
 public final class RequestColumn implements ColumnDecorator {
 	
 	private final TableDecorator td;
-	private final ColumnDecorator cd;
+	private final ColumnDecorator cd; //conditional delegate on fns
 	private final List<TypedFunction> fns;
 	private final String exp;
 	private final String tag;
 
 	public TableDecorator tableDecorator() {
 		return td;
-	}
-	
-	@Deprecated
-	public DBOrder dbOrder(){
-		if(isNull(exp)) {
-			return dbColumn().order();
-		}
-		if("desc".equals(exp) || "asc".equals(exp)) {
-			return dbColumn().order(exp.toUpperCase());
-		}
-		throw cannotEvaluateException(ORDER, exp);
-	}
-	
-	public TaggableColumn dbColumn(){
-		return tableDecorator().column(this);
 	}
 	
 	@Override
@@ -99,6 +82,13 @@ public final class RequestColumn implements ColumnDecorator {
 				: ColumnDecorator.super.criteria(name);
 	}
 	
+	@Override
+	public ArgumentParser parser(SQLType type) {
+		return fns.isEmpty()  //cannot apply column parser on function
+				? cd.parser(type) 
+				: ColumnDecorator.super.parser(type);
+	}
+	
 	//expression => criteria | comparator
 	ComparisonExpression expression(String... values) {
 		var criteria = criteria(exp);
@@ -123,11 +113,27 @@ public final class RequestColumn implements ColumnDecorator {
 	}
 
 	Stream<ComparisonExpression> expression(List<RequestColumn> columns) {
-		var cmp = ColumnDecorator.super.comparator(exp, 1);
+		var cmp = comparator(exp, 1);
 		if(cmp instanceof BasicComparator) {
-			return columns.stream().map(RequestColumn::dbColumn).map(cmp::expression);
-		} 
-		throw new IllegalArgumentException("illegal column comparator " + exp);
+			return columns.stream().map(RequestColumn::toColumn).map(cmp::expression);
+		}
+		throw isNull(cmp) 
+			? cannotEvaluateException("expression", exp) 
+			: new IllegalArgumentException("illegal column comparator " + exp);
+	}
+
+	public DBOrder toOrder(){
+		if(isNull(exp)) {
+			return toColumn().order();
+		}
+		if(exp.matches("asc|desc")) {
+			return toColumn().order(exp.toUpperCase());
+		}
+		throw cannotEvaluateException(ORDER, exp);
+	}
+	
+	public TaggableColumn toColumn(){
+		return tableDecorator().column(this);
 	}
 	
 	static RequestColumn decodeSingleColumn(String value, TableDecorator defaultTable, boolean allowedExp) {

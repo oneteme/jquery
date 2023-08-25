@@ -18,7 +18,8 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 
- * RequestColumn=val1,val2,RequestColumn2,...
+ * <code>RequestColumn=val1[,val2]*</code>
+ * <code>RequestColumn=AnOtherRequestColumn</code>
  * 
  * @author u$f
  * 
@@ -41,15 +42,15 @@ public final class RequestFilter {
 	}
 	
 	public DBFilter[] filters() {
-		var col = rc.dbColumn();
+		var col = rc.toColumn();
 		var filters = new LinkedList<>();
 		if(!columns.isEmpty()) {
 			rc.expression(columns).map(col::filter).forEach(filters::add);
 		}
 		if(!constants.isEmpty()) {
-			constants.forEach(arr-> filters.add(col.filter(rc.expression(arr))));
+			constants.stream().map(rc::expression).map(col::filter).forEach(filters::add);
 		}
-		return filters.toArray(DBFilter[]::new);  // do not join filters (WHERE & HAVING)
+		return filters.toArray(DBFilter[]::new);// do not join filters (WHERE + HAVING)
 	}
 	
 	static RequestFilter decodeFilter(Entry<String, String[]> entry, TableDecorator defaultTable) {
@@ -66,5 +67,4 @@ public final class RequestFilter {
 		});
 		return new RequestFilter(col, constants, columns);
 	}
-	
 }
