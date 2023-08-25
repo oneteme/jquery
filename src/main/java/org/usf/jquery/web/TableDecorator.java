@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.lang.String.join;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.empty;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -45,16 +44,12 @@ public interface TableDecorator {
 	
 	String identity(); //URL
 	
-	String tableName(); //SQL
+	String tableName(); //SQL check schema.table 
 	
 	Optional<String> columnName(ColumnDecorator cd);
 	
-	default Optional<String> schema() {
-		return empty();
-	}
-	
 	default DBTable table() {
-		return new DBTable(schema().orElse(null), tableName(), identity());
+		return new DBTable(tableName(), identity());
 	}
 	
 	default Optional<SQLType> columnType(ColumnDecorator cd) {

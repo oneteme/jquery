@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.NestedSql.aggregation;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.QueryParameterBuilder.streamArray;
@@ -48,6 +49,6 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	@Override
 	public String toString() {
-		return sql(addWithValue(), new Object[] {EMPTY});
+		return sql(addWithValue(), column("<left>"));
 	}
 }

@@ -61,7 +61,7 @@ public interface YearTableDecorator extends TableDecorator {
     
 	@Override
 	default DBTable table() {
-		return yearTable(schema().orElse(null), tableName(), identity());
+		return yearTable(tableName(), identity());
 	}
 	
 	@Override
