@@ -64,8 +64,10 @@ public final class RequestColumn implements ColumnDecorator {
 	
 	@Override
 	public ColumnBuilder builder() {
-		return t-> fns.stream()
-				.reduce((DBColumn)t.column(cd), (c, fn)-> fn.args(c), (c1,c2)-> c1); //combiner -> sequentially collect
+		return t-> fns.stream().reduce(
+				(DBColumn) t.column(cd), 
+				(c, fn)-> fn.args(c), 
+				(c1,c2)-> c1); //combiner -> sequentially collect
 	}
 
 	@Override
