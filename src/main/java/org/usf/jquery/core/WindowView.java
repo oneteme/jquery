@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,13 +25,13 @@ public final class WindowView implements TaggableView {
 		return new SqlStringBuilder(100)
 		.append("(SELECT ").append(tn).append(".*, ")
 		.append(column.sql(addWithValue())) //
-		.append(" AS ").append(alias)
+		.append(" AS ").append(doubleQuote(alias))
 		.append(" FROM ").append(tn).append(")")
 		.toString();
 	}
 
 	public DBFilter filter() {
-		return b-> expression.sql(b, column(b.columnFullReference(tagname(), alias)));
+		return b-> expression.sql(b, column(b.columnFullReference(table.tagname(), doubleQuote(alias))));
 	}
 
 	@Override

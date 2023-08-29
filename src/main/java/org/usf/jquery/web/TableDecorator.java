@@ -131,10 +131,8 @@ public interface TableDecorator {
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
     	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
-    	.forEach(e-> {
-    		var rf = decodeFilter(e, this);
-    		query.tablesIfAbsent(rf.tables()).filters(rf.filters());
-    	});
+    	.map(e-> decodeFilter(e, this))
+    	.forEach(rf-> query.tablesIfAbsent(rf.tables()).filters(rf.filters()));
 	}
 
 	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {
