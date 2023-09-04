@@ -17,9 +17,9 @@ import javax.sql.DataSource;
 
 import org.usf.jquery.core.ResultMapper.DataWriter;
 import org.usf.jquery.web.view.CalendarView;
-import org.usf.jquery.web.view.Chart2DView;
 import org.usf.jquery.web.view.PieChartView;
 import org.usf.jquery.web.view.ResultWebView;
+import org.usf.jquery.web.view.SankeyView;
 import org.usf.jquery.web.view.TableView;
 import org.usf.jquery.web.view.TimelineChartView;
 
@@ -106,6 +106,7 @@ public final class RequestQuery {
 		case "line"		: return lineChart(w);
 		case "timeline"	: return new TimelineChartView(w);
 		case "calendar"	: return new CalendarView(w);
+		case "sankey"	: return new SankeyView(w);
 		default: throw new IllegalArgumentException(view);
 		}
 	}
