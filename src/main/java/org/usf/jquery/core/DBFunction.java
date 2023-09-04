@@ -182,6 +182,12 @@ public interface DBFunction extends DBOperation {
 	static TypedFunction bigint() {
 		return new TypedFunction(BIGINT, castFunction("BIGINT"), VARCHAR); // + string !?
 	}
+
+	//other funct
+	
+	static TypedFunction coalesce() {
+		return autoTypeReturn(function("COALESCE"), AUTO_TYPE, AUTO_TYPE); //takes 1 or 2 param
+	}
 	
 	//aggregate funct.
 
