@@ -25,8 +25,6 @@ import org.usf.jquery.core.StringComparator;
  * 
  * @author u$f
  * 
- * @see TableDecorator
- * @see RequestColumn
  *
  */
 public interface ColumnDecorator {

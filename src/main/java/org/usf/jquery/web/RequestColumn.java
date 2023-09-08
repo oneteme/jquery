@@ -29,8 +29,6 @@ import lombok.RequiredArgsConstructor;
  * 
  * @author u$f
  * 
- * @see RequestFilter
- * 
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class RequestColumn implements ColumnDecorator {
