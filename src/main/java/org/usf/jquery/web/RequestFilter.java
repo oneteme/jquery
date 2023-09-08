@@ -23,8 +23,6 @@ import lombok.RequiredArgsConstructor;
  * 
  * @author u$f
  * 
- * @see RequestColumn
- *
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)

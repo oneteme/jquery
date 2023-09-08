@@ -15,8 +15,6 @@ import org.usf.jquery.core.LogicalOperator;
  * 
  * @author u$f
  * 
- * @see ComparisonExpression
- *
  */
 @FunctionalInterface
 public interface CriteriaBuilder<T> {

@@ -40,9 +40,6 @@ import org.usf.jquery.core.TaggableColumn;
  * 
  * @author u$f
  * 
- * @see ColumnDecorator
- * @see YearTableMetadata
- *
  */
 public interface YearTableDecorator extends TableDecorator {
 	
