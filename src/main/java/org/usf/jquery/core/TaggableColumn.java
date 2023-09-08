@@ -1,10 +1,12 @@
 package org.usf.jquery.core;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 public interface TaggableColumn extends DBColumn {
 
-	String tagname();
-	
-	default String tagSql(QueryParameterBuilder ph) {
-		return sql(ph) + " AS " + tagname();
-	}
+	String tagname(); //JSON & TAG
+
 }

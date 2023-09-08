@@ -1,150 +1,86 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
-import static java.lang.reflect.Array.getLength;
-import static java.util.Arrays.asList;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toList;
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
-import static org.usf.jquery.core.SqlStringBuilder.COMA_SEPARATOR;
-import static org.usf.jquery.core.SqlStringBuilder.QUOTE_SEPARATOR;
-import static org.usf.jquery.core.Utils.isBlank;
-import static org.usf.jquery.core.Validation.requireNonEmpty;
+import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
 
-import java.util.Collection;
-import java.util.LinkedList;
+import java.io.Writer;
+import java.sql.SQLException;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.function.Function;
-import java.util.function.Supplier;
 
-import lombok.AllArgsConstructor;
+import javax.sql.DataSource;
+
+import org.usf.jquery.core.ResultMapper.DataWriter;
+
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Slf4j
 @Getter
-@NoArgsConstructor
-@AllArgsConstructor
-public class RequestQuery {
-
-	String tablename;
-	List<TaggableColumn> columns = new LinkedList<>();
-	List<DBFilter> filters = new LinkedList<>();
-	boolean noResult;
-
-	public RequestQuery select(String tablename, TaggableColumn... columns) {
-		this.tablename = tablename;
-		return columns(columns);
-	}
-
-	public RequestQuery column(boolean condition, Supplier<TaggableColumn> column) {
-		if(condition) {
-			columns.add(column.get());
-		}
-		return this;
-	}
-	public RequestQuery columns(boolean condition, Supplier<TaggableColumn[]> column) {
-		return condition ? columns(column.get()) : this;
-	}
-	public RequestQuery columns(TaggableColumn... columns) {
-		this.columns.addAll(asList(columns));
-		return this;
-	}
-
-	public RequestQuery filter(boolean condition, Supplier<DBFilter> filter){
-		if(condition) {
-			filters.add(filter.get());
-		}
-		return this;
-	}
-	public RequestQuery filters(boolean condition, Supplier<DBFilter[]> filter){
-		return condition ? filters(filter.get()) : this;
-	}
-	public RequestQuery filters(DBFilter... filters){
-		this.filters.addAll(asList(filters));
-		return this;
-	}
-
-	public <T> T execute(Function<ParametredQuery, T> fn) {
-		return execute(null, fn);
-	}
-
-	public <T> T execute(String schema, Function<ParametredQuery, T> fn) {
-
-		requireNonNull(fn);
-		log.debug("Building prepared statement...");
-		var bg = currentTimeMillis();
-		var query = build(schema);
-		log.debug("Query built in {} ms", currentTimeMillis() - bg);
-		bg = currentTimeMillis();
-		var rows = fn.apply(query);
-		log.info("{} rows in {} ms", rowCount(rows), currentTimeMillis() - bg);
-		return rows;
-	}
-
-	public final ParametredQuery build(String schema){
-		
-		var pb = parametrized();
-		var sb = new SqlStringBuilder(500);
-		build(schema, sb, pb);
-		String[] cols = getColumns().stream().map(TaggableColumn::tagname).toArray(String[]::new);
-		return new ParametredQuery(sb.toString(), cols, pb.args(), noResult);
-	}
-
-	public void build(String schema, SqlStringBuilder sb, QueryParameterBuilder pb){
-    	
-    	requireNonNull(tablename);
-    	requireNonEmpty(columns); 
-    	sb.append("SELECT ")
-    	.appendEach(columns, COMA_SEPARATOR, e-> e.tagSql(addWithValue()))
-    	.append(" FROM ")
-    	.appendIf(!isBlank(schema), ()-> schema + QUOTE_SEPARATOR)
-    	.append(tablename);
-    	if(!filters.isEmpty()) {
-    		sb.append(" WHERE ")
-    		.appendEach(filters, AND.sql(), f-> f.sql(pb));
-    	}
-        if(columns.stream().anyMatch(DBColumn::isAggregation)) {
-        	var gc = columns.stream()
-        			.filter(RequestQuery::groupable)
-        			.map(TaggableColumn::tagname) //add alias 
-        			.collect(toList());
-        	if(!gc.isEmpty()) {
-        		sb.append(" GROUP BY ").appendEach(gc, COMA_SEPARATOR);
-        	}
-        	else if(columns.size() > 1) {
-        		//throw new RuntimeException("require groupBy columns"); ValueColumn
-        	}
-        }
+@RequiredArgsConstructor
+public final class RequestQuery {
+	
+	@NonNull
+	private final String query;
+	private final Object[] params;
+	
+	public List<DynamicModel> execute(DataSource ds) {
+		return execute(ds, new SimpleResultMapper());
 	}
 	
-	public RequestQuery fork(String tn) {
-		return new RequestQuery(tn, 
-				new LinkedList<>(columns), 
-				new LinkedList<>(filters), 
-				noResult);
+	public <T> T execute(DataSource ds, ResultMapper<T> mapper) {
+		try(var cn = ds.getConnection()){
+			log.debug("preparing statement : {}", query);
+			try(var ps = cn.prepareStatement(query)){
+				if(params != null) {
+					for(var i=0; i<params.length; i++) {
+						ps.setObject(i+1, params[i]);
+					}						
+				}
+		        log.debug("with parameters : {}", Arrays.toString(params));
+		        log.debug("executing SQL query...");
+		        var bg = currentTimeMillis();
+				try(var rs = ps.executeQuery()){
+			        log.debug("query executed in {} ms", currentTimeMillis() - bg);
+					return mapper.map(rs);
+				}
+			}
+		}
+		catch(SQLException e) {
+			throw new RuntimeException(e);
+		}
 	}
 
-	private static boolean groupable(DBColumn column) {
-		return !column.isAggregation() && !column.isConstant();
+	/* experimental */
+	
+	public void toCsv(DataSource ds, Writer w) {
+		toCsv(ds, w::write);
+	}
+
+	public void toCsv(DataSource ds, DataWriter out) {
+		execute(ds, new CsvResultMapper(out));
+	}
+
+	public void toAscii(DataSource ds, Writer w) {
+		toAscii(ds, w::write);
 	}
 	
-	@SuppressWarnings("rawtypes")
-	private static int rowCount(Object o) {
-		if(o.getClass().isArray()) {
-			return getLength(o);
-		}
-		if(o instanceof Collection) {
-			return ((Collection)o).size();
-		}
-		if(o instanceof Map) {
-			return ((Map)o).size();
-		}
-		return 1; //???
+	public void toAscii(DataSource ds, DataWriter out) {
+		execute(ds, new AsciiResultMapper(out));
 	}
 	
+	public void logResult(DataSource ds) {
+		execute(ds, new AsciiResultMapper(usingRowWriter(log::debug)));
+	}
+
+	public SimpleResultMapper defaultMapper() {
+		return new SimpleResultMapper();
+	}
 }

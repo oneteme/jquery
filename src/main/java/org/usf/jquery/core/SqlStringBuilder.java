@@ -3,17 +3,24 @@ package org.usf.jquery.core;
 import static java.util.function.Function.identity;
 
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 public final class SqlStringBuilder {
 	
-	static final String EMPTY_STRING    = "";
-	static final String COMA_SEPARATOR  = ", ";
-	static final String SPACE_SEPARATOR = " ";
-	static final String POINT_SEPARATOR = ".";
-	static final String QUOTE_SEPARATOR = "'";
+	static final String EMPTY = "";
+	static final String COMA  = ",";
+	static final String SPACE = " ";
+	static final String QUOTE = "'";
+	static final String DQUOT = "\"";
+	static final String SCOMA  = COMA + SPACE;
 	
 	private final StringBuilder sb;
 
@@ -23,6 +30,10 @@ public final class SqlStringBuilder {
 	
 	public SqlStringBuilder(String v) { //buffer++
 		this.sb = new StringBuilder(v.length() + 50).append(v);
+	}
+
+	public SqlStringBuilder appendIf(boolean condition, String s) {
+		return condition ? append(s) : this;
 	}
 	
 	public SqlStringBuilder appendIf(boolean condition, Supplier<String> sup) {
@@ -34,11 +45,11 @@ public final class SqlStringBuilder {
 	}
 
 	public SqlStringBuilder appendEach(Collection<String> list, String separator) {
-		return appendEach(list, separator, EMPTY_STRING, identity());
+		return appendEach(list, separator, EMPTY, identity());
 	}
 
 	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, Function<T, String> fn) {
-		return appendEach(list, separator, EMPTY_STRING, fn);
+		return appendEach(list, separator, EMPTY, fn);
 	}
 
 	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, String prefix, Function<T, String> fn) {
@@ -53,15 +64,14 @@ public final class SqlStringBuilder {
 		return this;
 	}
 
-	public <T> SqlStringBuilder forEach(Collection<T> list, String separator, Consumer<T> cons) {
-		if(!list.isEmpty()) {
-			var it = list.iterator();
+	public <T> SqlStringBuilder forEach(Iterator<T> it, String separator, Consumer<T> cons) {
+		if(it.hasNext()) {
 			cons.accept(it.next());
 			while(it.hasNext()) {
 				this.sb.append(separator);
 				cons.accept(it.next());
 			}
-		}
+		} 
 		return this;
 	}
 	
@@ -76,11 +86,15 @@ public final class SqlStringBuilder {
 	}
 
 	public static String space(String op) {
-		return SPACE_SEPARATOR + op + SPACE_SEPARATOR;
+		return SPACE + op + SPACE;
 	}
 
-	public static String varchar(String op) {
-		return QUOTE_SEPARATOR + op + QUOTE_SEPARATOR;
+	public static String quote(String op) {
+		return QUOTE + op + QUOTE;
+	}
+
+	public static String doubleQuote(String op) {
+		return DQUOT + op + DQUOT;
 	}
 
 	public static String parenthese(String op) { 
@@ -88,6 +102,6 @@ public final class SqlStringBuilder {
 	}
 
 	public static String member(String parent, String child) { 
-		return parent + POINT_SEPARATOR + child;
+		return parent + "." + child;
 	}
 }

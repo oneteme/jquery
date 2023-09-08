@@ -7,10 +7,15 @@ import java.util.function.Supplier;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @AllArgsConstructor
 public final class CaseSingleColumnBuilder {
 
-	private final CaseSingleColumn caseColumn = new CaseSingleColumn();
+	private final CaseColumn caseColumn = new CaseColumn();
 	private final WhenFilterBridge bridge = new WhenFilterBridge(); 
 	private final DBColumn column;
 	private DBFilter filter; //temp
@@ -19,39 +24,39 @@ public final class CaseSingleColumnBuilder {
 		this.column = column;
 	}
 	
-	public WhenFilterBridge when(ComparatorExpression exp) {
+	public WhenFilterBridge when(ComparisonExpression exp) {
 		this.filter = new ColumnSingleFilter(column, exp);
 		return bridge;
 	}
 	
-	public CaseSingleColumn orElse(int value) {
+	public CaseColumn orElse(int value) {
 		return orElseExp(value);
 	}
 
-	public CaseSingleColumn orElse(double value) {
+	public CaseColumn orElse(double value) {
 		return orElseExp(value);
 	}
 
-	public CaseSingleColumn orElse(String value) {
+	public CaseColumn orElse(String value) {
 		return orElseExp(value);
 	}
 	
-	public CaseSingleColumn orElse(DBColumn column) {
+	public CaseColumn orElse(DBColumn column) {
 		return orElseExp(column);
 	}
 	
-	public CaseSingleColumn end() {
+	public CaseColumn end() {
 		return caseColumn;
 	}
 	
 
-	private CaseSingleColumn orElseExp(Object elseValue) {
-		caseColumn.append(CaseExpression.orElse(elseValue));
+	private CaseColumn orElseExp(Object elseValue) {
+		caseColumn.append(WhenExpression.orElse(elseValue));
 		return caseColumn;
 	}
 	
 	public NamedColumn as(String tagname) {
-		return new NamedColumn(caseColumn, tagname);
+		return caseColumn.as(tagname);
 	}
 	
 	public final class WhenFilterBridge {
@@ -81,7 +86,7 @@ public final class CaseSingleColumnBuilder {
 		}
 		
 		private CaseSingleColumnBuilder thenExp(Object o) {
-			caseColumn.append(new CaseExpression(requireNonNull(filter), o));
+			caseColumn.append(new WhenExpression(requireNonNull(filter), o));
 			filter = null;
 			return CaseSingleColumnBuilder.this;			
 		}
