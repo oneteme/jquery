@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
+
 import java.util.Collection;
 import java.util.Map;
 
@@ -25,18 +27,18 @@ public final class Utils {
 	}
 	
 	public static <T> boolean isEmpty(T[] a) {
-		return a == null || a.length == 0;
+		return isNull(a) || a.length == 0;
 	}
 	
 	public static boolean isEmpty(Collection<?> c) {
-		return c == null || c.isEmpty();
+		return isNull(c) || c.isEmpty();
 	}
 
-	public static boolean isEmpty(Map<?,?> c) {
-		return c == null || c.isEmpty();
+	public static boolean isEmpty(Map<?,?> map) {
+		return isNull(map) || map.isEmpty();
 	}
 
-	public static boolean isBlank(String str) {
-		return str == null || str.isBlank();
+	public static boolean isBlank(String s) {
+		return isNull(s) || s.isBlank();
 	}
 }

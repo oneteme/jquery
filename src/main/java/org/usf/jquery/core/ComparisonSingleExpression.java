@@ -4,7 +4,6 @@ import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.NestedSql.aggregation;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.QueryParameterBuilder.streamArray;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 
 import java.util.LinkedList;
 

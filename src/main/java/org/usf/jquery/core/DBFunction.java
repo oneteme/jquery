@@ -98,6 +98,14 @@ public interface DBFunction extends DBOperation {
 	static TypedFunction trim() {
 		return new TypedFunction(VARCHAR, function("TRIM"), VARCHAR);
 	}
+
+	static TypedFunction ltrim() {
+		return new TypedFunction(VARCHAR, function("LTRIM"), VARCHAR);
+	}
+
+	static TypedFunction rtrim() {
+		return new TypedFunction(VARCHAR, function("RTRIM"), VARCHAR);
+	}
 	
 	static TypedFunction upper() {
 		return new TypedFunction(VARCHAR, function("UPPER"), VARCHAR);
@@ -111,12 +119,24 @@ public interface DBFunction extends DBOperation {
 		return new TypedFunction(VARCHAR, function("INITCAP"), VARCHAR);
 	}
 	
+	static TypedFunction reverse() {
+		return new TypedFunction(VARCHAR, function("REVERSE"), VARCHAR);
+	}
+	
+	static TypedFunction left() {
+		return new TypedFunction(VARCHAR, function("LEFT"), VARCHAR, INTEGER);
+	}
+	
+	static TypedFunction right() {
+		return new TypedFunction(VARCHAR, function("RIGHT"), VARCHAR, INTEGER);
+	}
+	
 	static TypedFunction replace() { //int start, int length
 		return new TypedFunction(VARCHAR, function("REPLACE"), VARCHAR, VARCHAR, VARCHAR); //!teradata
 	}
 	
 	static TypedFunction oreplace() { //int start, int length
-		return new TypedFunction(VARCHAR, function("OREPLACE"), VARCHAR, VARCHAR, VARCHAR);
+		return new TypedFunction(VARCHAR, function("OREPLACE"), VARCHAR, VARCHAR, VARCHAR); //teradata 
 	}
 	
 	static TypedFunction substring() { //int start, int length

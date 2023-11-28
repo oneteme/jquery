@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
+
 import java.util.LinkedHashMap;
 
 /**
@@ -18,6 +20,6 @@ public final class DynamicModel extends LinkedHashMap<String, Object> {
 	
 	public <T> T getField(String name, T defaultValue) {
 		T v = getField(name);
-		return v == null ? defaultValue : v;
+		return isNull(v) ? defaultValue : v;
 	}
 }
