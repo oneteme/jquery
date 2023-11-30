@@ -69,7 +69,7 @@ public final class Chart2DView implements WebViewMapper {
 		var sb2 = new StringBuilder();
 		for(var r : dt.getRows()) {
 			@SuppressWarnings("unchecked")
-			var map = (Map<String, String>) ofEntries(r.toArray(Entry[]::new));
+			var map = ofEntries((Entry<String,String>[])r.toArray(Entry[]::new));
 			sb2.append("[").append(map.get(xAxis.getName()));
 			cols.forEach(c-> sb2.append(",").append(map.getOrDefault(c, "0")));
 			sb2.append("],");
