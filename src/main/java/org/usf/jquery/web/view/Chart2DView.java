@@ -31,7 +31,7 @@ import lombok.extern.slf4j.Slf4j;
  * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/barchart?hl=fr#data-format">barchart</a>
  * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/linechart?hl=fr#data-format">linechart</a>
  * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/areachart?hl=fr#data-format">areachart</a>
- * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/combochart?hl=fr#data-format">areachart</a>
+ * @see <a href="https://developers.google.com/chart/interactive/docs/gallery/combochart?hl=fr#data-format">combochart</a>
  *
  */
 @Slf4j
