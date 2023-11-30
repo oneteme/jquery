@@ -1,27 +1,12 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
-import static org.usf.jquery.core.ResultMapper.DataWriter.usingRowWriter;
-import static org.usf.jquery.web.view.Chart2DView.areaChart;
-import static org.usf.jquery.web.view.Chart2DView.barChart;
-import static org.usf.jquery.web.view.Chart2DView.columnChart;
-import static org.usf.jquery.web.view.Chart2DView.comboChart;
-import static org.usf.jquery.web.view.Chart2DView.lineChart;
 
-import java.io.Writer;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
 import javax.sql.DataSource;
-
-import org.usf.jquery.core.ResultMapper.DataWriter;
-import org.usf.jquery.web.view.CalendarView;
-import org.usf.jquery.web.view.PieChartView;
-import org.usf.jquery.web.view.ResultWebView;
-import org.usf.jquery.web.view.SankeyView;
-import org.usf.jquery.web.view.TableView;
-import org.usf.jquery.web.view.TimelineChartView;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -43,10 +28,10 @@ public final class RequestQuery {
 	private final Object[] params;
 	
 	public List<DynamicModel> execute(DataSource ds) {
-		return execute(ds, new SimpleResultMapper());
+		return execute(ds, new KeyValueMapper());
 	}
 	
-	public <T> T execute(DataSource ds, ResultMapper<T> mapper) {
+	public <T> T execute(DataSource ds, ResultSetMapper<T> mapper) { // overload with sql types
 		try(var cn = ds.getConnection()){
 			log.debug("preparing statement : {}", query);
 			try(var ps = cn.prepareStatement(query)){
@@ -65,53 +50,7 @@ public final class RequestQuery {
 			}
 		}
 		catch(SQLException e) {
-			throw new RuntimeException(e);
+			throw new MappingException("error while mapping results", e);
 		}
-	}
-
-	/* experimental */
-	
-	public void toCsv(DataSource ds, Writer w) {
-		toCsv(ds, w::write);
-	}
-
-	public void toCsv(DataSource ds, DataWriter out) {
-		execute(ds, new CsvResultMapper(out));
-	}
-
-	public void toAscii(DataSource ds, Writer w) {
-		toAscii(ds, w::write);
-	}
-	
-	public void toAscii(DataSource ds, DataWriter out) {
-		execute(ds, new AsciiResultMapper(out));
-	}
-	
-	public void toChart(DataSource ds, Writer w, String view) {
-		execute(ds, chart(view, w));
-	}
-	
-	public void logResult(DataSource ds) {
-		execute(ds, new AsciiResultMapper(usingRowWriter(log::debug)));
-	}
-
-	public ResultWebView chart(String view, Writer w) {
-		switch (view) {
-		case "table"	: return new TableView(w);
-		case "pie"		: return new PieChartView(w);
-		case "column"	: return columnChart(w);
-		case "bar"		: return barChart(w);
-		case "area"		: return areaChart(w);
-		case "combo"	: return comboChart(w);
-		case "line"		: return lineChart(w);
-		case "timeline"	: return new TimelineChartView(w);
-		case "calendar"	: return new CalendarView(w);
-		case "sankey"	: return new SankeyView(w);
-		default: throw new IllegalArgumentException(view);
-		}
-	}
-	
-	public SimpleResultMapper defaultMapper() {
-		return new SimpleResultMapper();
 	}
 }

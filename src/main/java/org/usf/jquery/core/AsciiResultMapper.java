@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class AsciiResultMapper implements ResultMapper<Void> {
+public final class AsciiResultMapper implements ResultSetMapper<Void> {
 	
 	private static final int MAX_LENGTH = 50;
 
@@ -87,7 +87,7 @@ public final class AsciiResultMapper implements ResultMapper<Void> {
 			}
 			writer.writeLine(div);
 		} catch (IOException e) {
-            throw new RuntimeException("error while mapping results", e);
+            throw new MappingException("error writing results", e);
 		}
 		log.info("{} rows mapped in {} ms", rw, currentTimeMillis() - bg);
 		return null;

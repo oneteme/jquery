@@ -6,8 +6,8 @@ import static java.nio.file.Files.readString;
 import static java.util.Map.ofEntries;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
-import static org.usf.jquery.web.view.ResultWebView.DataTable.fromMetaData;
-import static org.usf.jquery.web.view.ResultWebView.WebType.NUMBER;
+import static org.usf.jquery.web.view.WebViewMapper.DataTable.fromMetaData;
+import static org.usf.jquery.web.view.WebViewMapper.WebType.NUMBER;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -17,6 +17,8 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.Map.Entry;
+
+import org.usf.jquery.core.MappingException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -34,11 +36,11 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class Chart2DView implements ResultWebView {
+public final class Chart2DView implements WebViewMapper {
 	
-	private static final String COLS = "$columns";
-	private static final String DATA = "$data";
-	private static final String TYPE = "$chart";
+	private static final String COLS  = "$columns";
+	private static final String DATA  = "$data";
+	private static final String CHART = "$chart";
 
 	private final String type;
     private final Writer writer;
@@ -77,12 +79,12 @@ public final class Chart2DView implements ResultWebView {
 		}
 		try {
 			writer.write(readString(Paths.get(getClass().getResource("./chart.google.html").toURI()))
-					.replace(TYPE, type)
+					.replace(CHART, type)
 					.replace(COLS, sb1.toString()) //TD optim this
 					.replace(DATA, sb2.toString()
 					.replace(lineSeparator(), "")));
 		} catch (IOException | URISyntaxException e) {
-			throw new RuntimeException("error while mapping results", e);
+			throw new MappingException("error mapping results", e);
 		}
 		log.info("{} rows mapped in {} ms", dt.getRows().size(), currentTimeMillis() - bg);
 		return null;

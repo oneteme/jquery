@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class CsvResultMapper implements ResultMapper<Void> {
+public final class CsvResultMapper implements ResultSetMapper<Void> {
 	
 	private static final String SEMIC = ";";
     private final DataWriter writer;
@@ -43,9 +43,9 @@ public final class CsvResultMapper implements ResultMapper<Void> {
             }
         }
         catch(IOException e) {
-            throw new RuntimeException("error while mapping results", e);
+            throw new MappingException("error writing results", e);
         }
-		log.info("{} rows mapped in {} ms", rw, currentTimeMillis() - bg);
+		log.info("{} rows written in {} ms", rw, currentTimeMillis() - bg);
         return null;
     }
     

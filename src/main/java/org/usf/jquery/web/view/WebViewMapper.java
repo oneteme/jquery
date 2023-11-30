@@ -10,9 +10,9 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isBlank;
-import static org.usf.jquery.web.view.ResultWebView.WebType.NUMBER;
-import static org.usf.jquery.web.view.ResultWebView.WebType.STRING;
-import static org.usf.jquery.web.view.ResultWebView.WebType.typeOf;
+import static org.usf.jquery.web.view.WebViewMapper.WebType.NUMBER;
+import static org.usf.jquery.web.view.WebViewMapper.WebType.STRING;
+import static org.usf.jquery.web.view.WebViewMapper.WebType.typeOf;
 
 import java.sql.Date;
 import java.sql.ResultSet;
@@ -26,7 +26,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map.Entry;
 
-import org.usf.jquery.core.ResultMapper;
+import org.usf.jquery.core.ResultSetMapper;
 import org.usf.jquery.core.SqlStringBuilder;
 
 import lombok.Getter;
@@ -40,7 +40,7 @@ import lombok.ToString;
  *
  *
  */
-public interface ResultWebView extends ResultMapper<Void>  {
+public interface WebViewMapper extends ResultSetMapper<Void>  {
 	
 	@RequiredArgsConstructor
 	enum WebType implements Formatter<Object> {

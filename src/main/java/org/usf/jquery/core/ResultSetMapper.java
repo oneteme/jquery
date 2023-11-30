@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
-
 import static java.lang.System.lineSeparator;
+import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 
 import java.io.IOException;
 import java.sql.ResultSet;
@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @FunctionalInterface
-public interface ResultMapper<T> {
+public interface ResultSetMapper<T> {
 	
     T map(ResultSet rs) throws SQLException; //SQLException only
 	
@@ -60,7 +60,7 @@ public interface ResultMapper<T> {
 
 		@Override
 		public void writeLine() throws IOException {
-			writeLine("");
+			writeLine(EMPTY);
 		}
 		
 		@Override

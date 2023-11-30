@@ -15,7 +15,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-public final class SimpleResultMapper implements ResultMapper<List<DynamicModel>> {
+public final class KeyValueMapper implements ResultSetMapper<List<DynamicModel>> {
 
     @Override
     public List<DynamicModel> map(ResultSet rs) throws SQLException {

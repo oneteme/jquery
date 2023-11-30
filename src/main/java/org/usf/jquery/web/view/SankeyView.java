@@ -4,9 +4,9 @@ import static java.lang.System.currentTimeMillis;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.readString;
 import static java.util.stream.Collectors.toList;
-import static org.usf.jquery.web.view.ResultWebView.TableColumn.columns;
-import static org.usf.jquery.web.view.ResultWebView.WebType.NUMBER;
-import static org.usf.jquery.web.view.ResultWebView.WebType.STRING;
+import static org.usf.jquery.web.view.WebViewMapper.TableColumn.columns;
+import static org.usf.jquery.web.view.WebViewMapper.WebType.NUMBER;
+import static org.usf.jquery.web.view.WebViewMapper.WebType.STRING;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -14,8 +14,9 @@ import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import org.usf.jquery.core.MappingException;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,7 +30,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public class SankeyView implements ResultWebView {
+public class SankeyView implements WebViewMapper {
 
 	private static final String COLS = "$columns";
 	private static final String DATA = "$data";
@@ -77,7 +78,7 @@ public class SankeyView implements ResultWebView {
 					.replace(DATA, sb2.toString())
 					.replace(lineSeparator(), ""));
 		} catch (IOException | URISyntaxException e) {
-			throw new RuntimeException("error while mapping results", e);
+			throw new MappingException("error mapping results", e);
 		}
 		log.info("{} rows mapped in {} ms", rw, currentTimeMillis() - bg);
 		return null;
