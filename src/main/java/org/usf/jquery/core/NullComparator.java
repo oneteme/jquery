@@ -18,8 +18,4 @@ public interface NullComparator extends Comparator {
 		requireNArgs(1, args, NullComparator.class::getSimpleName);
 		return builder.appendParameter(args[0]) + SPACE + name();
 	}
-
-	static NullComparator nullComparator(final String name) {
-		return ()-> name;
-	}
 }

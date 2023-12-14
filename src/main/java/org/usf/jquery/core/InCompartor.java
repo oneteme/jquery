@@ -21,8 +21,4 @@ public interface InCompartor extends Comparator {
 		var params = copyOfRange(args, 1, args.length);
 		return builder.appendParameter(args[0]) + SPACE + name() + parenthese(builder.appendArray(params));
 	}
-	
-	static InCompartor inComparator(final String name) {
-		return ()-> name;
-	}
 }

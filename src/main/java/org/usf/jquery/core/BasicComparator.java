@@ -17,8 +17,4 @@ public interface BasicComparator extends Comparator {
 		requireNArgs(2, args, BasicComparator.class::getSimpleName);
 		return builder.appendParameter(args[0]) + symbol() + builder.appendParameter(args[1]);
 	}
-	
-	static BasicComparator basicComparator(final String name) {
-		return ()-> name;
-	}
 }

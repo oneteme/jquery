@@ -1,10 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.BasicComparator.basicComparator;
-import static org.usf.jquery.core.InCompartor.inComparator;
-import static org.usf.jquery.core.NullComparator.nullComparator;
-import static org.usf.jquery.core.StringComparator.stringComparator;
-
 /**
  * 
  * @author u$f
@@ -72,5 +67,20 @@ public interface Comparator extends DBProcessor {
 	static InCompartor notIn() {
 		return inComparator("NOT IN");
 	}
-
+	
+	static BasicComparator basicComparator(final String name) {
+		return ()-> name;
+	}
+	
+	static StringComparator stringComparator(final String name) {
+		return ()-> name;
+	}
+	
+	static NullComparator nullComparator(final String name) {
+		return ()-> name;
+	}
+	
+	static InCompartor inComparator(final String name) {
+		return ()-> name;
+	}
 }

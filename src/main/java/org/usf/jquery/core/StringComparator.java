@@ -18,9 +18,4 @@ public interface StringComparator extends Comparator {
 		requireNArgs(2, args, String.class::getSimpleName);
 		return builder.appendString(args[0]) + space(name()) + builder.appendString(args[1]);
 	}
-
-	static StringComparator stringComparator(final String name) {
-		return ()-> name;
-	}
-	
 }

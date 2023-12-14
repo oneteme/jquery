@@ -5,6 +5,7 @@ import static org.usf.jquery.core.Validation.VAR_PATTERN;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import java.util.LinkedList;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -21,6 +22,7 @@ public final class RequestParser {
 	private int idx;
 	private int size;
 	private char c;
+	private List<RequestEntry> entries;
 	
 	private RequestParser(String s) {
 		this.s = s;
@@ -39,7 +41,7 @@ public final class RequestParser {
 			shift();
 			if(idx < size) {
 				entry.initArgs();
-				if(c != ')') { //TODO parse map
+				if(c != ')') { //TD parse map
 					do {
 						entry.getArgs().add(parseEntry(true, tag));
 					} while(idx < size && (c=s.charAt(idx)) == ',' && ++idx < size);
