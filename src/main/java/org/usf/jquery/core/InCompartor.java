@@ -11,7 +11,7 @@ import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
  *
  */
 @FunctionalInterface
-public interface InCompartor extends DBComparator {
+public interface InCompartor extends Comparator {
 
 	String name();
 

@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 
 import java.util.Collection;
 import java.util.Map;
@@ -23,7 +24,7 @@ public final class Utils {
 	}
 	
 	public static <T> boolean isPresent(T[] a) {
-		return !isEmpty(a);
+		return nonNull(a) && a.length > 0;
 	}
 	
 	public static <T> boolean isEmpty(T[] a) {

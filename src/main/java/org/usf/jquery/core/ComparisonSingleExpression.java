@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ComparisonSingleExpression implements ComparisonExpression {
 
-	private final DBComparator comparator;
+	private final Comparator comparator;
 	private final Object right; //null|array|any
 	
 	@Override

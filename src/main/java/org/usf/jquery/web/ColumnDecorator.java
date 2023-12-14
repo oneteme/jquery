@@ -2,23 +2,22 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.DBColumn.count;
-import static org.usf.jquery.core.DBComparator.equal;
-import static org.usf.jquery.core.DBComparator.greaterOrEqual;
-import static org.usf.jquery.core.DBComparator.greaterThan;
-import static org.usf.jquery.core.DBComparator.iLike;
-import static org.usf.jquery.core.DBComparator.in;
-import static org.usf.jquery.core.DBComparator.lessOrEqual;
-import static org.usf.jquery.core.DBComparator.lessThan;
-import static org.usf.jquery.core.DBComparator.like;
-import static org.usf.jquery.core.DBComparator.notEqual;
-import static org.usf.jquery.core.DBComparator.notIn;
-import static org.usf.jquery.core.DBComparator.notLike;
-import static org.usf.jquery.core.JDBCType.AUTO_TYPE;
+import static org.usf.jquery.core.Comparator.equal;
+import static org.usf.jquery.core.Comparator.greaterOrEqual;
+import static org.usf.jquery.core.Comparator.greaterThan;
+import static org.usf.jquery.core.Comparator.iLike;
+import static org.usf.jquery.core.Comparator.in;
+import static org.usf.jquery.core.Comparator.lessOrEqual;
+import static org.usf.jquery.core.Comparator.lessThan;
+import static org.usf.jquery.core.Comparator.like;
+import static org.usf.jquery.core.Comparator.notEqual;
+import static org.usf.jquery.core.Comparator.notIn;
+import static org.usf.jquery.core.Comparator.notLike;
 import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 
-import org.usf.jquery.core.DBComparator;
-import org.usf.jquery.core.DBFunction;
-import org.usf.jquery.core.SQLType;
+import org.usf.jquery.core.Comparator;
+import org.usf.jquery.core.JavaType;
+import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.StringComparator;
 
 /**
@@ -33,8 +32,8 @@ public interface ColumnDecorator {
 	
 	String reference(); //JSON
 	
-	default SQLType dataType() {
-		return AUTO_TYPE;
+	default JavaType dataType() {
+		return null;
 	}
 	
 	default String pattern() {
@@ -57,7 +56,7 @@ public interface ColumnDecorator {
 		return null; // no criteria by default
 	}
 
-	default DBComparator comparator(String comparator, int nArg) {
+	default Comparator comparator(String comparator, int nArg) {
 		if(isNull(comparator)) {
 			return nArg == 1 ? equal() : in();
 		}
@@ -78,13 +77,13 @@ public interface ColumnDecorator {
 	/**
 	 * override parser | format | local
 	 */
-	default ArgumentParser parser(SQLType type){
+	default ArgumentParser parser(JavaType type){
 		return type instanceof ParsableSQLType 
 				? (ParsableSQLType) type //improve parser search 
 				: typeOf(type);
 	}
 	
-	private static DBComparator containsArgPartten(StringComparator fn) {
+	private static Comparator containsArgPartten(StringComparator fn) {
 		return (b, args)-> {
 			args[1] = "%" + args[1] + "%";
 			return fn.sql(b, args);
@@ -92,7 +91,7 @@ public interface ColumnDecorator {
 	}
 	
 	static ColumnDecorator countColumn() {
-		return ofColumn(DBFunction.count().name(), t-> count());
+		return ofColumn(Operator.count().id(), t-> count());
 	}
 
 	static ColumnDecorator ofColumn(String ref, ColumnBuilder cb) {

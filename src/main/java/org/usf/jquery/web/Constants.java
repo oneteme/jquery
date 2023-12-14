@@ -22,7 +22,7 @@ public final class Constants {
 	public static final String PARTITION = "partition"; //not res
 	
 	static final Set<String> RESERVED_WORDS = 
-			Set.of(COLUMN, COLUMN_DISTINCT, ORDER, REVISION, REVISION_MODE);
+			Set.of(COLUMN, COLUMN_DISTINCT, ORDER, REVISION, REVISION_MODE); //metadata ?
 	
 	static final YearMonth[] EMPTY_REVISION = new YearMonth[0]; //not standard
 	

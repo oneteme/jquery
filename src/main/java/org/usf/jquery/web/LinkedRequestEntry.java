@@ -7,7 +7,7 @@ import static java.util.Collections.emptyMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.regex.Pattern.compile;
-import static org.usf.jquery.core.DBFunction.lookupFunction;
+import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -29,8 +29,11 @@ import java.util.regex.Matcher;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.OperationColumn;
+import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.OverClause;
 import org.usf.jquery.core.TypedFunction;
+import org.usf.jquery.core.TypedOperator;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -113,7 +116,7 @@ public final class LinkedRequestEntry {
 		if("count".equals(re.requireNoArgFunction())) { // not arguments
 			return countColumn();
 		}
-		var fn = lookupFunction(snakeToCamelCase(re.getName()));
+		var fn = lookupOperator(snakeToCamelCase(re.getName()));
 		if(fn.filter(TypedFunction::isWindowFunction).isPresent()) {
 			return ofColumn(re.requireNoArgFunction().toLowerCase(), t-> fn.get().args()); 
 		}
@@ -126,28 +129,26 @@ public final class LinkedRequestEntry {
 	 * 	<li> over function</li>
 	 * </ol>
 	 */
-	private static TypedFunction requireFunction(RequestEntry re, TableDecorator td) {
-		var fn = lookupFunction(re.getName())
+	private static OperationColumn requireFunction(RequestEntry re, TableDecorator td) {
+		var fn = lookupOperator(re.getName())
 				.orElseThrow(()-> cannotEvaluateException("function", re.getName()));
-		if("OVER".equals(fn.name())) {
+		if("OVER".equals(fn.id())) { //map arg function
 			var args = re.getArgs();
 			if(isNull(args) || !args.containsKey(ARRAY_ARGS_KEY)) { //named arguments function
-				return fn.additionalArgs(overClause(td, isNull(args) ? emptyMap() : args));
+				return fn.args(overClause(td, isNull(args) ? emptyMap() : args));
 			}
 			throw new UnsupportedOperationException("over function require named args");
 		}
-		//array arguments functions
-		parseEntry(fn, re, td);
-		return fn;
+		return parseEntry(fn, re, td);
 	}
 
-	private static void parseEntry(TypedFunction fn, RequestEntry re, TableDecorator td){
+	private static OperationColumn parseEntry(Operator fn, RequestEntry re, TableDecorator td){
 		if(!isEmpty(re.getArgs()) && !re.getArgs().containsKey(ARRAY_ARGS_KEY)) {
 			throw new UnsupportedOperationException("functions does not support named args");
 		}
 		if(fn.argumentCount() <= 1) { //1st argument ignored
 			if(!isEmpty(re.getArgs())) {
-				throw new IllegalArgumentException(fn.name() + " takes no arguments");
+				throw new IllegalArgumentException(fn.id() + " takes no arguments");
 			}
 		}
 		else {
@@ -171,10 +172,10 @@ public final class LinkedRequestEntry {
 						}
 					}
 				}
-				fn.additionalArgs(args.toArray());
+				return fn.args(args.toArray());
 			}
 			else {
-				throw new IllegalArgumentException(fn.name() + " takes " + n + " argument(s)");
+				throw new IllegalArgumentException(fn.id() + " takes " + n + " argument(s)");
 			}
 		}
 	}
@@ -221,7 +222,7 @@ public final class LinkedRequestEntry {
 			if(to == s.length()) {
 				break;
 			}
-			if(c == '(') {
+			if(c == '(') { // operator
 				var jmp = s.indexOf(')', ++to);
 				if(jmp > -1) {
 					var nest = s.indexOf('(', to);
@@ -238,7 +239,7 @@ public final class LinkedRequestEntry {
 				}
 				c = s.charAt(to);
 			}
-			if(c == ':') {
+			if(c == ':') { // tag
 				var jmp = s.indexOf(',', ++to);
 				if(jmp == -1) {
 					jmp = s.length();
@@ -247,20 +248,21 @@ public final class LinkedRequestEntry {
 				if((to = jmp) == s.length()) {
 					break;
 				}
-				c = s.charAt(to);
+				c = s.charAt(to); //else throw exception
 			}
 			if(c == ',' && multiple) {
 				res.add(new LinkedRequestEntry());
 			}
-			else if(c != '.') {
+			else if(c != '.') { //not accessor
 				throw new IllegalArgumentException("'" + s.charAt(to) + "' not valid at index=" + to);
 			}
-			if((from = ++to) == s.length()) {
+			if((from = ++to) == s.length()) { //ends with dot
 				throw new IllegalArgumentException("'" + s.charAt(to-1) + "' not allowed at the end");
 			}
 		}
 		return res;
 	}
+	
 	
 	private static final String ARG_PATTERN = "\\w+(\\.\\w*)*";
 	
@@ -306,6 +308,9 @@ public final class LinkedRequestEntry {
 		}
 		return map;
 	}
+	
+	
+	
 
 	private static boolean legalArgChar(char c) { //later next version
 		return legalVariableChar(c) || c == '.'; 

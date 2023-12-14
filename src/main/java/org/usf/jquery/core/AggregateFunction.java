@@ -6,15 +6,11 @@ package org.usf.jquery.core;
  *
  */
 @FunctionalInterface
-public interface AggregationFunction extends DBFunction {
+public interface AggregateFunction extends WindowFunction {
 
 	@Override
 	default boolean isAggregation() {
 		return true;
-	}
-	
-	static AggregationFunction aggregationFunction(String name) {
-		return ()-> name;
 	}
 	
 }

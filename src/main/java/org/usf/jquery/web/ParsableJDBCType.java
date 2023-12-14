@@ -14,7 +14,7 @@ import java.time.LocalTime;
 import java.util.List;
 
 import org.usf.jquery.core.JDBCType;
-import org.usf.jquery.core.SQLType;
+import org.usf.jquery.core.JavaType;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
@@ -54,7 +54,7 @@ public enum ParsableJDBCType implements ParsableSQLType {
 			DATE, TIME, TIMESTAMP); //else string
 	
 	@Delegate
-	private final SQLType type;
+	private final JavaType type;
 	@Delegate
 	private final ArgumentParser parser; //isAutoType delegated
 	
@@ -67,7 +67,7 @@ public enum ParsableJDBCType implements ParsableSQLType {
 		return unparsableType(type);
 	}
 
-	public static ParsableSQLType typeOf(SQLType type) {
+	public static ParsableSQLType typeOf(JavaType type) {
 		for(var t : values()) {
 			if(t.type == type) {
 				return t;

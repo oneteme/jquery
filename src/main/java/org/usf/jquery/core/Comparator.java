@@ -11,7 +11,7 @@ import static org.usf.jquery.core.StringComparator.stringComparator;
  *
  */
 @FunctionalInterface
-public interface DBComparator extends DBCallable {
+public interface Comparator extends DBProcessor {
 	
 	default ComparisonExpression expression(Object right) {
 		return new ComparisonSingleExpression(this, right);

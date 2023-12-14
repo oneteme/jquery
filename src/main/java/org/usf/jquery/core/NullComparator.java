@@ -9,7 +9,7 @@ import static org.usf.jquery.core.Validation.requireNArgs;
  *
  */
 @FunctionalInterface
-public interface NullComparator extends DBComparator {
+public interface NullComparator extends Comparator {
 
 	String name();
 	

@@ -1,11 +1,11 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -14,21 +14,40 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public class OperationColumn implements DBColumn {
+public final class OperationColumn implements DBColumn {
 
-	@NonNull
-	private final DBOperation operation;
-	private final Object[] args; //
+	private final Operator operator;
+	private final Object[] args;
+	private final JavaType type;
+	private Boolean aggregation;
 
+	public OperationColumn(Operator operation, Object[] args) {
+		this(operation, args, AUTO);
+	}
+	
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		return operation.sql(builder, args);
+		return operator.sql(builder, args);
 	}
 
 	@Override
+	public JavaType javaType() {
+		return type;
+	}
+	
+	@Override
 	public boolean isAggregation() {
-		return operation.isAggregation() 
-				|| Stream.of(args).anyMatch(NestedSql::aggregation);
+		if(aggregation == null) {
+			return operator.isAggregation() 
+					|| Stream.of(args).anyMatch(NestedSql::aggregation);
+		}
+		return aggregation;
+	}
+
+	//see Operator::over
+	OperationColumn aggregation(boolean aggregation) {
+		this.aggregation = aggregation;
+		return this;
 	}
 
 	@Override
@@ -40,4 +59,5 @@ public class OperationColumn implements DBColumn {
 	public String toString() {
 		return sql(addWithValue());
 	}
+
 }

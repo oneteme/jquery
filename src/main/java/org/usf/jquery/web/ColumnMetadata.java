@@ -1,9 +1,9 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.Utils.UNLIMITED;
-import static org.usf.jquery.web.ParsableJDBCType.AUTO_TYPE;
 
-import org.usf.jquery.core.SQLType;
+import org.usf.jquery.core.JavaType;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -23,11 +23,11 @@ import lombok.ToString;
 public final class ColumnMetadata {
 	
 	private final String columnName;
-	private SQLType dataType = AUTO_TYPE;
+	private JavaType dataType = AUTO;
 	private int dataSize = UNLIMITED;
 	
 	ColumnMetadata reset() {
-		this.dataType = AUTO_TYPE;
+		this.dataType = AUTO;
 		this.dataSize = UNLIMITED;
 		return this;
 	}

@@ -8,7 +8,7 @@ import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.ComparisonExpression;
-import org.usf.jquery.core.DBComparator;
+import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.LogicalOperator;
 
 /**
@@ -34,7 +34,7 @@ public interface CriteriaBuilder<T> {
 				.orElseThrow();
 	}
 	
-	public static CriteriaBuilder<Object> ofComparator(DBComparator cmp) {
+	public static CriteriaBuilder<Object> ofComparator(Comparator cmp) {
 		return cmp::expression;
 	}
 }

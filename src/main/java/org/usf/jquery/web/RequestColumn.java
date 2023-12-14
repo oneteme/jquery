@@ -15,10 +15,10 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.BasicComparator;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBComparator;
+import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.InCompartor;
-import org.usf.jquery.core.SQLType;
+import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedFunction;
 
@@ -54,9 +54,9 @@ public final class RequestColumn implements ColumnDecorator {
 	}
 	
 	@Override
-	public SQLType dataType() {
+	public JavaType dataType() {
 		var i = fns.size();
-		while(--i>=0 && fns.get(i).getReturnedType().isAutoType());
+		while(--i>=0 && fns.get(i).getReturnedType() == null);
 		return i<0 ? cd.dataType() : fns.get(i).getReturnedType();
 	}
 	
@@ -64,12 +64,12 @@ public final class RequestColumn implements ColumnDecorator {
 	public ColumnBuilder builder() {
 		return t-> fns.stream().reduce(
 				(DBColumn) t.column(cd), 
-				(c, fn)-> fn.args(c), 
+				(c, fn)-> fn.function(c), 
 				(c1,c2)-> c1); //combiner -> sequentially collect
 	}
 
 	@Override
-	public DBComparator comparator(String comparator, int nArg) {
+	public Comparator comparator(String comparator, int nArg) {
 		return fns.isEmpty()  //cannot apply column comparator on function
 				? cd.comparator(comparator, nArg) 
 				: ColumnDecorator.super.comparator(comparator, nArg);
@@ -83,7 +83,7 @@ public final class RequestColumn implements ColumnDecorator {
 	}
 	
 	@Override
-	public ArgumentParser parser(SQLType type) {
+	public ArgumentParser parser(JavaType type) {
 		return fns.isEmpty()  //cannot apply column parser on function
 				? cd.parser(type) 
 				: ColumnDecorator.super.parser(type);
@@ -98,7 +98,7 @@ public final class RequestColumn implements ColumnDecorator {
 		var cmp = comparator(exp, values.length);
 		if(nonNull(cmp)) {
 			var type = dataType();
-			if(type.isAutoType()) { // logical column type can be set in table
+			if(type == null) { // logical column type can be set in table
 				type = td.columnType(cd).orElse(type);
 			} //else : overridden
 	    	var pars = requireNonNull(parser(type));

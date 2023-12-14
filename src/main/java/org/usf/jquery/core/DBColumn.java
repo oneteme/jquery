@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -15,7 +16,7 @@ import lombok.NonNull;
  *
  */
 @FunctionalInterface
-public interface DBColumn extends DBObject, NestedSql {
+public interface DBColumn extends DBObject, Typed, NestedSql {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
@@ -32,6 +33,10 @@ public interface DBColumn extends DBObject, NestedSql {
 
 	default boolean isConstant() {
 		return false;
+	}
+	
+	default JavaType javaType() {
+		return AUTO;
 	}
 
 	default NamedColumn as(String name) {
@@ -113,29 +118,21 @@ public interface DBColumn extends DBObject, NestedSql {
 	// operations
 	
 	default OperationColumn plus(Object o) {
-		return DBArithmetic.plus().args(this, o);
+		return Operator.plus().args(this, o);
 	}
 
 	default OperationColumn minus(Object o) {
-		return DBArithmetic.minus().args(this, o);
+		return Operator.minus().args(this, o);
 	}
 
 	default OperationColumn multiply(Object o) {
-		return DBArithmetic.multiply().args(this, o);
+		return Operator.multiply().args(this, o);
 	}
 
 	default OperationColumn divise(Object o) {
-		return DBArithmetic.divise().args(this, o);
+		return Operator.divise().args(this, o);
 	}
 	
-	default OperationColumn mode(Object o) {
-		return DBArithmetic.mode().args(this, o);
-	}
-
-	default OperationColumn pow(Object o) {
-		return DBArithmetic.pow().args(this, o);
-	}
-
 	default WhenFilterBridge when(ComparisonExpression ex) {
 		return new CaseSingleColumnBuilder(this).when(ex);
 	}
@@ -173,65 +170,65 @@ public interface DBColumn extends DBObject, NestedSql {
 	}
 
 	static OperationColumn count(Object arg) {
-		return DBFunction.count().args(arg);
+		return Operator.count().args(arg);
 	}
 
 	static OperationColumn min(Object arg) {
-		return DBFunction.min().args(arg);
+		return Operator.min().args(arg);
 	}
 
 	static OperationColumn max(Object arg) {
-		return DBFunction.max().args(arg);
+		return Operator.max().args(arg);
 	}
 
 	static OperationColumn sum(Object arg) {
-		return DBFunction.sum().args(arg);
+		return Operator.sum().args(arg);
 	}
 	
 	static OperationColumn avg(Object arg) {
-		return DBFunction.avg().args(arg);
+		return Operator.avg().args(arg);
 	}
 	
 	//numeric
 	
 	static OperationColumn abs(Object arg) {
-		return DBFunction.abs().args(arg);
+		return Operator.abs().args(arg);
 	}
 	
 	static OperationColumn sqrt(Object arg) {
-		return DBFunction.sqrt().args(arg);
+		return Operator.sqrt().args(arg);
 	}
 
 	static OperationColumn trunc(Object arg) {
-		return DBFunction.trunc().args(arg);
+		return Operator.trunc().args(arg);
 	}
 
 	static OperationColumn ceil(Object arg) {
-		return DBFunction.ceil().args(arg);
+		return Operator.ceil().args(arg);
 	}
 
 	static OperationColumn floor(Object arg) {
-		return DBFunction.floor().args(arg);
+		return Operator.floor().args(arg);
 	}
 	
 	//string
 	static OperationColumn trim(Object arg) {
-		return DBFunction.trim().args(arg);
+		return Operator.trim().args(arg);
 	}
 
 	static OperationColumn length(Object arg) {
-		return DBFunction.length().args(arg);
+		return Operator.length().args(arg);
 	}
 
 	static OperationColumn upper(Object arg) {
-		return DBFunction.upper().args(arg);
+		return Operator.upper().args(arg);
 	}
 
 	static OperationColumn lower(Object arg) {
-		return DBFunction.lower().args(arg);
+		return Operator.lower().args(arg);
 	}
 	
 	static OperationColumn substring(Object arg, int start, int length) {
-		return DBFunction.substring().args(arg, start, length);
+		return Operator.substring().args(arg, start, length);
 	}
 }

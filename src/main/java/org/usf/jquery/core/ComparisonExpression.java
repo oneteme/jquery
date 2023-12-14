@@ -32,61 +32,61 @@ public interface ComparisonExpression extends DBExpression, NestedSql {
 	}
 	
 	static ComparisonExpression equal(Object right) {
-		return DBComparator.equal().expression(right);
+		return Comparator.equal().expression(right);
 	}
 
 	static ComparisonExpression notEqual(Object right) {
-		return DBComparator.notEqual().expression(right);
+		return Comparator.notEqual().expression(right);
 	}
 	
 	static ComparisonExpression lessThan(Object right) {
-		return DBComparator.lessThan().expression(right);
+		return Comparator.lessThan().expression(right);
 	}
 
 	static ComparisonExpression lessOrEqual(Object right) {
-		return DBComparator.lessOrEqual().expression(right);
+		return Comparator.lessOrEqual().expression(right);
 	}
 
 	static ComparisonExpression greaterThan(Object right) {
-		return DBComparator.greaterThan().expression(right);
+		return Comparator.greaterThan().expression(right);
 	}
 
 	static ComparisonExpression greaterOrEqual(Object right) {
-		return DBComparator.greaterOrEqual().expression(right);
+		return Comparator.greaterOrEqual().expression(right);
 	}
 	
 	static ComparisonExpression like(Object right) {
-		return DBComparator.like().expression(right);
+		return Comparator.like().expression(right);
 	}
 	
 	static ComparisonExpression iLike(Object right) {
-		return DBComparator.iLike().expression(right);
+		return Comparator.iLike().expression(right);
 	}
 
 	static ComparisonExpression notLike(Object right) {
-		return DBComparator.notLike().expression(right);
+		return Comparator.notLike().expression(right);
 	}
 
 	static ComparisonExpression notILike(Object right) {
-		return DBComparator.notILike().expression(right);
+		return Comparator.notILike().expression(right);
 	}
 
 	static ComparisonExpression isNull() {
-		return DBComparator.isNull().expression(null);
+		return Comparator.isNull().expression(null);
 	}
 
 	static ComparisonExpression isNotNull() {
-		return DBComparator.isNotNull().expression(null);
+		return Comparator.isNotNull().expression(null);
 	}
 
 	@SuppressWarnings("unchecked")
 	static <T> ComparisonExpression in(@NonNull T... right) {
-		return DBComparator.in().expression(right);
+		return Comparator.in().expression(right);
 	}
 	
 	@SuppressWarnings("unchecked")
 	static <T> ComparisonExpression notIn(@NonNull T... right) {
-		return DBComparator.notIn().expression(right);
+		return Comparator.notIn().expression(right);
 	}
 
 }

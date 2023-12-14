@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
@@ -16,11 +14,11 @@ public final class NamedColumn implements TaggableColumn {
 
 	@Delegate
 	private final DBColumn column;
-	private final String reference;
+	private final String tag;
 
 	@Override
 	public String tagname() {
-		return reference;
+		return tag;
 	}
 	
 	@Override
@@ -30,10 +28,5 @@ public final class NamedColumn implements TaggableColumn {
 	
 	public DBColumn unwrap() {
 		return column;
-	}
-	
-	@Override
-	public String toString() {
-		return sql(addWithValue()) + " AS " + reference;
 	}
 }

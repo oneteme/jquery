@@ -8,7 +8,7 @@ import static org.usf.jquery.core.Validation.requireNArgs;
  *
  */
 @FunctionalInterface
-public interface BasicComparator extends DBComparator {
+public interface BasicComparator extends Comparator {
 	
 	String symbol();
 

@@ -1,14 +1,17 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.JavaType.declare;
+
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.ToString;
 
 /**
  * 
@@ -18,36 +21,105 @@ import lombok.ToString;
  * 
  */
 @Getter
-@ToString
 @RequiredArgsConstructor
-public enum JDBCType implements SQLType {
+public enum JDBCType implements JavaType {
 	
-	AUTO_TYPE(Types.NULL, Object.class), //replace by array type
-	BOOLEAN(Types.BOOLEAN, Boolean.class),
-	BIT(Types.BIT, Boolean.class),
-	TINYINT(Types.TINYINT, Byte.class),
-	SMALLINT(Types.SMALLINT, Short.class),
-	INTEGER(Types.INTEGER, Integer.class),
-	BIGINT(Types.BIGINT, Long.class),
-	REAL(Types.REAL, Float.class),
-	FLOAT(Types.FLOAT, Double.class),
-	DOUBLE(Types.DOUBLE, Double.class),
-	NUMERIC(Types.NUMERIC, BigDecimal.class),
-	DECIMAL(Types.DECIMAL, BigDecimal.class),
-	CHAR(Types.CHAR, String.class), //teradata !char
-	VARCHAR(Types.VARCHAR, String.class),
-	NVARCHAR(Types.NVARCHAR, String.class),
-	LONGNVARCHAR(Types.LONGNVARCHAR, String.class),
-	DATE(Types.DATE, Date.class),
-	TIME(Types.TIME, Time.class),
-	TIMESTAMP(Types.TIMESTAMP, Timestamp.class),
-	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class);
+	//do not change enum order
+	BOOLEAN(Types.BOOLEAN, Boolean.class, JDBCType::isBoolean),
+	BIT(Types.BIT, Boolean.class, JDBCType::isBoolean),
+	TINYINT(Types.TINYINT, Byte.class, o-> isNumber(o, Byte.MIN_VALUE, Byte.MAX_VALUE, false)),
+	SMALLINT(Types.SMALLINT, Short.class, o-> isNumber(o, Short.MIN_VALUE, Short.MAX_VALUE, false)),
+	INTEGER(Types.INTEGER, Integer.class, o-> isNumber(o, Integer.MIN_VALUE, Integer.MAX_VALUE, false)),
+	BIGINT(Types.BIGINT, Long.class, o-> isNumber(o, Long.MIN_VALUE, Long.MAX_VALUE, false)),
+	REAL(Types.REAL, Float.class, o-> isNumber(o, Float.MIN_VALUE, Float.MAX_VALUE, true)),
+	FLOAT(Types.FLOAT, Double.class, o-> isNumber(o, Double.MIN_VALUE, Double.MAX_VALUE, true)),
+	DOUBLE(Types.DOUBLE, Double.class, o-> isNumber(o, Double.MIN_VALUE, Double.MAX_VALUE, true)),
+	NUMERIC(Types.NUMERIC, BigDecimal.class, JDBCType::isNumber),
+	DECIMAL(Types.DECIMAL, BigDecimal.class, JDBCType::isNumber),
+	CHAR(Types.CHAR, Character.class, JDBCType::isChar), //teradata !char
+	VARCHAR(Types.VARCHAR, String.class, JDBCType::isString),
+	NVARCHAR(Types.NVARCHAR, String.class, JDBCType::isString),
+	LONGNVARCHAR(Types.LONGNVARCHAR, String.class, JDBCType::isString),
+	DATE(Types.DATE, Date.class, Date.class::isInstance),
+	TIME(Types.TIME, Time.class, Time.class::isInstance),
+	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, Timestamp.class::isInstance),
+	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance);
+
+	public static final JavaType AUTO  = declare(Object.class, o-> true);
+	public static final JavaType OTHER = declare(Object.class, o-> true);
 	
 	private final int value;
-	private final Class<?> javaType;
+	private final Class<?> type;
+	private final Function<Object, Boolean> matcher;
 	
 	@Override
-	public boolean isAutoType() {
-		return this == AUTO_TYPE;
+	public boolean accept(Object o) {
+		if(o instanceof Typed) {
+			var t = ((Typed) o).javaType();
+			return t == null 
+					|| this == t
+					|| getType() == t.getType()
+					|| (subType(this, Number.class) && subType(t, Number.class)); //other types compatibility
+		}
+		return acceptValue(o);
 	}
+	
+	static boolean subType(JavaType type, Class<?> c) {
+		return c.isAssignableFrom(type.getType());
+	}
+	
+	private boolean acceptValue(Object o) {
+		return o == null || matcher.apply(o);
+	}
+	
+	private static boolean isNumber(Object o, double min, double max, boolean decimal) {
+		if(isNumber(o)) {
+			var n = (Number) o;
+			var v = n.doubleValue();
+			return (v >= min && v <= max) && (decimal || v == n.longValue());
+		}
+		return false;
+	}
+
+	private static boolean isNumber(Object o) {
+		return o instanceof Number;
+	}
+
+	private static boolean isBoolean(Object o) {
+		return o.getClass() == Boolean.class 
+				|| isNumber(o, 0, 1, false)
+				|| (o.getClass() == String.class && o.toString().matches("[yYnN]"));
+	}
+	
+	private static boolean isChar(Object o) {
+		return o.getClass() == Character.class 
+				|| (o.getClass() == String.class && o.toString().length() == 1);
+	}
+	
+	private static boolean isString(Object o) {
+		return o.getClass() == Character.class 
+				|| o.getClass() == String.class;
+	}
+	
+	public static JavaType typeOf(Object o) {
+		if(o instanceof Typed) {
+			var t = ((Typed) o).javaType();
+			return t == null ? AUTO : findType(t::equals);
+		}
+		return o == null ? AUTO : findType(e-> e.getType().isInstance(o));
+	}
+	
+	public static JavaType fromDataType(int value) {
+		return findType(t-> t.value == value);
+	}
+	
+	public static JavaType findType(Predicate<JDBCType> predicate) {
+		for(var t : values()) {
+			if(predicate.test(t)) {
+				return t;
+			}
+		}
+		return OTHER;
+	}
+	
 }

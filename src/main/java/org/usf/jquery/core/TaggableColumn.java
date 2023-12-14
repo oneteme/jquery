@@ -8,5 +8,5 @@ package org.usf.jquery.core;
 public interface TaggableColumn extends DBColumn {
 
 	String tagname(); //JSON & TAG
-
+	
 }

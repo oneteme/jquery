@@ -29,9 +29,10 @@ import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OverColumn;
 import org.usf.jquery.core.RequestQueryBuilder;
-import org.usf.jquery.core.SQLType;
-import org.usf.jquery.core.TableColumn;
+import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.TaggableView;
+import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.WindowView;
 
 /**
@@ -47,24 +48,24 @@ public interface TableDecorator {
 	
 	Optional<String> columnName(ColumnDecorator cd);
 	
-	default DBTable table() {
+	default TaggableView table() {
 		return new DBTable(tableName(), identity());
 	}
 	
-	default Optional<SQLType> columnType(ColumnDecorator cd) {
+	default Optional<JavaType> columnType(ColumnDecorator cd) {
 		return metadata().columnMetada(cd)
 				.map(ColumnMetadata::getDataType); //else not binded
 	}
 
-	default TaggableColumn column(ColumnDecorator column) {
-		if(nonNull(column.builder())) {
-			return column.builder().column(this).as(column.reference());
+	default TaggableColumn column(ColumnDecorator cd) {
+		if(nonNull(cd.builder())) {
+			return cd.builder().column(this).as(cd.reference());
 		}
-		var cn = columnName(column);
+		var cn = columnName(cd);
 		if(cn.isPresent()) {
-			return new TableColumn(requireLegalVariable(cn.get()), column.reference(), identity());
+			return new ViewColumn(table(), requireLegalVariable(cn.get()), cd.reference(), columnType(cd).orElse(null));
 		}
-		throw undeclaredResouceException(identity(), column.identity());
+		throw undeclaredResouceException(identity(), cd.identity());
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
@@ -92,10 +93,8 @@ public interface TableDecorator {
 					var entry = c.get(0);
 					var rc = decodeSingleColumn(entry.getKey(), this, true); //allow comparator
 					var nc = (NamedColumn) rc.toColumn();
-					var oc = nc.unwrap();
 					if(oc instanceof OverColumn) {
-						var wv = new WindowView(rc.tableDecorator().table(), (OverColumn) oc, 
-								nc.tagname(), rc.expression(entry.getValue()));
+						var wv = new WindowView(rc.tableDecorator().table(), nc, rc.expression(entry.getValue()));
 						query.tables(wv).filters(wv.filter());
 						parameters.remove(entry.getKey());
 					}

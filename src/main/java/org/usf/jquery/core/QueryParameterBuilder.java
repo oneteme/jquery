@@ -4,19 +4,17 @@ import static java.lang.reflect.Array.getLength;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.SqlStringBuilder.member;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
 import java.lang.reflect.Array;
 import java.sql.Date;
 import java.sql.Timestamp;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
@@ -33,29 +31,21 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
-	
+
+	private static final String ALIAS = "t";
 	private static final String ARG = "?";
 	
 	private final Collection<Object> args;
-	private List<String> tables = new LinkedList<>();
-	private boolean forceValue = false;
+	private final List<TaggableView> views; //indexed
 	
-	public QueryParameterBuilder tables(String... tablenames) {
-		if(isPresent(tablenames)){
-			tables = Stream.of(tablenames).distinct().collect(toList());
+	public String view(TaggableView view) {
+		for(int i=0; i<views.size(); i++) {
+			if(views.get(i).tagname().equals(view.tagname())) {
+				return ALIAS + (i+1);
+			}
 		}
-		return this;
-	}
-
-	public String columnFullReference(String tablename, String columnRef) {
-		return tables.size() < 2 
-				? columnRef //don't need alias
-				: member(tableAlias(tablename), columnRef);
-	}
-	
-	public String tableAlias(String tablename) {
-		var idx = tables.indexOf(tablename) + 1;
-		return idx > 0 ? "t"+idx : tablename;
+		views.add(view);
+		return ALIAS + views.size(); //always add alias
 	}
 
 	public String appendParameter(Object o) {
@@ -78,8 +68,13 @@ public final class QueryParameterBuilder {
 		return appendParameter(o, Timestamp.class, false);
 	}
 
-	public String appendLitteral(Object o, SQLType type) {
-		return appendParameter(o, type.getJavaType(), true); 
+	public String appendLitteral(Object o, JavaType type) {
+		return appendParameter(o, type.getType(), true); 
+	}
+	
+	//TODO
+	public String appendLitteral(Object o) {
+		return null;
 	}
 
 	private String appendParameter(Object o, Class<?> type, boolean addWithValue) {
@@ -121,13 +116,8 @@ public final class QueryParameterBuilder {
 				: formatString(o);
 	}
 	
-	@Deprecated
-	public void forceValue(boolean forceValue) {
-		this.forceValue = forceValue;
-	}
-	
 	boolean dynamic() {
-		return nonNull(args) && !forceValue;
+		return nonNull(args);
 	}
 	
 	public Object[] args() {
@@ -154,10 +144,14 @@ public final class QueryParameterBuilder {
 	}
 	
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null); //no args
+		return new QueryParameterBuilder(null, new ArrayList<>()); //no args
+	}
+	
+	public static QueryParameterBuilder addWithValue(QueryParameterBuilder builder) {
+		return new QueryParameterBuilder(null, builder.views);
 	}
 	
 	public static QueryParameterBuilder parametrized() {
-		return new QueryParameterBuilder(new LinkedList<>());
+		return new QueryParameterBuilder(new LinkedList<>(), new ArrayList<>());
 	}
 }

@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import org.usf.jquery.core.SQLType;
+import org.usf.jquery.core.JavaType;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -10,14 +10,14 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  * 
  */
-public interface ParsableSQLType extends SQLType, ArgumentParser {
+public interface ParsableSQLType extends JavaType, ArgumentParser {
 	
 	public static ParsableSQLType unparsableType(int type) {
 		return new UnparsableJDBCType(type, Object.class);
 	}
 	
-	public static ParsableSQLType unparsableType(SQLType type) {
-		return new UnparsableJDBCType(type.getValue(), type.getJavaType());
+	public static ParsableSQLType unparsableType(JavaType type) {
+		return new UnparsableJDBCType(type.getValue(), type.getType());
 	}
 
 	@Getter
