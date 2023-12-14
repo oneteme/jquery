@@ -24,7 +24,7 @@ public final class RequestParser {
 	
 	private RequestParser(String s) {
 		this.s = s;
-		size = s.length();
+		this.size = s.length();
 	}
 
 	public static RequestEntry parse(String s) {
@@ -39,7 +39,7 @@ public final class RequestParser {
 			shift();
 			if(idx < size) {
 				entry.initArgs();
-				if(c != ')') {
+				if(c != ')') { //TODO parse map
 					do {
 						entry.getArgs().add(parseEntry(true, tag));
 					} while(idx < size && (c=s.charAt(idx)) == ',' && ++idx < size);
