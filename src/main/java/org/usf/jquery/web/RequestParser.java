@@ -1,15 +1,10 @@
 package org.usf.jquery.web;
 
-import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Validation.VAR_PATTERN;
-import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import java.util.LinkedList;
 import java.util.List;
-
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
 
 /**
  * 
@@ -22,7 +17,6 @@ public final class RequestParser {
 	private int idx;
 	private int size;
 	private char c;
-	private List<RequestEntry> entries;
 	
 	private RequestParser(String s) {
 		this.s = s;
@@ -30,92 +24,108 @@ public final class RequestParser {
 	}
 
 	public static RequestEntry parse(String s) {
-		return new RequestParser(s).parseEntry(false, true);
+		return new RequestParser(s).parseEntry(false, false);
+	}
+	
+	public static List<RequestEntry> parseEntries(String s) {
+		return new RequestParser(s).parseEntries(true, false);
+	}
+	
+	private List<RequestEntry> parseEntries(boolean multiple, boolean argument) {
+		var entries = new LinkedList<RequestEntry>();
+		entries.add(parseEntry(multiple, argument));
+		while(c == ',') {
+			nextChar(true);
+			entries.add(parseEntry(multiple, argument));
+		}
+		return entries;
 	}
 
-	private RequestEntry parseEntry(boolean argument, boolean tag) {
-		var entry = new RequestEntry(argument
-				? jmpVal() //null value
-				: requireLegalVariable(jmpVar(), v-> "illegal variable name : '" + v + "'"));
-		if(c == '(') { //operation
-			shift();
-			if(idx < size) {
-				entry.initArgs();
-				if(c != ')') { //TD parse map
-					do {
-						entry.getArgs().add(parseEntry(true, tag));
-					} while(idx < size && (c=s.charAt(idx)) == ',' && ++idx < size);
-				}
-				if(c == ')') { // !else
-					shift();
-				}
-				else {
-					throw new IllegalArgumentException("')' expected");
-				}
+	private RequestEntry parseEntry(boolean multiple, boolean argument) {
+		var entry = argument 
+				? nextEntry() 
+				: new RequestEntry(requireLegalVariable(jmpVar()));
+		if(c == '(') { //operator
+			nextChar(true);
+			entry.setArgs(parseEntries(true, true)); // no args | null
+			if(c != ')') {
+				throw somethingExpectedException();
 			}
-			else {
-				throw new IllegalArgumentException("')' expected");
-			}
+			nextChar(false);
 		}
 		if(c == '.') {
-			shift();
-			entry.setNext(parseEntry(argument, tag));
+			nextChar(true);
+			entry.setNext(parseEntry(multiple, argument));
 		}
-		if(c == ':' && tag) {
-			shift();
-			entry.setTag(requireLegalVariable(jmpVar(), v-> "illegal variable name : '" + v + "'"));
+		if(c == ':' && !argument) {
+			nextChar(true);
+			entry.setTag(requireLegalVariable(jmpVar()));
 		}
-		if(c == ',' || (idx == size && c == 0) || (c == ')' && argument)) {
+		if((idx == size && c == 0) || (c == ',' && multiple) || (c == ')' && argument)) {
 			return entry;
 		}
-		throw new IllegalArgumentException("unexpected character '" + c + "' at index=" + idx);
+		throw unexpectedCharException();
 	}
 
-	private String jmpVal() {
+	private RequestEntry nextEntry() {
 		var from = idx;
-		ChartPredicate pr;
-		if(s.charAt(from) == '"') {
-			shift();
-			pr = RequestParser::legalAnyChar; //accept any character
+		if(c == '"') {
+			nextChar(true);
+			jmp(RequestParser::legalAnyChar); //accept any character
+			if(c == '"') {
+				nextChar(false);
+				return new RequestEntry(s.substring(from+1, idx-1), true);
+			}
+			throw new IllegalArgumentException("'\"' expected");
 		}
 		else {
 			var v = jmpVar();
-			if((idx == size || s.charAt(idx) == '.' || !legalVarChar(c)) && v.matches(VAR_PATTERN)) {
-				return v;
+			if((idx == size || s.charAt(idx) == '.' || !legalValChar(c)) && v.matches(VAR_PATTERN)) {
+				return new RequestEntry(v);
 			}
-			pr = RequestParser::legalValChar; //auto switch to value
 		}
-		jmp(pr);
-		if(s.charAt(from) != '"') {
-			return s.substring(from, idx);
-		}
-		if(c == '"') {
-			shift();
-			return s.substring(from+1, idx-1); 
-		}
-		else {
-			throw new IllegalArgumentException("'\"' expected before '" + c + "'" ); //end
-		}
+		jmp(RequestParser::legalValChar);
+		return new RequestEntry(from == idx ? null : s.substring(from, idx)); // empty => null
 	}
-
+	
 	private String jmpVar() {
 		var from = idx;
 		jmp(RequestParser::legalVarChar);
 		return s.substring(from, idx); 
 	}
 
-	private void jmp(ChartPredicate pr) {
-		while(idx<s.length() && pr.test(c=s.charAt(idx))) idx++;
+	private void jmp(CharPredicate cp) {
+		while(idx<size && cp.test(c=s.charAt(idx))) idx++;
 		c = idx == size ? 0 : s.charAt(idx);
 	}
 	
-	private void shift() {
-		if(idx < size) {
-			c = ++idx == size ? 0 : s.charAt(idx);
+	private void nextChar(boolean require) {
+		if(++idx < size) {
+			c = s.charAt(idx);
+		}
+		else if(!require) { //break condition
+			c = 0;
 		}
 		else {
-			throw new IllegalArgumentException("expected");
+			throw somethingExpectedException();
 		}
+	}
+	
+	private String requireLegalVariable(String s) {
+		if(s.matches(VAR_PATTERN)) {
+			return s;
+		}
+		throw s.isEmpty() && idx < size 
+			? unexpectedCharException() 
+			: new IllegalArgumentException("illegal variable name : " + quote(s));
+	}
+	
+	private IllegalArgumentException unexpectedCharException() {
+		return new IllegalArgumentException("unexpected character '" + c + "' at index=" + idx); //end
+	}
+	
+	private IllegalArgumentException somethingExpectedException() {
+		return new IllegalArgumentException("something expected after '" + s.charAt(size-1) + "'");
 	}
 	
 	private static boolean legalValChar(char c) {
@@ -127,42 +137,11 @@ public final class RequestParser {
 	}
 	
 	private static boolean legalAnyChar(char c) {
-		return c != '"' && c != '\'' && c != '&' && c != '?' && c != '=';  //avoid sql injection & http reserved symbol
-	}
-	
-	@Setter
-	@Getter
-	@NoArgsConstructor
-	static final class RequestEntry {
-
-		private String name;
-		private RequestEntry next;
-		private LinkedList<RequestEntry> args;
-		private String tag;
-
-		public RequestEntry(String name) {
-			this.name = name;
-		}
-
-		public void initArgs() {
-			args = new LinkedList<>();
-		}
-
-		@Override
-		public String toString() {
-			var s = name;
-			if(args != null){
-				s += args.stream().map(RequestEntry::toString).collect(joining(",", "(", ")"));
-			}
-			if(next != null) {
-				s += "." + next.toString();
-			}
-			return tag == null ? s : s + ":" + tag;
-		}
+		return c != '"' && c != '\'' && c != '&' && c != '?' && c != '=';  //avoid SQL injection & HTTP reserved symbol
 	}
 	
 	@FunctionalInterface
-	interface ChartPredicate {
+	interface CharPredicate {
 		boolean test(char c);
 	}
 }

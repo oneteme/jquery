@@ -16,18 +16,28 @@ class RequestParserTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"col123",
-		"c.n",
+		"dymmy",
+		"camelCaseCol0123",
+		"snake_column_123",
+		"view.column",
+		"view.column.fn1.fn2.exp",
 		"noArgFn()",
-		"fn(a,b,c,d)",
-		"trunc(3.55,44)",
+		"oneArgFn(c1)",
+		"concat(a,b,c,d)",
+		"trunc(3.55,2)",
+		"convert(2020-01-01)",
+		"extract(2020-01-01T00:00:00Z,epoch)",
+		"timestamp_diff(2022-01-01T00:00:00+01:00,2020-01-01T00:00:00+07:30)",
+		"concat(v.c,\"abc\",\"123\")",
 		"mod(abs(trunc(exp())))",
 		"co1.mod(6.acc).trunc(3).plus(100)", //6.acc as value
 		"co1.concat(co1.trunc(2).string(10), 1234)", //6.acc as value
 		"co1.concat(,123)", //null value
+		"co1.concat(123,)", //null value
+		"co1.concat(, ,123,)", //null value
 		"aa.fn(3.3,b,c,d)",
+		"aa.fn(,3.3,b,c,d,)",
 		"aa.fn(2020-01-01,b,c,d)",
-//		"aa.fn(\"a:3'\",b,c,d)", //pass
 	})
 	void testParse(String s) {
 		assertEquals(s, parse(s).toString());
@@ -36,17 +46,31 @@ class RequestParserTest {
 
 	@ParameterizedTest
 	@ValueSource(strings = {
-		"column)",
+		"",
+		"12345",
+		"1name",
+		"_column",
+		"(column",
+		")column",
+		"\"column",
+		",column",
+		":column",
+		".column",
 		"column(",
-		"column(1,2,3",
-		"column(1,2,3))",
+		"column)",
+		"column\"",
+		"column,",
 		"column:",
 		"column.",
-		"1ab",
-		"123",
+		"\"column\"",
+		"function(arg",
+		"function(arg))",
 		"123(a,b,c)",
 		"123.abc",
-		"aa.fn(a:3,b,c,d)",
+		"fn(3@c)",
+		"fn(\"",
+		"fn(\"arg",
+		"fn(\"arg,",
 		"aa.fn(\"a:3,b,c,d)",
 		"aa.fn(\"a:3,b,c,d&\")",
 	})

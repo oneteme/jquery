@@ -259,7 +259,7 @@ public interface Operator extends DBProcessor, NestedSql {
 	
 	static TypedOperator over() {
 		return new TypedOperator(firstArgType(), pipe("OVER"),
-				required(instance(OperationColumn.class)), 
+				required(instance(OperationColumn.class)), // TODO wrap => aggreagation || window
 				required(instance(OverClause.class))) {
 			@Override
 			public OperationColumn args(Object... args) {
