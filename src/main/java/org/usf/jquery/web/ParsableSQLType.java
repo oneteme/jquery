@@ -17,7 +17,7 @@ public interface ParsableSQLType extends JavaType, ArgumentParser {
 	}
 	
 	public static ParsableSQLType unparsableType(JavaType type) {
-		return new UnparsableJDBCType(type.getValue(), type.getType());
+		return new UnparsableJDBCType(type.getValue(), type.type());
 	}
 
 	@Getter

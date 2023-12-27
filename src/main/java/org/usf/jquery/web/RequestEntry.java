@@ -1,31 +1,40 @@
 package org.usf.jquery.web;
 
 import static java.lang.Math.min;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.DBColumn.lookupColumnFunction;
+import static org.usf.jquery.core.Operator.lookupNoArgFunction;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Validation.VAR_PATTERN;
 import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
 import static org.usf.jquery.web.JQueryContext.context;
+import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
+import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.JavaType;
+import org.usf.jquery.core.Operator;
+import org.usf.jquery.core.Order;
+import org.usf.jquery.core.TaggableColumn;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
-@Setter
 @Getter
+@Setter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor
 final class RequestEntry {
 
 	private final String value;
-	private final boolean unparsable; //"string"
+	private final boolean text; //"string"
 	private RequestEntry next;
 	private List<RequestEntry> args;
 	private String tag;
@@ -34,84 +43,124 @@ final class RequestEntry {
 		this(value, false);
 	}
 	
-	public DBColumn toColumn(TableDecorator td) { //columnName == viewName
-		DBColumn c = null;
-		RequestEntry nxt = requireNoArgs();
+	public DBOrder asOrder(TableDecorator td) {
+		var t = toColumn(td);
+		var c = t.td.column(t.tc); 
+		return isNull(t.entry.next) ? c.order() : t.entry.next.chainOrder(td, c);
+	}
+
+	private DBOrder chainOrder(TableDecorator td, DBColumn col) {
+		var c = toOperation(td, col);
+		if(nonNull(c)) {
+			return isNull(next) ? c.order() : next.chainOrder(td, c);
+		}
+		if(isNull(next)) { //last entry
+			var upVal = value.toUpperCase();
+			var order = Stream.of(Order.values()).filter(o-> o.name().equals(upVal)).findAny();
+			if(order.isPresent()) {
+				return col.order(order.get());
+			}
+		}
+		throw cannotEvaluateException("entry", value); //column expected
+	}
+	
+	public TaggableColumn asFilter(TableDecorator td, List<RequestEntry> values) {
+		
+		return null;
+	}
+
+	public TaggableColumn asColumn(TableDecorator td) { //columnName == viewName
+		var t = toColumn(td);
+		var c = t.td.column(t.tc); 
+		return isNull(t.entry.next) ? c : t.entry.next.chainColumn(td, c, c.tagname());
+	}
+	
+	private TaggableColumn chainColumn(TableDecorator td, DBColumn col, String alias) {
+		var c = toOperation(td, col);
+		if(nonNull(c)) {
+			return nonNull(next) 
+					? next.chainColumn(td, c, alias) 
+					: c.as(isNull(tag) ? alias : tag);
+		}
+		throw cannotEvaluateException("entry", value); //column expected
+	}
+	
+	private Triple toColumn(TableDecorator td) { //columnName == viewName
+		requireNoArgs();
 		if(next != null && context().isDeclaredTable(value) && context().isDeclaredColumn(next.value)) {
-			nxt = next.requireNoArgs();
-			c = context().getTable(value).column(context().getColumn(nxt.value));
+			return new Triple(
+					context().getTable(value), 
+					context().getColumn(next.requireNoArgs().value), 
+					next);
 		}
-		else if(context().isDeclaredColumn(value)) {
-			c = td.column(context().getColumn(value));
+		if(context().isDeclaredColumn(value)) {
+			return new Triple(td, context().getColumn(value), this);
 		}
-		else {
-			c = lookupColumnFunction().orElse(null);
+		throw cannotEvaluateException("column expression", value);
+	}
+	
+	private DBOrder chainExpression(TableDecorator td, DBColumn col) {
+		var c = toOperation(td, col);
+		if(nonNull(c)) {
+			return isNull(next) ? c.order() : next.chainOrder(td, c);
 		}
-		return c == null ? null : nxt.next(td, c);
+		if(isNull(next)) {
+			var order = Stream.of(Order.values()).filter(o-> o.name().equalsIgnoreCase(value)).findAny();
+			if(order.isPresent()) {
+				return col.order(order.get());
+			}
+		}
+		throw cannotEvaluateException("entry", value); //column expected
+	
+	}
+	
+	private DBColumn toOperation(TableDecorator td, DBColumn prev) {
+		var res = lookupOperator(value);
+		if(res.isEmpty()) {
+			return null;
+		}
+		var op = res.get();
+		var min = op.requireArgCount();
+		var np = args.size()+1;
+		if(np < min || (!op.isVarags() && np > op.getParameters().length)) {
+			throw new IllegalArgumentException();
+		}
+		var params = new ArrayList<Object>(np);
+		params.add(prev);
+		var i=1;
+		for(; i<min; i++) {
+			params.add(args.get(i-1).toArg(td, op.getParameters()[i].getTypes()));
+		}
+		for(; i<min(np, op.getParameters().length); i++) {
+			params.add(args.get(i-1).toArg(td, op.getParameters()[i].getTypes()));
+		}
+		if(op.isVarags()) {
+			var types = op.getParameters()[op.getParameters().length-1].getTypes(); 
+			for(; i<np; i++) {
+				params.add(args.get(i-1).toArg(td, types));
+			}
+		}
+		return op.args(params.toArray());
 	}
 	
 	private Object toArg(TableDecorator td, JavaType... types) {
-		if(value == null) {
+		if(isNull(value) || text) {
 			return requireNoArgs().value;
 		}
 		if(value.matches(VAR_PATTERN)) {
 			var c = toColumn(td);
-			if(c != null) {
+			if(nonNull(c)) {
 				return c; // type will be checked later
 			}
 		}
-		if(!unparsable) {
-			requireNoArgs();
-			for(var t : types) {
-				var o = javaTypeParser(t).tryParse(value);
-				if(o != null) {
-					return o;
-				}
-			}
-			throw new ParseException("cannot parse value : " + value);
-		}
+		requireNoArgs();
 		for(var t : types) {
-			if(t.accept(value)) {
-				return value;
+			var o = javaTypeParser(t).tryParse(value);
+			if(nonNull(o)) {
+				return o;
 			}
 		}
-		throw new ParseException("illegal value : " + value);
-	}
-	
-	DBColumn toOperation(TableDecorator td, DBColumn prev) {
-		var res = lookupOperator(value);
-		if(res.isPresent()) {
-			var op = res.get();
-			var min = op.requireArgCount();
-			var np = args.size()+1;
-			if(np < min || (!op.isVarags() && np > op.getParameters().length)) {
-				throw new IllegalArgumentException();
-			}
-			var params = new ArrayList<Object>(np);
-			params.add(prev);
-			var i=1;
-			for(; i<min; i++) {
-				params.add(args.get(i-1).toArg(td, op.getParameters()[i].getTypes()));
-			}
-			for(; i<min(np, op.getParameters().length); i++) {
-				params.add(args.get(i-1).toArg(td, op.getParameters()[i].getTypes()));
-			}
-			if(op.isVarags()) {
-				var types = op.getParameters()[op.getParameters().length-1].getTypes(); 
-				for(; i<np; i++) {
-					params.add(args.get(i-1).toArg(td, types));
-				}
-			}
-			return next(td, op.args(params.toArray()));
-		}
-		return null;
-	}
-	
-	private DBColumn next(TableDecorator td, DBColumn col) {
-		if(next == null) {
-			return tag == null ? col : col.as(tag);
-		}
-		return next.toOperation(td, col);
+		throw new ParseException("cannot parse value : " + value);
 	}
 	
 	private RequestEntry requireNoArgs() {
@@ -125,7 +174,7 @@ final class RequestEntry {
 	public String toString() {
 		var s = "";
 		if(value != null) {
-			s += unparsable ? doubleQuote(value) : value;
+			s += text ? doubleQuote(value) : value;
 		}
 		if(args != null){
 			s += args.stream().map(RequestEntry::toString).collect(joining(",", "(", ")"));
@@ -134,5 +183,14 @@ final class RequestEntry {
 			s += "." + next.toString();
 		}
 		return tag == null ? s : s + ":" + tag;
+	}
+	
+	@RequiredArgsConstructor
+	static class Triple {
+		
+		private final TableDecorator td;
+		private final ColumnDecorator tc;
+		private final RequestEntry entry;
+		
 	}
 }

@@ -14,8 +14,8 @@ import java.util.List;
 public final class RequestParser {
 
 	private final String s;
-	private int idx;
 	private int size;
+	private int idx;
 	private char c;
 	
 	private RequestParser(String s) {
@@ -23,7 +23,7 @@ public final class RequestParser {
 		this.size = s.length();
 	}
 
-	public static RequestEntry parse(String s) {
+	public static RequestEntry parseEntry(String s) {
 		return new RequestParser(s).parseEntry(false, false);
 	}
 	
@@ -44,13 +44,11 @@ public final class RequestParser {
 	private RequestEntry parseEntry(boolean multiple, boolean argument) {
 		var entry = argument 
 				? nextEntry() 
-				: new RequestEntry(requireLegalVariable(jmpVar()));
+				: new RequestEntry(requireLegalVariable(nextVar()));
 		if(c == '(') { //operator
 			nextChar(true);
 			entry.setArgs(parseEntries(true, true)); // no args | null
-			if(c != ')') {
-				throw somethingExpectedException();
-			}
+			requireChar(')'); //nextChar
 			nextChar(false);
 		}
 		if(c == '.') {
@@ -59,7 +57,7 @@ public final class RequestParser {
 		}
 		if(c == ':' && !argument) {
 			nextChar(true);
-			entry.setTag(requireLegalVariable(jmpVar()));
+			entry.setTag(requireLegalVariable(nextVar()));
 		}
 		if((idx == size && c == 0) || (c == ',' && multiple) || (c == ')' && argument)) {
 			return entry;
@@ -71,34 +69,29 @@ public final class RequestParser {
 		var from = idx;
 		if(c == '"') {
 			nextChar(true);
-			jmp(RequestParser::legalAnyChar); //accept any character
-			if(c == '"') {
-				nextChar(false);
-				return new RequestEntry(s.substring(from+1, idx-1), true);
-			}
-			throw new IllegalArgumentException("'\"' expected");
+			nextWhile(RequestParser::legalTxtChar); //accept any
+			requireChar('"'); //nextChar
+			nextChar(false);
+			return new RequestEntry(s.substring(from+1, idx-1), true);
 		}
-		else {
-			var v = jmpVar();
-			if((idx == size || s.charAt(idx) == '.' || !legalValChar(c)) && v.matches(VAR_PATTERN)) {
-				return new RequestEntry(v);
-			}
+		var v = nextVar(); //to optim
+		if((idx == size || s.charAt(idx) == '.' || !legalValChar(c)) && v.matches(VAR_PATTERN)) {
+			return new RequestEntry(v);
 		}
-		jmp(RequestParser::legalValChar);
+		nextWhile(RequestParser::legalValChar);
 		return new RequestEntry(from == idx ? null : s.substring(from, idx)); // empty => null
 	}
 	
-	private String jmpVar() {
+	private String nextVar() {
 		var from = idx;
-		jmp(RequestParser::legalVarChar);
+		nextWhile(RequestParser::legalVarChar);
 		return s.substring(from, idx); 
 	}
 
-	private void jmp(CharPredicate cp) {
+	private void nextWhile(CharPredicate cp) {
 		while(idx<size && cp.test(c=s.charAt(idx))) idx++;
 		c = idx == size ? 0 : s.charAt(idx);
 	}
-	
 	private void nextChar(boolean require) {
 		if(++idx < size) {
 			c = s.charAt(idx);
@@ -111,21 +104,31 @@ public final class RequestParser {
 		}
 	}
 	
+	private void requireChar(char rc) {
+		if(c != rc) {
+			throw new ParseException("'" + rc + "' expected at index=" + idx); // before ends
+		}
+	}
+	
 	private String requireLegalVariable(String s) {
 		if(s.matches(VAR_PATTERN)) {
 			return s;
 		}
 		throw s.isEmpty() && idx < size 
 			? unexpectedCharException() 
-			: new IllegalArgumentException("illegal variable name : " + quote(s));
+			: new ParseException("illegal variable name : " + quote(s));
 	}
 	
 	private IllegalArgumentException unexpectedCharException() {
-		return new IllegalArgumentException("unexpected character '" + c + "' at index=" + idx); //end
+		return new ParseException("unexpected character '" + c + "' at index=" + idx); //end
 	}
 	
 	private IllegalArgumentException somethingExpectedException() {
-		return new IllegalArgumentException("something expected after '" + s.charAt(size-1) + "'");
+		return new ParseException("something expected after '" + s.charAt(size-1) + "'");
+	}
+	
+	private static boolean legalTxtChar(char c) {
+		return c != '"' && c != '\'' && c != '&' && c != '?' && c != '=';  //avoid SQL injection & HTTP reserved symbol
 	}
 	
 	private static boolean legalValChar(char c) {
@@ -134,10 +137,6 @@ public final class RequestParser {
 
 	private static boolean legalVarChar(char c) {
 		return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z' ) || (c >= '0' && c <= '9') || c == '_';
-	}
-	
-	private static boolean legalAnyChar(char c) {
-		return c != '"' && c != '\'' && c != '&' && c != '?' && c != '=';  //avoid SQL injection & HTTP reserved symbol
 	}
 	
 	@FunctionalInterface

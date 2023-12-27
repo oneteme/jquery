@@ -161,7 +161,7 @@ public final class LinkedRequestEntry {
 				for(int i=1; i<fn.getArgTypes().length; i++) { //skip first argument
 					var s = params.get(i-1);
 					try {
-						args.add(typeOf(fn.getArgTypes()[i]).parse(s));
+						args.add(typeOf(fn.getArgTypes()[i]).autoTypeParse(s));
 					}
 					catch (Exception e) {
 						try {

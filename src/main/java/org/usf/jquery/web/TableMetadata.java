@@ -42,7 +42,7 @@ public class TableMetadata {
 	@Setter(AccessLevel.PACKAGE)
 	private Instant lastUpdate;
 	
-	public Optional<ColumnMetadata> columnMetada(ColumnDecorator cd){
+	public Optional<ColumnMetadata> columnMetada(ColumnDecorator cd) {
 		return columns.containsKey(cd.identity()) ? Optional.of(columns.get(cd.identity())) : empty();
 	}
 	

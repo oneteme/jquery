@@ -11,18 +11,26 @@ import lombok.NonNull;
  */
 public interface JavaType {
 	
+	String name();
+	
+	Class<?> type();
+	
 	boolean accept(Object o);
 	
-	Class<?> getType();
-	
-	static JavaType instance(Class<?> type) {
-		return declare(type, type::isInstance);
+	static JavaType instance(String name, Class<?> type) {
+		return declare(name, type, type::isInstance);
 	}
 	
-	static JavaType declare(@NonNull Class<?> type, @NonNull Predicate<Object> predicate) {
+	static JavaType declare(@NonNull String name, @NonNull Class<?> type, @NonNull Predicate<Object> predicate) {
 		return new JavaType() {
+			
 			@Override
-			public Class<?> getType() {
+			public String name() {
+				return name;
+			}
+			
+			@Override
+			public Class<?> type() {
 				return type;
 			}
 			

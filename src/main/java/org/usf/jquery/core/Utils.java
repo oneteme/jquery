@@ -20,7 +20,7 @@ public final class Utils {
 	public static final int UNLIMITED = -1;
 	
 	public static boolean isEmpty(int[] a) {
-		return a == null || a.length == 0;
+		return isNull(a) || a.length == 0;
 	}
 	
 	public static <T> boolean isPresent(T[] a) {

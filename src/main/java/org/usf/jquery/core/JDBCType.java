@@ -10,7 +10,6 @@ import java.sql.Types;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -20,7 +19,6 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  * 
  */
-@Getter
 @RequiredArgsConstructor
 public enum JDBCType implements JavaType {
 	
@@ -45,12 +43,17 @@ public enum JDBCType implements JavaType {
 	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, Timestamp.class::isInstance),
 	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance);
 
-	public static final JavaType AUTO  = declare(Object.class, o-> true);
-	public static final JavaType OTHER = declare(Object.class, o-> true);
+	public static final JavaType AUTO  = declare("AUTO", Object.class, o-> true);
+	public static final JavaType OTHER = declare("OTHER", Object.class, o-> {throw new UnsupportedOperationException("Unsupported SQL type");});
 	
 	private final int value;
 	private final Class<?> type;
 	private final Function<Object, Boolean> matcher;
+	
+	@Override
+	public Class<?> type() {
+		return type;
+	}
 	
 	@Override
 	public boolean accept(Object o) {
@@ -58,14 +61,14 @@ public enum JDBCType implements JavaType {
 			var t = ((Typed) o).javaType();
 			return t == null 
 					|| this == t
-					|| getType() == t.getType()
+					|| type() == t.type()
 					|| (subType(this, Number.class) && subType(t, Number.class)); //other types compatibility
 		}
 		return acceptValue(o);
 	}
 	
 	static boolean subType(JavaType type, Class<?> c) {
-		return c.isAssignableFrom(type.getType());
+		return c.isAssignableFrom(type.type());
 	}
 	
 	private boolean acceptValue(Object o) {
@@ -106,7 +109,7 @@ public enum JDBCType implements JavaType {
 			var t = ((Typed) o).javaType();
 			return t == null ? AUTO : findType(t::equals);
 		}
-		return o == null ? AUTO : findType(e-> e.getType().isInstance(o));
+		return o == null ? AUTO : findType(e-> e.type().isInstance(o));
 	}
 	
 	public static JavaType fromDataType(int value) {

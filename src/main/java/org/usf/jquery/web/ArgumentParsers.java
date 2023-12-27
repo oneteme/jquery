@@ -37,22 +37,25 @@ public class ArgumentParsers {
 			jdbcTypeParser(DATE), jdbcTypeParser(TIMESTAMP),
 			jdbcTypeParser(TIME), jdbcTypeParser(TIMESTAMP_WITH_TIMEZONE)};
 	
+	
 	public static ArgumentParser javaTypeParser(JavaType type) {
 		if(type instanceof JDBCType) {
-			return ArgumentParsers.jdbcTypeParser((JDBCType) type);
+			return jdbcTypeParser((JDBCType) type);
 		}
 		if(type == AUTO) {
-			return v-> {
-				for(var p : DEFAULT) {
-					var o = p.tryParse(v);
-					if(o != null) {
-						return o;
-					}
-				}
-				return v;
-			};
+			return ArgumentParsers::autoTypeParse;
 		}
 		throw new UnsupportedOperationException("unsupported type " + type);
+	}
+	
+	public static Object autoTypeParse(String v) {
+		for(var p : DEFAULT) {
+			var o = p.tryParse(v);
+			if(o != null) {
+				return o;
+			}
+		}
+		return v; //string value
 	}
 
 	public static ArgumentParser jdbcTypeParser(JDBCType type) {

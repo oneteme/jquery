@@ -2,7 +2,7 @@ package org.usf.jquery.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.usf.jquery.web.RequestParser.parse;
+import static org.usf.jquery.web.RequestParser.parseEntry;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -40,8 +40,8 @@ class RequestParserTest {
 		"aa.fn(2020-01-01,b,c,d)",
 	})
 	void testParse(String s) {
-		assertEquals(s, parse(s).toString());
-		assertEquals(s+=":tag", parse(s).toString());
+		assertEquals(s, parseEntry(s).toString());
+		assertEquals(s+=":tag", parseEntry(s).toString());
 	}
 
 	@ParameterizedTest
@@ -75,6 +75,6 @@ class RequestParserTest {
 		"aa.fn(\"a:3,b,c,d&\")",
 	})
 	void testParse2(String s) {
-		assertThrows(IllegalArgumentException.class, ()-> parse(s));
+		assertThrows(ParseException.class, ()-> parseEntry(s));
 	}
 }

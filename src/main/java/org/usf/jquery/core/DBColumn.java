@@ -46,11 +46,10 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 	}
 	
 	default DBOrder order() {
-		return order(null);
+		return new DBOrder(this);
 	}
 	
-	@Deprecated(forRemoval = false) //unsafe value
-	default DBOrder order(String order) {
+	default DBOrder order(Order order) {
 		return new DBOrder(this, order);
 	}
 
@@ -235,6 +234,6 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 	}
 	
 	static Optional<OperationColumn> lookupColumnFunction() {
-		return empty();
+		return empty(); //CURRENT_DATE, CURRENT_DATETIME
 	}
 }

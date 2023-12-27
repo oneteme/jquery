@@ -17,6 +17,7 @@ import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceExcept
 import static org.usf.jquery.web.RequestColumn.decodeColumns;
 import static org.usf.jquery.web.RequestColumn.decodeSingleColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
+import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.TableMetadata.emptyMetadata;
 import static org.usf.jquery.web.TableMetadata.tableMetadata;
 
@@ -123,8 +124,8 @@ public interface TableDecorator {
 			query.distinct();
 		}
 		Stream.of(cols)
-		.flatMap(c-> decodeColumns(c, this, false))
-		.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).columns(rc.toColumn()));
+		.flatMap(v-> parseEntries(v).stream())
+		.forEach(e-> query.columns(e.asColumn(this)));
 	}
 
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {

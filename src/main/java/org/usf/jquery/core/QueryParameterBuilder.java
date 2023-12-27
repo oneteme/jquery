@@ -69,7 +69,7 @@ public final class QueryParameterBuilder {
 	}
 
 	public String appendLitteral(Object o, JavaType type) {
-		return appendParameter(o, type.getType(), true); 
+		return appendParameter(o, type.type(), true); 
 	}
 	
 	//TODO

@@ -259,8 +259,8 @@ public interface Operator extends DBProcessor, NestedSql {
 	
 	static TypedOperator over() {
 		return new TypedOperator(firstArgType(), pipe("OVER"),
-				required(instance(OperationColumn.class)), // TODO wrap => aggreagation || window
-				required(instance(OverClause.class))) {
+				required(instance("??", OperationColumn.class)), // TODO wrap => aggreagation || window
+				required(instance("??", OverClause.class))) {
 			@Override
 			public OperationColumn args(Object... args) {
 				return super.args(args).aggregation(false); //!aggregation
@@ -294,6 +294,10 @@ public interface Operator extends DBProcessor, NestedSql {
 
 	static PipeFunction pipe(String name) {
 		return ()-> name;
+	}
+
+	static Optional<TypedOperator> lookupNoArgFunction(String op) {
+		return lookupOperator(op).filter(fn-> fn.requireArgCount() == 0);
 	}
 	
 	static Optional<TypedOperator> lookupOperator(String op) {
