@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.DBColumn.count;
+import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.Comparator.equal;
 import static org.usf.jquery.core.Comparator.greaterOrEqual;
 import static org.usf.jquery.core.Comparator.greaterThan;
@@ -16,6 +17,7 @@ import static org.usf.jquery.core.Comparator.notLike;
 import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 
 import org.usf.jquery.core.Comparator;
+import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.StringComparator;
@@ -26,14 +28,17 @@ import org.usf.jquery.core.StringComparator;
  * 
  *
  */
+@FunctionalInterface
 public interface ColumnDecorator {
 	
 	String identity();  //URL
 	
-	String reference(); //JSON
+	default String reference() { //JSON
+		return identity();
+	}
 	
 	default JavaType dataType() {
-		return null;
+		return AUTO;
 	}
 	
 	default String pattern() {
@@ -89,6 +94,8 @@ public interface ColumnDecorator {
 			return fn.sql(b, args);
 		};
 	}
+	
+	default ComparisonExpression expression(String exp, String... values) { return null; };
 	
 	static ColumnDecorator countColumn() {
 		return ofColumn(Operator.count().id(), t-> count());

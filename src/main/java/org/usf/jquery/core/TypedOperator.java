@@ -66,5 +66,4 @@ public class TypedOperator implements Operator {
 	public boolean isVarags() {
 		return parameters.length > 0 && parameters[parameters.length-1].isVarargs(); 
 	}
-	
 }
