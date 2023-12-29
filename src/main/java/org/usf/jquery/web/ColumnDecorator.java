@@ -14,7 +14,7 @@ import static org.usf.jquery.core.Comparator.like;
 import static org.usf.jquery.core.Comparator.notEqual;
 import static org.usf.jquery.core.Comparator.notIn;
 import static org.usf.jquery.core.Comparator.notLike;
-import static org.usf.jquery.web.ParsableJDBCType.typeOf;
+import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
 
 import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
@@ -37,19 +37,28 @@ public interface ColumnDecorator {
 		return identity();
 	}
 	
-	default JavaType dataType() {
-		return AUTO;
+	default JavaType dataType(TableDecorator td) {
+		return td.metadata().columnMetada(this)
+		.map(ColumnMetadata::getDataType)
+		.orElse(AUTO); 
 	}
 	
-	default String pattern() {
+	/**
+	 * override parser | format | local
+	 */
+	default ArgumentParser parser(TableDecorator td){
+		return javaTypeParser(dataType(td));
+	}
+	
+	default String pattern(TableDecorator td) {
 		throw new UnsupportedOperationException(); //improve API security and performance
 	}
 
-	default boolean canSelect() {
+	default boolean canSelect(TableDecorator td) {
 		throw new UnsupportedOperationException(); //authorization inject
 	}
 
-	default boolean canFilter() {
+	default boolean canFilter(TableDecorator td) {
 		throw new UnsupportedOperationException(); //authorization inject
 	}
 	
@@ -77,15 +86,6 @@ public interface ColumnDecorator {
 		default			: return null;
 		//isnull
 		}
-	}
-	
-	/**
-	 * override parser | format | local
-	 */
-	default ArgumentParser parser(JavaType type){
-		return type instanceof ParsableSQLType 
-				? (ParsableSQLType) type //improve parser search 
-				: typeOf(type);
 	}
 	
 	private static Comparator containsArgPartten(StringComparator fn) {

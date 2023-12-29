@@ -4,7 +4,6 @@ import static org.usf.jquery.core.Parameter.checkArgs;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.awt.image.renderable.ParameterBlock;
 import java.util.function.Function;
 
 import lombok.Getter;

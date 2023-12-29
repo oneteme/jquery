@@ -3,22 +3,26 @@ package org.usf.jquery.web;
 import static java.lang.Math.min;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Operator.lookupNoArgFunction;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Validation.VAR_PATTERN;
 import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
+import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 import static org.usf.jquery.web.JQueryContext.context;
-import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.InCompartor;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
@@ -32,36 +36,38 @@ import lombok.Setter;
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor
-final class RequestEntry {
+final class RequestEntryChain {
 	
 	private static final ColumnDecorator DEFAUL_COLUMN = ()-> null; //unused identity
 
 	private final String value;
 	private final boolean text; //"string"
-	private RequestEntry next;
-	private List<RequestEntry> args;
+	private RequestEntryChain next;
+	private List<RequestEntryChain> args;
 	private String tag;
 
-	public RequestEntry(String value) {
+	public RequestEntryChain(String value) {
 		this(value, false);
 	}
 
-	public TaggableColumn asColumn(TableDecorator td) { //columnName == viewName
+	public TaggableColumn asColumn(TableDecorator td) {
 		var t = lookup(td, true);
 		var c = t.buildColumn();
 		var e = t.entry;
 		DBColumn oc = c;
-		while(e.next()) {
-			e = e.next;
-			oc = e.toOperation(td, oc);
-			if(isNull(oc)) {
-				throw cannotEvaluateException("entry", e.value); //column expected
-			}
+		if(e.next()) {
+			do {
+				e = e.next;
+				oc = e.toOperation(td, oc);
+				if(isNull(oc)) {
+					throw cannotEvaluateException(e);
+				}
+			} while(e.next()); //preserve last non null entry
 		}
 		return oc.as(isNull(e.tag) ? c.tagname() : e.tag);
 	}
 
-	public DBFilter asFilter(TableDecorator td, String[] values) {
+	public DBFilter asFilter(TableDecorator td, String expression) {
 		var t = lookup(td, false);
 		var c = t.buildColumn();
 		var e = t.entry.next;
@@ -72,18 +78,18 @@ final class RequestEntry {
 				break;
 			}
 			else {
-				oc = op; //preserve last non value
+				oc = op; //preserve last non null column
 			}
 			e = e.next;
 		}
 		var cd = c == oc ? t.cd : DEFAUL_COLUMN; //no operation
 		if(isNull(e)) { // no expression
-			return oc.filter(cd.expression(null, values));
+			return oc.filter(toExpression(td, cd, null, expression));
 		}
 		else if(e.isLast()) {
-			return oc.filter(cd.expression(e.value, values));
+			return oc.filter(toExpression(td, cd, e.value, expression));
 		}
-		throw cannotEvaluateException("entry", e.toString()); //more detail
+		throw cannotEvaluateException(e); //more detail
 	}
 	
 	public DBOrder asOrder(TableDecorator td) {
@@ -97,7 +103,7 @@ final class RequestEntry {
 				break;
 			}
 			else {
-				oc = op; //preserve last non value
+				oc = op; //preserve last non null column
 			}
 			e = e.next;
 		}
@@ -111,7 +117,7 @@ final class RequestEntry {
 				return oc.order(order.get());
 			}
 		}
-		throw cannotEvaluateException("entry", e.toString()); //column expected
+		throw cannotEvaluateException(e); //column expected
 	}
 	
 	private OperationColumn toOperation(TableDecorator td, DBColumn col) {
@@ -141,6 +147,31 @@ final class RequestEntry {
 			}
 		}
 		return op.args(params.toArray());
+	}
+	
+	
+	static ComparisonExpression toExpression(TableDecorator td, ColumnDecorator cd, String exp, String... values) {
+		if(nonNull(exp)) {
+			var criteria = cd.criteria(exp);
+			if(nonNull(criteria)) {
+				return criteria.build(values);
+			}
+		}
+		var cmp = cd.comparator(exp, values.length);
+		if(nonNull(cmp)) {
+	    	var prs = requireNonNull(cd.parser(td));
+	    	if(values.length == 0) {
+	    		return cmp.expression(null);
+	    	}
+	    	if(values.length == 1) {
+	    		return cmp.expression(prs.parse(values[0]));
+	    	}
+	    	var args = prs.parseAll(values);
+			return cmp instanceof InCompartor 
+					? cmp.expression(args)
+					: ofComparator(cmp).build(args);
+		}
+		throw ParseException.cannotEvaluateException("expression", null);
 	}
 	
 	private Object toArg(TableDecorator td, JavaType... types) {
@@ -183,11 +214,11 @@ final class RequestEntry {
 				throw new IllegalArgumentException(op.id() + " takes no arguments");
 			}
 		}
-		throw cannotEvaluateException("column expression", value);
+		throw cannotEvaluateException(this);
 	}
 	
-	private RequestEntry requireNoArgs() {
-		if(args == null) {
+	private RequestEntryChain requireNoArgs() {
+		if(isNull(args)) {
 			return this;
 		}
 		throw new IllegalArgumentException(value + " takes no args");
@@ -208,7 +239,7 @@ final class RequestEntry {
 			s += text ? doubleQuote(value) : value;
 		}
 		if(args != null){
-			s += args.stream().map(RequestEntry::toString).collect(joining(",", "(", ")"));
+			s += args.stream().map(RequestEntryChain::toString).collect(joining(",", "(", ")"));
 		}
 		if(next != null) {
 			s += "." + next.toString();
@@ -216,12 +247,16 @@ final class RequestEntry {
 		return tag == null ? s : s + ":" + tag;
 	}
 	
+	static ParseException cannotEvaluateException(RequestEntryChain entry) {
+		return new ParseException("cannot evaluate entry : " + quote(entry.toString()));
+	}
+	
 	@RequiredArgsConstructor
 	static class Triple {
 		
 		private final TableDecorator td;
 		private final ColumnDecorator cd;
-		private final RequestEntry entry;
+		private final RequestEntryChain entry;
 		private final TaggableColumn column;
 		
 		TaggableColumn buildColumn() {

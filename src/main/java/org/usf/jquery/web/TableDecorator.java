@@ -18,6 +18,7 @@ import static org.usf.jquery.web.RequestColumn.decodeColumns;
 import static org.usf.jquery.web.RequestColumn.decodeSingleColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
 import static org.usf.jquery.web.RequestParser.parseEntries;
+import static org.usf.jquery.web.RequestParser.parseEntry;
 import static org.usf.jquery.web.TableMetadata.emptyMetadata;
 import static org.usf.jquery.web.TableMetadata.tableMetadata;
 
@@ -53,18 +54,13 @@ public interface TableDecorator {
 		return new DBTable(tableName(), identity());
 	}
 	
-	default Optional<JavaType> columnType(ColumnDecorator cd) {
-		return metadata().columnMetada(cd)
-				.map(ColumnMetadata::getDataType); //else not binded
-	}
-
 	default TaggableColumn column(ColumnDecorator cd) {
 		if(nonNull(cd.builder())) {
 			return cd.builder().column(this).as(cd.reference());
 		}
 		var cn = columnName(cd);
 		if(cn.isPresent()) {
-			return new ViewColumn(table(), requireLegalVariable(cn.get()), cd.reference(), columnType(cd).orElse(null));
+			return new ViewColumn(table(), requireLegalVariable(cn.get()), cd.reference(), cd.dataType(this));
 		}
 		throw undeclaredResouceException(identity(), cd.identity());
 	}
@@ -131,15 +127,18 @@ public interface TableDecorator {
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
     	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
-    	.map(e-> decodeFilter(e, this))
-    	.forEach(rf-> query.tablesIfAbsent(rf.tables()).filters(rf.filters()));
+    	.flatMap(e-> {
+    		var re = parseEntry(e.getKey());
+    		return Stream.of(e.getValue()).map(v-> re.asFilter(this, v));
+    	})
+    	.forEach(query::filters);
 	}
 
 	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.get(ORDER))
-			.flatMap(c-> decodeColumns(c, this, true))
-			.forEach(rc-> query.tablesIfAbsent(rc.tableDecorator().table()).orders(rc.toOrder()));
+			.flatMap(c-> parseEntries(c).stream())
+			.forEach(e-> query.orders(e.asOrder(this)));
 		}
 	}
 

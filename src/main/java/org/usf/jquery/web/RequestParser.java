@@ -23,16 +23,16 @@ public final class RequestParser {
 		this.size = s.length();
 	}
 
-	public static RequestEntry parseEntry(String s) {
+	public static RequestEntryChain parseEntry(String s) {
 		return new RequestParser(s).parseEntry(false, false);
 	}
 	
-	public static List<RequestEntry> parseEntries(String s) {
+	public static List<RequestEntryChain> parseEntries(String s) {
 		return new RequestParser(s).parseEntries(true, false);
 	}
 	
-	private List<RequestEntry> parseEntries(boolean multiple, boolean argument) {
-		var entries = new LinkedList<RequestEntry>();
+	private List<RequestEntryChain> parseEntries(boolean multiple, boolean argument) {
+		var entries = new LinkedList<RequestEntryChain>();
 		entries.add(parseEntry(multiple, argument));
 		while(c == ',') {
 			nextChar(true);
@@ -41,10 +41,10 @@ public final class RequestParser {
 		return entries;
 	}
 
-	private RequestEntry parseEntry(boolean multiple, boolean argument) {
+	private RequestEntryChain parseEntry(boolean multiple, boolean argument) {
 		var entry = argument 
 				? nextEntry() 
-				: new RequestEntry(requireLegalVariable(nextVar()));
+				: new RequestEntryChain(requireLegalVariable(nextVar()));
 		if(c == '(') { //operator
 			nextChar(true);
 			entry.setArgs(parseEntries(true, true)); // no args | null
@@ -65,21 +65,21 @@ public final class RequestParser {
 		throw unexpectedCharException();
 	}
 
-	private RequestEntry nextEntry() {
+	private RequestEntryChain nextEntry() {
 		var from = idx;
 		if(c == '"') {
 			nextChar(true);
 			nextWhile(RequestParser::legalTxtChar); //accept any
 			requireChar('"'); //nextChar
 			nextChar(false);
-			return new RequestEntry(s.substring(from+1, idx-1), true);
+			return new RequestEntryChain(s.substring(from+1, idx-1), true);
 		}
 		var v = nextVar(); //to optim
 		if((idx == size || s.charAt(idx) == '.' || !legalValChar(c)) && v.matches(VAR_PATTERN)) {
-			return new RequestEntry(v);
+			return new RequestEntryChain(v);
 		}
 		nextWhile(RequestParser::legalValChar);
-		return new RequestEntry(from == idx ? null : s.substring(from, idx)); // empty => null
+		return new RequestEntryChain(from == idx ? null : s.substring(from, idx)); // empty => null
 	}
 	
 	private String nextVar() {
@@ -119,11 +119,11 @@ public final class RequestParser {
 			: new ParseException("illegal variable name : " + quote(s));
 	}
 	
-	private IllegalArgumentException unexpectedCharException() {
+	private ParseException unexpectedCharException() {
 		return new ParseException("unexpected character '" + c + "' at index=" + idx); //end
 	}
 	
-	private IllegalArgumentException somethingExpectedException() {
+	private ParseException somethingExpectedException() {
 		return new ParseException("something expected after '" + s.charAt(size-1) + "'");
 	}
 	
