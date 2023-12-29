@@ -13,10 +13,8 @@ import static org.usf.jquery.core.Validation.VAR_PATTERN;
 import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 import static org.usf.jquery.web.JQueryContext.context;
-import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -175,7 +173,7 @@ final class RequestEntryChain {
 					? cmp.expression(args)
 					: ofComparator(cmp).build(args);
 		}
-		throw ParseException.cannotEvaluateException("exp", exp);
+		throw cannotEvaluateException(exp);
 	}
 	
 	private Object toArg(TableDecorator td, JavaType... types) {
@@ -250,9 +248,13 @@ final class RequestEntryChain {
 		}
 		return tag == null ? s : s + ":" + tag;
 	}
-	
+
 	static ParseException cannotEvaluateException(RequestEntryChain entry) {
-		return new ParseException("cannot evaluate entry : " + quote(entry.toString()));
+		return cannotEvaluateException(entry.toString());
+	}
+	
+	static ParseException cannotEvaluateException(String entry) {
+		return new ParseException("cannot evaluate entry : " + quote(entry));
 	}
 	
 	static String[] toStringArray(List<RequestEntryChain> entries) {
@@ -270,9 +272,5 @@ final class RequestEntryChain {
 		TaggableColumn buildColumn() {
 			return isNull(column) ? td.column(cd) : column;
 		}
-	}
-	
-	public static void main(String[] args) {
-		System.out.println(Arrays.toString(",2,3,".split(",")));
 	}
 }
