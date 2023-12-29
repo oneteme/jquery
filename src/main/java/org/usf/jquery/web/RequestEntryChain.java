@@ -13,8 +13,10 @@ import static org.usf.jquery.core.Validation.VAR_PATTERN;
 import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 import static org.usf.jquery.web.JQueryContext.context;
+import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -67,7 +69,7 @@ final class RequestEntryChain {
 		return oc.as(isNull(e.tag) ? c.tagname() : e.tag);
 	}
 
-	public DBFilter asFilter(TableDecorator td, String expression) {
+	public DBFilter asFilter(TableDecorator td, List<RequestEntryChain> values) {
 		var t = lookup(td, false);
 		var c = t.buildColumn();
 		var e = t.entry.next;
@@ -84,10 +86,10 @@ final class RequestEntryChain {
 		}
 		var cd = c == oc ? t.cd : DEFAUL_COLUMN; //no operation
 		if(isNull(e)) { // no expression
-			return oc.filter(toExpression(td, cd, null, expression));
+			return oc.filter(toComparison(td, cd, null, values));
 		}
 		else if(e.isLast()) {
-			return oc.filter(toExpression(td, cd, e.value, expression));
+			return oc.filter(toComparison(td, cd, e.value, values));
 		}
 		throw cannotEvaluateException(e); //more detail
 	}
@@ -149,29 +151,31 @@ final class RequestEntryChain {
 		return op.args(params.toArray());
 	}
 	
-	
-	static ComparisonExpression toExpression(TableDecorator td, ColumnDecorator cd, String exp, String... values) {
+	static ComparisonExpression toComparison(TableDecorator td, ColumnDecorator cd, String exp, List<RequestEntryChain> values) {
 		if(nonNull(exp)) {
 			var criteria = cd.criteria(exp);
 			if(nonNull(criteria)) {
-				return criteria.build(values);
+				return criteria.build(toStringArray(values));
 			}
 		}
-		var cmp = cd.comparator(exp, values.length);
+		var cmp = cd.comparator(exp, values.size());
 		if(nonNull(cmp)) {
+	    	if(values.size() == 1) {
+	    		try {
+		    		return cmp.expression(values.get(0).asColumn(td)); // try parse column
+	    		}
+	    		catch (Exception e) {
+	    	    	var prs = requireNonNull(cd.parser(td));
+		    		return cmp.expression(prs.parse(values.get(0).toString()));
+				}
+	    	}
 	    	var prs = requireNonNull(cd.parser(td));
-	    	if(values.length == 0) {
-	    		return cmp.expression(null);
-	    	}
-	    	if(values.length == 1) {
-	    		return cmp.expression(prs.parse(values[0]));
-	    	}
-	    	var args = prs.parseAll(values);
+	    	var args = prs.parseAll(toStringArray(values));
 			return cmp instanceof InCompartor 
 					? cmp.expression(args)
 					: ofComparator(cmp).build(args);
 		}
-		throw ParseException.cannotEvaluateException("expression", null);
+		throw ParseException.cannotEvaluateException("exp", exp);
 	}
 	
 	private Object toArg(TableDecorator td, JavaType... types) {
@@ -251,6 +255,10 @@ final class RequestEntryChain {
 		return new ParseException("cannot evaluate entry : " + quote(entry.toString()));
 	}
 	
+	static String[] toStringArray(List<RequestEntryChain> entries) {
+		return entries.stream().map(RequestEntryChain::toString).toArray(String[]::new);
+	}
+	
 	@RequiredArgsConstructor
 	static class Triple {
 		
@@ -262,5 +270,9 @@ final class RequestEntryChain {
 		TaggableColumn buildColumn() {
 			return isNull(column) ? td.column(cd) : column;
 		}
+	}
+	
+	public static void main(String[] args) {
+		System.out.println(Arrays.toString(",2,3,".split(",")));
 	}
 }

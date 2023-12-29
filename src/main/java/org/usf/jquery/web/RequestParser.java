@@ -31,6 +31,10 @@ public final class RequestParser {
 		return new RequestParser(s).parseEntries(true, false);
 	}
 	
+	public static List<RequestEntryChain> parseArgs(String s) {
+		return new RequestParser(s).parseEntries(true, true);
+	}
+	
 	private List<RequestEntryChain> parseEntries(boolean multiple, boolean argument) {
 		var entries = new LinkedList<RequestEntryChain>();
 		entries.add(parseEntry(multiple, argument));

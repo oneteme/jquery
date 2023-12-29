@@ -17,6 +17,7 @@ import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceExcept
 import static org.usf.jquery.web.RequestColumn.decodeColumns;
 import static org.usf.jquery.web.RequestColumn.decodeSingleColumn;
 import static org.usf.jquery.web.RequestFilter.decodeFilter;
+import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
 import static org.usf.jquery.web.TableMetadata.emptyMetadata;
@@ -129,7 +130,7 @@ public interface TableDecorator {
     	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());
-    		return Stream.of(e.getValue()).map(v-> re.asFilter(this, v));
+    		return Stream.of(e.getValue()).map(v-> re.asFilter(this, parseArgs(v)));
     	})
     	.forEach(query::filters);
 	}
