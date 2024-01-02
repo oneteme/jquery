@@ -18,6 +18,11 @@ import org.usf.jquery.web.view.WebViewMapper;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ChartMappers {
 	

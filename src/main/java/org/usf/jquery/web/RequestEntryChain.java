@@ -7,6 +7,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Operator.lookupNoArgFunction;
 import static org.usf.jquery.core.Operator.lookupOperator;
+import static org.usf.jquery.core.OverClause.clauses;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Validation.VAR_PATTERN;
@@ -27,6 +28,7 @@ import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.WindowView;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -39,6 +41,8 @@ import lombok.Setter;
 final class RequestEntryChain {
 	
 	private static final ColumnDecorator DEFAUL_COLUMN = ()-> null; //unused identity
+	
+	private static final String OVER_FN =  "OVER"; 
 
 	private final String value;
 	private final boolean text; //"string"
@@ -83,13 +87,19 @@ final class RequestEntryChain {
 			e = e.next;
 		}
 		var cd = c == oc ? t.cd : DEFAUL_COLUMN; //no operation
+		ComparisonExpression exp = null;
 		if(isNull(e)) { // no expression
-			return oc.filter(toComparison(td, cd, null, values));
+			exp = new RequestEntryChain(null).toComparison(td, cd, values);
 		}
 		else if(e.isLast()) {
-			return oc.filter(toComparison(td, cd, e.value, values));
+			exp = e.toComparison(td, cd, values);
 		}
-		throw cannotEvaluateException(e); //more detail
+		else {
+			throw cannotEvaluateException(e); //more detail
+		}
+		return OVER_FN.equals(e.value) 
+				? new WindowView(td.table(), oc.as(c.tagname())).filter(exp) 
+				: oc.filter(exp);
 	}
 	
 	public DBOrder asOrder(TableDecorator td) {
@@ -120,16 +130,55 @@ final class RequestEntryChain {
 		throw cannotEvaluateException(e); //column expected
 	}
 	
-	private OperationColumn toOperation(TableDecorator td, DBColumn col) {
+	ComparisonExpression toComparison(TableDecorator td, ColumnDecorator cd, List<RequestEntryChain> values) {
+		if(nonNull(value)) {
+			var criteria = cd.criteria(value);
+			if(nonNull(criteria)) {
+				return criteria.build(toStringArray(values));
+			}
+		}
+		var cmp = cd.comparator(value, values.size());
+		if(nonNull(cmp)) {
+	    	if(values.size() == 1) {
+	    		try {
+		    		return cmp.expression(values.get(0).asColumn(td)); // try parse column
+	    		}
+	    		catch (Exception e) {
+	    	    	var prs = requireNonNull(cd.parser(td));
+		    		return cmp.expression(prs.parse(values.get(0).toString()));
+				}
+	    	}
+	    	var prs = requireNonNull(cd.parser(td));
+	    	var arr = prs.parseAll(toStringArray(values));
+			return cmp instanceof InCompartor 
+					? cmp.expression(arr)
+					: ofComparator(cmp).build(arr);
+		}
+		throw cannotEvaluateException(value);
+	}
+	
+	OperationColumn requireOperation(TableDecorator td, DBColumn col) {
+		var op = toOperation(td, col);
+		if(nonNull(op)) {
+			return op;
+		}
+		throw cannotEvaluateException(value); // as function
+	}
+	
+	OperationColumn toOperation(TableDecorator td, DBColumn col) {
 		var res = lookupOperator(value);
 		if(res.isEmpty()) {
 			return null;
 		}
 		var op = res.get();
+		if("OVER".equals(res.get().id())) {
+			var oc = args.stream().map(o-> o.requireOperation(td, col)).toArray(OperationColumn[]::new);
+			return op.args(clauses(oc));
+		}
 		var min = op.requireArgCount();
 		var np = args.size()+1; // col
 		if(np < min || (!op.isVarags() && np > op.getParameters().length)) {
-			throw new IllegalArgumentException();
+			throw new IllegalArgumentException("msg");
 		}
 		var params = new ArrayList<Object>(np);
 		params.add(col);
@@ -149,34 +198,7 @@ final class RequestEntryChain {
 		return op.args(params.toArray());
 	}
 	
-	static ComparisonExpression toComparison(TableDecorator td, ColumnDecorator cd, String exp, List<RequestEntryChain> values) {
-		if(nonNull(exp)) {
-			var criteria = cd.criteria(exp);
-			if(nonNull(criteria)) {
-				return criteria.build(toStringArray(values));
-			}
-		}
-		var cmp = cd.comparator(exp, values.size());
-		if(nonNull(cmp)) {
-	    	if(values.size() == 1) {
-	    		try {
-		    		return cmp.expression(values.get(0).asColumn(td)); // try parse column
-	    		}
-	    		catch (Exception e) {
-	    	    	var prs = requireNonNull(cd.parser(td));
-		    		return cmp.expression(prs.parse(values.get(0).toString()));
-				}
-	    	}
-	    	var prs = requireNonNull(cd.parser(td));
-	    	var args = prs.parseAll(toStringArray(values));
-			return cmp instanceof InCompartor 
-					? cmp.expression(args)
-					: ofComparator(cmp).build(args);
-		}
-		throw cannotEvaluateException(exp);
-	}
-	
-	private Object toArg(TableDecorator td, JavaType... types) {
+	Object toArg(TableDecorator td, JavaType... types) {
 		if(isNull(value) || text) {
 			return requireNoArgs().value;
 		}
@@ -207,7 +229,7 @@ final class RequestEntryChain {
 			return new Triple(td, context().getColumn(requireNoArgs().value), this, null);
 		}
 		if(noArgFn) {
-			var res = lookupNoArgFunction(value);
+			var res = lookupNoArgFunction(value); //window function 
 			if(res.isPresent()) {
 				var op = res.get(); 
 				if(isNull(args) || args.isEmpty()) {
@@ -217,6 +239,14 @@ final class RequestEntryChain {
 			}
 		}
 		throw cannotEvaluateException(this);
+	}
+	
+
+	private Object lookupColumn(TableDecorator td, boolean noArgFn) {
+
+		if(context().isDeclaredColumn(value)) {
+			
+		}
 	}
 	
 	private RequestEntryChain requireNoArgs() {
@@ -237,16 +267,16 @@ final class RequestEntryChain {
 	@Override
 	public String toString() {
 		var s = "";
-		if(value != null) {
+		if(nonNull(value)) {
 			s += text ? doubleQuote(value) : value;
 		}
-		if(args != null){
+		if(nonNull(args)){
 			s += args.stream().map(RequestEntryChain::toString).collect(joining(",", "(", ")"));
 		}
-		if(next != null) {
+		if(nonNull(next)) {
 			s += "." + next.toString();
 		}
-		return tag == null ? s : s + ":" + tag;
+		return isNull(tag) ? s : s + ":" + tag;
 	}
 
 	static ParseException cannotEvaluateException(RequestEntryChain entry) {
@@ -273,4 +303,5 @@ final class RequestEntryChain {
 			return isNull(column) ? td.column(cd) : column;
 		}
 	}
+	
 }

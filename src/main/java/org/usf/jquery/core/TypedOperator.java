@@ -55,6 +55,7 @@ public class TypedOperator implements Operator {
 		}
 		return new OperationColumn(operator, args, typeFn.apply(args));
 	}
+
 	
 	public int requireArgCount() {
 		var i=0;

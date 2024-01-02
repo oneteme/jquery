@@ -87,7 +87,7 @@ public final class DatabaseMetadata {
 			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
 			log.info(bar);
 			map.entrySet().forEach(e-> 
-			log.info(format(pattern, e.getKey(), e.getValue().getColumnName(), e.getValue().getDataType().getValue(), e.getValue().getDataSize())));
+			log.info(format(pattern, e.getKey(), e.getValue().getColumnName(), e.getValue().getDataType(), e.getValue().getDataSize())));
 			log.info(bar);
 		}
 	}

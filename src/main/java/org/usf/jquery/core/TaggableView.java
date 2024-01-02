@@ -8,5 +8,5 @@ package org.usf.jquery.core;
 public interface TaggableView extends DBView {
 
 	String tagname();
-	
+
 }

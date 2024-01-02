@@ -29,8 +29,7 @@ public final class ColumnSingleFilter implements DBFilter {
 	
 	@Override
 	public boolean isAggregation() {
-		return column.isAggregation() 
-				|| aggregation(expression);
+		return column.isAggregation() || aggregation(expression);
 	}
 
 	@Override

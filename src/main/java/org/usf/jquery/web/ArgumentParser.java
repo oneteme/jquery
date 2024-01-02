@@ -1,7 +1,7 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.format;
 import static java.util.Objects.isNull;
-import static org.usf.jquery.web.ParseException.cannotParseException;
 
 import java.util.stream.Stream;
 
@@ -24,7 +24,7 @@ public interface ArgumentParser {
 			return nativeParse(v);
 		}
 		catch(Exception e) {
-			throw cannotParseException("parameter value", v, e);
+			throw new ParseException(format("cannot parse %s value '%s'", toString(), v), e); 
 		}
 	}
 	

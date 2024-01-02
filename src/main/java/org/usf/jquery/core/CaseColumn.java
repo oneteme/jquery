@@ -8,7 +8,6 @@ import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.function.Predicate;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;

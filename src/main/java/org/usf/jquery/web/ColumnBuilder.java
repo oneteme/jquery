@@ -5,7 +5,7 @@ import org.usf.jquery.core.DBColumn;
 /**
  * 
  * @author u$f
- * 
+ *
  */
 @FunctionalInterface
 public interface ColumnBuilder {

@@ -39,7 +39,7 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 
 	static TypedOperator minus() {
-		return new TypedOperator(DOUBLE, operator("-"), required(DOUBLE), required(DOUBLE)); // date|datetime
+		return new TypedOperator(DOUBLE, operator("-"), required(DOUBLE), required(DOUBLE)); //date|datetime
 	}
 
 	static TypedOperator multiply() {
@@ -192,7 +192,6 @@ public interface Operator extends DBProcessor, NestedSql {
 		return new TypedOperator(BIGINT, extract("EPOCH"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
 
-
 	//cast functions
 
 	static TypedOperator varchar() {
@@ -256,16 +255,30 @@ public interface Operator extends DBProcessor, NestedSql {
 	static TypedOperator denseRank() {
 		return new TypedOperator(INTEGER, window("DENSE_RANK")); // takes no args
 	}
+
+	//pipe functions
 	
 	static TypedOperator over() {
 		return new TypedOperator(firstArgType(), pipe("OVER"),
-				required(instance("??", OperationColumn.class)), // TODO wrap => aggreagation || window
-				required(instance("??", OverClause.class))) {
+				required(instance(OperationColumn.class)),
+				required(instance(OverClause.class))) {
 			@Override
 			public OperationColumn args(Object... args) {
 				return super.args(args).aggregation(false); //!aggregation
 			}
 		};
+	}
+
+	//clause functions
+	
+	static TypedOperator partition() {
+		var ct = instance(DBColumn.class); // require at least one column
+		return new TypedOperator(instance(DBColumn[].class), clause("PARTITION BY"), required(ct), varargs(ct));
+	}
+
+	static TypedOperator order() {
+		var ot = instance(DBOrder.class); // require at least one order
+		return new TypedOperator(instance(DBOrder[].class), clause("ORDER BY"), required(ot), varargs(ot));
 	}
 
 	static ArithmeticOperator operator(String symbol) {
@@ -296,8 +309,12 @@ public interface Operator extends DBProcessor, NestedSql {
 		return ()-> name;
 	}
 
-	static Optional<TypedOperator> lookupNoArgFunction(String op) {
-		return lookupOperator(op).filter(fn-> fn.requireArgCount() == 0);
+	static ClauseFunction clause(String name) {
+		return ()-> name;
+	}
+
+	static Optional<TypedOperator> lookupWindowFunction(String op) {
+		return lookupOperator(op).filter(WindowFunction.class::isInstance);
 	}
 	
 	static Optional<TypedOperator> lookupOperator(String op) {
@@ -306,7 +323,7 @@ public interface Operator extends DBProcessor, NestedSql {
 			if(isStatic(m.getModifiers()) && m.getReturnType() == TypedOperator.class) { // no private static
 				return Optional.of((TypedOperator) m.invoke(null));
 			}
-		} catch (Exception e) {/*do not throw exception*/}
+		} catch (Exception e) {/* do not throw exception */}
 		return empty();
 	}
 

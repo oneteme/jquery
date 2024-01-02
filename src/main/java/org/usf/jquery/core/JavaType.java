@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
+
 import java.util.function.Predicate;
 
 import lombok.NonNull;
@@ -17,8 +19,8 @@ public interface JavaType {
 	
 	boolean accept(Object o);
 	
-	static JavaType instance(String name, Class<?> type) {
-		return declare(name, type, type::isInstance);
+	static JavaType instance(Class<?> type) {
+		return declare(type.getSimpleName(), type, o-> isNull(o) || type.isInstance(o));
 	}
 	
 	static JavaType declare(@NonNull String name, @NonNull Class<?> type, @NonNull Predicate<Object> predicate) {
@@ -40,5 +42,4 @@ public interface JavaType {
 			}
 		};
 	}
-	
 }

@@ -13,9 +13,9 @@ import java.util.List;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.BasicComparator;
+import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.InCompartor;
 import org.usf.jquery.core.JavaType;

@@ -33,7 +33,6 @@ import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.OverClause;
 import org.usf.jquery.core.TypedFunction;
-import org.usf.jquery.core.TypedOperator;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;

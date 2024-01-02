@@ -41,10 +41,12 @@ public enum JDBCType implements JavaType {
 	DATE(Types.DATE, Date.class, Date.class::isInstance),
 	TIME(Types.TIME, Time.class, Time.class::isInstance),
 	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, Timestamp.class::isInstance),
-	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance);
+	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance),
+	OTHER(Types.OTHER, null, o-> false); //isnull !?
 
 	public static final JavaType AUTO  = declare("AUTO", Object.class, o-> true);
-	public static final JavaType OTHER = declare("OTHER", Object.class, o-> {throw new UnsupportedOperationException("Unsupported SQL type");});
+	
+	static final JavaType OVER_ARG = declare("over.arg", Object.class, o-> true);
 	
 	private final int value;
 	private final Class<?> type;
@@ -107,16 +109,16 @@ public enum JDBCType implements JavaType {
 	public static JavaType typeOf(Object o) {
 		if(o instanceof Typed) {
 			var t = ((Typed) o).javaType();
-			return t == null ? AUTO : findType(t::equals);
+			return t == null ? null : findType(t::equals);
 		}
-		return o == null ? AUTO : findType(e-> e.type().isInstance(o));
+		return o == null ? null : findType(e-> e.type().isInstance(o));
 	}
 	
-	public static JavaType fromDataType(int value) {
+	public static JDBCType fromDataType(int value) {
 		return findType(t-> t.value == value);
 	}
 	
-	public static JavaType findType(Predicate<JDBCType> predicate) {
+	public static JDBCType findType(Predicate<JDBCType> predicate) {
 		for(var t : values()) {
 			if(predicate.test(t)) {
 				return t;

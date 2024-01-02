@@ -1,52 +1,73 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.groupingBy;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
-import lombok.NonNull;
+import lombok.AccessLevel;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 
  * @author u$f
  *
  */
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class OverClause implements DBObject {
 
-	private final List<DBColumn> partitions = new LinkedList<>();
-	private final List<DBOrder> orders = new LinkedList<>();
+	private final OperationColumn partition;
+	private final OperationColumn order;
 	
-	public OverClause partitions(@NonNull DBColumn... columns) {
-		Stream.of(columns).forEach(this.partitions::add);
-		return this;
-	}
-
-	public OverClause orders(@NonNull DBOrder... orders) {
-		Stream.of(orders).forEach(this.orders::add);
-		return this;
+	public OverClause() {
+		this(null, null);
 	}
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, getClass()::getSimpleName);
+		requireNoArgs(args, OverClause.class::getSimpleName);
 		return sql(builder);
 	}
 	
-	public String sql(QueryParameterBuilder builder) {
+	String sql(QueryParameterBuilder builder) {
 		var qp = addWithValue(); //no alias
 		var sb = new SqlStringBuilder(100);
-		if(!partitions.isEmpty()) {
-			sb.append("PARTITION BY ").appendEach(partitions, COMA, o-> o.sql(qp));
+		if(nonNull(partition)) {
+			sb.append(partition.sql(qp));
 		}
-		if(!orders.isEmpty()) { //require orders
-			sb.appendIf(!partitions.isEmpty(), SPACE)
-			.append("ORDER BY ").appendEach(orders, COMA, o-> o.sql(qp));
+		if(nonNull(order)) { //require orders
+			sb.appendIf(nonNull(partition), SPACE).append(order.sql(qp));
 		}
 		return sb.toString();
+	}
+	
+	public static OverClause clauses(OperationColumn... args) { //partition, order, ...
+		if(args == null) {
+			return new OverClause();
+		}
+		var map = Stream.of(args).collect(groupingBy(o-> o.getOperator().id()));
+		var prt = requireOneArg(map, "PARTITION BY"); 
+		var ord = requireOneArg(map, "ORDER BY");
+		if(map.isEmpty()) {
+			return new OverClause(prt, ord);
+		}
+		throw new IllegalArgumentException("illegal over function arguments : " + map.keySet());
+	}
+
+	private static OperationColumn requireOneArg(Map<String, List<OperationColumn>> map, String key) {
+		var args = map.remove(key);
+		if(isNull(args)) {
+			return null;
+		}
+		if(args.size() == 1) {
+			return args.get(0);
+		}
+		throw new IllegalArgumentException("duplicated arg values " + key);
 	}
 }

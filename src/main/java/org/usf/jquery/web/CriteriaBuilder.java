@@ -7,8 +7,8 @@ import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.Comparator;
+import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.LogicalOperator;
 
 /**

@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.JDBCType.AUTO;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -25,37 +26,35 @@ import lombok.NoArgsConstructor;
 
 /**
  * 
- * 
  * @author u$f
- * 
+ *
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ArgumentParsers {
 	
-	private static final ArgumentParser[] DEFAULT = {
+	private static final ArgumentParser[] STD_TYPES = {
 			jdbcTypeParser(BIGINT), jdbcTypeParser(DOUBLE), 
 			jdbcTypeParser(DATE), jdbcTypeParser(TIMESTAMP),
 			jdbcTypeParser(TIME), jdbcTypeParser(TIMESTAMP_WITH_TIMEZONE)};
-	
 	
 	public static ArgumentParser javaTypeParser(JavaType type) {
 		if(type instanceof JDBCType) {
 			return jdbcTypeParser((JDBCType) type);
 		}
-		if(type == AUTO) {
+		if(isNull(type)) {
 			return ArgumentParsers::autoTypeParse;
 		}
 		throw new UnsupportedOperationException("unsupported type " + type);
 	}
 	
 	public static Object autoTypeParse(String v) {
-		for(var p : DEFAULT) {
+		for(var p : STD_TYPES) {
 			var o = p.tryParse(v);
-			if(o != null) {
+			if(nonNull(o)) {
 				return o;
 			}
 		}
-		return v; //string value
+		return v; //string value by default
 	}
 
 	public static ArgumentParser jdbcTypeParser(JDBCType type) {
@@ -79,6 +78,7 @@ public class ArgumentParsers {
 		case TIME: 						return v-> Time.valueOf(LocalTime.parse(v));
 		case TIMESTAMP: 				return v-> Timestamp.from(Instant.parse(v));
 		case TIMESTAMP_WITH_TIMEZONE:	return v-> Timestamp.from(ZonedDateTime.parse(v).toInstant());
+		case OTHER:
 		default: 						throw new UnsupportedOperationException("unsupported type " + type);
 		}
 	}

@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
+import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -31,7 +32,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
-
+	
 	private static final String ALIAS = "t";
 	private static final String ARG = "?";
 	
@@ -39,14 +40,25 @@ public final class QueryParameterBuilder {
 	private final List<TaggableView> views; //indexed
 	
 	public String view(TaggableView view) {
-		for(int i=0; i<views.size(); i++) {
+		return view(view, i-> {});
+	}
+	
+	public String overwriteView(TaggableView view) {
+		return view(view, i-> views.set(i, view));
+	}
+
+	private String view(TaggableView view, IntConsumer consumer) {
+		var i=0;
+		for(; i<views.size(); i++) {
 			if(views.get(i).tagname().equals(view.tagname())) {
-				return ALIAS + (i+1);
+				consumer.accept(i);
+				return ALIAS + (i+1); //always add alias
 			}
 		}
 		views.add(view);
 		return ALIAS + views.size(); //always add alias
 	}
+	
 
 	public String appendParameter(Object o) {
 		return appendParameter(o, Object.class, false);
@@ -74,7 +86,7 @@ public final class QueryParameterBuilder {
 	
 	//TODO
 	public String appendLitteral(Object o) {
-		return null;
+		return appendParameter(o, Object.class, true); 
 	}
 
 	private String appendParameter(Object o, Class<?> type, boolean addWithValue) {

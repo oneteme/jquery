@@ -1,8 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
-import static org.usf.jquery.core.DBColumn.count;
-import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.Comparator.equal;
 import static org.usf.jquery.core.Comparator.greaterOrEqual;
 import static org.usf.jquery.core.Comparator.greaterThan;
@@ -14,11 +12,12 @@ import static org.usf.jquery.core.Comparator.like;
 import static org.usf.jquery.core.Comparator.notEqual;
 import static org.usf.jquery.core.Comparator.notIn;
 import static org.usf.jquery.core.Comparator.notLike;
+import static org.usf.jquery.core.DBColumn.count;
 import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
 
 import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
-import org.usf.jquery.core.JavaType;
+import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.StringComparator;
 
@@ -37,10 +36,10 @@ public interface ColumnDecorator {
 		return identity();
 	}
 	
-	default JavaType dataType(TableDecorator td) {
+	default JDBCType dataType(TableDecorator td) {
 		return td.metadata().columnMetada(this)
 		.map(ColumnMetadata::getDataType)
-		.orElse(AUTO); 
+		.orElse(null); 
 	}
 	
 	/**
