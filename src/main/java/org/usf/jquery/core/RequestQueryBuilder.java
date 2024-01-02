@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
@@ -84,12 +83,12 @@ public class RequestQueryBuilder {
 
 	public RequestQuery build(String schema) {
 		log.debug("building query...");
-		requireNonEmpty(tables);
+//		requireNonEmpty(tables);
     	requireNonEmpty(columns);
 		var bg = currentTimeMillis();
 		var pb = parametrized();
 		var sb = new SqlStringBuilder(1000); //avg
-		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
+//		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
 		if(isNull(it)) {
 			build(sb, pb, schema);
 		}
@@ -113,7 +112,7 @@ public class RequestQueryBuilder {
     	.appendIf(distinct, ()-> "DISTINCT ")
     	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.tagname()))
     	.append(" FROM ")
-    	.appendEach(tables, SCOMA, o-> o.sql(pb, schema) + SPACE + pb.tableAlias(o.tagname()));
+    	.appendEach(pb.views(), SCOMA, o-> o.sql(pb, schema, true));
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){

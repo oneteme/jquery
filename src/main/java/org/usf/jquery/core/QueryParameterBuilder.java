@@ -59,6 +59,9 @@ public final class QueryParameterBuilder {
 		return ALIAS + views.size(); //always add alias
 	}
 	
+	public List<TaggableView> views(){
+		return views;
+	}
 
 	public String appendParameter(Object o) {
 		return appendParameter(o, Object.class, false);
@@ -93,8 +96,8 @@ public final class QueryParameterBuilder {
 		if(isNull(o)) {
 			return dynamic() && !addWithValue ? appendArg(null) : "null";
 		}
-		if(o instanceof DBColumn) { //check type !?
-			return ((DBColumn)o).sql(this);
+		if(o instanceof DBObject) { //check type !?
+			return ((DBObject)o).sql(this, null);
 		}
 		if(type.isInstance(o)) {
 			if(dynamic() && !addWithValue) {

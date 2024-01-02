@@ -51,18 +51,6 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 	
 	//numeric functions
-
-	static TypedOperator trunc() {
-		return new TypedOperator(BIGINT, function("TRUNC"), required(DOUBLE)); 
-	}
-
-	static TypedOperator ceil() {
-		return new TypedOperator(BIGINT, function("CEIL"), required(DOUBLE)); 
-	}
-
-	static TypedOperator floor() {
-		return new TypedOperator(BIGINT, function("FLOOR"), required(DOUBLE)); 
-	}
 	
 	static TypedOperator sqrt() {
 		return new TypedOperator(DOUBLE, function("SQRT"), required(DOUBLE)); 
@@ -73,11 +61,27 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 	
 	static TypedOperator log() {
-		return new TypedOperator(DOUBLE, function("LOG"), required(DOUBLE)); 
+		return new TypedOperator(DOUBLE, function("LOG"), required(DOUBLE), optional(INTEGER)); 
 	}
 	
 	static TypedOperator abs() {
 		return new TypedOperator(DOUBLE, function("ABS"), required(DOUBLE));
+	}
+
+	static TypedOperator ceil() {
+		return new TypedOperator(BIGINT, function("CEIL"), required(DOUBLE)); 
+	}
+
+	static TypedOperator floor() {
+		return new TypedOperator(BIGINT, function("FLOOR"), required(DOUBLE)); 
+	}
+
+	static TypedOperator trunc() {
+		return new TypedOperator(BIGINT, function("TRUNC"), required(DOUBLE), optional(INTEGER)); 
+	}
+	
+	static TypedOperator round() {
+		return new TypedOperator(DOUBLE, function("ROUND"), required(DOUBLE), optional(INTEGER));
 	}
 	
 	static TypedOperator mod() {
@@ -86,10 +90,6 @@ public interface Operator extends DBProcessor, NestedSql {
 	
 	static TypedOperator pow() {
 		return new TypedOperator(DOUBLE, function("POW"), required(DOUBLE), required(DOUBLE));
-	}
-	
-	static TypedOperator round() {
-		return new TypedOperator(DOUBLE, function("ROUND"), required(DOUBLE), optional(INTEGER));
 	}
 	
 	//string functions
@@ -260,11 +260,11 @@ public interface Operator extends DBProcessor, NestedSql {
 	
 	static TypedOperator over() {
 		return new TypedOperator(firstArgType(), pipe("OVER"),
-				required(instance(OperationColumn.class)),
+				required(instance(DBColumn.class)), //NamedColumn, OperationColumn
 				required(instance(OverClause.class))) {
 			@Override
 			public OperationColumn args(Object... args) {
-				return super.args(args).aggregation(false); //!aggregation
+				return super.args(args).aggregation(false); //over aggregation functions
 			}
 		};
 	}
@@ -313,8 +313,16 @@ public interface Operator extends DBProcessor, NestedSql {
 		return ()-> name;
 	}
 
+	static StandaloneFunction constant(String name) {
+		return ()-> name;
+	}
+	
+	static Optional<TypedOperator> lookupStandaloneFunction(String op) {
+		return lookupOperator(op).filter(fn-> fn.unwrap() instanceof StandaloneFunction);
+	}
+
 	static Optional<TypedOperator> lookupWindowFunction(String op) {
-		return lookupOperator(op).filter(WindowFunction.class::isInstance);
+		return lookupOperator(op).filter(fn-> fn.unwrap() instanceof WindowFunction);
 	}
 	
 	static Optional<TypedOperator> lookupOperator(String op) {

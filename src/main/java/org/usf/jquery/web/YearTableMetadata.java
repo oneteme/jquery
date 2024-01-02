@@ -12,11 +12,10 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.JQueryContext.database;
-import static org.usf.jquery.web.ParsableJDBCType.AUTO_TYPE;
-import static org.usf.jquery.web.ParsableJDBCType.typeOf;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -87,7 +86,7 @@ public final class YearTableMetadata extends TableMetadata {
 					columnTables.computeIfAbsent(cm.getColumnName(), k-> new LinkedHashSet<>()).add(tn);
 					var type = rs.getInt("DATA_TYPE");
 					var size = rs.getInt("COLUMN_SIZE");
-					if(cm.getDataType() == AUTO_TYPE) { //first time
+					if(isNull(cm.getDataType())) { //first time
 						cm.setDataType(typeOf(type));
 						cm.setDataSize(size);
 					}

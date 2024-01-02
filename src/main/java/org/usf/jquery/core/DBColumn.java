@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Optional.empty;
-import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -38,7 +37,7 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 	}
 	
 	default JavaType javaType() {
-		return AUTO;
+		return null;
 	}
 
 	default NamedColumn as(String name) {
@@ -165,7 +164,6 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 		return !(o instanceof DBColumn) || ((DBColumn)o).isConstant();
 	}
 	
-
 	static OperationColumn count() {
 		return count(column("*"));
 	}

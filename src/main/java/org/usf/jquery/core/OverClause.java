@@ -32,10 +32,10 @@ public final class OverClause implements DBObject {
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
 		requireNoArgs(args, OverClause.class::getSimpleName);
-		return sql(builder);
+		return sql();
 	}
 	
-	String sql(QueryParameterBuilder builder) {
+	String sql() {
 		var qp = addWithValue(); //no alias
 		var sb = new SqlStringBuilder(100);
 		if(nonNull(partition)) {

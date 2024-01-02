@@ -10,6 +10,7 @@ import java.sql.Types;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -19,6 +20,7 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  * 
  */
+@Getter
 @RequiredArgsConstructor
 public enum JDBCType implements JavaType {
 	
@@ -44,8 +46,6 @@ public enum JDBCType implements JavaType {
 	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance),
 	OTHER(Types.OTHER, null, o-> false); //isnull !?
 
-	public static final JavaType AUTO  = declare("AUTO", Object.class, o-> true);
-	
 	static final JavaType OVER_ARG = declare("over.arg", Object.class, o-> true);
 	
 	private final int value;
@@ -106,7 +106,7 @@ public enum JDBCType implements JavaType {
 				|| o.getClass() == String.class;
 	}
 	
-	public static JavaType typeOf(Object o) {
+	public static JDBCType typeOf(Object o) {
 		if(o instanceof Typed) {
 			var t = ((Typed) o).javaType();
 			return t == null ? null : findType(t::equals);

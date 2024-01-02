@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.stream.Stream;
@@ -20,13 +19,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Parameter {
 	
-	private final JavaType[] types;
+	private final JavaType[] types; //null => accept all
 	private final boolean required;
 	private final boolean varargs;
-	
-	public JavaType[] getTypes() {
-		return isEmpty(types) ? new JavaType[] {AUTO} : types;
-	}
 
 	public boolean accept(Object o) {
 		return isEmpty(types) || Stream.of(types).anyMatch(t-> t.accept(o));
@@ -51,13 +46,13 @@ public final class Parameter {
 		return new Parameter(types, false, true);
 	}
 	
-	public static Parameter[] checkArgs(Parameter... parameters) {
+	public static Parameter[] checkParams(Parameter... parameters) {
 		if(nonNull(parameters)) {
-			var i = parameters.length;
-			while(--i>=0 && parameters[i].isRequired());
-			for(; i>=0; i--) {
+			var i=0;
+			while(i<parameters.length && parameters[i].isRequired()) i++;
+			for(i++; i<parameters.length; i++) {
 				if(parameters[i].isRequired()) {
-					throw new IllegalArgumentException("optional argument");
+					throw new IllegalArgumentException("required parameter cannot follow optional parameter");
 				}
 			}
 		}

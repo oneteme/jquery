@@ -1,9 +1,10 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Parameter.checkArgs;
-import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Validation.requireNoArgs;
+import static java.lang.Math.min;
+import static java.util.Objects.isNull;
+import static org.usf.jquery.core.Parameter.checkParams;
 
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import lombok.Getter;
@@ -16,6 +17,8 @@ import lombok.experimental.Delegate;
  */
 @Getter
 public class TypedOperator implements Operator {
+	
+	private static final Parameter[] NO_PARAM = new Parameter[0];
 
 	@Delegate
 	private final Operator operator;
@@ -23,13 +26,13 @@ public class TypedOperator implements Operator {
 	private final Parameter[] parameters;
 	
 	public TypedOperator(JavaType type, Operator function, Parameter... args) {
-		this(o-> type, function, args == null ? new Parameter[0] : args);
+		this(o-> type, function, args == null ? NO_PARAM : args);
 	}
 
 	public TypedOperator(Function<Object[], JavaType> typeFn, Operator function, Parameter... parameter) {
 		this.typeFn = typeFn;
 		this.operator = function;
-		this.parameters = checkArgs(parameter);
+		this.parameters = checkParams(parameter);
 	}
 	
 	public Operator unwrap() {
@@ -38,28 +41,36 @@ public class TypedOperator implements Operator {
 	
 	@Override
 	public OperationColumn args(Object... args) {
-		// TODO check arg types
-		if(isEmpty(parameters)) {
-			requireNoArgs(args, operator::id);
-		}
-		else {
-			if(isEmpty(args)) {
-				if(parameters[0].isRequired()) {
-					
-				}
-				//require args
+		return args(args, (p, o)->{
+			if(!p.accept(o)) {
+				throw new IllegalArgumentException("mismatch arg type");
 			}
-			else {
-				
-			}
-		}
-		return new OperationColumn(operator, args, typeFn.apply(args));
+		});
 	}
 
-	
+	OperationColumn args(Object[] args, BiConsumer<Parameter, Object> fn) {
+		if(isNull(args)) {
+			args = new Object[0];
+		}
+		var na = args.length;
+		var rq = requireArgCount();
+		if(na >= rq && (na <= parameters.length || isVarags())) {
+			var i=0;
+			for(; i<min(na, parameters.length); i++) {
+				fn.accept(parameters[i], args[i]);
+			}
+			if(i<args.length) {
+				var last = parameters[parameters.length-1];
+				fn.accept(last, args[i]);
+			}
+			return new OperationColumn(operator, args, typeFn.apply(args));
+		}
+		throw new IllegalArgumentException();
+	}
+
 	public int requireArgCount() {
 		var i=0;
-		while(i<parameters.length && parameters[i++].isRequired());
+		while(i<parameters.length && parameters[i].isRequired()) i++;
 		return i;
 	}
 	

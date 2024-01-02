@@ -36,5 +36,4 @@ public interface ArgumentParser {
 			return null;
 		}
 	}
-	
 }

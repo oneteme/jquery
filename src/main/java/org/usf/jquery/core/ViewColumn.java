@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.member;
 
@@ -20,7 +19,7 @@ public final class ViewColumn implements TaggableColumn {
 	private final JavaType type;
 	
 	public ViewColumn(TaggableView view, String name, String tag) {
-		this(view, name, tag, AUTO);
+		this(view, name, tag, null);
 	}
 
 	@Override

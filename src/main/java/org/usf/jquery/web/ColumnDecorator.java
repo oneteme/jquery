@@ -12,13 +12,11 @@ import static org.usf.jquery.core.Comparator.like;
 import static org.usf.jquery.core.Comparator.notEqual;
 import static org.usf.jquery.core.Comparator.notIn;
 import static org.usf.jquery.core.Comparator.notLike;
-import static org.usf.jquery.core.DBColumn.count;
 import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
 
 import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.JDBCType;
-import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.StringComparator;
 
 /**
@@ -96,10 +94,6 @@ public interface ColumnDecorator {
 	
 	default ComparisonExpression expression(String exp, String... values) { return null; };
 	
-	static ColumnDecorator countColumn() {
-		return ofColumn(Operator.count().id(), t-> count());
-	}
-
 	static ColumnDecorator ofColumn(String ref, ColumnBuilder cb) {
 		return new ColumnDecorator() {
 			@Override

@@ -1,5 +1,7 @@
 package org.usf.jquery.web;
 
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Validation.VAR_PATTERN;
 
@@ -42,7 +44,9 @@ public final class RequestParser {
 			nextChar(true);
 			entries.add(parseEntry(multiple, argument));
 		}
-		return entries;
+		return entries.size() == 1 && isNull(entries.get(0).getValue()) //avoid () => (null)
+				? emptyList()
+				: entries;
 	}
 
 	private RequestEntryChain parseEntry(boolean multiple, boolean argument) {

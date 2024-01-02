@@ -5,13 +5,18 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.Operator.lookupNoArgFunction;
+import static org.usf.jquery.core.DBColumn.column;
+import static org.usf.jquery.core.Operator.count;
 import static org.usf.jquery.core.Operator.lookupOperator;
+import static org.usf.jquery.core.Operator.lookupStandaloneFunction;
+import static org.usf.jquery.core.Operator.lookupWindowFunction;
 import static org.usf.jquery.core.OverClause.clauses;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.VAR_PATTERN;
 import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
+import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 import static org.usf.jquery.web.JQueryContext.context;
 
@@ -24,10 +29,11 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.InCompartor;
-import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
+import org.usf.jquery.core.Parameter;
 import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.WindowView;
 
 import lombok.AccessLevel;
@@ -41,8 +47,7 @@ import lombok.Setter;
 final class RequestEntryChain {
 	
 	private static final ColumnDecorator DEFAUL_COLUMN = ()-> null; //unused identity
-	
-	private static final String OVER_FN =  "OVER"; 
+	private static final String OVER_FN = "OVER";
 
 	private final String value;
 	private final boolean text; //"string"
@@ -55,7 +60,7 @@ final class RequestEntryChain {
 	}
 
 	public TaggableColumn asColumn(TableDecorator td) {
-		var t = lookup(td, true);
+		var t = lookup(td);
 		var c = t.buildColumn();
 		var e = t.entry;
 		DBColumn oc = c;
@@ -68,11 +73,14 @@ final class RequestEntryChain {
 				}
 			} while(e.next()); //preserve last non null entry
 		}
+		if(oc == c) {
+			return c;
+		}
 		return oc.as(isNull(e.tag) ? c.tagname() : e.tag);
 	}
 
 	public DBFilter asFilter(TableDecorator td, List<RequestEntryChain> values) {
-		var t = lookup(td, false);
+		var t = lookup(td);
 		var c = t.buildColumn();
 		var e = t.entry.next;
 		DBColumn oc = c;
@@ -103,7 +111,7 @@ final class RequestEntryChain {
 	}
 	
 	public DBOrder asOrder(TableDecorator td) {
-		var t = lookup(td, false);
+		var t = lookup(td);
 		var c = t.buildColumn();
 		var e = t.entry.next;
 		DBColumn oc = c;
@@ -167,49 +175,66 @@ final class RequestEntryChain {
 	
 	OperationColumn toOperation(TableDecorator td, DBColumn col) {
 		var res = lookupOperator(value);
-		if(res.isEmpty()) {
-			return null;
-		}
-		var op = res.get();
-		if("OVER".equals(res.get().id())) {
-			var oc = args.stream().map(o-> o.requireOperation(td, col)).toArray(OperationColumn[]::new);
-			return op.args(clauses(oc));
+		return res.isEmpty() ? null : fillArgs(td, col, res.get());
+	}
+
+	OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator op) {
+		if(OVER_FN.equals(op.id())) {
+			var oc = args.stream().map(o-> o.requireOperation(td, null)).toArray(OperationColumn[]::new);
+			return op.args(col, clauses(oc));
 		}
 		var min = op.requireArgCount();
-		var np = args.size()+1; // col
+		var np = isNull(args) ? 0 : args.size();
+		if(nonNull(col)) {
+			np++;
+		}
 		if(np < min || (!op.isVarags() && np > op.getParameters().length)) {
 			throw new IllegalArgumentException("msg");
 		}
 		var params = new ArrayList<Object>(np);
-		params.add(col);
-		var i=1;
-		for(; i<min; i++) {
-			params.add(args.get(i-1).toArg(td, op.getParameters()[i].getTypes()));
+		if(nonNull(col)) {
+			params.add(col);
 		}
+		var s=nonNull(col)?1:0;
+		var i=s; 
 		for(; i<min(np, op.getParameters().length); i++) {
-			params.add(args.get(i-1).toArg(td, op.getParameters()[i].getTypes()));
+			params.add(args.get(i-s).toArg(td, op.getParameters()[i]));
 		}
 		if(op.isVarags()) {
-			var types = op.getParameters()[op.getParameters().length-1].getTypes(); 
+			var types = op.getParameters()[op.getParameters().length-1]; 
 			for(; i<np; i++) {
-				params.add(args.get(i-1).toArg(td, types));
+				params.add(args.get(i-s).toArg(td, types));
 			}
 		}
 		return op.args(params.toArray());
 	}
 	
-	Object toArg(TableDecorator td, JavaType... types) {
+	Object toArg(TableDecorator td, Parameter parameter) {
 		if(isNull(value) || text) {
 			return requireNoArgs().value;
 		}
 		if(value.matches(VAR_PATTERN)) {
-			var c = lookup(td, true);
-			if(nonNull(c)) {
-				return c; // type will be checked later
+			try {
+				var c = asColumn(td);
+				if(nonNull(c)) {
+					return c; // type will be checked later
+				}	
+			}
+			catch (Exception e) {/* do not throw exception */}
+		}
+		if(isEmpty(parameter.getTypes())) {
+			return value;
+		}
+		if(parameter.getTypes().length == 1) {
+			var type = parameter.getTypes()[0].type();
+			if(type.isAssignableFrom(DBColumn.class)) {
+				return asColumn(td);
+			}
+			if(type.isAssignableFrom(DBOrder.class)) {
+				return asOrder(td);
 			}
 		}
-		requireNoArgs();
-		for(var t : types) {
+		for(var t : parameter.getTypes()) {
 			var o = javaTypeParser(t).tryParse(value);
 			if(nonNull(o)) {
 				return o;
@@ -218,35 +243,34 @@ final class RequestEntryChain {
 		throw new ParseException("cannot parse value : " + value);
 	}
 	
-	private Triple lookup(TableDecorator td, boolean noArgFn) { //columnName == viewName
-		if(next() && context().isDeclaredTable(value) && context().isDeclaredColumn(next.value)) {
-			return new Triple(
-					context().getTable(requireNoArgs().value), 
-					context().getColumn(next.requireNoArgs().value), 
-					next, null);
-		}
-		if(context().isDeclaredColumn(value)) {
-			return new Triple(td, context().getColumn(requireNoArgs().value), this, null);
-		}
-		if(noArgFn) {
-			var res = lookupNoArgFunction(value); //window function 
-			if(res.isPresent()) {
-				var op = res.get(); 
-				if(isNull(args) || args.isEmpty()) {
-					return new Triple(null, null, this, op.args().as(op.id()));
-				}
-				throw new IllegalArgumentException(op.id() + " takes no arguments");
+	private Triple lookup(TableDecorator td) {
+		if(next() && context().isDeclaredTable(value)) {  //columnName == viewName
+			var tr = next.lookupColumn(context().getTable(value));
+			if(nonNull(tr)) {
+				return tr;
 			}
+		}
+		var tp = lookupColumn(td);
+		if(nonNull(tp)) {
+			return tp;
 		}
 		throw cannotEvaluateException(this);
 	}
-	
 
-	private Object lookupColumn(TableDecorator td, boolean noArgFn) {
-
+	private Triple lookupColumn(TableDecorator td) {
 		if(context().isDeclaredColumn(value)) {
-			
+			return new Triple(td, context().getColumn(requireNoArgs().value), this);
 		}
+		if("count".equals(value)) {
+			return new Triple(td, ofColumn("count", b-> fillArgs(td, column("*"), count())), this);
+		}
+		var res = lookupWindowFunction(value) //rank, rowNumber, ..
+				.or(()-> lookupStandaloneFunction(value)); //current_date, ..
+		if(res.isPresent()) {
+			var fn = res.get();
+			return new Triple(td, ofColumn(value, b-> fn.args()), this); //args //??
+		}
+		return null;
 	}
 	
 	private RequestEntryChain requireNoArgs() {
@@ -297,10 +321,9 @@ final class RequestEntryChain {
 		private final TableDecorator td;
 		private final ColumnDecorator cd;
 		private final RequestEntryChain entry;
-		private final TaggableColumn column;
 		
 		TaggableColumn buildColumn() {
-			return isNull(column) ? td.column(cd) : column;
+			return td.column(cd);
 		}
 	}
 	

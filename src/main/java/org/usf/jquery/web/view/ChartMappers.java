@@ -1,4 +1,4 @@
-package org.usf.jquery.web;
+package org.usf.jquery.web.view;
 
 import static org.usf.jquery.web.view.Chart2DView.areaChart;
 import static org.usf.jquery.web.view.Chart2DView.barChart;
@@ -7,13 +7,6 @@ import static org.usf.jquery.web.view.Chart2DView.comboChart;
 import static org.usf.jquery.web.view.Chart2DView.lineChart;
 
 import java.io.Writer;
-
-import org.usf.jquery.web.view.CalendarView;
-import org.usf.jquery.web.view.PieChartView;
-import org.usf.jquery.web.view.SankeyView;
-import org.usf.jquery.web.view.TableView;
-import org.usf.jquery.web.view.TimelineChartView;
-import org.usf.jquery.web.view.WebViewMapper;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;

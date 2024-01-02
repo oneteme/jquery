@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.JDBCType.AUTO;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
 import java.util.stream.Stream;
@@ -24,7 +23,7 @@ public final class OperationColumn implements DBColumn {
 	private Boolean aggregation;
 
 	public OperationColumn(Operator operation, Object[] args) {
-		this(operation, args, AUTO);
+		this(operation, args, null);
 	}
 	
 	@Override
