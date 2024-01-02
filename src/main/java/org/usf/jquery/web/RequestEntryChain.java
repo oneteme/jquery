@@ -195,8 +195,8 @@ final class RequestEntryChain {
 		if(nonNull(col)) {
 			params.add(col);
 		}
-		var s=nonNull(col)?1:0;
-		var i=s; 
+		var s = nonNull(col) ? 1 : 0;
+		var i = s; 
 		for(; i<min(np, op.getParameters().length); i++) {
 			params.add(args.get(i-s).toArg(td, op.getParameters()[i]));
 		}
@@ -213,17 +213,9 @@ final class RequestEntryChain {
 		if(isNull(value) || text) {
 			return requireNoArgs().value;
 		}
-		if(value.matches(VAR_PATTERN)) {
-			try {
-				var c = asColumn(td);
-				if(nonNull(c)) {
-					return c; // type will be checked later
-				}	
-			}
-			catch (Exception e) {/* do not throw exception */}
-		}
 		if(isEmpty(parameter.getTypes())) {
-			return value;
+			var c = tryParseColumn(td);
+			return isNull(c) ? value : c;
 		}
 		if(parameter.getTypes().length == 1) {
 			var type = parameter.getTypes()[0].type();
@@ -234,6 +226,10 @@ final class RequestEntryChain {
 				return asOrder(td);
 			}
 		}
+		var c = tryParseColumn(td);
+		if(isNull(c)) {
+			return c;
+		}
 		for(var t : parameter.getTypes()) {
 			var o = javaTypeParser(t).tryParse(value);
 			if(nonNull(o)) {
@@ -241,6 +237,15 @@ final class RequestEntryChain {
 			}
 		}
 		throw new ParseException("cannot parse value : " + value);
+	}
+	
+	private DBColumn tryParseColumn(TableDecorator td) {
+		try {
+			return asColumn(td);
+		}
+		catch (Exception e) {/* do not throw exception */
+			return null;
+		}
 	}
 	
 	private Triple lookup(TableDecorator td) {
@@ -261,7 +266,7 @@ final class RequestEntryChain {
 		if(context().isDeclaredColumn(value)) {
 			return new Triple(td, context().getColumn(requireNoArgs().value), this);
 		}
-		if("count".equals(value)) {
+		if("count".equals(value)) { //table !?
 			return new Triple(td, ofColumn("count", b-> fillArgs(td, column("*"), count())), this);
 		}
 		var res = lookupWindowFunction(value) //rank, rowNumber, ..
