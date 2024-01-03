@@ -66,6 +66,7 @@ public final class OverClause implements DBObject {
 			return null;
 		}
 		if(args.size() == 1) {
+			//instance of ClauseFunction ?
 			return args.get(0);
 		}
 		throw new IllegalArgumentException("duplicated arg values " + key);

@@ -11,9 +11,14 @@ import java.util.stream.Stream;
  *
  */
 @FunctionalInterface
-public interface ArgumentParser {
+public interface JDBCArgumentParser extends JavaArgumentParser {
 	
 	Object nativeParse(String v);
+	
+	@Override
+	default Object parse(RequestEntryChain entry, TableDecorator td) {
+		return parse(entry.requireNoArgs().getValue());
+	}
 
 	default Object[] parseAll(String... args) {
 		return isNull(args) ? null : Stream.of(args).map(this::parse).toArray();
@@ -25,15 +30,6 @@ public interface ArgumentParser {
 		}
 		catch(Exception e) {
 			throw new ParseException(format("cannot parse %s value '%s'", toString(), v), e); 
-		}
-	}
-	
-	default Object tryParse(String v) {
-		try {
-			return nativeParse(v);
-		}
-		catch(Exception e) {
-			return null;
 		}
 	}
 }

@@ -30,33 +30,16 @@ import lombok.extern.slf4j.Slf4j;
 public class RequestQueryBuilder {
 
 	private final List<TaggableColumn> columns = new LinkedList<>();
-	private final List<TaggableView> tables = new LinkedList<>();
 	private final List<DBFilter> filters = new LinkedList<>();  //WERE & HAVING
 	private final List<DBOrder> orders = new LinkedList<>();
 	private Iterator<?> it;
 	private boolean distinct;
-	
-	public RequestQueryBuilder select(TaggableView table, TaggableColumn... columns) {
-		return tables(table).columns(columns);
-	}
 	
 	public RequestQueryBuilder distinct() {
 		distinct = true;
 		return this;
 	}
 
-	public RequestQueryBuilder tables(@NonNull TaggableView... tables) {
-		Stream.of(tables).forEach(this.tables::add);
-		return this;
-	}
-	
-	public RequestQueryBuilder tablesIfAbsent(@NonNull TaggableView... tables) {
-		Stream.of(tables)
-		.filter(v-> this.tables.stream().noneMatch(t-> t.tagname().equals(v.tagname())))
-		.forEach(this.tables::add);
-		return this;
-	}
-	
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
 		Stream.of(columns).forEach(this.columns::add);
 		return this;

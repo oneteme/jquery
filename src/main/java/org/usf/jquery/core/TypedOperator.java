@@ -4,7 +4,6 @@ import static java.lang.Math.min;
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.Parameter.checkParams;
 
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 import lombok.Getter;
@@ -41,14 +40,6 @@ public class TypedOperator implements Operator {
 	
 	@Override
 	public OperationColumn args(Object... args) {
-		return args(args, (p, o)->{
-			if(!p.accept(o)) {
-				throw new IllegalArgumentException("mismatch arg type");
-			}
-		});
-	}
-
-	OperationColumn args(Object[] args, BiConsumer<Parameter, Object> fn) {
 		if(isNull(args)) {
 			args = new Object[0];
 		}
@@ -57,15 +48,27 @@ public class TypedOperator implements Operator {
 		if(na >= rq && (na <= parameters.length || isVarags())) {
 			var i=0;
 			for(; i<min(na, parameters.length); i++) {
-				fn.accept(parameters[i], args[i]);
+				if(!parameters[i].accept(args[i])) {
+					throw illegalArgumentException();
+				}
 			}
 			if(i<args.length) {
 				var last = parameters[parameters.length-1];
-				fn.accept(last, args[i]);
+				if(!last.accept(args[i])) {
+					throw illegalArgumentException();
+				}
 			}
-			return new OperationColumn(operator, args, typeFn.apply(args));
+			return new OperationColumn(operator, mapArgs(args), typeFn.apply(args));
 		}
-		throw new IllegalArgumentException();
+		throw new IllegalArgumentException("mismatch parameters");
+	}
+	
+	Object[] mapArgs(Object... args) {
+		return args;
+	}
+	
+	private static IllegalArgumentException illegalArgumentException() {
+		return new IllegalArgumentException("mismatch arg type");
 	}
 
 	public int requireArgCount() {

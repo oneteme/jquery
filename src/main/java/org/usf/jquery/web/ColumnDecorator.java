@@ -12,7 +12,7 @@ import static org.usf.jquery.core.Comparator.like;
 import static org.usf.jquery.core.Comparator.notEqual;
 import static org.usf.jquery.core.Comparator.notIn;
 import static org.usf.jquery.core.Comparator.notLike;
-import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
+import static org.usf.jquery.web.ArgumentParsers.jdbcArgParser;
 
 import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
@@ -43,8 +43,8 @@ public interface ColumnDecorator {
 	/**
 	 * override parser | format | local
 	 */
-	default ArgumentParser parser(TableDecorator td){
-		return javaTypeParser(dataType(td));
+	default JDBCArgumentParser parser(TableDecorator td){
+		return jdbcArgParser(dataType(td));
 	}
 	
 	default String pattern(TableDecorator td) {

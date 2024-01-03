@@ -10,7 +10,10 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JDBCType.typeOf;
-import static org.usf.jquery.core.JavaType.instance;
+import static org.usf.jquery.core.JqueryType.CLAUSE;
+import static org.usf.jquery.core.JqueryType.COLUMN;
+import static org.usf.jquery.core.JqueryType.ORDER;
+import static org.usf.jquery.core.OverClause.clauses;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -18,6 +21,7 @@ import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.Optional;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /**
  * 
@@ -131,7 +135,7 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 	
 	static TypedOperator right() {
-		return new TypedOperator(VARCHAR, function("RIGHT"),  required(VARCHAR), required(INTEGER));
+		return new TypedOperator(VARCHAR, function("RIGHT"), required(VARCHAR), required(INTEGER));
 	}
 	
 	static TypedOperator replace() {
@@ -211,7 +215,7 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 	
 	static TypedOperator decimal() {
-		return new TypedOperator(DOUBLE, cast("DECIMAL"), required(VARCHAR, DOUBLE), optional(INTEGER), optional(INTEGER));
+		return new TypedOperator(DOUBLE, cast("DECIMAL"), required(VARCHAR, BIGINT), optional(INTEGER), optional(INTEGER));
 	}
 
 	//other functions
@@ -259,12 +263,17 @@ public interface Operator extends DBProcessor, NestedSql {
 	//pipe functions
 	
 	static TypedOperator over() {
-		return new TypedOperator(firstArgType(), pipe("OVER"),
-				required(instance(DBColumn.class)), //NamedColumn, OperationColumn
-				required(instance(OverClause.class))) {
+		return new TypedOperator(firstArgType(), pipe("OVER"), required(COLUMN), optional(CLAUSE), optional(CLAUSE)) {
+			
 			@Override
 			public OperationColumn args(Object... args) {
 				return super.args(args).aggregation(false); //over aggregation functions
+			}
+			
+			@Override
+			Object[] mapArgs(Object... args) {
+				var c = Stream.of(args).skip(1).map(OperationColumn.class::cast).toArray(OperationColumn[]::new);
+				return super.mapArgs(args[0], clauses(c));
 			}
 		};
 	}
@@ -272,13 +281,11 @@ public interface Operator extends DBProcessor, NestedSql {
 	//clause functions
 	
 	static TypedOperator partition() {
-		var ct = instance(DBColumn.class); // require at least one column
-		return new TypedOperator(instance(DBColumn[].class), clause("PARTITION BY"), required(ct), varargs(ct));
+		return new TypedOperator(CLAUSE, clause("PARTITION BY"), required(COLUMN), varargs(COLUMN));
 	}
 
 	static TypedOperator order() {
-		var ot = instance(DBOrder.class); // require at least one order
-		return new TypedOperator(instance(DBOrder[].class), clause("ORDER BY"), required(ot), varargs(ot));
+		return new TypedOperator(CLAUSE, clause("ORDER BY"), required(ORDER), varargs(ORDER));
 	}
 
 	static ArithmeticOperator operator(String symbol) {

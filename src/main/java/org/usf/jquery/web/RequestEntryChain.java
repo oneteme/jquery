@@ -10,12 +10,9 @@ import static org.usf.jquery.core.Operator.count;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.Operator.lookupStandaloneFunction;
 import static org.usf.jquery.core.Operator.lookupWindowFunction;
-import static org.usf.jquery.core.OverClause.clauses;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Validation.VAR_PATTERN;
-import static org.usf.jquery.web.ArgumentParsers.javaTypeParser;
+import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 import static org.usf.jquery.web.JQueryContext.context;
@@ -165,8 +162,8 @@ final class RequestEntryChain {
 		throw cannotEvaluateException(value);
 	}
 	
-	OperationColumn requireOperation(TableDecorator td, DBColumn col) {
-		var op = toOperation(td, col);
+	OperationColumn asOperation(TableDecorator td) {
+		var op = toOperation(td, null);
 		if(nonNull(op)) {
 			return op;
 		}
@@ -179,10 +176,6 @@ final class RequestEntryChain {
 	}
 
 	OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator op) {
-		if(OVER_FN.equals(op.id())) {
-			var oc = args.stream().map(o-> o.requireOperation(td, null)).toArray(OperationColumn[]::new);
-			return op.args(col, clauses(oc));
-		}
 		var min = op.requireArgCount();
 		var np = isNull(args) ? 0 : args.size();
 		if(nonNull(col)) {
@@ -210,42 +203,9 @@ final class RequestEntryChain {
 	}
 	
 	Object toArg(TableDecorator td, Parameter parameter) {
-		if(isNull(value) || text) {
-			return requireNoArgs().value;
-		}
-		if(isEmpty(parameter.getTypes())) {
-			var c = tryParseColumn(td);
-			return isNull(c) ? value : c;
-		}
-		if(parameter.getTypes().length == 1) {
-			var type = parameter.getTypes()[0].type();
-			if(type.isAssignableFrom(DBColumn.class)) {
-				return asColumn(td);
-			}
-			if(type.isAssignableFrom(DBOrder.class)) {
-				return asOrder(td);
-			}
-		}
-		var c = tryParseColumn(td);
-		if(isNull(c)) {
-			return c;
-		}
-		for(var t : parameter.getTypes()) {
-			var o = javaTypeParser(t).tryParse(value);
-			if(nonNull(o)) {
-				return o;
-			}
-		}
-		throw new ParseException("cannot parse value : " + value);
-	}
-	
-	private DBColumn tryParseColumn(TableDecorator td) {
-		try {
-			return asColumn(td);
-		}
-		catch (Exception e) {/* do not throw exception */
-			return null;
-		}
+		return isNull(value) || text 
+				? requireNoArgs().value
+				: parse(this, td, parameter.getTypes());
 	}
 	
 	private Triple lookup(TableDecorator td) {
@@ -259,6 +219,14 @@ final class RequestEntryChain {
 		if(nonNull(tp)) {
 			return tp;
 		}
+		if("count".equals(value)) { //table !?
+			return new Triple(td, ofColumn("count", b-> fillArgs(td, column("*"), count())), this);
+		}
+		var res = lookupStandaloneFunction(value); //rank, rowNumber, ..
+		if(res.isPresent()) {
+			var fn = res.get();
+			return new Triple(td, ofColumn(value, b-> fn.args()), this); //args //??
+		}
 		throw cannotEvaluateException(this);
 	}
 
@@ -266,11 +234,7 @@ final class RequestEntryChain {
 		if(context().isDeclaredColumn(value)) {
 			return new Triple(td, context().getColumn(requireNoArgs().value), this);
 		}
-		if("count".equals(value)) { //table !?
-			return new Triple(td, ofColumn("count", b-> fillArgs(td, column("*"), count())), this);
-		}
-		var res = lookupWindowFunction(value) //rank, rowNumber, ..
-				.or(()-> lookupStandaloneFunction(value)); //current_date, ..
+		var res = lookupWindowFunction(value); //rank, rowNumber, ..
 		if(res.isPresent()) {
 			var fn = res.get();
 			return new Triple(td, ofColumn(value, b-> fn.args()), this); //args //??
@@ -278,7 +242,7 @@ final class RequestEntryChain {
 		return null;
 	}
 	
-	private RequestEntryChain requireNoArgs() {
+	RequestEntryChain requireNoArgs() {
 		if(isNull(args)) {
 			return this;
 		}

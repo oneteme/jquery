@@ -1,13 +1,10 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.JavaType.declare;
-
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 import lombok.Getter;
@@ -46,11 +43,9 @@ public enum JDBCType implements JavaType {
 	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance),
 	OTHER(Types.OTHER, null, o-> false); //isnull !?
 
-	static final JavaType OVER_ARG = declare("over.arg", Object.class, o-> true);
-	
 	private final int value;
 	private final Class<?> type;
-	private final Function<Object, Boolean> matcher;
+	private final Predicate<Object> matcher;
 	
 	@Override
 	public Class<?> type() {
@@ -74,7 +69,7 @@ public enum JDBCType implements JavaType {
 	}
 	
 	private boolean acceptValue(Object o) {
-		return o == null || matcher.apply(o);
+		return o == null || matcher.test(o);
 	}
 	
 	private static boolean isNumber(Object o, double min, double max, boolean decimal) {
