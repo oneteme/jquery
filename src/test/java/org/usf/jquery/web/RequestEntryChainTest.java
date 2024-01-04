@@ -1,10 +1,8 @@
 package org.usf.jquery.web;
 
 import static java.util.Collections.emptyList;
-import static org.junit.jupiter.api.Assertions.*;
-import static org.usf.jquery.web.RequestParser.*;
+import static org.usf.jquery.web.RequestParser.parseEntry;
 
-import java.util.Collections;
 import java.util.Optional;
 
 import org.junit.jupiter.api.Test;

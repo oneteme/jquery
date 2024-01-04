@@ -94,7 +94,7 @@ public class RequestQueryBuilder {
 		sb.append("SELECT ")
     	.appendIf(distinct, ()-> "DISTINCT ")
     	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.tagname()))
-    	.append(" FROM ")
+    	.appendIf(!pb.views().isEmpty(), " FROM ") //TODO finish this
     	.appendEach(pb.views(), SCOMA, o-> o.sql(pb, schema, true));
 	}
 

@@ -22,7 +22,7 @@ public final class SqlStringBuilder {
 	static final String DQUOT = "\"";
 	static final String SCOMA  = COMA + SPACE;
 	
-	private final StringBuilder sb;
+	final StringBuilder sb;
 
 	public SqlStringBuilder(int capacity) {
 		this.sb = new StringBuilder(capacity);
@@ -78,6 +78,10 @@ public final class SqlStringBuilder {
 	public SqlStringBuilder append(String s) {
 		sb.append(s);
 		return this;
+	}
+	
+	public int length(){
+		return sb.length();
 	}
 	
 	@Override

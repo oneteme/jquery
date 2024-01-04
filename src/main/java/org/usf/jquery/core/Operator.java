@@ -323,10 +323,6 @@ public interface Operator extends DBProcessor, NestedSql {
 	static StandaloneFunction constant(String name) {
 		return ()-> name;
 	}
-	
-	static Optional<TypedOperator> lookupStandaloneFunction(String op) {
-		return lookupOperator(op).filter(fn-> fn.unwrap().getClass() == StandaloneFunction.class);
-	}
 
 	static Optional<TypedOperator> lookupWindowFunction(String op) {
 		return lookupOperator(op).filter(fn-> fn.unwrap().getClass() == WindowFunction.class); //!aggregation

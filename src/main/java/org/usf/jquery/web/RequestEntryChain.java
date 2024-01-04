@@ -5,13 +5,10 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.DBColumn.column;
-import static org.usf.jquery.core.Operator.count;
 import static org.usf.jquery.core.Operator.lookupOperator;
-import static org.usf.jquery.core.Operator.lookupStandaloneFunction;
 import static org.usf.jquery.core.Operator.lookupWindowFunction;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
@@ -19,7 +16,6 @@ import static org.usf.jquery.web.JQueryContext.context;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.ComparisonExpression;
@@ -28,10 +24,8 @@ import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.InCompartor;
 import org.usf.jquery.core.OperationColumn;
-import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Parameter;
-import org.usf.jquery.core.SqlStringBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.WindowView;
@@ -72,39 +66,30 @@ final class RequestEntryChain {
 				}
 			} while(e.next());
 		}
-		else {
-			return c;
+		if(nonNull(e.tag)) {
+			return oc.as(e.tag);
 		}
-		return oc.as(isNull(e.tag) ? c.tagname() : e.tag);
+		return oc == c ? c : oc.as(c.tagname());
 	}
 
 	public DBFilter asFilter(TableDecorator td, List<RequestEntryChain> values) {
 		var t = lookupResource(td);
 		var c = t.buildColumn();
 		var e = t.entry.next;
+		var p = t.entry;
 		DBColumn oc = c;
 		while(nonNull(e)) {
 			var op = e.toOperation(td, oc);
-			if(isNull(oc)) {
+			if(isNull(op)) {
 				break;
 			}
-			else {
-				oc = op; //preserve last non null column
-			}
+			oc = op; //preserve last non null column
+			p = e; //preserve last operator entry
 			e = e.next;
 		}
-		var cd = c == oc ? t.cd : DEFAUL_COLUMN; //no operation
-		ComparisonExpression exp = null;
-		if(isNull(e)) { // no expression
-			exp = new RequestEntryChain(null).toComparison(td, cd, values);
-		}
-		else if(e.isLast()) {
-			exp = e.toComparison(td, cd, values);
-		}
-		else {
-			throw cannotEvaluateException("filter", e); //more detail
-		}
-		return "OVER".equals(e.value) 
+		var exp = (isNull(e) ? new RequestEntryChain(null) : e)
+				.toComparison(td, c == oc ? t.cd : DEFAUL_COLUMN, values);
+		return "over".equals(p.value) 
 				? new WindowView(td.table(), oc.as(c.tagname())).filter(exp) 
 				: oc.filter(exp);
 	}
@@ -137,12 +122,23 @@ final class RequestEntryChain {
 		throw cannotEvaluateException("order", e); //column expected
 	}
 	
-	OperationColumn asOperation(TableDecorator td) {
+	public OperationColumn asOperation(TableDecorator td) { //predicate
 		var op = toOperation(td, null);
 		if(nonNull(op)) {
 			return op;
 		}
 		throw cannotEvaluateException("operation", this); // as function
+	}
+
+	OperationColumn toOperation(TableDecorator td, DBColumn col) {
+		var res = lookupOperator(value);
+		if(isNull(col) && "count".equals(value) && isEmpty(args)) {
+			col = b-> { //no column & no args
+				b.view(td.table());
+				return "*";
+			};
+		}
+		return res.isEmpty() ? null : fillArgs(td, col, res.get());
 	}
 	
 	ComparisonExpression toComparison(TableDecorator td, ColumnDecorator cd, List<RequestEntryChain> values) {
@@ -169,48 +165,32 @@ final class RequestEntryChain {
 					? cmp.expression(arr)
 					: ofComparator(cmp).build(arr);
 		}
-		throw cannotEvaluateException("expression", value);
-	}
-
-	OperationColumn toOperation(TableDecorator td, DBColumn col) {
-		var res = lookupOperator(value);
-		return res.isEmpty() ? null : fillArgs(td, col, res.get());
-	}
-
-	Object toArg(TableDecorator td, Parameter parameter) {
-		return isNull(value) || text 
-				? requireNoArgs().value
-				: parse(this, td, parameter.getTypes());
+		throw cannotEvaluateException("expression", this);
 	}
 	
 	private Triple lookupResource(TableDecorator td) {
 		if(next() && context().isDeclaredTable(value)) {  //columnName == viewName
-			var tr = next.lookupPrefixedResource(context().getTable(value));
+			var tr = next.lookupViewResource(context().getTable(value));
 			if(nonNull(tr)) {
 				return tr;
 			}
 		}
-		var tp = lookupPrefixedResource(td);
+		var tp = lookupViewResource(td);
 		if(nonNull(tp)) {
 			return tp;
 		}
-		if("count".equals(value)) { //table !?
-			DBColumn col = b-> {
-				b.view(td.table());
-				return "*";
-			};
-			return new Triple(td, ofColumn(value, b-> fillArgs(td, col, count())), this);
+		var op = toOperation(td, null);
+		if(nonNull(op)) {
+			return new Triple(td, ofColumn(value, b-> op), this);
 		}
-		return lookupStandaloneFunction(value)
-		.map(fn-> new Triple(td, ofColumn(value, b-> fillArgs(td, null, fn)), this))
-		.orElseThrow(()-> cannotEvaluateException("resource", this));
+		throw cannotEvaluateException("resource", this);
 	}
 
-	private Triple lookupPrefixedResource(TableDecorator td) {
+	private Triple lookupViewResource(TableDecorator td) {
 		return context().isDeclaredColumn(value) 
 				? new Triple(td, context().getColumn(requireNoArgs().value), this)
 				: lookupWindowFunction(value)  //rank, rowNumber, ..
-				.map(fn-> new Triple(td, ofColumn(value, b-> fillArgs(td, null, fn)), this)) //reuse fn
+				.map(fn-> new Triple(td, ofColumn(value, b-> fillArgs(td, null, fn)), this))
 				.orElse(null);
 	}
 	
@@ -240,6 +220,12 @@ final class RequestEntryChain {
 			return op.args(params.toArray());
 		}
 		throw new IllegalArgumentException("msg");
+	}
+
+	private Object toArg(TableDecorator td, Parameter parameter) {
+		return isNull(value) || text
+				? requireNoArgs().value
+				: parse(this, td, parameter.getTypes());
 	}
 	
 	RequestEntryChain requireNoArgs() {
@@ -273,11 +259,7 @@ final class RequestEntryChain {
 	}
 
 	static ParseException cannotEvaluateException(String type, RequestEntryChain entry) {
-		return cannotEvaluateException(type, entry.toString());
-	}
-	
-	static ParseException cannotEvaluateException(String type, String entry) {
-		return new ParseException("cannot evaluate " + type + " " + quote(entry));
+		return ParseException.cannotEvaluateException(type, entry.toString());
 	}
 	
 	static String[] toStringArray(List<RequestEntryChain> entries) {
@@ -295,5 +277,4 @@ final class RequestEntryChain {
 			return td.column(cd);
 		}
 	}
-	
 }
