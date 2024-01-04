@@ -19,6 +19,7 @@ import static org.usf.jquery.web.JQueryContext.context;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.ComparisonExpression;
@@ -27,8 +28,10 @@ import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.InCompartor;
 import org.usf.jquery.core.OperationColumn;
+import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Parameter;
+import org.usf.jquery.core.SqlStringBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.WindowView;
@@ -44,7 +47,6 @@ import lombok.Setter;
 final class RequestEntryChain {
 	
 	private static final ColumnDecorator DEFAUL_COLUMN = ()-> null; //unused identity
-	private static final String OVER_FN = "OVER";
 
 	private final String value;
 	private final boolean text; //"string"
@@ -57,7 +59,7 @@ final class RequestEntryChain {
 	}
 
 	public TaggableColumn asColumn(TableDecorator td) {
-		var t = lookup(td);
+		var t = lookupResource(td);
 		var c = t.buildColumn();
 		var e = t.entry;
 		DBColumn oc = c;
@@ -66,18 +68,18 @@ final class RequestEntryChain {
 				e = e.next;
 				oc = e.toOperation(td, oc);
 				if(isNull(oc)) {
-					throw cannotEvaluateException(e);
+					throw cannotEvaluateException("column", e);
 				}
-			} while(e.next()); //preserve last non null entry
+			} while(e.next());
 		}
-		if(oc == c) {
+		else {
 			return c;
 		}
 		return oc.as(isNull(e.tag) ? c.tagname() : e.tag);
 	}
 
 	public DBFilter asFilter(TableDecorator td, List<RequestEntryChain> values) {
-		var t = lookup(td);
+		var t = lookupResource(td);
 		var c = t.buildColumn();
 		var e = t.entry.next;
 		DBColumn oc = c;
@@ -100,15 +102,15 @@ final class RequestEntryChain {
 			exp = e.toComparison(td, cd, values);
 		}
 		else {
-			throw cannotEvaluateException(e); //more detail
+			throw cannotEvaluateException("filter", e); //more detail
 		}
-		return OVER_FN.equals(e.value) 
+		return "OVER".equals(e.value) 
 				? new WindowView(td.table(), oc.as(c.tagname())).filter(exp) 
 				: oc.filter(exp);
 	}
 	
 	public DBOrder asOrder(TableDecorator td) {
-		var t = lookup(td);
+		var t = lookupResource(td);
 		var c = t.buildColumn();
 		var e = t.entry.next;
 		DBColumn oc = c;
@@ -132,7 +134,15 @@ final class RequestEntryChain {
 				return oc.order(order.get());
 			}
 		}
-		throw cannotEvaluateException(e); //column expected
+		throw cannotEvaluateException("order", e); //column expected
+	}
+	
+	OperationColumn asOperation(TableDecorator td) {
+		var op = toOperation(td, null);
+		if(nonNull(op)) {
+			return op;
+		}
+		throw cannotEvaluateException("operation", this); // as function
 	}
 	
 	ComparisonExpression toComparison(TableDecorator td, ColumnDecorator cd, List<RequestEntryChain> values) {
@@ -159,87 +169,77 @@ final class RequestEntryChain {
 					? cmp.expression(arr)
 					: ofComparator(cmp).build(arr);
 		}
-		throw cannotEvaluateException(value);
+		throw cannotEvaluateException("expression", value);
 	}
-	
-	OperationColumn asOperation(TableDecorator td) {
-		var op = toOperation(td, null);
-		if(nonNull(op)) {
-			return op;
-		}
-		throw cannotEvaluateException(value); // as function
-	}
-	
+
 	OperationColumn toOperation(TableDecorator td, DBColumn col) {
 		var res = lookupOperator(value);
 		return res.isEmpty() ? null : fillArgs(td, col, res.get());
 	}
 
-	OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator op) {
-		var min = op.requireArgCount();
-		var np = isNull(args) ? 0 : args.size();
-		if(nonNull(col)) {
-			np++;
-		}
-		if(np < min || (!op.isVarags() && np > op.getParameters().length)) {
-			throw new IllegalArgumentException("msg");
-		}
-		var params = new ArrayList<Object>(np);
-		if(nonNull(col)) {
-			params.add(col);
-		}
-		var s = nonNull(col) ? 1 : 0;
-		var i = s; 
-		for(; i<min(np, op.getParameters().length); i++) {
-			params.add(args.get(i-s).toArg(td, op.getParameters()[i]));
-		}
-		if(op.isVarags()) {
-			var types = op.getParameters()[op.getParameters().length-1]; 
-			for(; i<np; i++) {
-				params.add(args.get(i-s).toArg(td, types));
-			}
-		}
-		return op.args(params.toArray());
-	}
-	
 	Object toArg(TableDecorator td, Parameter parameter) {
 		return isNull(value) || text 
 				? requireNoArgs().value
 				: parse(this, td, parameter.getTypes());
 	}
 	
-	private Triple lookup(TableDecorator td) {
+	private Triple lookupResource(TableDecorator td) {
 		if(next() && context().isDeclaredTable(value)) {  //columnName == viewName
-			var tr = next.lookupColumn(context().getTable(value));
+			var tr = next.lookupPrefixedResource(context().getTable(value));
 			if(nonNull(tr)) {
 				return tr;
 			}
 		}
-		var tp = lookupColumn(td);
+		var tp = lookupPrefixedResource(td);
 		if(nonNull(tp)) {
 			return tp;
 		}
 		if("count".equals(value)) { //table !?
-			return new Triple(td, ofColumn("count", b-> fillArgs(td, column("*"), count())), this);
+			DBColumn col = b-> {
+				b.view(td.table());
+				return "*";
+			};
+			return new Triple(td, ofColumn(value, b-> fillArgs(td, col, count())), this);
 		}
-		var res = lookupStandaloneFunction(value); //rank, rowNumber, ..
-		if(res.isPresent()) {
-			var fn = res.get();
-			return new Triple(td, ofColumn(value, b-> fn.args()), this); //args //??
-		}
-		throw cannotEvaluateException(this);
+		return lookupStandaloneFunction(value)
+		.map(fn-> new Triple(td, ofColumn(value, b-> fillArgs(td, null, fn)), this))
+		.orElseThrow(()-> cannotEvaluateException("resource", this));
 	}
 
-	private Triple lookupColumn(TableDecorator td) {
-		if(context().isDeclaredColumn(value)) {
-			return new Triple(td, context().getColumn(requireNoArgs().value), this);
+	private Triple lookupPrefixedResource(TableDecorator td) {
+		return context().isDeclaredColumn(value) 
+				? new Triple(td, context().getColumn(requireNoArgs().value), this)
+				: lookupWindowFunction(value)  //rank, rowNumber, ..
+				.map(fn-> new Triple(td, ofColumn(value, b-> fillArgs(td, null, fn)), this)) //reuse fn
+				.orElse(null);
+	}
+	
+	private OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator op) {
+		var np = isNull(args) ? 0 : args.size();
+		if(nonNull(col)) {
+			np++;
+		}		
+		var min = op.requireArgCount();
+		var max = op.getParameters().length;
+		if(np >= min && (op.isVarags() || np <= max)) {
+			var params = new ArrayList<Object>(np);
+			if(nonNull(col)) {
+				params.add(col);
+			}
+			var s = nonNull(col) ? 1 : 0;
+			var i = s; 
+			for(; i<min(np, max); i++) {
+				params.add(args.get(i-s).toArg(td, op.getParameters()[i]));
+			}
+			if(op.isVarags()) {
+				var types = op.getParameters()[max-1]; 
+				for(; i<np; i++) {
+					params.add(args.get(i-s).toArg(td, types));
+				}
+			}
+			return op.args(params.toArray());
 		}
-		var res = lookupWindowFunction(value); //rank, rowNumber, ..
-		if(res.isPresent()) {
-			var fn = res.get();
-			return new Triple(td, ofColumn(value, b-> fn.args()), this); //args //??
-		}
-		return null;
+		throw new IllegalArgumentException("msg");
 	}
 	
 	RequestEntryChain requireNoArgs() {
@@ -272,12 +272,12 @@ final class RequestEntryChain {
 		return isNull(tag) ? s : s + ":" + tag;
 	}
 
-	static ParseException cannotEvaluateException(RequestEntryChain entry) {
-		return cannotEvaluateException(entry.toString());
+	static ParseException cannotEvaluateException(String type, RequestEntryChain entry) {
+		return cannotEvaluateException(type, entry.toString());
 	}
 	
-	static ParseException cannotEvaluateException(String entry) {
-		return new ParseException("cannot evaluate entry : " + quote(entry));
+	static ParseException cannotEvaluateException(String type, String entry) {
+		return new ParseException("cannot evaluate " + type + " " + quote(entry));
 	}
 	
 	static String[] toStringArray(List<RequestEntryChain> entries) {

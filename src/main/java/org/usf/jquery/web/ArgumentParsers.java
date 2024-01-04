@@ -93,10 +93,10 @@ public class ArgumentParsers {
 
 	public static JavaArgumentParser jqueryArgParser(JqueryType type) {
 		switch (type) {
-		case COLUMN:		return RequestEntryChain::asColumn;
-		case ORDER: 		return RequestEntryChain::asOrder;
-		case CLAUSE: 		return RequestEntryChain::asOperation;
-		default:			throw unsupportedTypeException(requireNonNull(type));
+		case COLUMN:	return RequestEntryChain::asColumn;
+		case ORDER : 	return RequestEntryChain::asOrder;
+		case CLAUSE:	return RequestEntryChain::asOperation;
+		default:		throw unsupportedTypeException(requireNonNull(type));
 		}
 	}
 	

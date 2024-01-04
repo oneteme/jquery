@@ -140,7 +140,7 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 	static DBColumn column(@NonNull String value) {
 		return p-> value;
 	}
-
+	
 	static DBColumn constant(Object value) {
 		return constant(()-> value);
 	}

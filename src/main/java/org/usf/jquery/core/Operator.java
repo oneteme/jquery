@@ -271,9 +271,9 @@ public interface Operator extends DBProcessor, NestedSql {
 			}
 			
 			@Override
-			Object[] mapArgs(Object... args) {
-				var c = Stream.of(args).skip(1).map(OperationColumn.class::cast).toArray(OperationColumn[]::new);
-				return super.mapArgs(args[0], clauses(c));
+			Object[] mapArg(Object... args) { //map args after check
+				var c = Stream.of(args).skip(1).toArray(OperationColumn[]::new);
+				return super.mapArg(args[0], clauses(c));
 			}
 		};
 	}
@@ -325,11 +325,11 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 	
 	static Optional<TypedOperator> lookupStandaloneFunction(String op) {
-		return lookupOperator(op).filter(fn-> fn.unwrap() instanceof StandaloneFunction);
+		return lookupOperator(op).filter(fn-> fn.unwrap().getClass() == StandaloneFunction.class);
 	}
 
 	static Optional<TypedOperator> lookupWindowFunction(String op) {
-		return lookupOperator(op).filter(fn-> fn.unwrap() instanceof WindowFunction);
+		return lookupOperator(op).filter(fn-> fn.unwrap().getClass() == WindowFunction.class); //!aggregation
 	}
 	
 	static Optional<TypedOperator> lookupOperator(String op) {
