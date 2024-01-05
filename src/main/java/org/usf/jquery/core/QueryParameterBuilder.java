@@ -15,7 +15,6 @@ import java.lang.reflect.Array;
 import java.sql.Date;
 import java.sql.Timestamp;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.function.Function;
@@ -36,7 +35,7 @@ public final class QueryParameterBuilder {
 	private static final String ARG = "?";
 	
 	private final String viewAlias;
-	private final Collection<Object> args;
+	private final List<Object> args;
 	private final List<TaggableView> views; //indexed
 	
 	public String view(TaggableView view) {

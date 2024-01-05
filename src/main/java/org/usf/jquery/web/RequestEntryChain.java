@@ -104,13 +104,11 @@ final class RequestEntryChain {
 			if(isNull(op)) {
 				break;
 			}
-			else {
-				oc = op; //preserve last non null column
-			}
+			oc = op; //preserve last non null column
 			e = e.next;
 		}
 		if(isNull(e)) { // no expression
-			return c.order();
+			return oc.order();
 		}
 		else if(e.isLast()) { //last entry
 			var upVal = e.value.toUpperCase();
@@ -142,6 +140,9 @@ final class RequestEntryChain {
 	}
 	
 	ComparisonExpression toComparison(TableDecorator td, ColumnDecorator cd, List<RequestEntryChain> values) {
+		if(next()) {
+			throw cannotEvaluateException("expression", next); // as function
+		}
 		if(nonNull(value)) {
 			var criteria = cd.criteria(value);
 			if(nonNull(criteria)) {
