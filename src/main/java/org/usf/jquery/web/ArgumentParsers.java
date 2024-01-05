@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -46,23 +45,25 @@ public class ArgumentParsers {
 			jdbcArgParser(VARCHAR)};
 	
 	public static Object parse(RequestEntryChain entry, TableDecorator td, JavaType... types) {
-		if(nonNull(types)) { 
-			if(types.length == 1 && types[0] instanceof JqueryType) { // only one type
-				return jqueryArgParser((JqueryType)types[0]).parse(entry, td);
-			}
-			if(!Stream.of(types).allMatch(JDBCType.class::isInstance)) {
-				throw new IllegalArgumentException("different types");
-			}
+		if(isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance)) {
+			try {
+				return jqueryArgParser(COLUMN).parse(entry, td); //only JDBC types
+			} catch (Exception e) {/*do not throw exception*/}
 		}
-		try {
-			return jqueryArgParser(COLUMN).parse(entry, td);
-		} catch (Exception e) {/*do not throw exception*/}
 		if(isEmpty(types)) {
-			types = new JavaType[] {null};
+			return jdbcArgParser(null).parse(entry, td);
 		}
 		for(var type : types) {
 			try {
-				return jdbcArgParser((JDBCType) type).parse(entry, td);
+				if(type instanceof JqueryType) {
+					return jqueryArgParser((JqueryType) type).parse(entry, td);
+				}
+				else if(type instanceof JDBCType) {
+					return jdbcArgParser((JDBCType) type).parse(entry, td);
+				}
+				else {
+					throw new UnsupportedOperationException("unsupported " + type);
+				}
 			} catch (Exception e) {/*do not throw exception*/}
 		}
 		throw cannotParseException("value", entry.toString());

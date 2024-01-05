@@ -17,7 +17,9 @@ import static org.usf.jquery.core.OverClause.clauses;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
+import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Optional;
 import java.util.function.Function;
@@ -29,6 +31,20 @@ import java.util.stream.Stream;
  *
  */
 public interface Operator extends DBProcessor, NestedSql {
+
+	static final Operator VALUE_RETURN = new Operator() {
+		
+		@Override
+		public String sql(QueryParameterBuilder builder, Object[] args) {
+			requireNArgs(1, args, this::id);
+			return args[0] instanceof Number ? args[0].toString() : quote(args[0].toString());
+		}
+		
+		@Override
+		public String id() {
+			return "value";
+		}
+	};
 	
 	String id();
 	
@@ -286,6 +302,10 @@ public interface Operator extends DBProcessor, NestedSql {
 
 	static TypedOperator order() {
 		return new TypedOperator(CLAUSE, clause("ORDER BY"), required(ORDER), varargs(ORDER));
+	}
+	
+	static TypedOperator value() {
+		return new TypedOperator(firstArgType(), VALUE_RETURN, required());
 	}
 
 	static ArithmeticOperator operator(String symbol) {

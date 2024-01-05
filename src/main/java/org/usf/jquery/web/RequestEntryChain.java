@@ -141,7 +141,7 @@ final class RequestEntryChain {
 	
 	ComparisonExpression toComparison(TableDecorator td, ColumnDecorator cd, List<RequestEntryChain> values) {
 		if(next()) {
-			throw cannotEvaluateException("expression", this); // as function
+			throw cannotEvaluateException("expression", this);
 		}
 		if(nonNull(value)) {
 			var criteria = cd.criteria(value);
