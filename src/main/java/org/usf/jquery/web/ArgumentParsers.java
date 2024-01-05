@@ -7,7 +7,6 @@ import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
-import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JqueryType.COLUMN;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.ParseException.cannotParseException;
@@ -41,17 +40,16 @@ public class ArgumentParsers {
 	private static final JDBCArgumentParser[] STD_PRS = {
 			jdbcArgParser(BIGINT), jdbcArgParser(DOUBLE), 
 			jdbcArgParser(DATE), jdbcArgParser(TIMESTAMP), 
-			jdbcArgParser(TIME), jdbcArgParser(TIMESTAMP_WITH_TIMEZONE),
-			jdbcArgParser(VARCHAR)};
+			jdbcArgParser(TIME), jdbcArgParser(TIMESTAMP_WITH_TIMEZONE)};
 	
 	public static Object parse(RequestEntryChain entry, TableDecorator td, JavaType... types) {
 		if(isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance)) {
 			try {
 				return jqueryArgParser(COLUMN).parse(entry, td); //only JDBC types
 			} catch (Exception e) {/*do not throw exception*/}
-		}
-		if(isEmpty(types)) {
-			return jdbcArgParser(null).parse(entry, td);
+			if(isEmpty(types)) {
+				return jdbcArgParser(null).parse(entry, td);
+			}
 		}
 		for(var type : types) {
 			try {

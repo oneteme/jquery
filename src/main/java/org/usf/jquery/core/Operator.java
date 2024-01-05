@@ -287,9 +287,9 @@ public interface Operator extends DBProcessor, NestedSql {
 			}
 			
 			@Override
-			Object[] mapArg(Object... args) { //map args after check
+			Object[] afterCheck(Object... args) { //map args after check
 				var c = Stream.of(args).skip(1).toArray(OperationColumn[]::new);
-				return super.mapArg(args[0], clauses(c));
+				return super.afterCheck(args[0], clauses(c));
 			}
 		};
 	}

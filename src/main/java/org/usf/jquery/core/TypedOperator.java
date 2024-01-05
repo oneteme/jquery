@@ -58,12 +58,12 @@ public class TypedOperator implements Operator {
 					throw illegalArgumentException();
 				}
 			}
-			return new OperationColumn(operator, mapArg(args), typeFn.apply(args));
+			return new OperationColumn(operator, afterCheck(args), typeFn.apply(args));
 		}
 		throw new IllegalArgumentException("mismatch parameters");
 	}
 	
-	Object[] mapArg(Object... args) {
+	Object[] afterCheck(Object... args) {
 		return args;
 	}
 	
