@@ -20,16 +20,17 @@ public final class WindowView implements TaggableView {
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, String schema) { //sub query should not use main builder
-		var va = "v0";
+		var b = addWithValue();
+		var v = b.view(this);
 		return new SqlStringBuilder(100)
-		.append("(SELECT ").append(va).append(".*, ")
-		.append(column.sql(addWithValue())).append(" AS ").append(doubleQuote(column.tagname()))
-		.append(" FROM ").append(view.sql(addWithValue(), schema)).append(SPACE).append(va).append(")")
+		.append("(SELECT ").append(member(v, "*")).append(", ")
+		.append(column.sql(b)).append(" AS ").append(doubleQuote(column.tagname()))
+		.append(" FROM ").append(view.sql(b, schema)).append(SPACE).append(v).append(")")
 		.toString();
 	}
 	
 	public DBFilter filter(ComparisonExpression expression) {
-		DBColumn col = b-> member(b.overwriteView(this), column.tagname());
+		DBColumn col = b-> member(b.overwriteView(this), doubleQuote(column.tagname()));
 		return col.filter(expression);
 	}
 

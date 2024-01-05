@@ -33,9 +33,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
-	private static final String ALIAS = "t";
 	private static final String ARG = "?";
 	
+	private final String viewAlias;
 	private final Collection<Object> args;
 	private final List<TaggableView> views; //indexed
 	
@@ -52,11 +52,11 @@ public final class QueryParameterBuilder {
 		for(; i<views.size(); i++) {
 			if(views.get(i).tagname().equals(view.tagname())) {
 				consumer.accept(i);
-				return ALIAS + (i+1); //always add alias
+				return viewAlias + (i+1); //always add alias
 			}
 		}
 		views.add(view);
-		return ALIAS + views.size(); //always add alias
+		return viewAlias + views.size(); //always add alias
 	}
 	
 	public List<TaggableView> views(){
@@ -159,14 +159,14 @@ public final class QueryParameterBuilder {
 	}
 	
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null, new ArrayList<>()); //no args
+		return new QueryParameterBuilder("s", null, new ArrayList<>()); //no args
 	}
 	
 	public static QueryParameterBuilder addWithValue(QueryParameterBuilder builder) {
-		return new QueryParameterBuilder(null, builder.views);
+		return new QueryParameterBuilder(builder.viewAlias, null, builder.views);
 	}
 	
 	public static QueryParameterBuilder parametrized() {
-		return new QueryParameterBuilder(new LinkedList<>(), new ArrayList<>());
+		return new QueryParameterBuilder("v", new LinkedList<>(), new ArrayList<>());
 	}
 }

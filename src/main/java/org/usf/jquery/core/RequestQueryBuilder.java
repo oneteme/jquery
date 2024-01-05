@@ -83,19 +83,20 @@ public class RequestQueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb, String schema){
-    	select(sb, pb, schema);
     	where(sb, pb);
     	groupBy(sb);
     	having(sb, pb);
     	orderBy(sb, pb);
+    	sb.sb.insert(0, select(pb, schema)); //declare all view before FROM
 	}
 
-	void select(SqlStringBuilder sb, QueryParameterBuilder pb, String schema){
-		sb.append("SELECT ")
+	@Deprecated
+	String select(QueryParameterBuilder pb, String schema){
+		return new SqlStringBuilder(100).append("SELECT ")
     	.appendIf(distinct, ()-> "DISTINCT ")
     	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.tagname()))
     	.appendIf(!pb.views().isEmpty(), " FROM ") //TODO finish this
-    	.appendEach(pb.views(), SCOMA, o-> o.sql(pb, schema, true));
+    	.appendEach(pb.views(), SCOMA, o-> o.sql(pb, schema, true)).toString();
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
