@@ -24,7 +24,7 @@ public final class CaseColumn implements DBColumn {
 	@Override
 	public String sql(QueryParameterBuilder builder) {
 		return expressions.stream()
-		.map(o-> o.sql(addWithValue(builder)))
+		.map(o-> o.sql(builder.withValue()))
 		.collect(joining(SPACE, "CASE ", " END"));
 	}
 	

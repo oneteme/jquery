@@ -16,6 +16,6 @@ public interface NullComparator extends Comparator {
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireNArgs(1, args, NullComparator.class::getSimpleName);
-		return builder.appendParameter(args[0]) + SPACE + name();
+		return builder.appendLitteral(args[0]) + SPACE + name();
 	}
 }

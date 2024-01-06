@@ -15,6 +15,6 @@ public interface BasicComparator extends Comparator {
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireNArgs(2, args, BasicComparator.class::getSimpleName);
-		return builder.appendParameter(args[0]) + symbol() + builder.appendParameter(args[1]);
+		return builder.appendLitteral(args[0]) + symbol() + builder.appendParameter(args[1]);
 	}
 }

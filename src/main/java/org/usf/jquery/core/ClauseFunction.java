@@ -20,7 +20,7 @@ public interface ClauseFunction extends FunctionOperator {
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		return isEmpty(args) 
 				? EMPTY 
-				: id() + SPACE + Stream.of(args).map(builder::appendParameter).collect(joining(COMA));
+				: id() + SPACE + Stream.of(args).map(builder::appendLitteral).collect(joining(COMA));
 	}
 	
 }

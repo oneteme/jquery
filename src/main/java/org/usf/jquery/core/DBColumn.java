@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Optional.empty;
+import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -150,7 +151,7 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 			
 			@Override
 			public String sql(QueryParameterBuilder arg) {
-				return arg.formatValue(value.get());
+				return formatValue(value.get());
 			}
 			
 			@Override

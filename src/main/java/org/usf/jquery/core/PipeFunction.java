@@ -15,7 +15,7 @@ public interface PipeFunction extends FunctionOperator {
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireAtLeastNArgs(1, args, ()-> "Pipe function");
-		return builder.appendParameter(args[0]) + SPACE 
+		return builder.appendLitteral(args[0]) + SPACE 
 				+ FunctionOperator.super.sql(builder, copyOfRange(args, 1, args.length));
 	}
 }

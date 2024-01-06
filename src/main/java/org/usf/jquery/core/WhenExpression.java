@@ -29,7 +29,7 @@ final class WhenExpression implements DBExpression {
 				: sb.append("WHEN ")
 				.append(filter.sql(arg))
 				.append(" THEN ");
-		return sb.append(arg.appendParameter(value)).toString();
+		return sb.append(arg.appendLitteral(value)).toString();
 	}
 	
 	@Override

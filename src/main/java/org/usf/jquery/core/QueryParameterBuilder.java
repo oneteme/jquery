@@ -1,19 +1,13 @@
 package org.usf.jquery.core;
 
-import static java.lang.reflect.Array.getLength;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.IntStream.range;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.core.Validation.illegalArgumentIf;
 
-import java.lang.reflect.Array;
-import java.sql.Date;
-import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
@@ -22,6 +16,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -38,6 +33,10 @@ public final class QueryParameterBuilder {
 	private final List<Object> args;
 	private final List<TaggableView> views; //indexed
 	
+	public List<TaggableView> views(){
+		return views;
+	}
+	
 	public String view(TaggableView view) {
 		return view(view, i-> {});
 	}
@@ -47,8 +46,7 @@ public final class QueryParameterBuilder {
 	}
 
 	private String view(TaggableView view, IntConsumer consumer) {
-		var i=0;
-		for(; i<views.size(); i++) {
+		for(var i=0; i<views.size(); i++) {
 			if(views.get(i).tagname().equals(view.tagname())) {
 				consumer.accept(i);
 				return viewAlias + (i+1); //always add alias
@@ -57,90 +55,48 @@ public final class QueryParameterBuilder {
 		views.add(view);
 		return viewAlias + views.size(); //always add alias
 	}
-	
-	public List<TaggableView> views(){
-		return views;
-	}
 
 	public String appendParameter(Object o) {
-		return appendParameter(o, Object.class, false);
-	}
-	
-	public String appendNumber(Object o) {
-		return appendParameter(o, Number.class, false);
-	}
-	
-	public String appendString(Object o) {
-		return appendParameter(o, String.class, false);
-	}
-
-	public String appendDate(Object o) {
-		return appendParameter(o, Date.class, false);
-	}
-
-	public String appendTimestamp(Object o) {
-		return appendParameter(o, Timestamp.class, false);
-	}
-
-	public String appendLitteral(Object o, JavaType type) {
-		return appendParameter(o, type.type(), true); 
-	}
-	
-	//TODO
-	public String appendLitteral(Object o) {
-		return appendParameter(o, Object.class, true); 
-	}
-
-	private String appendParameter(Object o, Class<?> type, boolean addWithValue) {
-		if(isNull(o)) {
-			return dynamic() && !addWithValue ? appendArg(null) : "null";
-		}
-		if(o instanceof DBObject) { //check type !?
-			return ((DBObject)o).sql(this, null);
-		}
-		if(type.isInstance(o)) {
-			if(dynamic() && !addWithValue) {
-				return appendArg(o);
-			}
-			return formatValue(o);
-		}
-		throw new IllegalArgumentException("require " + type.getSimpleName().toLowerCase() + " parameter");
-	}
-
-	public String appendArray(Object o) {
-		illegalArgumentIf(o == null || !o.getClass().isArray(), ()-> "require array parameter");
 		if(dynamic()) {
-			streamArray(o).forEach(args::add);
-			return nParameter(getLength(o));
+			return o instanceof DBObject
+					? ((DBObject)o).sql(this, null)
+					: appendArg(o);
 		}
-		Function<Object, String> fn = o.getClass().getComponentType().isAssignableFrom(Number.class)
+		return appendLitteral(o);
+	}
+
+	public String appendLitteral(Object o) {
+		return o instanceof DBObject 
+				? ((DBObject)o).sql(this, null) 
+				: formatValue(o);
+	}
+	
+	public String appendArrayParameter(@NonNull Object[] arr) {
+		if(dynamic()) {
+			Stream.of(arr).forEach(args::add);
+			return nParameter(arr.length);
+		}
+		return appendArrayParameter(arr);
+	}
+	
+	public String appendLitteralArray(@NonNull Object[] arr) {
+		Function<Object, String> fn = arr.getClass().getComponentType().isAssignableFrom(Number.class)
 				? QueryParameterBuilder::formatNumber
 				: QueryParameterBuilder::formatString;
-		return streamArray(o).map(fn).collect(joining(SCOMA));
+		return Stream.of(arr).map(fn).collect(joining(SCOMA));
 	}
 	
 	private String appendArg(Object o) {
 		args.add(o);
 		return ARG;
 	}
-
-	String formatValue(Object o) {
-		return o instanceof Number 
-				? formatNumber(o)
-				: formatString(o);
-	}
-	
-	boolean dynamic() {
-		return nonNull(args);
-	}
 	
 	public Object[] args() {
 		return dynamic() ? args.toArray() : new Object[0];
 	}
-
-	static Stream<Object> streamArray(Object o) {
-		return range(0, getLength(o))
-			.mapToObj(i-> Array.get(o, i));
+	
+	private boolean dynamic() {
+		return nonNull(args);
 	}
 
 	static String nParameter(int n){
@@ -149,23 +105,30 @@ public final class QueryParameterBuilder {
 		}
         return n == 1 ? ARG : ARG + (COMA + ARG).repeat(n-1);
     }
+
+	static String formatValue(Object o) {
+		return o instanceof Number 
+				? formatNumber(o)
+				: formatString(o);
+	}
 	
 	static String formatString(Object o) {
-		return quote(o.toString());
+		return isNull(o) ? "null" : quote(o.toString());
 	}
 	static String formatNumber(Object o) {
-		return o.toString(); 
+		return isNull(o) ? "null" : o.toString(); 
+	}
+	
+	public QueryParameterBuilder withValue() {
+		return new QueryParameterBuilder(viewAlias, null, views);
 	}
 	
 	public static QueryParameterBuilder addWithValue() {
 		return new QueryParameterBuilder("s", null, new ArrayList<>()); //no args
 	}
 	
-	public static QueryParameterBuilder addWithValue(QueryParameterBuilder builder) {
-		return new QueryParameterBuilder(builder.viewAlias, null, builder.views);
-	}
-	
 	public static QueryParameterBuilder parametrized() {
 		return new QueryParameterBuilder("v", new LinkedList<>(), new ArrayList<>());
 	}
+	
 }

@@ -19,6 +19,6 @@ public interface InCompartor extends Comparator {
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireAtLeastNArgs(2, args, InCompartor.class::getSimpleName);
 		var params = copyOfRange(args, 1, args.length);
-		return builder.appendParameter(args[0]) + SPACE + name() + parenthese(builder.appendArray(params));
+		return builder.appendLitteral(args[0]) + SPACE + name() + parenthese(builder.appendArrayParameter(params));
 	}
 }
