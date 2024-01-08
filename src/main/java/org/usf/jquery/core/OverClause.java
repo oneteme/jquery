@@ -46,7 +46,7 @@ public final class OverClause implements DBObject {
 	}
 	
 	public static OverClause clauses(OperationColumn... args) { //partition, order, ...
-		if(args == null) {
+		if(isNull(args)) {
 			return new OverClause();
 		}
 		var map = Stream.of(args).collect(groupingBy(o-> o.getOperator().id()));

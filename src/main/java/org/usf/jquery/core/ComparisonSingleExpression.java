@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.NestedSql.aggregation;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
@@ -25,7 +26,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	public String sql(QueryParameterBuilder builder, Object left) {
 		var param = new LinkedList<>();
 		param.add(left);
-		if(right != null) {
+		if(nonNull(right)) {
 			if(right.getClass().isArray()) {
 				Stream.of((Object[])right).forEach(param::add);
 			}

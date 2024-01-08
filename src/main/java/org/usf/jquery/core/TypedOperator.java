@@ -67,10 +67,6 @@ public class TypedOperator implements Operator {
 		return args;
 	}
 	
-	private static IllegalArgumentException illegalArgumentException() {
-		return new IllegalArgumentException("mismatch arg type");
-	}
-
 	public int requireArgCount() {
 		var i=0;
 		while(i<parameters.length && parameters[i].isRequired()) i++;
@@ -79,5 +75,9 @@ public class TypedOperator implements Operator {
 	
 	public boolean isVarags() {
 		return parameters.length > 0 && parameters[parameters.length-1].isVarargs(); 
+	}
+	
+	private static IllegalArgumentException illegalArgumentException() {
+		return new IllegalArgumentException("mismatch arg type");
 	}
 }
