@@ -11,8 +11,7 @@ public interface TaggableColumn extends DBColumn {
 
 	String tagname(); //JSON & TAG
 	
-	default String sql(QueryParameterBuilder builder, boolean as) {
-		var s = this.sql(builder);
-		return as ? s + " AS " + doubleQuote(tagname()) : s;
+	default String sqlWithTag(QueryParameterBuilder builder) {
+		return sql(builder) + " AS " + doubleQuote(tagname());
 	}
 }

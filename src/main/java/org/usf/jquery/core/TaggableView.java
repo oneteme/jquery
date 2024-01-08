@@ -10,9 +10,8 @@ import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 public interface TaggableView extends DBView {
 
 	String tagname();
-
-	default String sql(QueryParameterBuilder builder, String schema, boolean as) {
-		var s = this.sql(builder, schema);
-		return as ? s + SPACE + builder.view(this) : s;
+	
+	default String sqlWithTag(QueryParameterBuilder builder, String schema) {
+		return sql(builder, schema) + SPACE + builder.view(this);
 	}
 }

@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
 import java.util.Iterator;
@@ -94,9 +93,9 @@ public class RequestQueryBuilder {
 	String select(QueryParameterBuilder pb, String schema){
 		return new SqlStringBuilder(100).append("SELECT ")
     	.appendIf(distinct, ()-> "DISTINCT ")
-    	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.tagname()))
+    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb))
     	.appendIf(!pb.views().isEmpty(), " FROM ") //TODO finish this
-    	.appendEach(pb.views(), SCOMA, o-> o.sql(pb, schema, true)).toString();
+    	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb, schema)).toString();
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
