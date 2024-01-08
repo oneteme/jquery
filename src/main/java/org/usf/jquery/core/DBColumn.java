@@ -1,11 +1,9 @@
 package org.usf.jquery.core;
 
-import static java.util.Optional.empty;
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
@@ -230,9 +228,5 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 	
 	static OperationColumn substring(Object arg, int start, int length) {
 		return Operator.substring().args(arg, start, length);
-	}
-	
-	static Optional<OperationColumn> lookupColumnFunction() {
-		return empty(); //CURRENT_DATE, CURRENT_DATETIME
 	}
 }

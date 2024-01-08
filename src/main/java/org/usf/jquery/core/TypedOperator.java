@@ -25,7 +25,7 @@ public class TypedOperator implements Operator {
 	private final Parameter[] parameters;
 	
 	public TypedOperator(JavaType type, Operator function, Parameter... args) {
-		this(o-> type, function, args == null ? NO_PARAM : args);
+		this(o-> type, function, isNull(args) ? NO_PARAM : args);
 	}
 
 	public TypedOperator(Function<Object[], JavaType> typeFn, Operator function, Parameter... parameter) {

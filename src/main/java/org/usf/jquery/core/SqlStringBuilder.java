@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
 import static java.util.function.Function.identity;
 
 import java.util.Collection;
@@ -106,6 +107,6 @@ public final class SqlStringBuilder {
 	}
 
 	public static String member(String parent, String child) { 
-		return parent + "." + child;
+		return isNull(parent) ? child : parent + "." + child;
 	}
 }

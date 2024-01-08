@@ -3,9 +3,9 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.DBColumn.column;
 import static org.usf.jquery.core.NestedSql.aggregation;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.QueryParameterBuilder.streamArray;
 
 import java.util.LinkedList;
+import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -27,7 +27,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 		param.add(left);
 		if(right != null) {
 			if(right.getClass().isArray()) {
-				streamArray(right).forEach(param::add);
+				Stream.of((Object[])right).forEach(param::add);
 			}
 			else {
 				param.add(right);
@@ -49,5 +49,5 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	@Override
 	public String toString() {
 		return sql(addWithValue(), column("<left>"));
-	}
+	}	
 }

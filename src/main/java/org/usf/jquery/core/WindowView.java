@@ -20,7 +20,7 @@ public final class WindowView implements TaggableView {
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, String schema) { //sub query should not use main builder
-		var b = addWithValue();
+		var b = addWithValue("v");
 		var v = b.view(this);
 		return new SqlStringBuilder(100)
 		.append("(SELECT ").append(member(v, "*")).append(", ")

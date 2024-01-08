@@ -7,11 +7,11 @@ import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.Function;
 import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 
@@ -29,7 +29,7 @@ public final class QueryParameterBuilder {
 	
 	private static final String ARG = "?";
 	
-	private final String viewAlias;
+	private final String vPrefix;
 	private final List<Object> args;
 	private final List<TaggableView> views; //indexed
 	
@@ -46,14 +46,17 @@ public final class QueryParameterBuilder {
 	}
 
 	private String view(TaggableView view, IntConsumer consumer) {
+		if(isNull(vPrefix)) {
+			return null;
+		}
 		for(var i=0; i<views.size(); i++) {
 			if(views.get(i).tagname().equals(view.tagname())) {
 				consumer.accept(i);
-				return viewAlias + (i+1); //always add alias
+				return vPrefix + (i+1);
 			}
 		}
 		views.add(view);
-		return viewAlias + views.size(); //always add alias
+		return vPrefix + views.size();
 	}
 
 	public String appendParameter(Object o) {
@@ -67,23 +70,25 @@ public final class QueryParameterBuilder {
 
 	public String appendLitteral(Object o) {
 		return o instanceof DBObject 
-				? ((DBObject)o).sql(this, null) 
+				? ((DBObject)o).sql(this, null)
 				: formatValue(o);
 	}
 	
 	public String appendArrayParameter(@NonNull Object[] arr) {
 		if(dynamic()) {
+			if(isEmpty(arr)) {
+				return EMPTY;
+			}
 			Stream.of(arr).forEach(args::add);
 			return nParameter(arr.length);
 		}
-		return appendArrayParameter(arr);
+		return appendLitteralArray(arr);
 	}
 	
 	public String appendLitteralArray(@NonNull Object[] arr) {
-		Function<Object, String> fn = arr.getClass().getComponentType().isAssignableFrom(Number.class)
-				? QueryParameterBuilder::formatNumber
-				: QueryParameterBuilder::formatString;
-		return Stream.of(arr).map(fn).collect(joining(SCOMA));
+		return isEmpty(arr) ? EMPTY : Stream.of(arr)
+				.map(this::appendLitteral)
+				.collect(joining(SCOMA));
 	}
 	
 	private String appendArg(Object o) {
@@ -107,28 +112,27 @@ public final class QueryParameterBuilder {
     }
 
 	static String formatValue(Object o) {
-		return o instanceof Number 
-				? formatNumber(o)
-				: formatString(o);
-	}
-	
-	static String formatString(Object o) {
-		return isNull(o) ? "null" : quote(o.toString());
-	}
-	static String formatNumber(Object o) {
-		return isNull(o) ? "null" : o.toString(); 
+		if(nonNull(o)){
+			return o instanceof Number 
+					? o.toString()
+					: quote(o.toString());
+		}
+		return "null";
 	}
 	
 	public QueryParameterBuilder withValue() {
-		return new QueryParameterBuilder(viewAlias, null, views);
+		return new QueryParameterBuilder(vPrefix, null, views);
+	}
+
+	public static QueryParameterBuilder addWithValue() {
+		return new QueryParameterBuilder(null, null, null); //no args
 	}
 	
-	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder("s", null, new ArrayList<>()); //no args
+	public static QueryParameterBuilder addWithValue(String prefix) {
+		return new QueryParameterBuilder(prefix, null, new LinkedList<>());
 	}
 	
 	public static QueryParameterBuilder parametrized() {
 		return new QueryParameterBuilder("v", new LinkedList<>(), new ArrayList<>());
 	}
-	
 }
