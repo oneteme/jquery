@@ -277,5 +277,10 @@ final class RequestEntryChain {
 		TaggableColumn buildColumn() {
 			return td.column(cd);
 		}
+		
+		@Override
+		public String toString() {
+			return td + "." + cd + " => " + entry.toString();
+		}
 	}
 }

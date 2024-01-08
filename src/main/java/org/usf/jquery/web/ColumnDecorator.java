@@ -92,7 +92,7 @@ public interface ColumnDecorator {
 		};
 	}
 	
-	default ComparisonExpression expression(String exp, String... values) { return null; };
+	default ComparisonExpression expression(String exp, String... values) { return null; }
 	
 	static ColumnDecorator ofColumn(String ref, ColumnBuilder cb) {
 		return new ColumnDecorator() {

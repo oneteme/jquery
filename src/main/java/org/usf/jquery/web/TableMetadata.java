@@ -63,7 +63,8 @@ public class TableMetadata {
 				if(nonNull(meta)) {
 					meta.setDataType(fromDataType(rs.getInt("DATA_TYPE")));
 					meta.setDataSize(rs.getInt("COLUMN_SIZE"));
-				}// else undeclared column
+					meta.setPrecision(rs.getInt("DECIMAL_DIGITS"));
+				} // else undeclared column
 			} while(rs.next());
 		}
 		if(!dbMap.isEmpty()) {

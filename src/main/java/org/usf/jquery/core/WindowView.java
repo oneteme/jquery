@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.SqlStringBuilder.member;
 
@@ -21,10 +20,10 @@ public final class WindowView implements TaggableView {
 	@Override
 	public String sql(QueryParameterBuilder builder, String schema) { //sub query should not use main builder
 		var b = addWithValue("w");
-		var alias = b.view(view);
 		return new SqlStringBuilder(100)
-		.append("(SELECT ").append(member(alias, "*")).append(", ").append(column.sqlWithTag(b))
-		.append(" FROM ").append(view.sql(b, schema)).append(SPACE).append(alias).append(")")
+		.append("(SELECT ").append(member(b.view(view), "*"))
+		.append(", ").append(column.sqlWithTag(b))
+		.append(" FROM ").append(view.sqlWithTag(b, schema)).append(")")
 		.toString();
 	}
 	
@@ -42,5 +41,4 @@ public final class WindowView implements TaggableView {
 	public String toString() {
 		return sql(addWithValue(), "<schema>"); 
 	}
-	
 }

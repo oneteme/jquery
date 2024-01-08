@@ -41,7 +41,7 @@ public enum JDBCType implements JavaType {
 	TIME(Types.TIME, Time.class, Time.class::isInstance),
 	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, Timestamp.class::isInstance),
 	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance),
-	OTHER(Types.OTHER, null, o-> false); //isnull !?
+	OTHER(Types.OTHER, Object.class, o-> false); //isnull !?
 
 	private final int value;
 	private final Class<?> type;
@@ -84,7 +84,7 @@ public enum JDBCType implements JavaType {
 	private static boolean isNumber(Object o) {
 		return o instanceof Number;
 	}
-
+	
 	private static boolean isBoolean(Object o) {
 		return o.getClass() == Boolean.class 
 				|| isNumber(o, 0, 1, false)

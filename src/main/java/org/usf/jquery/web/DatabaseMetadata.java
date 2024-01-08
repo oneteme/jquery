@@ -81,13 +81,14 @@ public final class DatabaseMetadata {
 	
 	static void logTableColumns(Map<String, ColumnMetadata> map) {
 		if(!map.isEmpty()) {
-			var pattern = "|%-20s|%-40s|%-6s|%-12s|";
+			var pattern = "|%-20s|%-15s|%-25s|%-20s|";
 			var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
 			log.info(bar);
-			log.info(format(pattern, "TAGNAME", "NAME", "TYPE", "LENGTH"));
+			log.info(format(pattern, "ID", "CLASS", "COLUMN", "TYPE"));
 			log.info(bar);
 			map.entrySet().forEach(e-> 
-			log.info(format(pattern, e.getKey(), e.getValue().getColumnName(), e.getValue().getDataType(), e.getValue().getDataSize())));
+			log.info(format(pattern, e.getKey(), e.getValue().toJavaType(), 
+					e.getValue().getColumnName(), e.getValue().toSqlType())));
 			log.info(bar);
 		}
 	}
