@@ -47,8 +47,8 @@ public final class ColumnMetadata {
 	
 	public String toSqlType(){
 		var s = dataType.name();
-		if(dataType.type() == String.class) {
-			s+= "(" + (dataSize == MAX_VALUE ? "" : dataSize) + ")";
+		if(dataType.type() == String.class && dataSize < MAX_VALUE) {
+			s+= "(" + dataSize + ")";
 		}
 		if(dataType.type() == Timestamp.class) {
 			s+= "(" + precision + ")";
