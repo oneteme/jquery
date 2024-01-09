@@ -1,11 +1,14 @@
 package org.usf.jquery.web;
 
+import static java.lang.Integer.parseInt;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
+import static org.usf.jquery.web.Constants.FETCH;
+import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.JQueryContext.database;
@@ -61,6 +64,7 @@ public interface TableDecorator {
 		parseColumns(query, parameterMap);
 		parseFilters(query, parameterMap);
 		parseOrders (query, parameterMap);
+		parseFetch(query, parameterMap);
 		return query;
 	}
 	
@@ -98,6 +102,26 @@ public interface TableDecorator {
 			.flatMap(c-> parseEntries(c).stream())
 			.forEach(e-> query.orders(e.asOrder(this)));
 		}
+	}
+	
+	default void parseFetch(RequestQueryBuilder query, Map<String, String[]> parameters) {
+		query.fetch(requirePositiveInt(OFFSET, parameters), 
+				requirePositiveInt(FETCH, parameters));
+	}
+	
+	private static Integer requirePositiveInt(String key, Map<String, String[]> parameters) {
+		if(parameters.containsKey(key)) {
+			var values = parameters.get(key);
+			if(values.length == 1) {
+				var v = parseInt(values[0]);
+				if(v >= 0) {
+					return v;
+				}
+				throw new IllegalArgumentException("negative");
+			}
+			throw new IllegalArgumentException("too many value");
+		}
+		return null;
 	}
 
 	default TableMetadata metadata() {

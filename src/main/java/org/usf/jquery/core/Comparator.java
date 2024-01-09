@@ -1,13 +1,29 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
+
 /**
  * 
  * @author u$f
  *
  */
 @FunctionalInterface
-public interface Comparator extends DBProcessor {
+public interface Comparator extends DBProcessor<ColumnSingleFilter> {
 	
+	@Override
+	default ColumnSingleFilter args(Object... args) {
+		if(nonNull(args) && args.length == 2) {
+			if(args[0] instanceof DBColumn) {
+				return new ColumnSingleFilter((DBColumn)args[0], 
+						this.expression(args.length > 1 ? args[1] : null)); // no type
+			}
+			else {
+				throw new IllegalArgumentException(); //TODO msg
+			}
+		}
+		throw new IllegalArgumentException(); //TODO msg
+	}
+
 	default ComparisonExpression expression(Object right) {
 		return new ComparisonSingleExpression(this, right);
 	}

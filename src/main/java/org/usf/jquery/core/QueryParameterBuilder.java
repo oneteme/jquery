@@ -111,7 +111,7 @@ public final class QueryParameterBuilder {
         return n == 1 ? ARG : ARG + (COMA + ARG).repeat(n-1);
     }
 
-	static String formatValue(Object o) {
+	public static String formatValue(Object o) {
 		if(nonNull(o)){
 			return o instanceof Number 
 					? o.toString()

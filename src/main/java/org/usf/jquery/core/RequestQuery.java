@@ -49,7 +49,7 @@ public final class RequestQuery {
 				}
 			}
 		}
-		catch(SQLException e) {
+		catch(SQLException e) { // rethrow exception
 			throw new MappingException("error while mapping results", e);
 		}
 	}

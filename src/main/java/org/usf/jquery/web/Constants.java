@@ -17,12 +17,13 @@ public final class Constants {
 	public static final String COLUMN = "column";
 	public static final String COLUMN_DISTINCT = "column.distinct"; 
 	public static final String ORDER = "order";
+	public static final String FETCH = "fetch";
+	public static final String OFFSET = "offset";
 	public static final String REVISION = "revision"; //not standard
 	public static final String REVISION_MODE = "revision.mode"; //not standard
-	public static final String PARTITION = "partition"; //not res
 	
 	static final Set<String> RESERVED_WORDS = 
-			Set.of(COLUMN, COLUMN_DISTINCT, ORDER, REVISION, REVISION_MODE); //metadata ?
+			Set.of(COLUMN, COLUMN_DISTINCT, ORDER, OFFSET, FETCH, REVISION, REVISION_MODE); //metadata ?
 	
 	static final YearMonth[] EMPTY_REVISION = new YearMonth[0]; //not standard
 	

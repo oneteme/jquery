@@ -15,6 +15,8 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Utils {
+	
+	static ThreadLocal<Database> context = new ThreadLocal<Database>();
 
 	public static final int UNLIMITED = -1;
 	
@@ -32,5 +34,9 @@ public final class Utils {
 
 	public static boolean isBlank(String s) {
 		return isNull(s) || s.isBlank();
+	}
+	
+	public static Database currentDatabase() {
+		return context.get();
 	}
 }

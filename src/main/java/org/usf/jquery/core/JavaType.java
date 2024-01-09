@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
+
 /**
  * 
  * @author u$f
@@ -15,6 +17,6 @@ public interface JavaType {
 	}
 	
 	default boolean accept(Object o) {
-		return o == null || type().isInstance(o);
+		return isNull(o) || type().isInstance(o);
 	}
 }

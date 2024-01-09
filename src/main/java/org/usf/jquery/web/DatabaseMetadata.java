@@ -23,6 +23,8 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
+import org.usf.jquery.core.Database;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -39,11 +41,13 @@ public final class DatabaseMetadata {
 
 	private final Object mutex = new Object();
 
-	@Getter(AccessLevel.PACKAGE)
+	@Getter(AccessLevel.PACKAGE)	
 	private final DataSource dataSource; //nullable if no sync
 	private final Map<String, TableMetadata> tables; //empty if no sync
 	@Getter
 	private Instant lastUpdate;
+	@Getter
+	private Database type;
 
 	public Optional<TableMetadata> tableMetada(TableDecorator td){
 		return ofNullable(tables.get(td.identity()));
@@ -59,6 +63,7 @@ public final class DatabaseMetadata {
 			log.info("Scanning database metadata...");
 			try(var cn = dataSource.getConnection()){
 				var metadata = cn.getMetaData();
+				type = Database.of(metadata.getDatabaseProductName()).orElse(null);
 				for(var t : tables.values()) {
 					log.info("Scanning table '{}' metadata...", t.getTablename());
 					t.fetch(metadata);

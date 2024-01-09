@@ -5,7 +5,8 @@ package org.usf.jquery.core;
  * @author u$f
  *
  */
-@FunctionalInterface
-public interface DBProcessor extends DBObject {
+public interface DBProcessor<T> extends DBObject {
+	
+	T args(Object... args);
 
 }

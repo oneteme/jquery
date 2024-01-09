@@ -23,16 +23,16 @@ import lombok.ToString;
  * @author u$f
  * 
  */
-@ToString
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
+@ToString
 @RequiredArgsConstructor
 public final class ColumnMetadata {
 	
 	private final String columnName;
 	private JDBCType dataType = null;
 	private int dataSize = UNLIMITED;
-	private Integer precision = UNLIMITED;
+	private int precision = UNLIMITED;
 	
 	ColumnMetadata reset() {
 		this.dataType  = null;

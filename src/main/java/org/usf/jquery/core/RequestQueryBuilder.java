@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -33,6 +34,8 @@ public class RequestQueryBuilder {
 	private final List<DBOrder> orders = new LinkedList<>();
 	private Iterator<?> it;
 	private boolean distinct;
+	private Integer fetch;
+	private Integer offset;
 	
 	public RequestQueryBuilder distinct() {
 		distinct = true;
@@ -51,6 +54,14 @@ public class RequestQueryBuilder {
 	
 	public RequestQueryBuilder orders(@NonNull DBOrder... orders) {
 		Stream.of(orders).forEach(this.orders::add);
+		return this;
+	}
+
+	// Use LIMIT & OFFSET clauses to limit the number of rows returned by a query.
+	// LIMIT & OFFSET is not SQL standard.
+	public RequestQueryBuilder fetch(Integer offset, Integer fetch) {
+		this.offset = offset;
+		this.fetch = fetch;
 		return this;
 	}
 	
@@ -86,6 +97,7 @@ public class RequestQueryBuilder {
     	groupBy(sb);
     	having(sb, pb);
     	orderBy(sb, pb);
+    	fetch(sb);
     	sb.sb.insert(0, select(pb, schema)); //declare all view before FROM
 	}
 
@@ -139,6 +151,15 @@ public class RequestQueryBuilder {
     		sb.append(" ORDER BY ")
     		.appendEach(orders, SCOMA, o-> o.sql(pb));
     	}
+	}
+	
+	void fetch(SqlStringBuilder sb) {
+		if(nonNull(offset)) {
+			sb.append(" OFFSET ").append(offset.toString()).append(" ROWS");
+		}
+		if(nonNull(fetch)) {
+			sb.append(" FETCH NEXT ").append(fetch.toString()).append(" ROWS ONLY");
+		}
 	}
 	
 	public boolean isAggregation() {

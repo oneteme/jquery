@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Optional.empty;
+import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -17,7 +18,8 @@ import static org.usf.jquery.core.OverClause.clauses;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
+import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
@@ -30,14 +32,14 @@ import java.util.stream.Stream;
  * @author u$f
  *
  */
-public interface Operator extends DBProcessor, NestedSql {
+public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 
 	static final Operator VALUE_RETURN = new Operator() {
 		
 		@Override
 		public String sql(QueryParameterBuilder builder, Object[] args) {
 			requireNArgs(1, args, this::id);
-			return args[0] instanceof Number ? args[0].toString() : quote(args[0].toString());
+			return formatValue(args[0]);
 		}
 		
 		@Override
@@ -155,11 +157,8 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 	
 	static TypedOperator replace() {
-		return new TypedOperator(VARCHAR, function("REPLACE"), required(VARCHAR), required(VARCHAR), required(VARCHAR)); //!teradata
-	}
-	
-	static TypedOperator oreplace() {
-		return new TypedOperator(VARCHAR, function("OREPLACE"), required(VARCHAR), required(VARCHAR), required(VARCHAR)); //teradata 
+		var id = currentDatabase() == TERADATA ? "OREPLACE" : "REPLACE";
+		return new TypedOperator(VARCHAR, function(id), required(VARCHAR), required(VARCHAR), required(VARCHAR)); //!teradata
 	}
 	
 	static TypedOperator substring() { //int start, int length
@@ -181,6 +180,7 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 
 	static TypedOperator week() {
+		//teradata
 		return new TypedOperator(INTEGER, extract("WEEK"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
@@ -189,11 +189,13 @@ public interface Operator extends DBProcessor, NestedSql {
 	}
 	
 	static TypedOperator dow() {
-		return new TypedOperator(INTEGER, extract("DOW"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
+		var fn  = currentDatabase() == TERADATA ? function("td_day_of_week") : extract("DOW");
+		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
 	
 	static TypedOperator doy() {
-		return new TypedOperator(INTEGER, extract("DOY"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
+		var fn  = currentDatabase() == TERADATA ? function("td_day_of_year") : extract("DOY");
+		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
 
 	static TypedOperator hour() {
