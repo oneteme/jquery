@@ -6,9 +6,11 @@ import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
 import java.util.Iterator;
@@ -154,11 +156,16 @@ public class RequestQueryBuilder {
 	}
 	
 	void fetch(SqlStringBuilder sb) {
-		if(nonNull(offset)) {
-			sb.append(" OFFSET ").append(offset.toString()).append(" ROWS");
+		if(currentDatabase() == TERADATA) {
+			
 		}
-		if(nonNull(fetch)) {
-			sb.append(" FETCH NEXT ").append(fetch.toString()).append(" ROWS ONLY");
+		else {
+			if(nonNull(offset)) {
+				sb.append(" OFFSET ").append(offset.toString()).append(" ROWS");
+			}
+			if(nonNull(fetch)) {
+				sb.append(" FETCH NEXT ").append(fetch.toString()).append(" ROWS ONLY");
+			}
 		}
 	}
 	

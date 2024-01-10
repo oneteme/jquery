@@ -3,6 +3,7 @@ package org.usf.jquery.web;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.Constants.COLUMN;
@@ -29,6 +30,7 @@ import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TaggableView;
+import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 
 /**
@@ -60,6 +62,7 @@ public interface TableDecorator {
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
+		currentDatabase(database().getType()); //table database
 		var query = new RequestQueryBuilder();
 		parseColumns(query, parameterMap);
 		parseFilters(query, parameterMap);

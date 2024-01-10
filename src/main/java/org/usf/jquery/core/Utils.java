@@ -15,8 +15,8 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Utils {
-	
-	static ThreadLocal<Database> context = new ThreadLocal<Database>();
+	//move this
+	static ThreadLocal<Database> context = new ThreadLocal<>();
 
 	public static final int UNLIMITED = -1;
 	
@@ -38,5 +38,9 @@ public final class Utils {
 	
 	public static Database currentDatabase() {
 		return context.get();
+	}
+
+	public static void currentDatabase(Database db) {
+		context.set(db);
 	}
 }
