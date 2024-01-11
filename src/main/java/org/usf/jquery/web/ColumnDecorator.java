@@ -77,15 +77,15 @@ public interface ColumnDecorator {
 		case "lt"  		: return lessThan();
 		case "le"  		: return lessOrEqual();
 		case "not" 		: return nArg == 1 ? notEqual() : notIn();
-		case "like"		: return containsArgPartten(like());
-		case "ilike"	: return containsArgPartten(iLike());
-		case "unlike"	: return containsArgPartten(notLike());
+		case "like"		: return wildcards(like());
+		case "ilike"	: return wildcards(iLike());
+		case "unlike"	: return wildcards(notLike());
 		default			: return null;
 		//isnull
 		}
 	}
 	
-	private static Comparator containsArgPartten(StringComparator fn) {
+	private static Comparator wildcards(StringComparator fn) {
 		return (b, args)-> {
 			args[1] = "%" + args[1] + "%";
 			return fn.sql(b, args);

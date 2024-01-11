@@ -10,12 +10,14 @@ import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import lombok.Getter;
@@ -59,8 +61,7 @@ public class RequestQueryBuilder {
 		return this;
 	}
 
-	// Use LIMIT & OFFSET clauses to limit the number of rows returned by a query.
-	// LIMIT & OFFSET is not SQL standard.
+	// the LIMIT clause is not in SQL standard.
 	public RequestQueryBuilder fetch(Integer offset, Integer fetch) {
 		this.offset = offset;
 		this.fetch = fetch;
@@ -105,8 +106,18 @@ public class RequestQueryBuilder {
 
 	@Deprecated
 	String select(QueryParameterBuilder pb, String schema){
-		return new SqlStringBuilder(100).append("SELECT ")
-    	.appendIf(distinct, ()-> "DISTINCT ")
+		if(currentDatabase() == TERADATA) {
+			if(nonNull(offset)) {
+				throw new UnsupportedOperationException("");
+			}
+			if(distinct && nonNull(fetch)) {
+				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
+			}
+		}
+		return new SqlStringBuilder(100).append("SELECT")
+    	.appendIf(distinct, ()-> " DISTINCT")
+    	.appendIf(nonNull(fetch), ()-> " TOP " + fetch)
+    	.append(SPACE)
     	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb))
     	.appendIf(!pb.views().isEmpty(), " FROM ") //TODO finish this
     	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb, schema)).toString();
@@ -156,10 +167,7 @@ public class RequestQueryBuilder {
 	}
 	
 	void fetch(SqlStringBuilder sb) {
-		if(currentDatabase() == TERADATA) {
-			
-		}
-		else {
+		if(currentDatabase() != TERADATA) { // TOP n
 			if(nonNull(offset)) {
 				sb.append(" OFFSET ").append(offset.toString()).append(" ROWS");
 			}

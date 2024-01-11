@@ -41,7 +41,7 @@ public final class RequestParser {
 		var entries = new LinkedList<RequestEntryChain>();
 		entries.add(parseEntry(multiple, argument));
 		while(c == ',') {
-			nextChar(true);
+			nextChar(!argument);
 			entries.add(parseEntry(multiple, argument));
 		}
 		return entries.size() == 1 && isNull(entries.get(0).getValue()) //avoid () => (null)

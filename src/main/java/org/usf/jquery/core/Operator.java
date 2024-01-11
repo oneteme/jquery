@@ -7,6 +7,7 @@ import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.INTEGER;
+import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
@@ -34,6 +35,7 @@ import java.util.stream.Stream;
  */
 public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 
+	@Deprecated(forRemoval = true)
 	static final Operator VALUE_RETURN = new Operator() {
 		
 		@Override
@@ -180,8 +182,8 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	}
 
 	static TypedOperator week() {
-		//teradata
-		return new TypedOperator(INTEGER, extract("WEEK"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		var fn  = currentDatabase() == TERADATA ? function("td_week_of_year") : extract("WEEK");//teradata 1st week index = 0
+		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
 	static TypedOperator day() {
@@ -190,24 +192,24 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	
 	static TypedOperator dow() {
 		var fn  = currentDatabase() == TERADATA ? function("td_day_of_week") : extract("DOW");
-		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
+		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	static TypedOperator doy() {
 		var fn  = currentDatabase() == TERADATA ? function("td_day_of_year") : extract("DOY");
-		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
+		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	static TypedOperator hour() {
-		return new TypedOperator(INTEGER, extract("HOUR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return new TypedOperator(INTEGER, extract("HOUR"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	static TypedOperator minute() {
-		return new TypedOperator(INTEGER, extract("MINUTE"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return new TypedOperator(INTEGER, extract("MINUTE"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	static TypedOperator second() {
-		return new TypedOperator(INTEGER, extract("SECOND"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return new TypedOperator(INTEGER, extract("SECOND"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	static TypedOperator epoch() {
@@ -305,7 +307,22 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	static TypedOperator order() {
 		return new TypedOperator(CLAUSE, clause("ORDER BY"), required(ORDER), varargs(ORDER));
 	}
+
+	// constant operators
 	
+	static TypedOperator cdate() {
+		return new TypedOperator(DATE, constant("CURRENT_DATE"));
+	}
+	
+	static TypedOperator ctime() {
+		return new TypedOperator(TIME, constant("CURRENT_TIME"));
+	}
+	
+	static TypedOperator ctimestamp() {
+		return new TypedOperator(TIMESTAMP_WITH_TIMEZONE, constant("CURRENT_TIMESTAMP"));
+	}
+	
+	@Deprecated(forRemoval = true)
 	static TypedOperator value() {
 		return new TypedOperator(firstArgType(), VALUE_RETURN, required());
 	}
@@ -342,7 +359,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 		return ()-> name;
 	}
 
-	static StandaloneFunction constant(String name) {
+	static ConstantOperator constant(String name) {
 		return ()-> name;
 	}
 

@@ -120,7 +120,7 @@ public interface TableDecorator {
 				if(v >= 0) {
 					return v;
 				}
-				throw new IllegalArgumentException("negative");
+				throw new IllegalArgumentException(key + " cannot be negative");
 			}
 			throw new IllegalArgumentException("too many value");
 		}

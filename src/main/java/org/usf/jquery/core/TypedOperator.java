@@ -49,13 +49,13 @@ public class TypedOperator implements Operator {
 			var i=0;
 			for(; i<min(na, parameters.length); i++) {
 				if(!parameters[i].accept(args[i])) {
-					throw illegalArgumentException();
+					throw argumentTypeMismatch();
 				}
 			}
 			if(i<args.length) {
 				var last = parameters[parameters.length-1];
 				if(!last.accept(args[i])) {
-					throw illegalArgumentException();
+					throw argumentTypeMismatch();
 				}
 			}
 			return new OperationColumn(operator, afterCheck(args), typeFn.apply(args));
@@ -77,7 +77,7 @@ public class TypedOperator implements Operator {
 		return parameters.length > 0 && parameters[parameters.length-1].isVarargs(); 
 	}
 	
-	private static IllegalArgumentException illegalArgumentException() {
-		return new IllegalArgumentException("mismatch arg type");
+	private static IllegalArgumentException argumentTypeMismatch() {
+		return new IllegalArgumentException("argument type mismatch");
 	}
 }

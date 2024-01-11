@@ -264,7 +264,7 @@ final class RequestEntryChain {
 	}
 	
 	static String[] toStringArray(List<RequestEntryChain> entries) {
-		return entries.stream().map(RequestEntryChain::toString).toArray(String[]::new);
+		return entries.stream().map(e-> isNull(e.value) ? null : e.toString()).toArray(String[]::new);
 	}
 	
 	@RequiredArgsConstructor

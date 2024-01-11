@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
+import java.util.Objects;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -38,7 +39,7 @@ public final class OperationColumn implements DBColumn {
 	
 	@Override
 	public boolean isAggregation() {
-		if(aggregation == null) {
+		if(Objects.isNull(aggregation)) {
 			return operator.isAggregation() 
 					|| Stream.of(args).anyMatch(NestedSql::aggregation);
 		}
