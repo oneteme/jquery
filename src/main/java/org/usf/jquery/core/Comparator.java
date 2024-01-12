@@ -1,6 +1,8 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Parameter.required;
+import static org.usf.jquery.core.Parameter.varargs;
 
 /**
  * 
@@ -28,60 +30,60 @@ public interface Comparator extends DBProcessor<ColumnSingleFilter> {
 		return new ComparisonSingleExpression(this, right);
 	}
 	
-	static BasicComparator equal() {
-		return basicComparator("=");
+	static TypedComparator equal() { //eq
+		return new TypedComparator(basicComparator("="), required(), required());
 	}
 
-	static BasicComparator notEqual() {
-		return basicComparator("<>");
+	static TypedComparator notEqual() { //ne
+		return new TypedComparator(basicComparator("<>"), required(), required());
 	}
 	
-	static BasicComparator lessThan() {
-		return basicComparator("<");
+	static TypedComparator lessThan() { //lt
+		return new TypedComparator(basicComparator("<"), required(), required());
 	}
 
-	static BasicComparator lessOrEqual() {
-		return basicComparator("<=");
+	static TypedComparator lessOrEqual() { //le
+		return new TypedComparator(basicComparator("<="), required(), required());
 	}
 
-	static BasicComparator greaterThan() {
-		return basicComparator(">");
+	static TypedComparator greaterThan() { //gt
+		return new TypedComparator(basicComparator(">"), required(), required());
 	}
 
-	static BasicComparator greaterOrEqual() {
-		return basicComparator(">=");
+	static TypedComparator greaterOrEqual() { //ge
+		return new TypedComparator(basicComparator(">="), required(), required());
 	}
 	
-	static StringComparator like() {
-		return stringComparator("LIKE");
+	static TypedComparator like() {
+		return new TypedComparator(stringComparator("LIKE"), required(), required());
 	}
 	
-	static StringComparator iLike() {
-		return stringComparator("ILIKE");
+	static TypedComparator iLike() {
+		return new TypedComparator(stringComparator("ILIKE"), required(), required());
 	}
 
-	static StringComparator notLike() {
-		return stringComparator("NOT LIKE");
+	static TypedComparator notLike() {
+		return new TypedComparator(stringComparator("NOT LIKE"), required(), required());
 	}
 
-	static StringComparator notILike() {
-		return stringComparator("NOT ILIKE");
+	static TypedComparator notILike() {
+		return new TypedComparator(stringComparator("NOT ILIKE"), required(), required());
 	}
 
-	static NullComparator isNull() {
-		return nullComparator("IS NULL");
+	static TypedComparator isNull() {
+		return new TypedComparator(nullComparator("IS NULL"));
 	}
 
-	static NullComparator isNotNull() {
-		return nullComparator("IS NOT NULL");
+	static TypedComparator isNotNull() {
+		return new TypedComparator(nullComparator("IS NOT NULL"));
 	}
 
-	static InCompartor in() {
-		return inComparator("IN");
+	static TypedComparator in() {
+		return new TypedComparator(inComparator("IN"), required(), varargs());
 	}
 	
-	static InCompartor notIn() {
-		return inComparator("NOT IN");
+	static TypedComparator notIn() {
+		return new TypedComparator(inComparator("NOT IN"), required(), varargs());
 	}
 	
 	static BasicComparator basicComparator(final String name) {
