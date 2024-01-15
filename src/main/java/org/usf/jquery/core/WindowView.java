@@ -4,6 +4,7 @@ import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.SqlStringBuilder.member;
 
+import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -11,7 +12,7 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class WindowView implements TaggableView {
 	
 	private final TaggableView view;
@@ -26,11 +27,23 @@ public final class WindowView implements TaggableView {
 		.toString();
 	}
 	
-	public DBFilter filter(ComparisonExpression expression) {
+	@Override
+	public String tagname() { //inherits tagname
+		return view.tagname();
+	}
+	
+	@Override
+	public String toString() {
+		return sql(addWithValue(), "<schema>"); 
+	}
+	
+
+	public static DBColumn windowColumn(TaggableView view, TaggableColumn column) {
+		var wv = new WindowView(view, column);
 		return new DBColumn() {
 			@Override
 			public String sql(QueryParameterBuilder builder) { //overwrite view
-				return member(builder.overwriteView(WindowView.this), doubleQuote(column.tagname()));
+				return member(builder.overwriteView(wv), doubleQuote(column.tagname()));
 			}
 			@Override
 			public JavaType javaType() {
@@ -40,16 +53,6 @@ public final class WindowView implements TaggableView {
 			public String toString() {
 				return sql(addWithValue());
 			}
-		}.filter(expression);
-	}
-
-	@Override
-	public String tagname() { //inherits tagname
-		return view.tagname();
-	}
-	
-	@Override
-	public String toString() {
-		return sql(addWithValue(), "<schema>"); 
+		};
 	}
 }

@@ -100,6 +100,7 @@ public class ArgumentParsers {
 		switch (type) {
 		case COLUMN:	return RequestEntryChain::asColumn;
 		case ORDER : 	return RequestEntryChain::asOrder;
+		case FILTER: 	return RequestEntryChain::asFilter;
 		case CLAUSE:	return RequestEntryChain::asOperation;
 		default:		throw unsupportedTypeException(type);
 		}

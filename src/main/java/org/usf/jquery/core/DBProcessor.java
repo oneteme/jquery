@@ -8,5 +8,4 @@ package org.usf.jquery.core;
 public interface DBProcessor<T> extends DBObject {
 	
 	T args(Object... args);
-
 }

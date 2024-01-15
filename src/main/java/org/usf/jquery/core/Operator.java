@@ -284,18 +284,14 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	
 	static TypedOperator over() {
 		return new TypedOperator(firstArgType(), pipe("OVER"), required(COLUMN), optional(CLAUSE), optional(CLAUSE)) {
-			
 			@Override
 			public OperationColumn args(Object... args) {
 				return super.args(args).aggregation(false); //over aggregation functions
 			}
-			
-			@Override
-			Object[] afterCheck(Object... args) { //map args after check
-				var c = Stream.of(args).skip(1).toArray(OperationColumn[]::new);
-				return new Object[] {args[0], clauses(c)};
-			}
-		};
+		}.argsMapper(args->{ //map args after check
+			var c = Stream.of(args).skip(1).toArray(OperationColumn[]::new);
+			return new Object[] {args[0], clauses(c)};
+		});
 	}
 
 	//clause functions
@@ -370,7 +366,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	static Optional<TypedOperator> lookupOperator(String op) {
 		try {
 			var m = Operator.class.getMethod(op);
-			if(isStatic(m.getModifiers()) && m.getReturnType() == TypedOperator.class) { // no private static
+			if(isStatic(m.getModifiers()) && m.getReturnType() == TypedOperator.class && m.getParameterCount() == 0) { // no private static
 				return Optional.of((TypedOperator) m.invoke(null));
 			}
 		} catch (Exception e) {/* do not throw exception */}

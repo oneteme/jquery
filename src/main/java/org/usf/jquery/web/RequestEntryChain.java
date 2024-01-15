@@ -5,34 +5,45 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.Comparator.eq;
+import static org.usf.jquery.core.Comparator.in;
+import static org.usf.jquery.core.Comparator.isNull;
+import static org.usf.jquery.core.Comparator.lookupComparator;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.Operator.lookupWindowFunction;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.WindowView.windowColumn;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
-import static org.usf.jquery.web.CriteriaBuilder.ofComparator;
 import static org.usf.jquery.web.JQueryContext.context;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Parameter;
+import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
+import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.WindowView;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.val;
 
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
@@ -71,26 +82,75 @@ final class RequestEntryChain {
 		return oc == c ? c : oc.as(c.tagname());
 	}
 
+	public DBFilter asFilter(TableDecorator td) {
+		return asFilter(td, null);
+	}
+
 	public DBFilter asFilter(TableDecorator td, List<RequestEntryChain> values) {
 		var t = lookupResource(td);
 		var c = t.buildColumn();
 		var e = t.entry.next;
-		var p = t.entry;
 		DBColumn oc = c;
 		while(nonNull(e)) {
 			var op = e.toOperation(td, oc);
 			if(isNull(op)) {
 				break;
 			}
-			oc = op; //preserve last non null column
-			p = e; //preserve last operator entry
+			oc = "over".equals(e.value)
+					? windowColumn(td.table(), op.as(c.tagname())) 
+					: op; //preserve last non null column
 			e = e.next;
 		}
-		var exp = (isNull(e) ? new RequestEntryChain(null) : e)
-				.toComparison(td, c == oc ? t.cd : DEFAUL_COLUMN, values);
-		return "over".equals(p.value) 
-				? new WindowView(td.table(), oc.as(c.tagname())).filter(exp) 
-				: oc.filter(exp);
+		if(isNull(e)) {
+			return isEmpty(values) 
+					? oc.isNull() 
+					: defaultFilter(t.td, oc, requireNonNull(t.cd.parser(t.td)), values);
+		}
+		if(!isEmpty(values) && (e.next() || !isEmpty(e.args))) {
+			throw new IllegalArgumentException("illegal");
+		}
+		if(isNull(e.args) && !isEmpty(values)) {
+			e.args = values;
+		}
+		var ftr = e.toComparison(td, oc);
+		if(nonNull(ftr)) {
+			if(e.next()) {
+				//values isEmpty
+				e = e.next;
+				while(nonNull(e)) {
+					ftr = e.toComparison(td, ftr);
+					e = e.next;
+				}
+				return ftr;
+			}
+			if(isNull(e.args)) {
+		    	var prs = requireNonNull(t.cd.parser(td));
+		    	var arr = prs.parseAll(toStringArray(values));
+				return oc.filter(in().expression(arr));
+			}
+			//values isEmpty
+			return ftr;
+		}
+		else if(oc == c) {
+			return c.filter(e.toComparison(td, t.cd, values));
+		}
+		else {
+			throw new IllegalArgumentException();
+		}
+	}
+	
+	static DBFilter defaultFilter(TableDecorator td, DBColumn oc, JDBCArgumentParser parser, List<RequestEntryChain> values) {
+		if(values.size() > 1) {
+			return oc.in(parser.parseAll(toStringArray(values)));
+		}
+		Object o;
+		try {
+			o = values.get(0).asColumn(td);
+		}
+		catch(Exception e) {
+			o = parser.parse(values.get(0).toString());
+		}
+		return oc.equal(o);
 	}
 	
 	public DBOrder asOrder(TableDecorator td) {
@@ -138,6 +198,19 @@ final class RequestEntryChain {
 		return res.isEmpty() ? null : fillArgs(td, col, res.get());
 	}
 	
+
+	DBFilter toComparison2(TableDecorator td, DBColumn col) {
+		var f = toComparison(td, col);
+		if(nonNull(f)) {
+		}
+		return null;
+	}
+	
+	DBFilter toComparison(TableDecorator td, DBObject col) {
+		var res = lookupComparator(value);
+		return res.isEmpty() ? null : fillArgs(td, col, res.get());
+	}
+	
 	ComparisonExpression toComparison(TableDecorator td, ColumnDecorator cd, List<RequestEntryChain> values) {
 		if(next()) {
 			throw cannotEvaluateException("expression", this);
@@ -148,23 +221,23 @@ final class RequestEntryChain {
 				return criteria.build(toStringArray(values));
 			}
 		}
-		var cmp = cd.comparator(value, values.size());
-		if(nonNull(cmp)) {
-	    	if(values.size() == 1) {
-	    		try {
-		    		return cmp.expression(values.get(0).asColumn(td)); // try parse column
-	    		}
-	    		catch (Exception e) {
-	    	    	var prs = requireNonNull(cd.parser(td));
-		    		return cmp.expression(prs.parse(values.get(0).toString()));
-				}
-	    	}
-	    	var prs = requireNonNull(cd.parser(td));
-	    	var arr = prs.parseAll(toStringArray(values));
-			return cmp.isVarargs() 
-					? cmp.expression(arr)
-					: ofComparator(cmp).build(arr);
-		}
+//		var cmp = cd.comparator(value, values.size());
+//		if(nonNull(cmp)) {
+//	    	if(values.size() == 1) {
+//	    		try {
+//		    		return cmp.expression(values.get(0).asColumn(td)); // try parse column
+//	    		}
+//	    		catch (Exception e) {
+//	    	    	var prs = requireNonNull(cd.parser(td));
+//		    		return cmp.expression(prs.parse(values.get(0).toString()));
+//				}
+//	    	}
+//	    	var prs = requireNonNull(cd.parser(td));
+//	    	var arr = prs.parseAll(toStringArray(values));
+//			return cmp.isVarargs() 
+//					? cmp.expression(arr)
+//					: ofComparator(cmp).build(arr);
+//		}
 		throw cannotEvaluateException("expression", this);
 	}
 	
@@ -194,12 +267,20 @@ final class RequestEntryChain {
 				.orElse(null);
 	}
 	
+
+	private DBFilter fillArgs(TableDecorator td, DBObject col, TypedComparator cmp) {
+		return cmp.args(toArgs(td, col, cmp.getParameterSet()));
+	}
+	
 	private OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator op) {
+		return op.args(toArgs(td, col, op.getParameterSet()));
+	}
+	
+	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps) {
 		var np = isNull(args) ? 0 : args.size();
 		if(nonNull(col)) {
 			np++;
 		}
-		var ps = op.getParameterSet();
 		var min = ps.requireParameterCount();
 		var max = ps.parameterCount();
 		if(np >= min && (ps.isVarags() || np <= max)) {
@@ -218,7 +299,7 @@ final class RequestEntryChain {
 					params.add(args.get(i-s).toArg(td, types));
 				}
 			}
-			return op.args(params.toArray());
+			return params.toArray();
 		}
 		throw new IllegalArgumentException("msg");
 	}

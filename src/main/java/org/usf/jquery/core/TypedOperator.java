@@ -1,8 +1,10 @@
 package org.usf.jquery.core;
 
+import static java.util.function.UnaryOperator.identity;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import java.util.function.Function;
+import java.util.function.UnaryOperator;
 
 import lombok.Getter;
 import lombok.experimental.Delegate;
@@ -19,6 +21,7 @@ public class TypedOperator implements Operator {
 	private final Operator operator;
 	private final Function<Object[], JavaType> typeFn;
 	private final ParameterSet parameterSet;
+	private UnaryOperator<Object[]> argMapper = identity();
 	
 	public TypedOperator(JavaType type, Operator function, Parameter... args) {
 		this(o-> type, function, args);
@@ -33,14 +36,15 @@ public class TypedOperator implements Operator {
 	@Override
 	public OperationColumn args(Object... args) {
 		args = parameterSet.match(args);
-		return new OperationColumn(operator, afterCheck(args), typeFn.apply(args));
+		return new OperationColumn(operator, argMapper.apply(args), typeFn.apply(args));
 	}
 	
 	public Operator unwrap() {
 		return operator;
 	}
-	
-	Object[] afterCheck(Object... args) {
-		return args;
+
+	TypedOperator argsMapper(UnaryOperator<Object[]> argMapper) {
+		this.argMapper = argMapper;
+		return this;
 	}
 }

@@ -1,10 +1,16 @@
 package org.usf.jquery.core;
 
+import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Arrays.copyOfRange;
+import static java.util.Optional.empty;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
+import static org.usf.jquery.core.JqueryType.FILTER;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 
+import java.util.Arrays;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 
 /**
@@ -12,7 +18,7 @@ import java.util.function.UnaryOperator;
  * @author u$f
  *
  */
-public interface Comparator extends DBProcessor<ColumnSingleFilter> {
+public interface Comparator extends DBProcessor<DBFilter> {
 	
 	String id();
 	
@@ -21,17 +27,9 @@ public interface Comparator extends DBProcessor<ColumnSingleFilter> {
 	}
 	
 	@Override
-	default ColumnSingleFilter args(Object... args) {
-		if(Objects.nonNull(args) && args.length >= 1 && args.length <= 2) {
-			if(args[0] instanceof DBColumn) {
-				return new ColumnSingleFilter((DBColumn)args[0], 
-						this.expression(args.length > 1 ? args[1] : null)); // no type
-			}
-			else {
-				throw new IllegalArgumentException(); //TODO msg
-			}
-		}
-		throw new IllegalArgumentException(); //TODO msg
+	default DBFilter args(Object... args) {
+		return new ColumnSingleFilter((DBColumn)args[0], 
+				this.expression(copyOfRange(args, 1, args.length))); // no type
 	}
 
 	default ComparisonExpression expression(Object right) {
@@ -106,6 +104,16 @@ public interface Comparator extends DBProcessor<ColumnSingleFilter> {
 		return new TypedComparator(inComparator("NOT IN"), required(), varargs());
 	}
 	
+	//pipe
+	
+	static TypedComparator and() {
+		return new TypedComparator(pipe("AND"), required(FILTER), required(FILTER));
+	}
+
+	static TypedComparator or() {
+		return new TypedComparator(pipe("OR"), required(FILTER), required(FILTER));
+	}
+	
 	static BasicComparator basicComparator(final String name) {
 		return ()-> name;
 	}
@@ -122,8 +130,22 @@ public interface Comparator extends DBProcessor<ColumnSingleFilter> {
 		return ()-> name;
 	}
 	
+	static ComparatorPipe pipe(final String name) {
+		return ()-> name;
+	}
+	
+	static Optional<TypedComparator> lookupComparator(String op) {
+		try {
+			var m = Comparator.class.getMethod(op);
+			if(isStatic(m.getModifiers()) && m.getReturnType() == TypedComparator.class  && m.getParameterCount() == 0) { // no private static
+				return Optional.of((TypedComparator) m.invoke(null));
+			}
+		} catch (Exception e) {/* do not throw exception */}
+		return empty();
+	}
+	
 	private static UnaryOperator<Object[]> wildcardSecondArg(UnaryOperator<Object> fn) {
-		return args->{
+		return args-> {
 			args[1] = fn.apply(args[1]);
 			return args;
 		};

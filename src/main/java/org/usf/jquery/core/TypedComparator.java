@@ -27,7 +27,7 @@ public final class TypedComparator implements Comparator {
 	}
 
 	@Override
-	public ColumnSingleFilter args(Object... args) {
+	public DBFilter args(Object... args) {
 		args = parameterSet.match(args);
 		return comparator.args(argMapper.apply(args));
 	}
