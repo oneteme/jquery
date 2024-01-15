@@ -21,16 +21,15 @@ public final class WindowView implements TaggableView {
 	public String sql(QueryParameterBuilder builder, String schema) { //sub query should not use main builder
 		var b = addWithValue("w");
 		return new SqlStringBuilder(100)
-		.append("(SELECT ").append(member(b.view(view), "*"))
-		.append(", ").append(column.sqlWithTag(b))
+		.append("(SELECT ").append(member(b.view(view), "*")).append(", ").append(column.sqlWithTag(b))
 		.append(" FROM ").append(view.sqlWithTag(b, schema)).append(")")
 		.toString();
 	}
 	
 	public DBFilter filter(ComparisonExpression expression) {
-		var col = new DBColumn() {
+		return new DBColumn() {
 			@Override
-			public String sql(QueryParameterBuilder builder) {
+			public String sql(QueryParameterBuilder builder) { //overwrite view
 				return member(builder.overwriteView(WindowView.this), doubleQuote(column.tagname()));
 			}
 			@Override
@@ -41,8 +40,7 @@ public final class WindowView implements TaggableView {
 			public String toString() {
 				return sql(addWithValue());
 			}
-		};
-		return col.filter(expression);
+		}.filter(expression);
 	}
 
 	@Override
