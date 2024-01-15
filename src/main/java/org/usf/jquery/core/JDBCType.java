@@ -1,10 +1,18 @@
 package org.usf.jquery.core;
 
+import static java.util.Optional.empty;
+
+/**
+ * 
+ * @author u$f
+ *
+ */
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.util.Optional;
 import java.util.function.Predicate;
 
 import lombok.Getter;
@@ -101,25 +109,25 @@ public enum JDBCType implements JavaType {
 				|| o.getClass() == String.class;
 	}
 	
-	public static JDBCType typeOf(Object o) {
+	public static Optional<JDBCType> typeOf(Object o) {
 		if(o instanceof Typed) {
 			var t = ((Typed) o).javaType();
-			return t == null ? null : findType(t::equals);
+			return Optional.of(t).flatMap(v-> findType(v::equals));
 		}
-		return o == null ? null : findType(e-> e.type().isInstance(o));
+		return Optional.of(o).flatMap(v-> findType(e-> e.type().isInstance(o)));
 	}
 	
-	public static JDBCType fromDataType(int value) {
+	public static Optional<JDBCType> fromDataType(int value) {
 		return findType(t-> t.value == value);
 	}
 	
-	public static JDBCType findType(Predicate<JDBCType> predicate) {
+	public static Optional<JDBCType> findType(Predicate<JDBCType> predicate) {
 		for(var t : values()) {
 			if(predicate.test(t)) {
-				return t;
+				return Optional.of(t);
 			}
 		}
-		return OTHER;
+		return empty();
 	}
 	
 }

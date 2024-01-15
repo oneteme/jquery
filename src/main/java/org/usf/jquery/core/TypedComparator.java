@@ -1,6 +1,9 @@
 package org.usf.jquery.core;
 
+import static java.util.function.UnaryOperator.identity;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
+
+import java.util.function.UnaryOperator;
 
 import lombok.Getter;
 import lombok.experimental.Delegate;
@@ -16,6 +19,7 @@ public final class TypedComparator implements Comparator {
 	@Delegate
 	private final Comparator comparator;
 	private final ParameterSet parameterSet;
+	private UnaryOperator<Object[]> argMapper = identity();
 	
 	public TypedComparator(Comparator comparator, Parameter... parameters) {
 		this.comparator = comparator;
@@ -25,14 +29,15 @@ public final class TypedComparator implements Comparator {
 	@Override
 	public ColumnSingleFilter args(Object... args) {
 		args = parameterSet.match(args);
-		return comparator.args(afterCheck(args));
+		return comparator.args(argMapper.apply(args));
 	}
 	
 	public Comparator unwrap() {
 		return comparator;
 	}
 	
-	Object[] afterCheck(Object... args) {
-		return args;
+	TypedComparator argsMapper(UnaryOperator<Object[]> argMapper) {
+		this.argMapper = argMapper;
+		return this;
 	}
 }

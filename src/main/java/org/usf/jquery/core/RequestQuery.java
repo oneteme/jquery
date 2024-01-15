@@ -2,12 +2,11 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.Objects;
 
 import javax.sql.DataSource;
 
@@ -28,7 +27,8 @@ public final class RequestQuery {
 	
 	@NonNull
 	private final String query;
-	private final Object[] params;
+	private final Object[] args;
+	private final int[] argTypes;
 	
 	public List<DynamicModel> execute(DataSource ds) {
 		return execute(ds, new KeyValueMapper());
@@ -38,17 +38,17 @@ public final class RequestQuery {
 		try(var cn = ds.getConnection()){
 			log.debug("preparing statement : {}", query);
 			try(var ps = cn.prepareStatement(query)){
-				if(nonNull(params)) {
-					for(var i=0; i<params.length; i++) {
-						if(isNull(params[i])) {
-							ps.setNull(i+1);
+				if(!isEmpty(args)) {
+					for(var i=0; i<args.length; i++) {
+						if(isNull(args[i])) {
+							ps.setNull(i+1, argTypes[i]);
 						}
 						else {
-							ps.setObject(i+1, params[i]);
+							ps.setObject(i+1, args[i], argTypes[i]);
 						}
 					}						
 				}
-		        log.debug("with parameters : {}", Arrays.toString(params));
+		        log.debug("with parameters : {}", Arrays.toString(args));
 		        log.debug("executing SQL query...");
 		        var bg = currentTimeMillis();
 				try(var rs = ps.executeQuery()){

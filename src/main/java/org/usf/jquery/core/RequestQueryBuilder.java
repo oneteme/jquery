@@ -17,7 +17,6 @@ import static org.usf.jquery.core.Validation.requireNonEmpty;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import lombok.Getter;
@@ -92,7 +91,7 @@ public class RequestQueryBuilder {
 			sb.forEach(it, " UNION ALL ", o-> build(sb, pb, schema));
 		}
 		log.debug("query built in {} ms", currentTimeMillis() - bg);
-		return new RequestQuery(sb.toString(), pb.args());
+		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb, String schema){

@@ -162,7 +162,7 @@ final class RequestEntryChain {
 	    	}
 	    	var prs = requireNonNull(cd.parser(td));
 	    	var arr = prs.parseAll(toStringArray(values));
-			return cmp instanceof InCompartor 
+			return cmp.isVarargs() 
 					? cmp.expression(arr)
 					: ofComparator(cmp).build(arr);
 		}
@@ -199,10 +199,11 @@ final class RequestEntryChain {
 		var np = isNull(args) ? 0 : args.size();
 		if(nonNull(col)) {
 			np++;
-		}		
-		var min = op.requireArgCount();
-		var max = op.getParameters().length;
-		if(np >= min && (op.isVarags() || np <= max)) {
+		}
+		var ps = op.getParameterSet();
+		var min = ps.requireParameterCount();
+		var max = ps.parameterCount();
+		if(np >= min && (ps.isVarags() || np <= max)) {
 			var params = new ArrayList<Object>(np);
 			if(nonNull(col)) {
 				params.add(col);
@@ -210,10 +211,10 @@ final class RequestEntryChain {
 			var s = nonNull(col) ? 1 : 0;
 			var i = s; 
 			for(; i<min(np, max); i++) {
-				params.add(args.get(i-s).toArg(td, op.getParameters()[i]));
+				params.add(args.get(i-s).toArg(td, ps.getParameters()[i]));
 			}
-			if(op.isVarags()) {
-				var types = op.getParameters()[max-1]; 
+			if(ps.isVarags()) {
+				var types = ps.getParameters()[max-1]; 
 				for(; i<np; i++) {
 					params.add(args.get(i-s).toArg(td, types));
 				}

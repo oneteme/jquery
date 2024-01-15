@@ -30,7 +30,6 @@ import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TaggableView;
-import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 
 /**

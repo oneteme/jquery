@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.lang.Math.min;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Utils.isEmpty;

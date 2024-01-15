@@ -1,15 +1,15 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
-import static org.usf.jquery.core.Comparator.equal;
-import static org.usf.jquery.core.Comparator.greaterOrEqual;
-import static org.usf.jquery.core.Comparator.greaterThan;
+import static org.usf.jquery.core.Comparator.eq;
+import static org.usf.jquery.core.Comparator.ge;
+import static org.usf.jquery.core.Comparator.gt;
 import static org.usf.jquery.core.Comparator.iLike;
 import static org.usf.jquery.core.Comparator.in;
-import static org.usf.jquery.core.Comparator.lessOrEqual;
-import static org.usf.jquery.core.Comparator.lessThan;
+import static org.usf.jquery.core.Comparator.le;
+import static org.usf.jquery.core.Comparator.lt;
 import static org.usf.jquery.core.Comparator.like;
-import static org.usf.jquery.core.Comparator.notEqual;
+import static org.usf.jquery.core.Comparator.ne;
 import static org.usf.jquery.core.Comparator.notIn;
 import static org.usf.jquery.core.Comparator.notLike;
 import static org.usf.jquery.web.ArgumentParsers.jdbcArgParser;
@@ -69,28 +69,30 @@ public interface ColumnDecorator {
 
 	default Comparator comparator(String comparator, int nArg) {
 		if(isNull(comparator)) {
-			return nArg == 1 ? equal() : in();
+			return nArg == 1 ? eq() : in();
 		}
 		switch(comparator) {
-		case "gt"		: return greaterThan();
-		case "ge"  		: return greaterOrEqual();
-		case "lt"  		: return lessThan();
-		case "le"  		: return lessOrEqual();
-		case "not" 		: return nArg == 1 ? notEqual() : notIn();
-		case "like"		: return wildcards(like());
-		case "ilike"	: return wildcards(iLike());
-		case "unlike"	: return wildcards(notLike());
+		case "gt"		: return gt();
+		case "ge"  		: return ge();
+		case "lt"  		: return lt();
+		case "le"  		: return le();
+		case "not" 		: return nArg == 1 ? ne() : notIn();
+		case "like"		: return like();
+		case "ilike"	: return iLike();
+		case "unlike"	: return notLike();
 		default			: return null;
 		//isnull
 		}
 	}
 	
+	/*
 	private static Comparator wildcards(StringComparator fn) {
 		return (b, args)-> {
 			args[1] = "%" + args[1] + "%";
 			return fn.sql(b, args);
 		};
 	}
+	*/
 	
 	default ComparisonExpression expression(String exp, String... values) { return null; }
 	

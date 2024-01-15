@@ -6,7 +6,7 @@ import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Objects;
+import java.util.Optional;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -32,8 +32,10 @@ public final class CaseColumn implements DBColumn {
 	public JavaType javaType() {
 		return expressions.stream()
 				.map(JDBCType::typeOf)
-				.filter(Objects::nonNull) // should have same type
-				.findAny().orElse(null);
+				.filter(Optional::isPresent) // should have same type
+				.findAny()
+				.orElseGet(Optional::empty)
+				.orElse(null);
 	}
 		
 	public CaseColumn append(WhenExpression we) {

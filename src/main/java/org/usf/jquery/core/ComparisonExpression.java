@@ -32,27 +32,27 @@ public interface ComparisonExpression extends DBExpression, NestedSql {
 	}
 	
 	static ComparisonExpression equal(Object right) {
-		return Comparator.equal().expression(right);
+		return Comparator.eq().expression(right);
 	}
 
 	static ComparisonExpression notEqual(Object right) {
-		return Comparator.notEqual().expression(right);
+		return Comparator.ne().expression(right);
 	}
 	
 	static ComparisonExpression lessThan(Object right) {
-		return Comparator.lessThan().expression(right);
+		return Comparator.lt().expression(right);
 	}
 
 	static ComparisonExpression lessOrEqual(Object right) {
-		return Comparator.lessOrEqual().expression(right);
+		return Comparator.le().expression(right);
 	}
 
 	static ComparisonExpression greaterThan(Object right) {
-		return Comparator.greaterThan().expression(right);
+		return Comparator.gt().expression(right);
 	}
 
 	static ComparisonExpression greaterOrEqual(Object right) {
-		return Comparator.greaterOrEqual().expression(right);
+		return Comparator.ge().expression(right);
 	}
 	
 	static ComparisonExpression like(Object right) {
@@ -76,7 +76,7 @@ public interface ComparisonExpression extends DBExpression, NestedSql {
 	}
 
 	static ComparisonExpression isNotNull() {
-		return Comparator.isNotNull().expression(null);
+		return Comparator.nonNull().expression(null);
 	}
 
 	@SuppressWarnings("unchecked")

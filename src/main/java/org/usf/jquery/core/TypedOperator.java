@@ -30,14 +30,14 @@ public class TypedOperator implements Operator {
 		this.parameterSet = ofParameters(parameter);
 	}
 	
-	public Operator unwrap() {
-		return operator;
-	}
-	
 	@Override
 	public OperationColumn args(Object... args) {
 		args = parameterSet.match(args);
 		return new OperationColumn(operator, afterCheck(args), typeFn.apply(args));
+	}
+	
+	public Operator unwrap() {
+		return operator;
 	}
 	
 	Object[] afterCheck(Object... args) {

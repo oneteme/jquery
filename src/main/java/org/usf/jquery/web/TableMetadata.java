@@ -7,6 +7,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.core.JDBCType.OTHER;
 import static org.usf.jquery.core.JDBCType.fromDataType;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.web.JQueryContext.database;
@@ -61,7 +62,7 @@ public class TableMetadata {
 			do {
 				var meta = dbMap.remove(rs.getString("COLUMN_NAME"));
 				if(nonNull(meta)) {
-					meta.setDataType(fromDataType(rs.getInt("DATA_TYPE")));
+					meta.setDataType(fromDataType(rs.getInt("DATA_TYPE")).orElse(OTHER));
 					meta.setDataSize(rs.getInt("COLUMN_SIZE"));
 					meta.setPrecision(rs.getInt("DECIMAL_DIGITS"));
 				} // else undeclared column

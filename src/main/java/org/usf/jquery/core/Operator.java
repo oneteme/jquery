@@ -293,7 +293,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 			@Override
 			Object[] afterCheck(Object... args) { //map args after check
 				var c = Stream.of(args).skip(1).toArray(OperationColumn[]::new);
-				return super.afterCheck(args[0], clauses(c));
+				return new Object[] {args[0], clauses(c)};
 			}
 		};
 	}
@@ -378,6 +378,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	}
 
 	private static Function<Object[], JavaType> firstArgType() {
-		return arr-> typeOf(requireAtLeastNArgs(1, arr, ()-> "firstArgType function")[0]);
+		return arr-> typeOf(requireAtLeastNArgs(1, arr, ()-> "firstArgType function")[0])
+				.orElse(null); // not sure 
 	}
 }
