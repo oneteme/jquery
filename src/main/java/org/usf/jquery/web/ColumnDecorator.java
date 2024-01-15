@@ -67,6 +67,7 @@ public interface ColumnDecorator {
 		return null; // no criteria by default
 	}
 
+	@Deprecated(forRemoval = true)
 	default Comparator comparator(String comparator, int nArg) {
 		if(isNull(comparator)) {
 			return nArg == 1 ? eq() : in();

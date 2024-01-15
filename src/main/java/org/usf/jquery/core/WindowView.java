@@ -28,7 +28,20 @@ public final class WindowView implements TaggableView {
 	}
 	
 	public DBFilter filter(ComparisonExpression expression) {
-		DBColumn col = b-> member(b.overwriteView(this), doubleQuote(column.tagname()));
+		var col = new DBColumn() {
+			@Override
+			public String sql(QueryParameterBuilder builder) {
+				return member(builder.overwriteView(WindowView.this), doubleQuote(column.tagname()));
+			}
+			@Override
+			public JavaType javaType() {
+				return column.javaType();
+			}
+			@Override
+			public String toString() {
+				return sql(addWithValue());
+			}
+		};
 		return col.filter(expression);
 	}
 
