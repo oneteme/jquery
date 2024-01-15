@@ -29,4 +29,9 @@ public final class NamedColumn implements TaggableColumn {
 	public DBColumn unwrap() {
 		return column;
 	}
+	
+	@Override 
+	public String toString() {
+		return column.toString();
+	}
 }
