@@ -128,7 +128,7 @@ public interface Comparator extends DBProcessor<DBFilter> {
 		return ()-> name;
 	}
 	
-	static ComparatorPipe pipe(final String name) {
+	static ComparatorChain pipe(final String name) {
 		return ()-> name;
 	}
 	

@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-public interface ComparatorPipe extends Comparator {
+public interface ComparatorChain extends Comparator {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {

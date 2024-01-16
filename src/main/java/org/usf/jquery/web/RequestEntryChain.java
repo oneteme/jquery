@@ -43,8 +43,6 @@ import lombok.Setter;
 @RequiredArgsConstructor
 final class RequestEntryChain {
 	
-	private static final ColumnDecorator DEFAUL_COLUMN = ()-> null; //unused identity
-
 	private final String value;
 	private final boolean text; //"string"
 	private RequestEntryChain next;
@@ -189,14 +187,6 @@ final class RequestEntryChain {
 			};
 		}
 		return res.isEmpty() ? null : fillArgs(td, col, res.get());
-	}
-	
-
-	DBFilter toComparison2(TableDecorator td, DBColumn col) {
-		var f = toComparison(td, col);
-		if(nonNull(f)) {
-		}
-		return null;
 	}
 	
 	DBFilter toComparison(TableDecorator td, DBObject col) {

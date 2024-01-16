@@ -44,5 +44,4 @@ public final class Parameter {
 	public static Parameter varargs(JavaType... types) {
 		return new Parameter(types, false, true);
 	}
-	
 }
