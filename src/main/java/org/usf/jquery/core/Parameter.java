@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -44,19 +43,6 @@ public final class Parameter {
 	
 	public static Parameter varargs(JavaType... types) {
 		return new Parameter(types, false, true);
-	}
-	
-	public static Parameter[] checkParams(Parameter... parameters) {
-		if(nonNull(parameters)) {
-			var i=0;
-			while(i<parameters.length && parameters[i].isRequired()) i++;
-			for(i++; i<parameters.length; i++) {
-				if(parameters[i].isRequired()) {
-					throw new IllegalArgumentException("required parameter cannot follow optional parameter");
-				}
-			}
-		}
-		return parameters;
 	}
 	
 }

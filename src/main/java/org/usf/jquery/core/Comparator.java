@@ -8,8 +8,6 @@ import static org.usf.jquery.core.JqueryType.FILTER;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 
-import java.util.Arrays;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 

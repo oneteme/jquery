@@ -5,9 +5,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
-import static org.usf.jquery.core.Comparator.isNull;
 import static org.usf.jquery.core.Comparator.lookupComparator;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.Operator.lookupWindowFunction;
@@ -20,10 +18,8 @@ import static org.usf.jquery.web.JQueryContext.context;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -36,14 +32,11 @@ import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
-import org.usf.jquery.core.Utils;
-import org.usf.jquery.core.WindowView;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
-import lombok.val;
 
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
