@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Optional.empty;
+import static org.usf.jquery.core.ArgTypeRef.firstArgType;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -11,7 +12,6 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.JqueryType.CLAUSE;
 import static org.usf.jquery.core.JqueryType.COLUMN;
 import static org.usf.jquery.core.JqueryType.ORDER;
@@ -21,11 +21,9 @@ import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
 import static org.usf.jquery.core.Utils.currentDatabase;
-import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Optional;
-import java.util.function.Function;
 import java.util.stream.Stream;
 
 /**
@@ -371,10 +369,5 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 			}
 		} catch (Exception e) {/* do not throw exception */}
 		return empty();
-	}
-
-	private static Function<Object[], JavaType> firstArgType() {
-		return arr-> typeOf(requireAtLeastNArgs(1, arr, ()-> "firstArgType function")[0])
-				.orElse(null); // not sure 
 	}
 }

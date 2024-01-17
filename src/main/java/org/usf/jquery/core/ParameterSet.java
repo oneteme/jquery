@@ -3,6 +3,8 @@ package org.usf.jquery.core;
 import static java.lang.Math.min;
 import static java.util.Objects.isNull;
 
+import java.util.function.ObjIntConsumer;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -20,35 +22,40 @@ public final class ParameterSet {
 	
 	private final Parameter[] parameters;
 	
-	public Object[] match(Object... args) {
-		if(isNull(args)) {
-			args = new Object[0];
-		}
-		var na = args.length;
-		var rq = requireParameterCount();
-		if(na >= rq && (na <= parameters.length || isVarags())) {
-			var i=0;
-			for(; i<min(na, parameters.length); i++) {
-				if(!parameters[i].accept(args[i])) {
-					throw argumentTypeMismatch();
-				}
+	public Object[] args(Object... args) {
+		var arr = isNull(args) ? new Object[0] : args;
+		args(arr.length, (p,i)-> {
+			if(!p.accept(i, arr)) {
+				throw badArgumentTypeException();
 			}
-			if(i<args.length) {
-				var last = parameters[parameters.length-1];
-				if(!last.accept(args[i])) {
-					throw argumentTypeMismatch();
-				}
-			}
-			return args;
-		}
-		throw argumentTypeMismatch();
+		});
+		return arr;
 	}
 
+	public void args(int nArgs, ObjIntConsumer<Parameter> cons) {
+		var rq = requiredParameterCount();
+		if(nArgs >= rq && (nArgs <= parameters.length || isVarags())) {
+			var i=0;
+			for(; i<min(nArgs, parameters.length); i++) {
+				cons.accept(parameters[i], i);
+			}
+			if(i<nArgs) {
+				var last = parameters[parameters.length-1];
+				for(; i<nArgs; i++) {
+					cons.accept(last, i);
+				}
+			}
+		}
+		else {
+			throw badArgumentCountException();
+		}
+	}
+	
 	public int parameterCount() {
 		return parameters.length;
 	}
 
-	public int requireParameterCount() {
+	public int requiredParameterCount() {
 		var i=0;
 		while(i<parameters.length && parameters[i].isRequired()) i++;
 		return i;
@@ -60,29 +67,31 @@ public final class ParameterSet {
 	
 	public static ParameterSet ofParameters(Parameter... parameters) {
 		if(isNull(parameters)) {
-			parameters = NO_PARAM;
+			return new ParameterSet(NO_PARAM);
 		}
-		else {
-			var i=0;
-			for(; i<parameters.length && parameters[i].isRequired(); i++) {
-				if(parameters[i].isVarargs() && i<parameters.length-1) {
-					throw new IllegalArgumentException("varargs should be the last parameter");
-				}
+		var i=0;
+		for(; i<parameters.length && parameters[i].isRequired(); i++) {
+			if(parameters[i].isVarargs() && i<parameters.length-1) {
+				throw new IllegalArgumentException("varargs should be the last parameter");
 			}
-			for(; i<parameters.length && !parameters[i].isRequired(); i++) {
-				if(parameters[i].isVarargs() && i<parameters.length-1) {
-					throw new IllegalArgumentException("varargs should be the last parameter");
-				}
+		}
+		for(; i<parameters.length && !parameters[i].isRequired(); i++) {
+			if(parameters[i].isVarargs() && i<parameters.length-1) {
+				throw new IllegalArgumentException("varargs should be the last parameter");
 			}
-			if(i<parameters.length) {
-				throw new IllegalArgumentException("required parameter cannot follow optional parameter");
-			}
+		}
+		if(i<parameters.length) {
+			throw new IllegalArgumentException("required parameter cannot follow optional parameter");
 		}
 		return new ParameterSet(parameters);
 	}
 	
-	private static IllegalArgumentException argumentTypeMismatch() {
-		return new IllegalArgumentException("argument type mismatch");
+	private static IllegalArgumentException badArgumentTypeException() {
+		return new IllegalArgumentException("bad argument type");
+	}
+	
+	private static IllegalArgumentException badArgumentCountException() {
+		return new IllegalArgumentException("bad argument count");
 	}
 	
 }

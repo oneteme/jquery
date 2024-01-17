@@ -21,9 +21,4 @@ public interface InCompartor extends Comparator {
 		var varg = copyOfRange(args, 1, args.length);
 		return builder.appendLitteral(args[0]) + SPACE + id() + parenthese(builder.appendArrayParameter(type, varg));
 	}
-	
-	@Override
-	default boolean isVarargs() {
-		return true;
-	}
 }

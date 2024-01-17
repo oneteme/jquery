@@ -35,7 +35,7 @@ public class TypedOperator implements Operator {
 	
 	@Override
 	public OperationColumn args(Object... args) {
-		args = parameterSet.match(args);
+		args = parameterSet.args(args);
 		return new OperationColumn(operator, argMapper.apply(args), typeFn.apply(args));
 	}
 	

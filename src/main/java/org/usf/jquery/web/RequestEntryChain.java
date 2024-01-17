@@ -1,6 +1,5 @@
 package org.usf.jquery.web;
 
-import static java.lang.Math.min;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -16,7 +15,6 @@ import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.JQueryContext.context;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
@@ -25,9 +23,9 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
-import org.usf.jquery.core.Parameter;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
@@ -260,37 +258,23 @@ final class RequestEntryChain {
 	}
 	
 	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps) {
-		var np = isNull(args) ? 0 : args.size();
+		int inc = nonNull(col) ? 1 : 0;
+		var arr = new Object[isNull(args) ? inc : args.size() + inc];
 		if(nonNull(col)) {
-			np++;
+			arr[0] = col;
 		}
-		var min = ps.requireParameterCount();
-		var max = ps.parameterCount();
-		if(np >= min && (ps.isVarags() || np <= max)) {
-			var params = new ArrayList<Object>(np);
-			if(nonNull(col)) {
-				params.add(col);
+		ps.args(arr.length, (p,i)-> {
+			if(i>0 || inc==0) {
+				arr[i] = args.get(i-inc).toArg(td, p.types(arr));
 			}
-			var s = nonNull(col) ? 1 : 0;
-			var i = s; 
-			for(; i<min(np, max); i++) {
-				params.add(args.get(i-s).toArg(td, ps.getParameters()[i]));
-			}
-			if(ps.isVarags()) {
-				var types = ps.getParameters()[max-1]; 
-				for(; i<np; i++) {
-					params.add(args.get(i-s).toArg(td, types));
-				}
-			}
-			return params.toArray();
-		}
-		throw new IllegalArgumentException("msg");
+		});
+		return arr;
 	}
 
-	private Object toArg(TableDecorator td, Parameter parameter) {
+	private Object toArg(TableDecorator td, JavaType[] types) {
 		return isNull(value) || text
 				? requireNoArgs().value
-				: parse(this, td, parameter.getTypes());
+				: parse(this, td, types);
 	}
 	
 	RequestEntryChain requireNoArgs() {

@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.copyOfRange;
 import static java.util.Optional.empty;
+import static org.usf.jquery.core.ArgTypeRef.firstArgType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JqueryType.FILTER;
 import static org.usf.jquery.core.Parameter.required;
@@ -19,11 +20,7 @@ import java.util.function.UnaryOperator;
 public interface Comparator extends DBProcessor<DBFilter> {
 	
 	String id();
-	
-	default boolean isVarargs() {
-		return false;
-	}
-	
+
 	@Override
 	default DBFilter args(Object... args) {
 		return new ColumnSingleFilter((DBColumn)args[0], 
@@ -95,11 +92,11 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	}
 
 	static TypedComparator in() {
-		return new TypedComparator(inComparator("IN"), required(), varargs());
+		return new TypedComparator(inComparator("IN"), required(), varargs(firstArgType()));
 	}
 	
 	static TypedComparator notIn() {
-		return new TypedComparator(inComparator("NOT IN"), required(), varargs());
+		return new TypedComparator(inComparator("NOT IN"), required(), varargs(firstArgType()));
 	}
 	
 	//pipe
