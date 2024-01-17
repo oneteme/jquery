@@ -1,8 +1,8 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -20,7 +20,7 @@ public interface ClauseFunction extends FunctionOperator {
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		return isEmpty(args) 
 				? EMPTY 
-				: id() + SPACE + Stream.of(args).map(builder::appendLitteral).collect(joining(COMA));
+				: id() + SPACE + Stream.of(args).map(builder::appendLitteral).collect(joining(SCOMA));
 	}
 	
 }

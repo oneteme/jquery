@@ -247,7 +247,6 @@ final class RequestEntryChain {
 				.map(fn-> new Triple(td, ofColumn(value, b-> fillArgs(td, null, fn)), this))
 				.orElse(null);
 	}
-	
 
 	private DBFilter fillArgs(TableDecorator td, DBObject col, TypedComparator cmp) {
 		return cmp.args(toArgs(td, col, cmp.getParameterSet()));
@@ -263,15 +262,15 @@ final class RequestEntryChain {
 		if(nonNull(col)) {
 			arr[0] = col;
 		}
-		ps.args(arr.length, (p,i)-> {
+		ps.forEach(arr.length, (p,i)-> {
 			if(i>0 || inc==0) {
-				arr[i] = args.get(i-inc).toArg(td, p.types(arr));
+				arr[i] = args.get(i-inc).parseValue(td, p.types(arr));
 			}
 		});
 		return arr;
 	}
 
-	private Object toArg(TableDecorator td, JavaType[] types) {
+	private Object parseValue(TableDecorator td, JavaType[] types) {
 		return isNull(value) || text
 				? requireNoArgs().value
 				: parse(this, td, types);

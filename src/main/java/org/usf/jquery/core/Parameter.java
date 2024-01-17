@@ -30,9 +30,10 @@ public final class Parameter {
 				: typeRef.apply(args).accept(args[idx]);
 	}
 	
-
 	public JavaType[] types(Object[] args) {
-		return isNull(typeRef) ? types : new JavaType[] {typeRef.apply(args)};
+		return isNull(typeRef) 
+				? types 
+				: new JavaType[] {typeRef.apply(args)};
 	}
 	
 	@Override

@@ -24,7 +24,7 @@ public final class ParameterSet {
 	
 	public Object[] args(Object... args) {
 		var arr = isNull(args) ? new Object[0] : args;
-		args(arr.length, (p,i)-> {
+		forEach(arr.length, (p,i)-> {
 			if(!p.accept(i, arr)) {
 				throw badArgumentTypeException();
 			}
@@ -32,27 +32,21 @@ public final class ParameterSet {
 		return arr;
 	}
 
-	public void args(int nArgs, ObjIntConsumer<Parameter> cons) {
+	public void forEach(int nArgs, ObjIntConsumer<Parameter> cons) {
 		var rq = requiredParameterCount();
-		if(nArgs >= rq && (nArgs <= parameters.length || isVarags())) {
-			var i=0;
-			for(; i<min(nArgs, parameters.length); i++) {
-				cons.accept(parameters[i], i);
-			}
-			if(i<nArgs) {
-				var last = parameters[parameters.length-1];
-				for(; i<nArgs; i++) {
-					cons.accept(last, i);
-				}
-			}
-		}
-		else {
+		if(nArgs < rq || (nArgs > parameters.length && !isVarags())) {
 			throw badArgumentCountException();
 		}
-	}
-	
-	public int parameterCount() {
-		return parameters.length;
+		var i=0;
+		for(; i<min(nArgs, parameters.length); i++) {
+			cons.accept(parameters[i], i);
+		}
+		if(i<nArgs) {
+			var last = parameters[parameters.length-1];
+			for(; i<nArgs; i++) {
+				cons.accept(last, i);
+			}
+		}
 	}
 
 	public int requiredParameterCount() {
