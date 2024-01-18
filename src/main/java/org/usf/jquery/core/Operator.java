@@ -30,6 +30,8 @@ import java.util.stream.Stream;
  *
  */
 public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
+	
+	String id();
 
 	@Deprecated(forRemoval = true)
 	static final Operator VALUE_RETURN = new Operator() {
@@ -45,8 +47,6 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 			return "value";
 		}
 	};
-	
-	String id();
 	
 	default OperationColumn args(Object... args) {
 		return new OperationColumn(this, args); // no type

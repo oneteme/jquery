@@ -36,6 +36,11 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor
@@ -305,15 +310,15 @@ final class RequestEntryChain {
 		}
 		return isNull(tag) ? s : s + ":" + tag;
 	}
-
-	static ParseException cannotEvaluateException(String type, RequestEntryChain entry) {
-		return ParseException.cannotEvaluateException(type, entry.toString());
-	}
 	
 	static String[] toStringArray(List<RequestEntryChain> entries) {
 		return entries.stream()
 				.map(e-> isNull(e.value) ? null : e.toString())
 				.toArray(String[]::new);
+	}
+
+	static ParseException cannotEvaluateException(String type, RequestEntryChain entry) {
+		return ParseException.cannotEvaluateException(type, entry.toString());
 	}
 	
 	@RequiredArgsConstructor

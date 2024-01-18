@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import lombok.NonNull;
@@ -11,7 +9,7 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-public interface ComparisonExpression extends DBExpression, NestedSql {
+public interface ComparisonExpression extends DBExpression, NestedSql, Chainable<ComparisonExpression> {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
@@ -20,16 +18,6 @@ public interface ComparisonExpression extends DBExpression, NestedSql {
 	}
 
 	String sql(QueryParameterBuilder builder, Object left); // do change method order
-	
-	ComparisonExpression append(LogicalOperator op, ComparisonExpression exp);
-	
-	default ComparisonExpression and(ComparisonExpression exp) {
-		return append(AND, exp);
-	}
-
-	default ComparisonExpression or(ComparisonExpression exp) {
-		return append(OR, exp);
-	}
 	
 	static ComparisonExpression equal(Object right) {
 		return Comparator.eq().expression(right);

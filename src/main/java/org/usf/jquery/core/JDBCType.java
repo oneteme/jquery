@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 
 /**
@@ -32,15 +34,15 @@ public enum JDBCType implements JavaType {
 	//do not change enum order
 	BOOLEAN(Types.BOOLEAN, Boolean.class, JDBCType::isBoolean),
 	BIT(Types.BIT, Boolean.class, JDBCType::isBoolean),
-	TINYINT(Types.TINYINT, Byte.class, o-> isNumber(o, Byte.MIN_VALUE, Byte.MAX_VALUE, false)),
-	SMALLINT(Types.SMALLINT, Short.class, o-> isNumber(o, Short.MIN_VALUE, Short.MAX_VALUE, false)),
-	INTEGER(Types.INTEGER, Integer.class, o-> isNumber(o, Integer.MIN_VALUE, Integer.MAX_VALUE, false)),
-	BIGINT(Types.BIGINT, Long.class, o-> isNumber(o, Long.MIN_VALUE, Long.MAX_VALUE, false)),
-	REAL(Types.REAL, Float.class, o-> isNumber(o, Float.MIN_VALUE, Float.MAX_VALUE, true)),
-	FLOAT(Types.FLOAT, Double.class, o-> isNumber(o, Double.MIN_VALUE, Double.MAX_VALUE, true)),
-	DOUBLE(Types.DOUBLE, Double.class, o-> isNumber(o, Double.MIN_VALUE, Double.MAX_VALUE, true)),
-	NUMERIC(Types.NUMERIC, BigDecimal.class, JDBCType::isNumber),
-	DECIMAL(Types.DECIMAL, BigDecimal.class, JDBCType::isNumber),
+	TINYINT(Types.TINYINT, Byte.class, Number.class, Number.class::isInstance),
+	SMALLINT(Types.SMALLINT, Short.class, Number.class, Number.class::isInstance),
+	INTEGER(Types.INTEGER, Integer.class, Number.class, Number.class::isInstance),
+	BIGINT(Types.BIGINT, Long.class, Number.class, Number.class::isInstance),
+	REAL(Types.REAL, Float.class, Number.class, Number.class::isInstance),
+	FLOAT(Types.FLOAT, Double.class, Number.class, Number.class::isInstance),
+	DOUBLE(Types.DOUBLE, Double.class, Number.class, Number.class::isInstance),
+	NUMERIC(Types.NUMERIC, BigDecimal.class, Number.class, Number.class::isInstance),
+	DECIMAL(Types.DECIMAL, BigDecimal.class, Number.class, Number.class::isInstance),
 	CHAR(Types.CHAR, Character.class, JDBCType::isChar), //teradata !char
 	VARCHAR(Types.VARCHAR, String.class, JDBCType::isString),
 	NVARCHAR(Types.NVARCHAR, String.class, JDBCType::isString),
@@ -49,11 +51,16 @@ public enum JDBCType implements JavaType {
 	TIME(Types.TIME, Time.class, Time.class::isInstance),
 	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, Timestamp.class::isInstance),
 	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance),
-	OTHER(Types.OTHER, Object.class, o-> false);
+	OTHER(Types.OTHER, Object.class, null, o-> false);
 
 	private final int value;
 	private final Class<?> type;
+	private final Class<?> superType;
 	private final Predicate<Object> matcher;
+	
+	private JDBCType(int value, Class<?> type, Predicate<Object> matcher) {
+		this(value, type, type, matcher);
+	}
 	
 	@Override
 	public Class<?> type() {
@@ -64,38 +71,15 @@ public enum JDBCType implements JavaType {
 	public boolean accept(Object o) {
 		if(o instanceof Typed) {
 			var t = ((Typed) o).javaType();
-			return t == null 
-					|| this == t
-					|| type() == t.type()
-					|| (subType(this, Number.class) && subType(t, Number.class)); //other types compatibility
+			return t == null || t == this
+					|| (nonNull(superType) && superType.isAssignableFrom(t.type()));
 		}
-		return acceptValue(o);
-	}
-	
-	static boolean subType(JavaType type, Class<?> c) {
-		return c.isAssignableFrom(type.type());
-	}
-	
-	private boolean acceptValue(Object o) {
-		return o == null || matcher.test(o);
-	}
-	
-	private static boolean isNumber(Object o, double min, double max, boolean decimal) {
-		if(isNumber(o)) {
-			var n = (Number) o;
-			var v = n.doubleValue();
-			return (v >= min && v <= max) && (decimal || v == n.longValue());
-		}
-		return false;
-	}
-
-	private static boolean isNumber(Object o) {
-		return o instanceof Number;
+		return isNull(o) || matcher.test(o);
 	}
 	
 	private static boolean isBoolean(Object o) {
 		return o.getClass() == Boolean.class 
-				|| isNumber(o, 0, 1, false)
+				|| o.equals(0) || o.equals(1) 
 				|| (o.getClass() == String.class && o.toString().matches("[yYnN]"));
 	}
 	
@@ -129,5 +113,4 @@ public enum JDBCType implements JavaType {
 		}
 		return empty();
 	}
-	
 }

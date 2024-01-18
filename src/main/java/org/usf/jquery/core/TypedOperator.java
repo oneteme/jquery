@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.util.function.UnaryOperator.identity;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
-import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
 import lombok.Getter;

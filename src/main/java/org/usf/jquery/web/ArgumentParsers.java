@@ -116,6 +116,6 @@ public class ArgumentParsers {
 	}
 	
 	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {
-		return new UnsupportedOperationException("unsupported type " + type.name());
+		return new UnsupportedOperationException("unsupported type " + type.toString());
 	}
 }

@@ -19,4 +19,8 @@ public interface DBView extends DBObject {
 
 	String sql(QueryParameterBuilder builder, String schema);
 	
+	default TaggableView as(String tagname) {
+		return new NamedView(this, tagname);
+	}
+	
 }

@@ -12,11 +12,7 @@ public interface JavaType {
 	
 	Class<?> type();
 	
-	default String name() {
-		return type().getSimpleName();
-	}
-	
-	default boolean accept(Object o) {
+	default boolean accept(Object o) { // nullable by default
 		return isNull(o) || type().isInstance(o);
 	}
 }

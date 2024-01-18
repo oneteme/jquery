@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static org.usf.jquery.web.ArgumentParsers.jdbcArgParser;
 
+import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.JDBCType;
 
 /**
@@ -19,21 +20,21 @@ public interface ColumnDecorator {
 		return identity();
 	}
 	
+	default JDBCArgumentParser parser(TableDecorator td){ // override parser | format | local
+		return jdbcArgParser(dataType(td));
+	}
+	
 	default JDBCType dataType(TableDecorator td) {
 		return td.metadata().columnMetada(this)
 		.map(ColumnMetadata::getDataType)
 		.orElse(null); 
 	}
 	
-	default JDBCArgumentParser parser(TableDecorator td){ // override parser | format | local
-		return jdbcArgParser(dataType(td));
-	}
-	
 	default ColumnBuilder builder() {
-		return null; // physical column by default
+		return null; // no builder by default
 	}
 	
-	default CriteriaBuilder<String> criteria(String name) { 
+	default CriteriaBuilder<ComparisonExpression> criteria(String name) {
 		return null;  // no criteria by default
 	}
 	

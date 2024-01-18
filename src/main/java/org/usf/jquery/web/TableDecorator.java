@@ -1,7 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
-import static java.util.Objects.nonNull;
+import static java.util.Objects.isNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
@@ -46,18 +47,27 @@ public interface TableDecorator {
 	Optional<String> columnName(ColumnDecorator cd);
 	
 	default TaggableView table() {
-		return new DBTable(tableName(), identity());
+		var b = builder();
+		return isNull(b) 
+				? new DBTable(tableName(), identity()) 
+				: b.build().as(identity());
 	}
 	
 	default TaggableColumn column(ColumnDecorator cd) {
-		if(nonNull(cd.builder())) {
-			return cd.builder().column(this).as(cd.reference());
-		}
-		var cn = columnName(cd);
-		if(cn.isPresent()) {
-			return new ViewColumn(table(), requireLegalVariable(cn.get()), cd.reference(), cd.dataType(this));
-		}
-		throw undeclaredResouceException(identity(), cd.identity());
+		var b = cd.builder();
+		return isNull(b)
+				? columnName(cd)
+						.map(cn-> new ViewColumn(table(), requireLegalVariable(cn), cd.reference(), cd.dataType(this)))
+						.orElseThrow(()-> undeclaredResouceException(identity(), cd.identity()))
+				: b.build(this).as(cd.reference());
+	}
+	
+	default ViewBuilder builder() {
+		return null; // no builder by default
+	}
+
+	default CriteriaBuilder<DBFilter> criteria(String name) { //!aggregation 
+		return null;  // no criteria by default
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {

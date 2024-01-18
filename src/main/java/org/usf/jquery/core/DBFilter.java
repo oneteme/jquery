@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 /**
@@ -10,7 +8,7 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
  *
  */
 @FunctionalInterface
-public interface DBFilter extends DBObject, NestedSql {
+public interface DBFilter extends DBObject, NestedSql, Chainable<DBFilter> {
 	
 	String sql(QueryParameterBuilder builder);
 
@@ -22,13 +20,5 @@ public interface DBFilter extends DBObject, NestedSql {
 	 
 	default DBFilter append(LogicalOperator op, DBFilter filter) {
 		throw new UnsupportedOperationException(); //explicitly overridden
-	}
-
-	default DBFilter and(DBFilter filter) {
-		return append(AND, filter);
-	}
-
-	default DBFilter or(DBFilter filter) {
-		return append(OR, filter);
 	}
 }

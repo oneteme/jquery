@@ -7,8 +7,7 @@ import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.Comparator;
-import org.usf.jquery.core.ComparisonExpression;
+import org.usf.jquery.core.Chainable;
 import org.usf.jquery.core.LogicalOperator;
 
 /**
@@ -17,24 +16,19 @@ import org.usf.jquery.core.LogicalOperator;
  * 
  */
 @FunctionalInterface
-public interface CriteriaBuilder<T> {
+public interface CriteriaBuilder<T extends Chainable<T>> {
 	
-	ComparisonExpression criteria(T arg);
+	T criteria(String arg);
 	
-	default LogicalOperator combiner() {
-		return OR;
-	}
-	
-	@SuppressWarnings("unchecked")
-	default ComparisonExpression build(T... args) {
+	default T build(String... args) {
 		return Stream.of(requireAtLeastNArgs(1, args, CriteriaBuilder.class::getSimpleName))
 				.map(v-> ofNullable(criteria(v))
-						.orElseThrow(()-> cannotEvaluateException("criteria value", v.toString())))
-				.reduce(ComparisonExpression::or)
+						.orElseThrow(()-> cannotEvaluateException("criteria value", v)))
+				.reduce((e1, e2)-> e1.append(combiner(), e2))
 				.orElseThrow();
 	}
 	
-	public static CriteriaBuilder<Object> ofComparator(Comparator cmp) {
-		return cmp::expression;
+	default LogicalOperator combiner() {
+		return OR;
 	}
 }
