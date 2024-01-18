@@ -1,8 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.copyOfRange;
-import static java.util.Optional.empty;
 import static org.usf.jquery.core.ArgTypeRef.firstArgType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JqueryType.FILTER;
@@ -26,6 +24,8 @@ public interface Comparator extends DBProcessor<DBFilter> {
 		return new ColumnSingleFilter((DBColumn)args[0], 
 				this.expression(copyOfRange(args, 1, args.length))); // no type
 	}
+
+	//basic comparator
 
 	default ComparisonExpression expression(Object right) {
 		return new ComparisonSingleExpression(this, right);
@@ -55,6 +55,8 @@ public interface Comparator extends DBProcessor<DBFilter> {
 		return new TypedComparator(basicComparator(">="), required(), required());
 	}
 	
+	//string comparator
+	
 	static TypedComparator startsLike() {
 		return like().argsMapper(wildcardSecondArg(o-> o + "%"));
 	}
@@ -65,6 +67,18 @@ public interface Comparator extends DBProcessor<DBFilter> {
 
 	static TypedComparator contentLike() {
 		return like().argsMapper(wildcardSecondArg(o-> "%" + o + "%"));
+	}
+	
+	static TypedComparator startsNotLike() {
+		return notLike().argsMapper(wildcardSecondArg(o-> o + "%"));
+	}
+
+	static TypedComparator endsNotLike() {
+		return notLike().argsMapper(wildcardSecondArg(o-> "%" + o));
+	}
+
+	static TypedComparator contentNotLike() {
+		return notLike().argsMapper(wildcardSecondArg(o-> "%" + o + "%"));
 	}
 	
 	static TypedComparator like() {
@@ -83,13 +97,17 @@ public interface Comparator extends DBProcessor<DBFilter> {
 		return new TypedComparator(stringComparator("NOT ILIKE"), required(VARCHAR), required(VARCHAR));
 	}
 	
+	//null comparator
+	
 	static TypedComparator isNull() {
 		return new TypedComparator(nullComparator("IS NULL")); // takes no args
 	}
 
-	static TypedComparator nonNull() {
+	static TypedComparator notNull() {
 		return new TypedComparator(nullComparator("IS NOT NULL")); // takes no args
 	}
+	
+	//in comparator
 
 	static TypedComparator in() {
 		return new TypedComparator(inComparator("IN"), required(), varargs(firstArgType()));
@@ -130,13 +148,7 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	}
 	
 	static Optional<TypedComparator> lookupComparator(String op) {
-		try {
-			var m = Comparator.class.getMethod(op);
-			if(isStatic(m.getModifiers()) && m.getReturnType() == TypedComparator.class  && m.getParameterCount() == 0) { // no private static
-				return Optional.of((TypedComparator) m.invoke(null));
-			}
-		} catch (Exception e) {/* do not throw exception */}
-		return empty();
+		return DBProcessor.lookup(Comparator.class, TypedComparator.class, op);
 	}
 	
 	private static UnaryOperator<Object[]> wildcardSecondArg(UnaryOperator<Object> fn) {

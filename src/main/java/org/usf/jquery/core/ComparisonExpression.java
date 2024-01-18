@@ -76,7 +76,7 @@ public interface ComparisonExpression extends DBExpression, NestedSql {
 	}
 
 	static ComparisonExpression isNotNull() {
-		return Comparator.nonNull().expression(null);
+		return Comparator.notNull().expression(null);
 	}
 
 	@SuppressWarnings("unchecked")

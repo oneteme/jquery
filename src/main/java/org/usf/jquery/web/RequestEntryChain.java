@@ -110,7 +110,7 @@ final class RequestEntryChain {
 					ftr = e.toComparison(td, ftr);
 					e = e.next;
 				}
-				return ftr;
+				return ftr; //throw if null
 			}
 			if(isNull(e.args)) {
 		    	var prs = requireNonNull(t.cd.parser(td));

@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.lang.reflect.Modifier.isStatic;
-import static java.util.Optional.empty;
 import static org.usf.jquery.core.ArgTypeRef.firstArgType;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.JDBCType.BIGINT;
@@ -362,12 +360,6 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	}
 	
 	static Optional<TypedOperator> lookupOperator(String op) {
-		try {
-			var m = Operator.class.getMethod(op);
-			if(isStatic(m.getModifiers()) && m.getReturnType() == TypedOperator.class && m.getParameterCount() == 0) { // no private static
-				return Optional.of((TypedOperator) m.invoke(null));
-			}
-		} catch (Exception e) {/* do not throw exception */}
-		return empty();
+		return DBProcessor.lookup(Operator.class, TypedOperator.class, op);
 	}
 }
