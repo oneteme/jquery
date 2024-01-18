@@ -263,7 +263,7 @@ final class RequestEntryChain {
 			arr[0] = col;
 		}
 		ps.forEach(arr.length, (p,i)-> {
-			if(i>0 || inc==0) {
+			if(i>0 || inc==0) { //arg0 already parsed
 				arr[i] = args.get(i-inc).parseValue(td, p.types(arr));
 			}
 		});
@@ -311,7 +311,9 @@ final class RequestEntryChain {
 	}
 	
 	static String[] toStringArray(List<RequestEntryChain> entries) {
-		return entries.stream().map(e-> isNull(e.value) ? null : e.toString()).toArray(String[]::new);
+		return entries.stream()
+				.map(e-> isNull(e.value) ? null : e.toString())
+				.toArray(String[]::new);
 	}
 	
 	@RequiredArgsConstructor

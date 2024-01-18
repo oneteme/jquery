@@ -117,14 +117,14 @@ public interface Comparator extends DBProcessor<DBFilter> {
 		return new TypedComparator(inComparator("NOT IN"), required(), varargs(firstArgType()));
 	}
 	
-	//pipe
+	//comparator chain
 	
 	static TypedComparator and() {
-		return new TypedComparator(pipe("AND"), required(FILTER), required(FILTER));
+		return new TypedComparator(chain("AND"), required(FILTER), required(FILTER));
 	}
 
 	static TypedComparator or() {
-		return new TypedComparator(pipe("OR"), required(FILTER), required(FILTER));
+		return new TypedComparator(chain("OR"), required(FILTER), required(FILTER));
 	}
 	
 	static BasicComparator basicComparator(final String name) {
@@ -143,7 +143,7 @@ public interface Comparator extends DBProcessor<DBFilter> {
 		return ()-> name;
 	}
 	
-	static ComparatorChain pipe(final String name) {
+	static ComparatorChain chain(final String name) {
 		return ()-> name;
 	}
 	

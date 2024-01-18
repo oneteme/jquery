@@ -19,7 +19,7 @@ public class TypedOperator implements Operator {
 	
 	@Delegate
 	private final Operator operator;
-	private final Function<Object[], JavaType> typeFn;
+	private final ArgTypeRef typeFn;
 	private final ParameterSet parameterSet;
 	private UnaryOperator<Object[]> argMapper = identity();
 	
@@ -27,7 +27,7 @@ public class TypedOperator implements Operator {
 		this(o-> type, function, args);
 	}
 
-	public TypedOperator(Function<Object[], JavaType> typeFn, Operator function, Parameter... parameter) {
+	public TypedOperator(ArgTypeRef typeFn, Operator function, Parameter... parameter) {
 		this.operator = function;
 		this.typeFn = typeFn;
 		this.parameterSet = ofParameters(parameter);

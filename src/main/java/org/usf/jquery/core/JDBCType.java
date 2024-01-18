@@ -49,7 +49,7 @@ public enum JDBCType implements JavaType {
 	TIME(Types.TIME, Time.class, Time.class::isInstance),
 	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, Timestamp.class::isInstance),
 	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance),
-	OTHER(Types.OTHER, Object.class, o-> false); //isnull !?
+	OTHER(Types.OTHER, Object.class, o-> false);
 
 	private final int value;
 	private final Class<?> type;
