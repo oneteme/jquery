@@ -60,7 +60,7 @@ public class ArgumentParsers {
 					return jdbcArgParser((JDBCType) type).parse(entry, td);
 				}
 				else {
-					throw new UnsupportedOperationException("unsupported " + type);
+					throw unsupportedTypeException(type);
 				}
 			} catch (Exception e) {/*do not throw exception*/}
 		}

@@ -110,7 +110,7 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	//in comparator
 
 	static TypedComparator in() {
-		return new TypedComparator(inComparator("IN"), required(), varargs(firstArgType()));
+		return new TypedComparator(inComparator("IN"), required(), varargs(firstArgType())); // in query
 	}
 	
 	static TypedComparator notIn() {

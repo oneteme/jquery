@@ -23,7 +23,7 @@ public final class ParameterSet {
 	private final Parameter[] parameters;
 	
 	public Object[] args(Object... args) {
-		var arr = isNull(args) ? new Object[0] : args;
+		var arr = isNull(args) ? NO_PARAM : args;
 		forEach(arr.length, (p,i)-> {
 			if(!p.accept(i, arr)) {
 				throw badArgumentTypeException();

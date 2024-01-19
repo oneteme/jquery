@@ -19,8 +19,8 @@ public final class WindowView implements TaggableView {
 	private final TaggableColumn column; //named operation column
 	
 	@Override
-	public String sql(QueryParameterBuilder builder, String schema) { //sub query should not use main builder
-		var b = addWithValue("w");
+	public String sql(QueryParameterBuilder builder, String schema) {
+		var b = addWithValue("w"); //sub query should not use main builder
 		return new SqlStringBuilder(100)
 		.append("(SELECT ").append(member(b.view(view), "*")).append(", ").append(column.sqlWithTag(b))
 		.append(" FROM ").append(view.sqlWithTag(b, schema)).append(")")
@@ -36,7 +36,6 @@ public final class WindowView implements TaggableView {
 	public String toString() {
 		return sql(addWithValue(), "<schema>"); 
 	}
-	
 
 	public static DBColumn windowColumn(TaggableView view, TaggableColumn column) {
 		var wv = new WindowView(view, column);

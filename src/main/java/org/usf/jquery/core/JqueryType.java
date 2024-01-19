@@ -12,7 +12,7 @@ public enum JqueryType implements JavaType {
 
 	COLUMN(DBColumn.class), 
 	ORDER(DBOrder.class), 
-	CLAUSE(OperationColumn.class), 
+	CLAUSE(OperationColumn.class), //+predicate
 	FILTER(DBFilter.class);
 	//expression, WHEN_THEN, ...
 	

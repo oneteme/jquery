@@ -269,16 +269,13 @@ final class RequestEntryChain {
 		}
 		ps.forEach(arr.length, (p,i)-> {
 			if(i>0 || inc==0) { //arg0 already parsed
-				arr[i] = args.get(i-inc).parseValue(td, p.types(arr));
+				var e = args.get(i-inc);
+				arr[i] = isNull(e.value) || e.text
+						? e.requireNoArgs().value
+						: parse(e, td, p.types(arr));
 			}
 		});
 		return arr;
-	}
-
-	private Object parseValue(TableDecorator td, JavaType[] types) {
-		return isNull(value) || text
-				? requireNoArgs().value
-				: parse(this, td, types);
 	}
 	
 	RequestEntryChain requireNoArgs() {
