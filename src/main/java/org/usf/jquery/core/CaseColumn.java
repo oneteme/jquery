@@ -29,7 +29,7 @@ public final class CaseColumn implements DBColumn {
 	}
 	
 	@Override
-	public JavaType javaType() {
+	public JavaType getType() {
 		return expressions.stream()
 				.map(JDBCType::typeOf)
 				.filter(Optional::isPresent) // should have same type

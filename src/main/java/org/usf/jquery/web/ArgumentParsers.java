@@ -101,7 +101,8 @@ public class ArgumentParsers {
 		case COLUMN:	return RequestEntryChain::asColumn;
 		case ORDER : 	return RequestEntryChain::asOrder;
 		case FILTER: 	return RequestEntryChain::asFilter;
-		case CLAUSE:	return RequestEntryChain::asOperation;
+		case CLAUSE:	return RequestEntryChain::asOperation; //filter
+		case QUERY : 	//TODO view(column(..), filter(..)) || column.view(filters..)
 		default:		throw unsupportedTypeException(type);
 		}
 	}

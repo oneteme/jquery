@@ -45,8 +45,8 @@ public final class WindowView implements TaggableView {
 				return member(builder.overwriteView(wv), doubleQuote(column.tagname()));
 			}
 			@Override
-			public JavaType javaType() {
-				return column.javaType();
+			public JavaType getType() {
+				return column.getType();
 			}
 			@Override
 			public String toString() {

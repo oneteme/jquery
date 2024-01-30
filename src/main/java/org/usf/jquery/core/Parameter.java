@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Parameter {
 	
-	private final JavaType[] types; //null => accept all
+	private final JavaType[] types; //empty => accept all types
 	private final ArgTypeRef typeRef;
 	private final boolean required;
 	private final boolean varargs;

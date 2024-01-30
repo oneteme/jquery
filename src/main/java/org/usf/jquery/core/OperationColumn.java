@@ -33,7 +33,7 @@ public final class OperationColumn implements DBColumn {
 	}
 
 	@Override
-	public JavaType javaType() {
+	public JavaType getType() {
 		return type;
 	}
 	

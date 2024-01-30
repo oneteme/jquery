@@ -23,7 +23,6 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
-import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.ParameterSet;
@@ -257,8 +256,8 @@ final class RequestEntryChain {
 		return cmp.args(toArgs(td, col, cmp.getParameterSet()));
 	}
 	
-	private OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator op) {
-		return op.args(toArgs(td, col, op.getParameterSet()));
+	private OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator opr) {
+		return opr.args(toArgs(td, col, opr.getParameterSet()));
 	}
 	
 	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps) {

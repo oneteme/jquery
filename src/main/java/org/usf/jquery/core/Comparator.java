@@ -1,11 +1,13 @@
 package org.usf.jquery.core;
 
 import static java.util.Arrays.copyOfRange;
-import static org.usf.jquery.core.ArgTypeRef.firstArgType;
+import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JqueryType.FILTER;
+import static org.usf.jquery.core.JqueryType.QUERY;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
+import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import java.util.Optional;
 import java.util.function.UnaryOperator;
@@ -110,11 +112,15 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	//in comparator
 
 	static TypedComparator in() {
-		return new TypedComparator(inComparator("IN"), required(), varargs(firstArgType())); // in query
+		return new TypedComparator(inComparator("IN"), 
+				ofParameters(required(), varargs(firstArgJdbcType())),
+				ofParameters(required(), required(QUERY)));
 	}
 	
 	static TypedComparator notIn() {
-		return new TypedComparator(inComparator("NOT IN"), required(), varargs(firstArgType()));
+		return new TypedComparator(inComparator("NOT IN"), 
+				ofParameters(required(), varargs(firstArgJdbcType())),
+				ofParameters(required(), required(QUERY)));
 	}
 	
 	//comparator chain

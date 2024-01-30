@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 
 /**
@@ -30,8 +29,7 @@ import lombok.RequiredArgsConstructor;
 @Getter
 @RequiredArgsConstructor
 public enum JDBCType implements JavaType {
-	
-	//do not change enum order
+
 	BOOLEAN(Types.BOOLEAN, Boolean.class, JDBCType::isBoolean),
 	BIT(Types.BIT, Boolean.class, JDBCType::isBoolean),
 	TINYINT(Types.TINYINT, Byte.class, Number.class, Number.class::isInstance),
@@ -51,7 +49,12 @@ public enum JDBCType implements JavaType {
 	TIME(Types.TIME, Time.class, Time.class::isInstance),
 	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, Timestamp.class::isInstance),
 	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance),
-	OTHER(Types.OTHER, Object.class, null, o-> false);
+	OTHER(Types.OTHER, Object.class, null) { //readonly
+		@Override
+		public boolean accept(Object o) {
+			return false;
+		}
+	};
 
 	private final int value;
 	private final Class<?> type;
@@ -63,16 +66,15 @@ public enum JDBCType implements JavaType {
 	}
 	
 	@Override
-	public Class<?> type() {
+	public Class<?> typeClass() {
 		return type;
 	}
 	
 	@Override
 	public boolean accept(Object o) {
 		if(o instanceof Typed) {
-			var t = ((Typed) o).javaType();
-			return t == null || t == this
-					|| (nonNull(superType) && superType.isAssignableFrom(t.type()));
+			var t = ((Typed) o).getType();
+			return t == this || isNull(t) || superType.isAssignableFrom(t.typeClass());
 		}
 		return isNull(o) || matcher.test(o);
 	}
@@ -95,10 +97,10 @@ public enum JDBCType implements JavaType {
 	
 	public static Optional<JDBCType> typeOf(Object o) {
 		if(o instanceof Typed) {
-			var t = ((Typed) o).javaType();
+			var t = ((Typed) o).getType();
 			return t instanceof JDBCType ? Optional.of((JDBCType) t) : empty();
 		}
-		return Optional.of(o).flatMap(v-> findType(e-> e.type().isInstance(o)));
+		return Optional.of(o).flatMap(v-> findType(e-> e.typeClass().isInstance(o)));
 	}
 	
 	public static Optional<JDBCType> fromDataType(int value) {

@@ -42,15 +42,15 @@ public final class ColumnMetadata {
 	}
 
 	public String toJavaType(){
-		return dataType.type().getSimpleName();
+		return dataType.typeClass().getSimpleName();
 	}
 	
 	public String toSqlType(){
 		var s = dataType.name();
-		if(dataType.type() == String.class && dataSize < MAX_VALUE) {
+		if(dataType.typeClass() == String.class && dataSize < MAX_VALUE) {
 			s+= "(" + dataSize + ")";
 		}
-		if(dataType.type() == Timestamp.class) {
+		if(dataType.typeClass() == Timestamp.class) {
 			s+= "(" + precision + ")";
 		}
 		if(dataType == REAL || dataType == NUMERIC || dataType == DECIMAL || dataType == FLOAT || dataType == DOUBLE) {

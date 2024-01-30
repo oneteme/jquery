@@ -7,6 +7,7 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 import java.util.function.Supplier;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
+import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.NonNull;
 
@@ -35,7 +36,7 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 		return false;
 	}
 	
-	default JavaType javaType() {
+	default JavaType getType() {
 		return null;
 	}
 

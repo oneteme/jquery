@@ -28,7 +28,7 @@ public final class ViewColumn implements TaggableColumn {
 	}
 	
 	@Override
-	public JavaType javaType() {
+	public JavaType getType() {
 		return type;
 	}
 

@@ -10,9 +10,14 @@ import static java.util.Objects.isNull;
 @FunctionalInterface
 public interface JavaType {
 	
-	Class<?> type();
+	Class<?> typeClass();
 	
-	default boolean accept(Object o) { // nullable by default
-		return isNull(o) || type().isInstance(o);
+	default boolean accept(Object o) {
+		return isNull(o) || typeClass().isInstance(o);
+	}
+	
+	public interface Typed {
+		
+		JavaType getType();  // return null by default
 	}
 }

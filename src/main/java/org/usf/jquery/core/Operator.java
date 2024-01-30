@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.ArgTypeRef.firstArgType;
+import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -237,7 +237,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	//other functions
 	
 	static TypedOperator coalesce() {
-		return new TypedOperator(firstArgType(), function("COALESCE"), required(), required());
+		return new TypedOperator(firstArgJdbcType(), function("COALESCE"), required(), required());
 	}
 
 	//aggregate functions
@@ -247,11 +247,11 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	}
 	
 	static TypedOperator min() {
-		return new TypedOperator(firstArgType(), aggregation("MIN"), required()); 
+		return new TypedOperator(firstArgJdbcType(), aggregation("MIN"), required()); 
 	}
 
 	static TypedOperator max() {
-		return new TypedOperator(firstArgType(), aggregation("MAX"), required()); 
+		return new TypedOperator(firstArgJdbcType(), aggregation("MAX"), required()); 
 	}
 
 	static TypedOperator sum() {
@@ -279,7 +279,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	//pipe functions
 	
 	static TypedOperator over() {
-		return new TypedOperator(firstArgType(), pipe("OVER"), required(COLUMN), optional(CLAUSE), optional(CLAUSE)) {
+		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), optional(CLAUSE), optional(CLAUSE)) {
 			@Override
 			public OperationColumn args(Object... args) {
 				return super.args(args).aggregation(false); //over aggregation functions
@@ -316,7 +316,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	
 	@Deprecated(forRemoval = true)
 	static TypedOperator value() {
-		return new TypedOperator(firstArgType(), VALUE_RETURN, required());
+		return new TypedOperator(firstArgJdbcType(), VALUE_RETURN, required());
 	}
 
 	static ArithmeticOperator operator(String symbol) {

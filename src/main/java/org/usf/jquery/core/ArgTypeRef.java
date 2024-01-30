@@ -12,7 +12,7 @@ import java.util.function.Function;
  */
 interface ArgTypeRef extends Function<Object[], JavaType> {
 
-	static ArgTypeRef firstArgType() {
+	static ArgTypeRef firstArgJdbcType() {
 		return arr-> typeOf(requireAtLeastNArgs(1, arr, 
 				()-> "ArgTypeRef function")[0]).orElse(null); // not sure 
 	} 
