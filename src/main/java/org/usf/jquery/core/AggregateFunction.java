@@ -12,5 +12,4 @@ public interface AggregateFunction extends WindowFunction {
 	default boolean isAggregation() {
 		return true;
 	}
-	
 }

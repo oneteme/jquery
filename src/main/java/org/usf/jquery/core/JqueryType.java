@@ -13,11 +13,11 @@ public enum JqueryType implements JavaType {
 	COLUMN(DBColumn.class),
 	FILTER(DBFilter.class),
 	ORDER(DBOrder.class),
+	QUERY(Query.class),
 	PARTITIONS(DBColumn[].class),
 	COLUMNS(DBColumn[].class),
 	FILTERS(DBFilter[].class),
-	ORDERS(DBOrder[].class),
-	QUERY(InternalQuery.class); //SELECT CLAUSE
+	ORDERS(DBOrder[].class);
 	//expression, WHEN_THEN, ...
 	
 	private final Class<?> type;

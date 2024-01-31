@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -24,7 +23,6 @@ import static org.usf.jquery.web.TableMetadata.tableMetadata;
 
 import java.util.Collection;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -44,7 +42,7 @@ public interface TableDecorator {
 	
 	String identity(); //URL
 	
-	String tableName(); //SQL check schema.table 
+	String tableName(); //SQL check schema.table
 	
 	Optional<String> columnName(ColumnDecorator cd);
 	

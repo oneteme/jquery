@@ -16,6 +16,7 @@ import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -29,6 +30,8 @@ public final class QueryParameterBuilder {
 	
 	private static final String ARG = "?";
 	
+	@Getter
+	private final String schema;
 	private final String vPrefix;
 	private final List<Object> args;
 	private final List<JDBCType> argTypes;
@@ -130,18 +133,22 @@ public final class QueryParameterBuilder {
 	}
 	
 	public QueryParameterBuilder withValue() {
-		return new QueryParameterBuilder(vPrefix, null, null, views);
+		return new QueryParameterBuilder(schema, vPrefix, null, null, views);
+	}
+	
+	public QueryParameterBuilder subQuery() {
+		return new QueryParameterBuilder(schema, vPrefix + "_s", args, argTypes, new LinkedList<>());
 	}
 
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null, null, null, null); //no args
+		return new QueryParameterBuilder(null, null, null, null, null); //no args
 	}
-	
-	public static QueryParameterBuilder addWithValue(String prefix) {
-		return new QueryParameterBuilder(prefix, null, null, new LinkedList<>());
-	}
-	
+
 	public static QueryParameterBuilder parametrized() {
-		return new QueryParameterBuilder("v", new LinkedList<>(), new LinkedList<>(), new ArrayList<>());
+		return parametrized(null);
+	}
+	
+	public static QueryParameterBuilder parametrized(String schema) {
+		return new QueryParameterBuilder(schema, "v", new LinkedList<>(), new LinkedList<>(), new ArrayList<>());
 	}
 }

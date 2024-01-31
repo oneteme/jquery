@@ -17,8 +17,8 @@ public class DBTable implements TaggableView {
 	private final String tag;
 	
 	@Override
-	public String sql(QueryParameterBuilder builder, String schema) {
-		return member(schema, name);
+	public String sql(QueryParameterBuilder builder) {
+		return member(builder.getSchema(), name);
 	}
 	
 	@Override 
@@ -28,6 +28,6 @@ public class DBTable implements TaggableView {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), "<schema>");
+		return sql(addWithValue());
 	}
 }

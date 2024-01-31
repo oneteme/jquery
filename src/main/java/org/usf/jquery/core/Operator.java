@@ -334,10 +334,6 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 		return ()-> name;
 	}
 
-	static ClauseFunction clause(String name) {
-		return ()-> name;
-	}
-
 	static ConstantOperator constant(String name) {
 		return ()-> name;
 	}

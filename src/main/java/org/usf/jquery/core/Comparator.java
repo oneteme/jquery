@@ -102,11 +102,11 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	//null comparator
 	
 	static TypedComparator isNull() {
-		return new TypedComparator(nullComparator("IS NULL")); // takes no args
+		return new TypedComparator(nullComparator("IS NULL"), required());
 	}
 
 	static TypedComparator notNull() {
-		return new TypedComparator(nullComparator("IS NOT NULL")); // takes no args
+		return new TypedComparator(nullComparator("IS NOT NULL"), required());
 	}
 	
 	//in comparator

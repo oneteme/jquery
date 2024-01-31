@@ -34,8 +34,6 @@ import org.usf.jquery.core.InternalQuery;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.JqueryType;
-import org.usf.jquery.core.RequestQueryBuilder;
-import org.usf.jquery.core.TaggableColumn;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -74,7 +72,7 @@ public class ArgumentParsers {
 				else {
 					throw unsupportedTypeException(type);
 				}
-			} catch (Exception e) {/*do not throw exception*/}
+			} catch (Exception e) {/*do not throw exception*/} // only parseException
 		}
 		throw cannotParseException("value", entry.toString());
 	}
@@ -117,12 +115,12 @@ public class ArgumentParsers {
 		case COLUMNS:		return (re, td)-> re.evalArray(td, Constants.COLUMN, COLUMN);
 		case FILTERS: 		return (re, td)-> re.evalArray(td, "filter", FILTER);
 		case ORDERS: 		return (re, td)-> re.evalArray(td,  Constants.ORDER, ORDER);
-		case QUERY: 		return ArgumentParsers::parseQuery;
+		case QUERY: 		return ArgumentParsers::evalQuery;
 		default:			throw unsupportedTypeException(type);
 		}
 	}
 	
-	private static InternalQuery parseQuery(RequestEntryChain re, TableDecorator td) {
+	private static InternalQuery evalQuery(RequestEntryChain re, TableDecorator td) {
 		var args = re.evalFunction(td, "query", ofParameters(required(COLUMNS), optional(FILTERS)));
 		var cols = (DBColumn[]) args[0];
 		var flts = args.length > 1 ? (DBFilter[]) args[1] : null;

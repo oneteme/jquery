@@ -11,7 +11,7 @@ public interface TaggableView extends DBView {
 
 	String tagname();
 	
-	default String sqlWithTag(QueryParameterBuilder builder, String schema) {
-		return sql(builder, schema) + SPACE + builder.view(this);
+	default String sqlWithTag(QueryParameterBuilder builder) {
+		return sql(builder) + SPACE + builder.view(this);
 	}
 }

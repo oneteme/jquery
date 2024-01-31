@@ -7,7 +7,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.Comparator.lookupComparator;
-import static org.usf.jquery.core.JqueryType.COLUMN;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.Operator.lookupWindowFunction;
 import static org.usf.jquery.core.Parameter.required;
@@ -20,8 +19,8 @@ import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.JQueryContext.context;
 
-import java.lang.reflect.Array;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
@@ -33,9 +32,7 @@ import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.JqueryType;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
-import org.usf.jquery.core.Parameter;
 import org.usf.jquery.core.ParameterSet;
-import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
@@ -146,7 +143,7 @@ final class RequestEntryChain {
 			}
 			if(isNull(e.args)) {
 		    	var prs = requireNonNull(t.cd.parser(td));
-		    	var arr = prs.parseAll(toStringArray(values));
+		    	var arr = isNull(values) ? null : prs.parseAll(toStringArray(values));
 				return oc.filter(in().expression(arr));
 			}
 			//values isEmpty

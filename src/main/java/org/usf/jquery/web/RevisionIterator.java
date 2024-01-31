@@ -56,8 +56,8 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	static DBTable yearTable(String name, String tagname) {
 		return new DBTable(name, tagname) {
 			@Override
-			public String sql(QueryParameterBuilder builder, String schema) {
-				return super.sql(builder, schema) + "_" + currentRev.get().getKey();
+			public String sql(QueryParameterBuilder builder) {
+				return super.sql(builder) + "_" + currentRev.get().getKey();
 			}
 		};
 	}

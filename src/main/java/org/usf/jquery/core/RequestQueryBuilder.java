@@ -81,30 +81,30 @@ public class RequestQueryBuilder {
 //		requireNonEmpty(tables);
     	requireNonEmpty(columns);
 		var bg = currentTimeMillis();
-		var pb = parametrized();
+		var pb = parametrized(schema);
 		var sb = new SqlStringBuilder(1000); //avg
 //		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
 		if(isNull(it)) {
-			build(sb, pb, schema);
+			build(sb, pb);
 		}
 		else {
-			sb.forEach(it, " UNION ALL ", o-> build(sb, pb, schema));
+			sb.forEach(it, " UNION ALL ", o-> build(sb, pb));
 		}
 		log.debug("query built in {} ms", currentTimeMillis() - bg);
 		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
 	}
 
-	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb, String schema){
+	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
     	where(sb, pb);
     	groupBy(sb);
     	having(sb, pb);
     	orderBy(sb, pb);
     	fetch(sb);
-    	sb.sb.insert(0, select(pb, schema)); //declare all view before FROM
+    	sb.sb.insert(0, select(pb)); //declare all view before FROM
 	}
 
 	@Deprecated
-	String select(QueryParameterBuilder pb, String schema){
+	String select(QueryParameterBuilder pb){
 		if(currentDatabase() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
@@ -119,7 +119,7 @@ public class RequestQueryBuilder {
     	.append(SPACE)
     	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb))
     	.appendIf(!pb.views().isEmpty(), " FROM ") //TODO finish this
-    	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb, schema)).toString();
+    	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb)).toString();
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
