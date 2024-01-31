@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import java.util.function.UnaryOperator;
@@ -35,7 +35,10 @@ public class TypedOperator implements Operator {
 	@Override
 	public OperationColumn args(Object... args) {
 		args = parameterSet.args(args);
-		return new OperationColumn(operator, isNull(argMapper) ? args : argMapper.apply(args), typeFn.apply(args));
+		if(nonNull(argMapper)) {
+			args = argMapper.apply(args);
+		}
+		return new OperationColumn(operator, args, typeFn.apply(args));
 	}
 	
 	public Operator unwrap() {

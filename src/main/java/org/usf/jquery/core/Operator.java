@@ -10,10 +10,9 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JqueryType.CLAUSE;
 import static org.usf.jquery.core.JqueryType.COLUMN;
-import static org.usf.jquery.core.JqueryType.ORDER;
-import static org.usf.jquery.core.OverClause.clauses;
+import static org.usf.jquery.core.JqueryType.ORDERS;
+import static org.usf.jquery.core.JqueryType.PARTITIONS;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -22,7 +21,6 @@ import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Optional;
-import java.util.stream.Stream;
 
 /**
  * 
@@ -279,25 +277,14 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	//pipe functions
 	
 	static TypedOperator over() {
-		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), optional(CLAUSE), optional(CLAUSE)) {
+		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), optional(PARTITIONS), optional(ORDERS)) {
 			@Override
 			public OperationColumn args(Object... args) {
 				return super.args(args).aggregation(false); //over aggregation functions
 			}
-		}.argsMapper(args->{ //map args after check
-			var c = Stream.of(args).skip(1).toArray(OperationColumn[]::new);
-			return new Object[] {args[0], clauses(c)};
-		});
-	}
-
-	//clause functions
-	
-	static TypedOperator partition() {
-		return new TypedOperator(CLAUSE, clause("PARTITION BY"), required(COLUMN), varargs(COLUMN));
-	}
-
-	static TypedOperator order() {
-		return new TypedOperator(CLAUSE, clause("ORDER BY"), required(ORDER), varargs(ORDER));
+		}.argsMapper(args-> new Object[] {args[0], new OverClause(
+				args.length > 1 ? (DBColumn[])args[1] : null, 
+				args.length > 2 ? (DBOrder[]) args[2] : null)});
 	}
 
 	// constant operators

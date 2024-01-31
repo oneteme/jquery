@@ -8,6 +8,13 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JqueryType.COLUMN;
+import static org.usf.jquery.core.JqueryType.COLUMNS;
+import static org.usf.jquery.core.JqueryType.FILTER;
+import static org.usf.jquery.core.JqueryType.FILTERS;
+import static org.usf.jquery.core.JqueryType.ORDER;
+import static org.usf.jquery.core.Parameter.optional;
+import static org.usf.jquery.core.Parameter.required;
+import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.ParseException.cannotParseException;
 
@@ -21,9 +28,14 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.DBColumn;
+import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.InternalQuery;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.JqueryType;
+import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.TaggableColumn;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -98,13 +110,23 @@ public class ArgumentParsers {
 
 	public static JavaArgumentParser jqueryArgParser(@NonNull JqueryType type) {
 		switch (type) {
-		case COLUMN:	return RequestEntryChain::asColumn;
-		case ORDER : 	return RequestEntryChain::asOrder;
-		case FILTER: 	return RequestEntryChain::asFilter;
-		case CLAUSE:	return RequestEntryChain::asOperation; //filter
-		case QUERY : 	//TODO view(column(..), filter(..)) || column.view(filters..)
-		default:		throw unsupportedTypeException(type);
+		case COLUMN:		return RequestEntryChain::asColumn;
+		case FILTER: 		return RequestEntryChain::asFilter;
+		case ORDER: 		return RequestEntryChain::asOrder;
+		case PARTITIONS:	return (re, td)-> re.evalArray(td, "partition", COLUMN);
+		case COLUMNS:		return (re, td)-> re.evalArray(td, Constants.COLUMN, COLUMN);
+		case FILTERS: 		return (re, td)-> re.evalArray(td, "filter", FILTER);
+		case ORDERS: 		return (re, td)-> re.evalArray(td,  Constants.ORDER, ORDER);
+		case QUERY: 		return ArgumentParsers::parseQuery;
+		default:			throw unsupportedTypeException(type);
 		}
+	}
+	
+	private static InternalQuery parseQuery(RequestEntryChain re, TableDecorator td) {
+		var args = re.evalFunction(td, "query", ofParameters(required(COLUMNS), optional(FILTERS)));
+		var cols = (DBColumn[]) args[0];
+		var flts = args.length > 1 ? (DBFilter[]) args[1] : null;
+		return new InternalQuery(cols, flts);
 	}
 
 	private static Object parseUnknown(String s) {

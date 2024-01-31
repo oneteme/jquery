@@ -1,13 +1,18 @@
 package org.usf.jquery.web;
 
+import static java.lang.reflect.Array.newInstance;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.Comparator.lookupComparator;
+import static org.usf.jquery.core.JqueryType.COLUMN;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.Operator.lookupWindowFunction;
+import static org.usf.jquery.core.Parameter.required;
+import static org.usf.jquery.core.Parameter.varargs;
+import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.WindowView.windowColumn;
@@ -15,7 +20,9 @@ import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.JQueryContext.context;
 
+import java.lang.reflect.Array;
 import java.util.List;
+import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.ComparisonExpression;
@@ -23,9 +30,12 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.JqueryType;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
+import org.usf.jquery.core.Parameter;
 import org.usf.jquery.core.ParameterSet;
+import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
@@ -53,6 +63,24 @@ final class RequestEntryChain {
 
 	public RequestEntryChain(String value) {
 		this(value, false);
+	}
+	
+	public Object[] evalFunction(TableDecorator td, String fnName, ParameterSet ps) {
+		if(fnName.equals(value)) {
+			return toArgs(td, null, ps, Object[]::new);
+		}
+		throw new IllegalArgumentException();
+	}
+	
+	public Object[] evalArray(TableDecorator td, String fnName, JqueryType type) {
+		if(fnName.equals(value)) {
+			var c = type.typeClass();
+			if(c.isArray()) {
+				throw new UnsupportedOperationException();
+			}
+			return toArgs(td, null, ofParameters(required(type), varargs(type)), s-> (Object[]) newInstance(c, s));
+		}
+		throw new IllegalArgumentException();
 	}
 
 	public TaggableColumn asColumn(TableDecorator td) {
@@ -253,16 +281,29 @@ final class RequestEntryChain {
 	}
 
 	private DBFilter fillArgs(TableDecorator td, DBObject col, TypedComparator cmp) {
-		return cmp.args(toArgs(td, col, cmp.getParameterSet()));
+		try {
+			return cmp.args(toArgs(td, col, cmp.getParameterSet(), Object[]::new));
+		}
+		catch(Exception e) {
+			for(var ps : cmp.getOverloads()) {
+				try {
+					return cmp.args(toArgs(td, col, ps, Object[]::new));
+				}
+				catch(Exception e1) {
+					System.out.println(e1);
+				}
+			}
+			throw e;
+		}
 	}
 	
 	private OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator opr) {
-		return opr.args(toArgs(td, col, opr.getParameterSet()));
+		return opr.args(toArgs(td, col, opr.getParameterSet(), Object[]::new));
 	}
 	
-	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps) {
+	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
 		int inc = nonNull(col) ? 1 : 0;
-		var arr = new Object[isNull(args) ? inc : args.size() + inc];
+		var arr = arrFn.apply(isNull(args) ? inc : args.size() + inc);
 		if(nonNull(col)) {
 			arr[0] = col;
 		}

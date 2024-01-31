@@ -1,14 +1,9 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.stream.Collectors.groupingBy;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
-
-import java.util.List;
-import java.util.Map;
-import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -18,11 +13,11 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class OverClause implements DBObject {
 
-	private final OperationColumn partition;
-	private final OperationColumn order;
+	private final DBColumn[] partitions;
+	private final DBOrder[] orders;
 	
 	public OverClause() {
 		this(null, null);
@@ -36,37 +31,13 @@ public final class OverClause implements DBObject {
 	
 	String sql(QueryParameterBuilder builder) {
 		var sb = new SqlStringBuilder(100);
-		if(nonNull(partition)) {
-			sb.append(partition.sql(builder));
+		if(!isEmpty(partitions)) {
+			sb.append("PARTITION BY ").append(builder.appendLitteralArray(partitions));
 		}
-		if(nonNull(order)) { //require orders
-			sb.appendIf(nonNull(partition), SPACE).append(order.sql(builder));
+		if(!isEmpty(orders)) { //require orders
+			sb.appendIf(nonNull(partitions), SPACE)
+			.append("ORDER BY ").append(builder.appendLitteralArray(orders));
 		}
 		return sb.toString();
-	}
-	
-	public static OverClause clauses(OperationColumn... args) { //partition, order, ...
-		if(isNull(args)) {
-			return new OverClause();
-		}
-		var map = Stream.of(args).collect(groupingBy(o-> o.getOperator().id()));
-		var prt = requireOneArg(map, "PARTITION BY"); 
-		var ord = requireOneArg(map, "ORDER BY");
-		if(map.isEmpty()) {
-			return new OverClause(prt, ord);
-		}
-		throw new IllegalArgumentException("illegal over function arguments : " + map.keySet());
-	}
-
-	private static OperationColumn requireOneArg(Map<String, List<OperationColumn>> map, String key) {
-		var args = map.remove(key);
-		if(isNull(args)) {
-			return null;
-		}
-		if(args.size() == 1) {
-			//instance of ClauseFunction ?
-			return args.get(0);
-		}
-		throw new IllegalArgumentException("duplicated arg values " + key);
 	}
 }
