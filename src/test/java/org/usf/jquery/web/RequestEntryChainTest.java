@@ -12,7 +12,7 @@ class RequestEntryChainTest {
 	@Test
 	void test() {
 		JQueryContext.register(emptyList(), emptyList());
-		parseEntry("count()").asColumn(new TableDecorator() {
+		parseEntry("count()").evalColumn(new TableDecorator() {
 			
 			@Override
 			public String tableName() {

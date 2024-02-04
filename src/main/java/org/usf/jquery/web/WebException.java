@@ -1,12 +1,14 @@
 package org.usf.jquery.web;
 
+import org.usf.jquery.core.JqueryException;
+
 /**
  * 
  * @author u$f
  *
  */
 @SuppressWarnings("serial")
-public class WebException extends RuntimeException {
+public class WebException extends JqueryException {
 
 	public WebException(String message) {
 		super(message);

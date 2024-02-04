@@ -1,7 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -46,20 +46,20 @@ public interface TableDecorator {
 	
 	Optional<String> columnName(ColumnDecorator cd);
 	
-	default TaggableView table() {
+	default TaggableView table() { //optim
 		var b = builder();
-		return isNull(b) 
-				? new DBTable(tableName(), identity()) 
-				: b.build().as(identity());
+		return nonNull(b) 
+				? b.build().as(identity())
+				: new DBTable(tableName(), identity());
 	}
 	
 	default TaggableColumn column(ColumnDecorator cd) {
 		var b = cd.builder();
-		return isNull(b)
-				? columnName(cd)
-						.map(cn-> new ViewColumn(table(), requireLegalVariable(cn), cd.reference(), cd.dataType(this)))
-						.orElseThrow(()-> undeclaredResouceException(identity(), cd.identity()))
-				: b.build(this).as(cd.reference());
+		if(nonNull(b)) {
+			return b.build(this).as(cd.reference());
+		}
+		var cn = columnName(cd).orElseThrow(()-> undeclaredResouceException(identity(), cd.identity()));
+		return new ViewColumn(table(), requireLegalVariable(cn), cd.reference(), cd.dataType(this));
 	}
 	
 	default ViewBuilder builder() {
@@ -95,7 +95,7 @@ public interface TableDecorator {
 		}
 		Stream.of(cols)
 		.flatMap(v-> parseEntries(v).stream())
-		.forEach(e-> query.columns(e.asColumn(this)));
+		.forEach(e-> query.columns(e.evalColumn(this)));
 	}
 
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
@@ -103,7 +103,7 @@ public interface TableDecorator {
     	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());
-    		return Stream.of(e.getValue()).map(v-> re.asFilter(this, parseArgs(v)));
+    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseArgs(v)));
     	})
     	.forEach(query::filters);
 	}
@@ -112,7 +112,7 @@ public interface TableDecorator {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.get(ORDER))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> query.orders(e.asOrder(this)));
+			.forEach(e-> query.orders(e.evalOrder(this)));
 		}
 	}
 	

@@ -4,6 +4,8 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.util.Collection;
+import java.util.Optional;
+import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -34,6 +36,12 @@ public final class Utils {
 
 	public static boolean isBlank(String s) {
 		return isNull(s) || s.isBlank();
+	}
+	
+	public static <E extends Enum<E>> Optional<E> findEnum(String v, Class<E> clazz){
+		return Stream.of(clazz.getEnumConstants())
+				.filter(e-> e.name().equals(v))
+				.findAny();
 	}
 	
 	public static Database currentDatabase() {

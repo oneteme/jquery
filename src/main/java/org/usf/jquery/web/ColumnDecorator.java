@@ -54,7 +54,7 @@ public interface ColumnDecorator {
 		return new ColumnDecorator() {
 			@Override
 			public String identity() {
-				return null; //unused
+				return ref;
 			}
 			@Override
 			public String reference() {

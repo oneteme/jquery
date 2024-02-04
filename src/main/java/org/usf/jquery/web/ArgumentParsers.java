@@ -55,7 +55,7 @@ public class ArgumentParsers {
 	public static Object parse(RequestEntryChain entry, TableDecorator td, JavaType... types) {
 		if(isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance)) {
 			try {
-				return jqueryArgParser(COLUMN).parse(entry, td); //only JDBC types
+				return jqueryArgParser(COLUMN).parse(entry, td); //only with JDBC types
 			} catch (Exception e) {/*do not throw exception*/}
 			if(isEmpty(types)) {
 				return jdbcArgParser(null).parse(entry, td);
@@ -108,20 +108,21 @@ public class ArgumentParsers {
 
 	public static JavaArgumentParser jqueryArgParser(@NonNull JqueryType type) {
 		switch (type) {
-		case COLUMN:		return RequestEntryChain::asColumn;
-		case FILTER: 		return RequestEntryChain::asFilter;
-		case ORDER: 		return RequestEntryChain::asOrder;
-		case PARTITIONS:	return (re, td)-> re.evalArray(td, "partition", COLUMN);
-		case COLUMNS:		return (re, td)-> re.evalArray(td, Constants.COLUMN, COLUMN);
-		case FILTERS: 		return (re, td)-> re.evalArray(td, "filter", FILTER);
-		case ORDERS: 		return (re, td)-> re.evalArray(td,  Constants.ORDER, ORDER);
+		case COLUMN:		return RequestEntryChain::evalColumn;
+		case FILTER: 		return RequestEntryChain::evalFilter;
+		case ORDER: 		return RequestEntryChain::evalOrder;
 		case QUERY: 		return ArgumentParsers::evalQuery;
+		case PARTITIONS:	return (re, td)-> re.evalArrayFunction(td, Constants.PARTITION, COLUMN);
+		case COLUMNS:		return (re, td)-> re.evalArrayFunction(td, Constants.COLUMN, COLUMN);
+		case FILTERS: 		return (re, td)-> re.evalArrayFunction(td, Constants.FILTER, FILTER);
+		case ORDERS: 		return (re, td)-> re.evalArrayFunction(td, Constants.ORDER, ORDER);
 		default:			throw unsupportedTypeException(type);
 		}
 	}
 	
-	private static InternalQuery evalQuery(RequestEntryChain re, TableDecorator td) {
-		var args = re.evalFunction(td, "query", ofParameters(required(COLUMNS), optional(FILTERS)));
+	//move it => RequestEntryChain
+	private static InternalQuery evalQuery(RequestEntryChain re, TableDecorator td) {//move it
+		var args = re.evalFunction(td, "query", ofParameters(required(COLUMNS), optional(FILTERS)));  //.distinct
 		var cols = (DBColumn[]) args[0];
 		var flts = args.length > 1 ? (DBFilter[]) args[1] : null;
 		return new InternalQuery(cols, flts);

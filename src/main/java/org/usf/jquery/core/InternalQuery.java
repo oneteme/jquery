@@ -51,5 +51,4 @@ public class InternalQuery implements Query {//see RequestQueryBuilder::build
 	public String toString() {
 		return sql(addWithValue());
 	}
-
 }

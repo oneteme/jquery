@@ -18,10 +18,6 @@ public final class ParseException extends WebException {
 		super(message, cause);
 	}
 
-	static ParseException cannotEvaluateException(String type, String expression) {
-		return new ParseException("cannot evaluate " + type +  " " + quote(expression));
-	}
-
 	static ParseException cannotParseException(String type, String value) {
 		return cannotParseException(type, value, null);
 	}

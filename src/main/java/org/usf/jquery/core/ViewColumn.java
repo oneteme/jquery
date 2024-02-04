@@ -41,5 +41,4 @@ public final class ViewColumn implements TaggableColumn {
 	public String toString() {
 		return sql(addWithValue());
 	}
-
 }

@@ -12,7 +12,6 @@ import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
-import static org.usf.jquery.web.ParseException.cannotEvaluateException;
 import static org.usf.jquery.web.ParseException.cannotParseException;
 import static org.usf.jquery.web.RevisionIterator.iterator;
 import static org.usf.jquery.web.RevisionIterator.monthFilter;
@@ -71,7 +70,7 @@ public interface YearTableDecorator extends TableDecorator {
 	default YearMonth[] parseRevisions(Map<String, String[]> parameterMap) {
 		var arr = parameterMap.get(REVISION_MODE);
 		if(nonNull(arr) && arr.length > 1) {
-			throw cannotEvaluateException(REVISION, join(", ", arr)); //multiple values
+			throw EvalException.cannotEvaluateException(REVISION, join(", ", arr)); //multiple values
 		}
 		var mod = revisionMode(isEmpty(arr) || isBlank(arr[0]) ? defaultRevisionMode() : arr[0]);
 		var values = parameterMap.containsKey(REVISION) 
@@ -99,7 +98,7 @@ public interface YearTableDecorator extends TableDecorator {
 		case "strict" 		: return this::strictRevisions;
 		case "preceding"	: return this::precedingRevisions;
 		case "succeeding"	: return this::succeedingRevisions;
-    	default 			: throw cannotEvaluateException(REVISION_MODE, mode);
+    	default 			: throw EvalException.cannotEvaluateException(REVISION_MODE, mode);
     	}
     }
     
