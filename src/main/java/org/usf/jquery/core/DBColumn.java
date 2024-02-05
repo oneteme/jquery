@@ -129,8 +129,8 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 		return Operator.multiply().args(this, o);
 	}
 
-	default OperationColumn divise(Object o) {
-		return Operator.divise().args(this, o);
+	default OperationColumn divide(Object o) {
+		return Operator.divide().args(this, o);
 	}
 	
 	default WhenFilterBridge when(ComparisonExpression ex) {

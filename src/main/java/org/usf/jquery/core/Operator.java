@@ -64,7 +64,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 		return new TypedOperator(DOUBLE, operator("*"), required(DOUBLE), required(DOUBLE));
 	}
 	
-	static TypedOperator divise() {
+	static TypedOperator divide() {
 		return new TypedOperator(DOUBLE, operator("/"), required(DOUBLE), required(DOUBLE));
 	}
 	
