@@ -23,6 +23,7 @@ public final class RequestParser {
 	private RequestParser(String s) {
 		this.s = s;
 		this.size = s.length();
+		this.c = size == 0 ? 0 : s.charAt(idx);
 	}
 
 	public static RequestEntryChain parseEntry(String s) {

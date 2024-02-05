@@ -9,5 +9,4 @@ package org.usf.jquery.web;
 public interface JavaArgumentParser {
 	
 	Object parse(RequestEntryChain entry, TableDecorator td);
-	
 }

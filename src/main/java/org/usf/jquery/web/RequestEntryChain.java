@@ -64,10 +64,12 @@ final class RequestEntryChain {
 	public TaggableColumn evalColumn(TableDecorator td) {
 		var r = chainResourceOperations(td, false);
 		if(r.entry.isLast()) {
-			if(r.col instanceof TaggableColumn) { //no operation
-				return (TaggableColumn) r.col;
+			if(nonNull(r.entry.tag)) {
+				return r.col.as(r.entry.tag);
 			}
-			return r.col.as(isNull(r.entry.tag) ? r.cd.identity() : r.entry.tag);
+			return r.col instanceof TaggableColumn 
+					? (TaggableColumn) r.col 
+					: r.col.as(r.cd.identity());
 		}
 		throw cannotEvaluateException("operation", r.entry.next);
 	}
@@ -78,12 +80,9 @@ final class RequestEntryChain {
 			return r.col.order();
 		}
 		var e = r.entry.next;
-		if(e.isLast()) { // next must be last
-			var o = findEnum(e.value.toUpperCase(), Order.class);
-			if(o.isPresent()) {
-				e.requireNoArgs(); //throw exception on valid order
-				return r.col.order(o.get());
-			}
+		if(e.isLast() && e.value.matches("asc|desc")) { // next must be last
+			var o = Order.valueOf(e.requireNoArgs().value.toUpperCase()); // noArgs on valid order
+			return r.col.order(o);
 		}
 		throw cannotEvaluateException("order", e);
 	}
@@ -149,10 +148,15 @@ final class RequestEntryChain {
 			return r.col.in(r.cd.parser(r.td).parseAll(toStringArray(values)));
 		}
 		Object o;
-		try {
-			o = values.get(0).evalColumn(r.td);
+		if(!r.entry.text) {
+			try {
+				o = values.get(0).evalColumn(r.td);
+			}
+			catch(Exception e) {
+				o = r.cd.parser(r.td).parse(values.get(0).toString());
+			}	
 		}
-		catch(Exception e) {
+		else {
 			o = r.cd.parser(r.td).parse(values.get(0).toString());
 		}
 		return r.col.equal(o);
