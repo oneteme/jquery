@@ -14,6 +14,7 @@ import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.findEnum;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.WindowView.windowColumn;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.JQueryContext.context;
@@ -22,7 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.IntFunction;
 
-import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
@@ -62,7 +62,7 @@ final class RequestEntryChain {
 	}
 	
 	public TaggableColumn evalColumn(TableDecorator td) {
-		var r = chainResourceOperations(td);
+		var r = chainResourceOperations(td, false);
 		if(r.entry.isLast()) {
 			if(r.col instanceof TaggableColumn) { //no operation
 				return (TaggableColumn) r.col;
@@ -73,13 +73,13 @@ final class RequestEntryChain {
 	}
 	
 	public DBOrder evalOrder(TableDecorator td) {
-		var r = chainResourceOperations(td);
+		var r = chainResourceOperations(td, false);
 		if(r.entry.isLast()) { // no order
 			return r.col.order();
 		}
 		var e = r.entry.next;
 		if(e.isLast()) { // next must be last
-			var o = findEnum(e.value, Order.class);
+			var o = findEnum(e.value.toUpperCase(), Order.class);
 			if(o.isPresent()) {
 				e.requireNoArgs(); //throw exception on valid order
 				return r.col.order(o.get());
@@ -93,7 +93,7 @@ final class RequestEntryChain {
 	}
 
 	public DBFilter evalFilter(TableDecorator td, List<RequestEntryChain> values) {
-		var r = chainResourceOperations(td);
+		var r = chainResourceOperations(td, true);
 		if(r.entry.isLast()) {
 			return defaultFilter(r, values);
 		}
@@ -118,7 +118,7 @@ final class RequestEntryChain {
 			throw cannotEvaluateException("comparator|criteria", e);
 		}
 		if(isEmpty(values)) {
-			return chainFilters(td, r.col);
+			return e.chainFilters(td, r.col);
 		}
 		throw new IllegalArgumentException();
 	}
@@ -158,7 +158,7 @@ final class RequestEntryChain {
 		return r.col.equal(o);
 	}
 	
-	ResourceCursor chainResourceOperations(TableDecorator td) {
+	ResourceCursor chainResourceOperations(TableDecorator td, boolean filter) {
 		var r = lookupResource(td);
 		var e = r.entry.next;
 		while(nonNull(e)) {
@@ -166,7 +166,9 @@ final class RequestEntryChain {
 			if(c.isEmpty()) {
 				break;
 			}
-			r.col = c.get(); // preserve last non null column
+			r.col = filter && "over".equals(e.value)
+					? windowColumn(r.td.table(), c.get().as(r.cd.identity())) 
+					: c.get(); // preserve last non null column
 			r.entry = e;
 			e = e.next;
 		}
@@ -177,7 +179,7 @@ final class RequestEntryChain {
 		var res = lookupOperator(value);
 		return res.map(fn-> {
 			var c = col;
-			if(isNull(c) && isEmpty(args) && "count".equals(fn.id())) {
+			if(isNull(c) && isEmpty(args) && "count".equals(value)) { // id is MAJ
 				c = b-> {
 					b.view(td.table()); // important! register view
 					return "*";
@@ -191,14 +193,13 @@ final class RequestEntryChain {
 		var f = toComparison(td, col).orElseThrow(()-> cannotEvaluateException("comparator", this));
 		var e = this.next;
 		while(nonNull(e)) {
-			var op = findEnum(e.value, LogicalOperator.class).orElseThrow(()-> cannotEvaluateException("logical operator", this));
-			if(isEmpty(e.args)) {
-				throw badArgumentCountException(1, 0);
+			var op = findEnum(e.value.toUpperCase(), LogicalOperator.class).orElseThrow(()-> cannotEvaluateException("logical operator", this));
+			var n = isEmpty(e.args) ? 0 : e.args.size();
+			if(n != 1) {
+				throw badArgumentCountException(1, n);				
 			}
-			if(e.args.size() > 1) {
-				throw badArgumentCountException(1, e.args.size());
-			}
-			f = f.append(op, e.args.get(0).evalFilter(td));				
+			f = f.append(op, e.args.get(0).evalFilter(td));
+			e = e.next;
 		}
 		return f;
 	}
