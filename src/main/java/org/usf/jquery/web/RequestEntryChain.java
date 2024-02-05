@@ -7,7 +7,6 @@ import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.Comparator.lookupComparator;
 import static org.usf.jquery.core.Operator.lookupOperator;
-import static org.usf.jquery.core.Operator.lookupWindowFunction;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
@@ -22,6 +21,7 @@ import static org.usf.jquery.web.JQueryContext.context;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.IntFunction;
+import java.util.function.Predicate;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -35,6 +35,7 @@ import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
+import org.usf.jquery.core.WindowFunction;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -166,7 +167,7 @@ final class RequestEntryChain {
 		var r = lookupResource(td);
 		var e = r.entry.next;
 		while(nonNull(e)) {
-			var c = e.toOperation(td, r.col);
+			var c = e.toOperation(td, r.col, fn-> true);
 			if(c.isEmpty()) {
 				break;
 			}
@@ -179,9 +180,8 @@ final class RequestEntryChain {
 		return r;
 	}
 
-	Optional<OperationColumn> toOperation(TableDecorator td, DBColumn col) {
-		var res = lookupOperator(value);
-		return res.map(fn-> {
+	Optional<OperationColumn> toOperation(TableDecorator td, DBColumn col, Predicate<TypedOperator> pre) {
+		return lookupOperator(value).filter(pre).map(fn-> {
 			var c = col;
 			if(isNull(c) && isEmpty(args) && "count".equals(value)) { // id is MAJ
 				c = b-> {
@@ -214,27 +214,24 @@ final class RequestEntryChain {
 	
 	private ResourceCursor lookupResource(TableDecorator td) {
 		if(next() && context().isDeclaredTable(value)) {  //sometimes td.id == cd.id
-			var tr = next.lookupViewResource(context().getTable(value));
-			if(nonNull(tr)) {
-				return tr;
+			var rc = next.lookupViewResource(context().getTable(value), 
+					fn-> fn.unwrap().getClass() == WindowFunction.class); // only window function
+			if(nonNull(rc)) {
+				return rc;
 			}
 		}
-		var tp = lookupViewResource(td);
-		if(nonNull(tp)) {
-			return tp;
-		}
-		var op = toOperation(td, null);
-		if(op.isPresent()) {
-			return new ResourceCursor(td, ofColumn(value, b-> op.get()), this);
+		var rc = lookupViewResource(td, fn-> true); // all operations
+		if(nonNull(rc)) {
+			return rc;
 		}
 		throw cannotEvaluateException("resource", this);
 	}
 
-	private ResourceCursor lookupViewResource(TableDecorator td) {
+	private ResourceCursor lookupViewResource(TableDecorator td, Predicate<TypedOperator> pre) {
 		return context().isDeclaredColumn(value) 
 				? new ResourceCursor(td, context().getColumn(requireNoArgs().value), this)
-				: lookupWindowFunction(value)  //rank, rowNumber, ..
-				.map(fn-> new ResourceCursor(td, ofColumn(value, b-> fillArgs(td, null, fn)), this))
+				: toOperation(td, null, pre)
+				.map(op-> new ResourceCursor(td, ofColumn(value, b-> op), this))
 				.orElse(null);
 	}
 

@@ -338,10 +338,6 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 		return ()-> name;
 	}
 
-	static Optional<TypedOperator> lookupWindowFunction(String op) {
-		return lookupOperator(op).filter(fn-> fn.unwrap().getClass() == WindowFunction.class); //!aggregation
-	}
-	
 	static Optional<TypedOperator> lookupOperator(String op) {
 		return DBProcessor.lookup(Operator.class, TypedOperator.class, op);
 	}
