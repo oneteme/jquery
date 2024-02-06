@@ -95,7 +95,8 @@ final class RequestEntryChain {
 	public DBFilter evalFilter(TableDecorator td, List<RequestEntryChain> values) {
 		var r = chainResourceOperations(td, true);
 		if(r.entry.isLast()) {
-			return defaultFilter(r, values);
+			return defaultComparatorEntry(values).toComparison(r.td, r.col)
+					.orElseThrow();
 		}
 		var e = r.entry.next;
 		if(e.isLast()) {
@@ -122,6 +123,19 @@ final class RequestEntryChain {
 		}
 		throw new IllegalArgumentException();
 	}
+	
+	static RequestEntryChain defaultComparatorEntry(List<RequestEntryChain> values) {
+		String cmp;
+		if(isEmpty(values)) {
+			cmp = "isNull";
+		}
+		else {
+			cmp = values.size() > 1 ? "in" : "eq";
+		}
+		var e = new RequestEntryChain(cmp);
+		e.args = values;
+		return e;
+	}
 
 	public Object[] evalFunction(TableDecorator td, String fnName, ParameterSet ps) {
 		if(fnName.equals(value)) {
@@ -140,29 +154,6 @@ final class RequestEntryChain {
 		}
 		throw cannotEvaluateException(fnName, this);
 	}
-	
-	static DBFilter defaultFilter(ResourceCursor r, List<RequestEntryChain> values) {
-		if(isEmpty(values)) {
-			return r.col.isNull();
-		}
-		if(values.size() > 1) {
-			return r.col.in(r.cd.parser(r.td).parseAll(toStringArray(values)));
-		}
-		Object o;
-		if(!r.entry.text) {
-			try {
-				o = values.get(0).evalColumn(r.td);
-			}
-			catch(Exception e) {
-				o = r.cd.parser(r.td).parse(values.get(0).toString());
-			}	
-		}
-		else {
-			o = r.cd.parser(r.td).parse(values.get(0).toString());
-		}
-		return r.col.equal(o);
-	}
-	
 	ResourceCursor chainResourceOperations(TableDecorator td, boolean filter) {
 		var r = lookupResource(td);
 		var e = r.entry.next;
