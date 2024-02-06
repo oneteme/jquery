@@ -118,18 +118,23 @@ final class RequestEntryChain {
 		if(o.isEmpty()) {
 			cannotEvaluateException("comparison|criteria", e);
 		}
-		if(e.isLast()) {
-			return o.get();
-		}
-		e = e.next;
-		if(e.value.matches("and|or")) {
-			var op = LogicalOperator.valueOf(e.value.toUpperCase());
-			if(!isEmpty(e.args) && e.args.size() == 1) {
-				return o.get().append(op, e.args.get(0).evalFilter(td));
+		var f = o.get();
+		while(e.next()) {
+			e = e.next;
+			if(e.value.matches("and|or")) {
+				var op = LogicalOperator.valueOf(e.value.toUpperCase());
+				if(!isEmpty(e.args) && e.args.size() == 1) {
+					f = f.append(op, e.args.get(0).evalFilter(td));
+				}
+				else {
+					throw badArgumentCountException(1, isEmpty(e.args) ? 0 : e.args.size());				
+				}
 			}
-			throw badArgumentCountException(1, isEmpty(e.args) ? 0 : e.args.size());				
+			else {
+				throw cannotEvaluateException("logical operator", e);
+			}
 		}
-		throw new RequestSyntaxException("logical operator" + e);
+		return f;
 	}
 	
 	static RequestEntryChain defaultComparatorEntry(List<RequestEntryChain> values) {
