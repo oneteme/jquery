@@ -94,7 +94,7 @@ final class RequestEntryChain {
 
 	public DBFilter evalFilter(TableDecorator td, List<RequestEntryChain> values) {
 		var r = chainResourceOperations(td, true);
-		if(r.entry.isLast()) {
+		if(r.entry.isLast()) { // no comparator
 			return defaultComparatorEntry(values)
 					.toComparison(td, r.col)
 					.orElseThrow(); //cannot be empty
@@ -108,48 +108,9 @@ final class RequestEntryChain {
 				e.setArgs(values);
 			}
 		}
-		var o = e.toComparison(td, r.col); //eval comparator first => avoid overriding
-		if(o.isEmpty() && r.col instanceof TaggableColumn) { //no operation
-			var c = r.cd.criteria(e.value); 
-			if(nonNull(c)) {
-				return r.col.filter(c.build(toStringArray(e.args)));
-			}
-		}
-		if(o.isEmpty()) {
-			cannotEvaluateException("comparison|criteria", e);
-		}
-		var f = o.get();
-		while(e.next()) {
-			e = e.next;
-			if(e.value.matches("and|or")) {
-				var op = LogicalOperator.valueOf(e.value.toUpperCase());
-				if(!isEmpty(e.args) && e.args.size() == 1) {
-					f = f.append(op, e.args.get(0).evalFilter(td));
-				}
-				else {
-					throw badArgumentCountException(1, isEmpty(e.args) ? 0 : e.args.size());				
-				}
-			}
-			else {
-				throw cannotEvaluateException("logical operator", e);
-			}
-		}
-		return f;
+		return e.chainComparator(td, r.cd, r.col);
 	}
 	
-	static RequestEntryChain defaultComparatorEntry(List<RequestEntryChain> values) {
-		String cmp;
-		if(isEmpty(values)) {
-			cmp = "isNull";
-		}
-		else {
-			cmp = values.size() > 1 ? "in" : "eq";
-		}
-		var e = new RequestEntryChain(cmp);
-		e.setArgs(values);
-		return e;
-	}
-
 	public Object[] evalFunction(TableDecorator td, String fnName, ParameterSet ps) {
 		if(fnName.equals(value)) {
 			return requireNoNext().toArgs(td, null, ps, Object[]::new);
@@ -197,6 +158,50 @@ final class RequestEntryChain {
 			return fillArgs(td, c, fn);
 		});
 	}
+
+	static RequestEntryChain defaultComparatorEntry(List<RequestEntryChain> values) {
+		String cmp;
+		if(isEmpty(values)) {
+			cmp = "isNull";
+		}
+		else {
+			cmp = values.size() > 1 ? "in" : "eq";
+		}
+		var e = new RequestEntryChain(cmp);
+		e.setArgs(values);
+		return e;
+	}
+
+	DBFilter chainComparator(TableDecorator td, ColumnDecorator cd, DBColumn col){
+		var f = toComparison(td, col).orElse(null); //eval comparator first => avoid overriding
+		if(isNull(f) && col instanceof TaggableColumn) { //no operation
+			var c = cd.criteria(value); 
+			if(nonNull(c)) {
+				f = col.filter(c.build(toStringArray(args)));
+			}
+		}
+		if(isNull(f)) {
+			throw cannotEvaluateException("comparison|criteria", this);
+		}
+		var e = this;
+		while(e.next()) {
+			e = e.next;
+			if(e.value.matches("and|or")) {
+				var op = LogicalOperator.valueOf(e.value.toUpperCase());
+				if(!isEmpty(e.args) && e.args.size() == 1) {
+					f = f.append(op, e.args.get(0).evalFilter(td));
+				}
+				else {
+					throw badArgumentCountException(1, isEmpty(e.args) ? 0 : e.args.size());				
+				}
+			}
+			else {
+				throw cannotEvaluateException("logical operator", e);
+			}
+		}
+		return f;
+	}
+	
 	
 	Optional<DBFilter> toComparison(TableDecorator td, DBObject col) {
 		return lookupComparator(value).map(c-> fillArgs(td, col, c));

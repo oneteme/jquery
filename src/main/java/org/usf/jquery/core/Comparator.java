@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.util.Arrays.copyOfRange;
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JqueryType.FILTER;
 import static org.usf.jquery.core.JqueryType.QUERY;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -123,16 +122,6 @@ public interface Comparator extends DBProcessor<DBFilter> {
 				ofParameters(required(), required(QUERY)));
 	}
 	
-	//comparator chain
-	
-	static TypedComparator and() {
-		return new TypedComparator(chain("AND"), required(FILTER), required(FILTER));
-	}
-
-	static TypedComparator or() {
-		return new TypedComparator(chain("OR"), required(FILTER), required(FILTER));
-	}
-	
 	static BasicComparator basicComparator(final String name) {
 		return ()-> name;
 	}
@@ -146,10 +135,6 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	}
 	
 	static InCompartor inComparator(final String name) {
-		return ()-> name;
-	}
-	
-	static ComparatorChain chain(final String name) {
 		return ()-> name;
 	}
 	
