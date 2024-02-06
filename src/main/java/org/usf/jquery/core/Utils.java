@@ -2,9 +2,9 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.joining;
 
 import java.util.Collection;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -38,10 +38,8 @@ public final class Utils {
 		return isNull(s) || s.isBlank();
 	}
 	
-	public static <E extends Enum<E>> Optional<E> findEnum(String v, Class<E> clazz){
-		return Stream.of(clazz.getEnumConstants())
-				.filter(e-> e.name().equals(v))
-				.findAny();
+	public static String toString(Object[] a) {
+		return Stream.of(a).map(Object::toString).collect(joining(","));
 	}
 	
 	public static Database currentDatabase() {

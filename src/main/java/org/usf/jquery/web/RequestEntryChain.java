@@ -11,7 +11,6 @@ import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
-import static org.usf.jquery.core.Utils.findEnum;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.WindowView.windowColumn;
 import static org.usf.jquery.web.ArgumentParsers.parse;
@@ -35,6 +34,7 @@ import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
+import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.WindowFunction;
 
 import lombok.AccessLevel;
@@ -65,7 +65,7 @@ final class RequestEntryChain {
 	public TaggableColumn evalColumn(TableDecorator td) {
 		var r = chainResourceOperations(td, false);
 		if(r.entry.isLast()) {
-			if(nonNull(r.entry.tag)) {
+			if(nonNull(r.entry.tag)) { //TD required if operation
 				return r.col.as(r.entry.tag);
 			}
 			return r.col instanceof TaggableColumn 
@@ -95,33 +95,41 @@ final class RequestEntryChain {
 	public DBFilter evalFilter(TableDecorator td, List<RequestEntryChain> values) {
 		var r = chainResourceOperations(td, true);
 		if(r.entry.isLast()) {
-			return defaultComparatorEntry(values).toComparison(r.td, r.col)
-					.orElseThrow();
+			return defaultComparatorEntry(values)
+					.toComparison(td, r.col)
+					.orElseThrow(); //cannot be empty
 		}
 		var e = r.entry.next;
+		if(!isEmpty(values)) {
+			if(!e.isLast()) {
+				throw new RequestSyntaxException(e + "=" + Utils.toString(values.toArray()));
+			}
+			if(isNull(e.args)) {
+				e.setArgs(values);
+			}
+		}
+		var o = e.toComparison(td, r.col); //eval comparator first => avoid overriding
+		if(o.isEmpty() && r.col instanceof TaggableColumn) { //no operation
+			var c = r.cd.criteria(e.value); 
+			if(nonNull(c)) {
+				return r.col.filter(c.build(toStringArray(e.args)));
+			}
+		}
+		if(o.isEmpty()) {
+			cannotEvaluateException("comparison|criteria", e);
+		}
 		if(e.isLast()) {
-			if(nonNull(e.args) && !isEmpty(values)) {
-				throw new IllegalArgumentException("both");
-			}
-			else if(isNull(e.args)) {
-				e.args = values;
-			}
-			var o = e.toComparison(td, r.col);
-			if(o.isPresent()) {
-				return o.get();
-			} //eval comparator first to avoid overriding default comparators
-			if(r.col instanceof TaggableColumn) {
-				var c = r.cd.criteria(e.value); 
-				if(nonNull(c)) {
-					return r.col.filter(c.build(toStringArray(e.args)));
-				}
-			}
-			throw cannotEvaluateException("comparator|criteria", e);
+			return o.get();
 		}
-		if(isEmpty(values)) {
-			return e.chainFilters(td, r.col);
+		e = e.next;
+		if(e.value.matches("and|or")) {
+			var op = LogicalOperator.valueOf(e.value.toUpperCase());
+			if(!isEmpty(e.args) && e.args.size() == 1) {
+				return o.get().append(op, e.args.get(0).evalFilter(td));
+			}
+			throw badArgumentCountException(1, isEmpty(e.args) ? 0 : e.args.size());				
 		}
-		throw new IllegalArgumentException();
+		throw new RequestSyntaxException("logical operator" + e);
 	}
 	
 	static RequestEntryChain defaultComparatorEntry(List<RequestEntryChain> values) {
@@ -133,7 +141,7 @@ final class RequestEntryChain {
 			cmp = values.size() > 1 ? "in" : "eq";
 		}
 		var e = new RequestEntryChain(cmp);
-		e.args = values;
+		e.setArgs(values);
 		return e;
 	}
 
@@ -154,6 +162,7 @@ final class RequestEntryChain {
 		}
 		throw cannotEvaluateException(fnName, this);
 	}
+	
 	ResourceCursor chainResourceOperations(TableDecorator td, boolean filter) {
 		var r = lookupResource(td);
 		var e = r.entry.next;
@@ -161,11 +170,11 @@ final class RequestEntryChain {
 			var c = e.toOperation(td, r.col, fn-> true);
 			if(c.isEmpty()) {
 				break;
-			}
-			r.col = filter && "over".equals(e.value)
-					? windowColumn(r.td.table(), c.get().as(r.cd.identity())) 
-					: c.get(); // preserve last non null column
+			} // preserve last non null column
 			r.entry = e;
+			r.col = filter && "over".equals(e.value) 
+					? windowColumn(r.td.table(), c.get().as(r.cd.identity())) 
+					: c.get(); 
 			e = e.next;
 		}
 		return r;
@@ -184,21 +193,6 @@ final class RequestEntryChain {
 		});
 	}
 	
-	DBFilter chainFilters(TableDecorator td, DBColumn col) {
-		var f = toComparison(td, col).orElseThrow(()-> cannotEvaluateException("comparator", this));
-		var e = this.next;
-		while(nonNull(e)) {
-			var op = findEnum(e.value.toUpperCase(), LogicalOperator.class).orElseThrow(()-> cannotEvaluateException("logical operator", this));
-			var n = isEmpty(e.args) ? 0 : e.args.size();
-			if(n != 1) {
-				throw badArgumentCountException(1, n);				
-			}
-			f = f.append(op, e.args.get(0).evalFilter(td));
-			e = e.next;
-		}
-		return f;
-	}
-
 	Optional<DBFilter> toComparison(TableDecorator td, DBObject col) {
 		return lookupComparator(value).map(c-> fillArgs(td, col, c));
 	}
