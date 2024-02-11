@@ -13,12 +13,12 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class ViewColumn implements TaggableColumn {
 
-	private final TaggableView view;
+	private final DBView view;
 	private final String name;
 	private final String tag;
 	private final JavaType type;
 	
-	public ViewColumn(TaggableView view, String name, String tag) {
+	public ViewColumn(DBView view, String name, String tag) {
 		this(view, name, tag, null);
 	}
 

@@ -9,10 +9,8 @@ import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.ArrayList;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.function.IntConsumer;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -35,27 +33,18 @@ public final class QueryParameterBuilder {
 	private final String vPrefix;
 	private final List<Object> args;
 	private final List<JDBCType> argTypes;
-	private final List<TaggableView> views; //indexed
+	private final List<DBView> views; //indexed
 	
-	public List<TaggableView> views(){
+	public List<DBView> views(){
 		return views;
 	}
 	
-	public String view(TaggableView view) {
-		return view(view, i-> {});
-	}
-	
-	public String overwriteView(TaggableView view) {
-		return view(view, i-> views.set(i, view));
-	}
-
-	private String view(TaggableView view, IntConsumer consumer) {
+	public String view(@NonNull DBView view) {
 		if(isNull(vPrefix)) {
 			return null;
 		}
 		for(var i=0; i<views.size(); i++) {
-			if(views.get(i).tagname().equals(view.tagname())) {
-				consumer.accept(i);
+			if(views.get(i).equals(view)) {
 				return vPrefix + (i+1);
 			}
 		}
@@ -137,18 +126,18 @@ public final class QueryParameterBuilder {
 	}
 	
 	public QueryParameterBuilder subQuery() {
-		return new QueryParameterBuilder(schema, vPrefix + "_s", args, argTypes, new LinkedList<>());
+		return new QueryParameterBuilder(schema, isNull(vPrefix) ? null : vPrefix + "_s", args, argTypes, new LinkedList<>());
 	}
 
 	public static QueryParameterBuilder addWithValue() {
 		return new QueryParameterBuilder(null, null, null, null, null); //no args
 	}
 
-	public static QueryParameterBuilder parametrized() {
-		return parametrized(null);
+	public static QueryParameterBuilder parametrized(List<DBView> views) {
+		return parametrized(null, views);
 	}
 	
-	public static QueryParameterBuilder parametrized(String schema) {
-		return new QueryParameterBuilder(schema, "v", new LinkedList<>(), new LinkedList<>(), new ArrayList<>());
+	public static QueryParameterBuilder parametrized(String schema, List<DBView> views) {
+		return new QueryParameterBuilder(schema, "v", new LinkedList<>(), new LinkedList<>(), views);
 	}
 }

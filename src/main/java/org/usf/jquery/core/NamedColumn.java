@@ -23,7 +23,7 @@ public final class NamedColumn implements TaggableColumn {
 	
 	@Override
 	public NamedColumn as(String name) { // map
-		return new NamedColumn(unwrap(), name);
+		return tag.equals(name) ? this : new NamedColumn(unwrap(), name);
 	}
 	
 	public DBColumn unwrap() {

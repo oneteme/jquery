@@ -10,7 +10,7 @@ import java.util.stream.Stream;
  *
  */
 @SuppressWarnings("serial")
-public final class BadArgumentException extends JqueryException {
+public final class BadArgumentException extends JQueryException {
 
 	public BadArgumentException(String message) {
 		super(message);

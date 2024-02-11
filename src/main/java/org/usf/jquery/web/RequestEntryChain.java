@@ -6,16 +6,17 @@ import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.Comparator.lookupComparator;
+import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.WindowView.windowColumn;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.JQueryContext.context;
+import static org.usf.jquery.web.RequestContext.requestContext;
 
 import java.util.List;
 import java.util.Optional;
@@ -26,7 +27,7 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
-import org.usf.jquery.core.JqueryType;
+import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.LogicalOperator;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
@@ -35,6 +36,7 @@ import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.Utils;
+import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.WindowFunction;
 
 import lombok.AccessLevel;
@@ -63,9 +65,10 @@ final class RequestEntryChain {
 	}
 	
 	public TaggableColumn evalColumn(TableDecorator td) {
-		var r = chainResourceOperations(td, false);
+		var r = chainResourceOperations(td, false)
+				.orElseThrow(()-> cannotEvaluateException("column", this));
 		if(r.entry.isLast()) {
-			if(nonNull(r.entry.tag)) { //TD required if operation
+			if(nonNull(r.entry.tag)) { //TD: required tag if operation
 				return r.col.as(r.entry.tag);
 			}
 			return r.col instanceof TaggableColumn 
@@ -76,7 +79,8 @@ final class RequestEntryChain {
 	}
 	
 	public DBOrder evalOrder(TableDecorator td) {
-		var r = chainResourceOperations(td, false);
+		var r = chainResourceOperations(td, false)
+				.orElseThrow(()-> cannotEvaluateException("order", this));
 		if(r.entry.isLast()) { // no order
 			return r.col.order();
 		}
@@ -93,22 +97,40 @@ final class RequestEntryChain {
 	}
 
 	public DBFilter evalFilter(TableDecorator td, List<RequestEntryChain> values) {
-		var r = chainResourceOperations(td, true);
-		if(r.entry.isLast()) { // no comparator
-			return defaultComparatorEntry(values)
-					.toComparison(td, r.col)
-					.orElseThrow(); //cannot be empty
+		var o = chainResourceOperations(td, true);
+		if(o.isPresent()) {
+			var r = o.get();
+			if(r.entry.isLast()) { // no comparator
+				r.entry.setNext(defaultComparatorEntry(values));
+			}
+			r.entry.next.updateArgs(values);
+			return r.entry.next.chainComparator(td, r.cd, r.col);
 		}
-		var e = r.entry.next;
+		if(next() && context().isDeclaredTable(value)) {
+			var c = context().getTable(value).criteria(next.value);
+			if(nonNull(c)) {
+				next.updateArgs(values);
+				return next.chainComparator(td, c.build(toStringArray(next.args)));
+			}
+		}
+		var c = td.criteria(value);
+		if(nonNull(c)) {
+			updateArgs(values);
+			return chainComparator(td, c.build(toStringArray(args)));
+		}
+		return null;
+	}
+	
+	//column.eq=v1
+	private void updateArgs(List<RequestEntryChain> values) {
 		if(!isEmpty(values)) {
-			if(!e.isLast()) {
-				throw new RequestSyntaxException(e + "=" + Utils.toString(values.toArray()));
+			if(isLast() && isNull(args)) {
+				setArgs(values);
 			}
-			if(isNull(e.args)) {
-				e.setArgs(values);
+			else {
+				throw new RequestSyntaxException(this + "=" + Utils.toString(values.toArray()));
 			}
 		}
-		return e.chainComparator(td, r.cd, r.col);
 	}
 	
 	public Object[] evalFunction(TableDecorator td, String fnName, ParameterSet ps) {
@@ -118,7 +140,7 @@ final class RequestEntryChain {
 		throw cannotEvaluateException(fnName, this);
 	}
 	
-	public Object[] evalArrayFunction(TableDecorator td, String fnName, JqueryType type) {
+	public Object[] evalArrayFunction(TableDecorator td, String fnName, JQueryType type) {
 		if(fnName.equals(value)) {
 			var c = type.typeClass();
 			if(!c.isArray()) { //basic type
@@ -127,36 +149,6 @@ final class RequestEntryChain {
 			throw new UnsupportedOperationException();
 		}
 		throw cannotEvaluateException(fnName, this);
-	}
-	
-	ResourceCursor chainResourceOperations(TableDecorator td, boolean filter) {
-		var r = lookupResource(td);
-		var e = r.entry.next;
-		while(nonNull(e)) {
-			var c = e.toOperation(td, r.col, fn-> true);
-			if(c.isEmpty()) {
-				break;
-			} // preserve last non null column
-			r.entry = e;
-			r.col = filter && "over".equals(e.value) 
-					? windowColumn(r.td.table(), c.get().as(r.cd.identity())) 
-					: c.get(); 
-			e = e.next;
-		}
-		return r;
-	}
-
-	Optional<OperationColumn> toOperation(TableDecorator td, DBColumn col, Predicate<TypedOperator> pre) {
-		return lookupOperator(value).filter(pre).map(fn-> {
-			var c = col;
-			if(isNull(c) && isEmpty(args) && "count".equals(value)) { // id is MAJ
-				c = b-> {
-					b.view(td.table()); // important! register view
-					return "*";
-				};
-			}
-			return fillArgs(td, c, fn);
-		});
 	}
 
 	static RequestEntryChain defaultComparatorEntry(List<RequestEntryChain> values) {
@@ -167,25 +159,26 @@ final class RequestEntryChain {
 		else {
 			cmp = values.size() > 1 ? "in" : "eq";
 		}
-		var e = new RequestEntryChain(cmp);
-		e.setArgs(values);
-		return e;
+		return new RequestEntryChain(cmp); // do not set args
 	}
 
 	DBFilter chainComparator(TableDecorator td, ColumnDecorator cd, DBColumn col){
-		var f = toComparison(td, col).orElse(null); //eval comparator first => avoid overriding
+		var f = lookupComparator(value).map(c-> fillArgs(td, col, c)).orElse(null); //eval comparator first => avoid overriding
 		if(isNull(f) && col instanceof TaggableColumn) { //no operation
-			var c = cd.criteria(value); 
+			var c = cd.criteria(value); //criteria lookup
 			if(nonNull(c)) {
 				f = col.filter(c.build(toStringArray(args)));
 			}
 		}
-		if(isNull(f)) {
-			throw cannotEvaluateException("comparison|criteria", this);
+		if(nonNull(f)) {
+			return chainComparator(td, f);
 		}
-		var e = this;
-		while(e.next()) {
-			e = e.next;
+		throw cannotEvaluateException("comparison|criteria", this);
+	}
+
+	DBFilter chainComparator(TableDecorator td, DBFilter f){
+		var e = next;
+		while(nonNull(e)) {
 			if(e.value.matches("and|or")) {
 				var op = LogicalOperator.valueOf(e.value.toUpperCase());
 				if(!isEmpty(e.args) && e.args.size() == 1) {
@@ -198,36 +191,73 @@ final class RequestEntryChain {
 			else {
 				throw cannotEvaluateException("logical operator", e);
 			}
+			e = e.next;
 		}
 		return f;
 	}
 	
-	
-	Optional<DBFilter> toComparison(TableDecorator td, DBObject col) {
-		return lookupComparator(value).map(c-> fillArgs(td, col, c));
+	private Optional<ResourceCursor> chainResourceOperations(TableDecorator td, boolean filter) {
+		return lookupResource(td).map(r-> {
+			var e = r.entry.next;
+			while(nonNull(e)) { // chain until !operator
+				var c = e.toOperation(td, r.col, fn-> true);
+				if(c.isEmpty()) {
+					break;
+				} 
+				r.entry = e;
+				r.col = filter && "over".equals(e.value) 
+						? windowColumn(r.td, c.get().as(r.cd.identity())) 
+						: c.get(); 
+				e = e.next;
+			}
+			return r;
+		});
 	}
 	
-	private ResourceCursor lookupResource(TableDecorator td) {
+	private static DBColumn windowColumn(TableDecorator td, TaggableColumn column) {
+		var v = td.table();
+		var vw = requestContext().getViews(td.identity()); // TD use tag ?
+		if(vw instanceof CompletableViewQuery) {  // already create
+			((CompletableViewQuery)vw).columns(column);
+		}
+		else {
+			if(isNull(vw)) {
+				vw = v;
+			}
+			else if(!vw.equals(v)) {
+				throw new IllegalStateException(); // 2 view same named
+			}
+			vw = new CompletableViewQuery(vw.window(td.identity(), column));
+			requestContext().setViews(td.identity(), vw); // same name
+		}
+		return new ViewColumn(v, doubleQuote(column.tagname()), null, column.getType());
+	}
+	
+	private Optional<ResourceCursor> lookupResource(TableDecorator td) {
 		if(next() && context().isDeclaredTable(value)) {  //sometimes td.id == cd.id
-			var rc = next.lookupViewResource(context().getTable(value), 
-					fn-> fn.unwrap().getClass() == WindowFunction.class); // only window function
-			if(nonNull(rc)) {
+			var rc = next.lookupViewResource(context().getTable(value), RequestEntryChain::isWindowFunction);
+			if(rc.isPresent()) {
+				requireNoArgs(); // noArgs on valid resource
 				return rc;
 			}
 		}
-		var rc = lookupViewResource(td, fn-> true); // all operations
-		if(nonNull(rc)) {
-			return rc;
-		}
-		throw cannotEvaluateException("resource", this);
+		return lookupViewResource(td, fn-> true); // all operations
+	}
+	
+	private Optional<ResourceCursor> lookupViewResource(TableDecorator td, Predicate<TypedOperator> pre) {
+		return context().isDeclaredColumn(value) 
+				? Optional.of(new ResourceCursor(td, context().getColumn(requireNoArgs().value), this))
+				: toOperation(td, null, pre).map(op-> new ResourceCursor(td, ofColumn(value, b-> op), this));
 	}
 
-	private ResourceCursor lookupViewResource(TableDecorator td, Predicate<TypedOperator> pre) {
-		return context().isDeclaredColumn(value) 
-				? new ResourceCursor(td, context().getColumn(requireNoArgs().value), this)
-				: toOperation(td, null, pre)
-				.map(op-> new ResourceCursor(td, ofColumn(value, b-> op), this))
-				.orElse(null);
+	private Optional<OperationColumn> toOperation(TableDecorator td, DBColumn col, Predicate<TypedOperator> pre) {
+		return lookupOperator(value).filter(pre).map(fn-> {
+			var c = col;
+			if(isNull(c) && isEmpty(args) && "count".equals(value)) { // id is MAJ
+				c = allColumns(td.table());
+			}
+			return fillArgs(td, c, fn);
+		});
 	}
 
 	private DBFilter fillArgs(TableDecorator td, DBObject col, TypedComparator cmp) {
@@ -267,7 +297,7 @@ final class RequestEntryChain {
 		});
 		return arr;
 	}
-	
+
 	RequestEntryChain requireNoArgs() {
 		if(isNull(args)) {
 			return this;
@@ -305,13 +335,17 @@ final class RequestEntryChain {
 		return isNull(tag) ? s : s + ":" + tag;
 	}
 	
-	static String[] toStringArray(List<RequestEntryChain> entries) {
+	private static boolean isWindowFunction(TypedOperator op) {
+		return op.unwrap().getClass() == WindowFunction.class;  // !instanceOf : only window function
+	}
+	
+	private static String[] toStringArray(List<RequestEntryChain> entries) {
 		return entries.stream()
 				.map(e-> isNull(e.value) ? null : e.toString())
 				.toArray(String[]::new);
 	}
 
-	static EvalException cannotEvaluateException(String type, RequestEntryChain entry) {
+	private static EvalException cannotEvaluateException(String type, RequestEntryChain entry) {
 		return EvalException.cannotEvaluateException(type, entry.toString());
 	}
 	

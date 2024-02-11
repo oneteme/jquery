@@ -15,6 +15,8 @@ import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
+import static org.usf.jquery.web.RequestContext.clearContext;
+import static org.usf.jquery.web.RequestContext.requestContext;
 import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
@@ -28,9 +30,9 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBTable;
+import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
-import org.usf.jquery.core.TaggableView;
 import org.usf.jquery.core.ViewColumn;
 
 /**
@@ -46,10 +48,10 @@ public interface TableDecorator {
 	
 	Optional<String> columnName(ColumnDecorator cd);
 	
-	default TaggableView table() { //optim
+	default DBView table() { //optim
 		var b = builder();
 		return nonNull(b) 
-				? b.build().as(identity())
+				? b.build(identity())
 				: new DBTable(tableName(), identity());
 	}
 	
@@ -71,13 +73,14 @@ public interface TableDecorator {
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
+		clearContext();
 		currentDatabase(database().getType()); //table database
 		var query = new RequestQueryBuilder();
 		parseColumns(query, parameterMap);
 		parseFilters(query, parameterMap);
 		parseOrders (query, parameterMap);
-		parseFetch(query, parameterMap);
-		return query;
+		parseFetch(query, parameterMap);		
+		return query.views(requestContext().views());
 	}
 	
 	default void parseColumns(RequestQueryBuilder query, Map<String, String[]> parameters) {

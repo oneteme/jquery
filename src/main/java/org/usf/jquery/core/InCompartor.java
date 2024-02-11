@@ -19,6 +19,6 @@ public interface InCompartor extends Comparator {
 		requireAtLeastNArgs(2, args, InCompartor.class::getSimpleName);
 		var type = typeOf(args[0]).orElseThrow(Comparator::typeCannotBeNullException);
 		var varg = copyOfRange(args, 1, args.length);
-		return builder.appendLitteral(args[0]) + SPACE + id() + parenthese(args.length == 2 && args[1] instanceof InternalQuery ? builder.appendLitteral(args[1]) : builder.appendArrayParameter(type, varg));
+		return builder.appendLitteral(args[0]) + SPACE + id() + parenthese(args.length == 2 && args[1] instanceof ViewQuery ? builder.appendLitteral(args[1]) : builder.appendArrayParameter(type, varg));
 	}
 }

@@ -10,5 +10,5 @@ import org.usf.jquery.core.DBView;
 @FunctionalInterface
 public interface ViewBuilder {
 
-	DBView build();
+	DBView build(String id);
 }

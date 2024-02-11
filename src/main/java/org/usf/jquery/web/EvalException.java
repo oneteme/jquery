@@ -8,7 +8,6 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
  *
  */
 @SuppressWarnings("serial")
-
 public final class EvalException extends WebException {
 
 	public EvalException(String message) {

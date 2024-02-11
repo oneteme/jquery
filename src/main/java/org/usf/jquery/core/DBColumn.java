@@ -1,9 +1,11 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
+import static org.usf.jquery.core.SqlStringBuilder.member;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.Objects;
 import java.util.function.Supplier;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
@@ -41,7 +43,7 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 	}
 
 	default NamedColumn as(String name) {
-		return new NamedColumn(this, requireLegalVariable(name));
+		return new NamedColumn(this, Objects.isNull(name) ? null : requireLegalVariable(name));
 	}
 	
 	default DBOrder order() {
@@ -138,7 +140,15 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 	}
 	
 	static DBColumn column(@NonNull String value) {
-		return p-> value;
+		return b-> value;
+	}
+
+	static DBColumn allColumns(@NonNull DBView view) {
+		return column(view, "*");
+	}
+
+	static DBColumn column(@NonNull DBView view, @NonNull String value) {
+		return b-> member(b.view(view), value);
 	}
 	
 	static DBColumn constant(Object value) {

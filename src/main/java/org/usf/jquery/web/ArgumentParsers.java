@@ -7,11 +7,11 @@ import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
-import static org.usf.jquery.core.JqueryType.COLUMN;
-import static org.usf.jquery.core.JqueryType.COLUMNS;
-import static org.usf.jquery.core.JqueryType.FILTER;
-import static org.usf.jquery.core.JqueryType.FILTERS;
-import static org.usf.jquery.core.JqueryType.ORDER;
+import static org.usf.jquery.core.JQueryType.COLUMN;
+import static org.usf.jquery.core.JQueryType.COLUMNS;
+import static org.usf.jquery.core.JQueryType.FILTER;
+import static org.usf.jquery.core.JQueryType.FILTERS;
+import static org.usf.jquery.core.JQueryType.ORDER;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
@@ -28,12 +28,12 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.InternalQuery;
 import org.usf.jquery.core.JDBCType;
+import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
-import org.usf.jquery.core.JqueryType;
+import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.ViewQuery;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -63,8 +63,8 @@ public class ArgumentParsers {
 		}
 		for(var type : types) {
 			try {
-				if(type instanceof JqueryType) {
-					return jqueryArgParser((JqueryType) type).parse(entry, td);
+				if(type instanceof JQueryType) {
+					return jqueryArgParser((JQueryType) type).parse(entry, td);
 				}
 				else if(type instanceof JDBCType) {
 					return jdbcArgParser((JDBCType) type).parse(entry, td);
@@ -106,7 +106,7 @@ public class ArgumentParsers {
 		}
 	}
 
-	public static JavaArgumentParser jqueryArgParser(@NonNull JqueryType type) {
+	public static JavaArgumentParser jqueryArgParser(@NonNull JQueryType type) {
 		switch (type) {
 		case COLUMN:		return RequestEntryChain::evalColumn;
 		case FILTER: 		return RequestEntryChain::evalFilter;
@@ -121,11 +121,12 @@ public class ArgumentParsers {
 	}
 	
 	//move it => RequestEntryChain
-	private static InternalQuery evalQuery(RequestEntryChain re, TableDecorator td) {//move it
+	@Deprecated(forRemoval = true)
+	private static ViewQuery evalQuery(RequestEntryChain re, TableDecorator td) {//move it
 		var args = re.evalFunction(td, "query", ofParameters(required(COLUMNS), optional(FILTERS)));  //.distinct
-		var cols = (DBColumn[]) args[0];
+		var cols = (TaggableColumn[]) args[0];
 		var flts = args.length > 1 ? (DBFilter[]) args[1] : null;
-		return new InternalQuery(cols, flts);
+		return new ViewQuery(td.identity(), null, cols).filters(flts);
 	}
 
 	private static Object parseUnknown(String s) {

@@ -8,12 +8,12 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public enum JqueryType implements JavaType {
+public enum JQueryType implements JavaType {
 
 	COLUMN(DBColumn.class),
 	FILTER(DBFilter.class),
 	ORDER(DBOrder.class),
-	QUERY(Query.class),
+	QUERY(ViewQuery.class),
 	PARTITIONS(DBColumn[].class),
 	COLUMNS(DBColumn[].class),
 	FILTERS(DBFilter[].class),

@@ -34,6 +34,7 @@ public class RequestQueryBuilder {
 
 	private final List<TaggableColumn> columns = new LinkedList<>();
 	private final List<DBFilter> filters = new LinkedList<>();  //WERE & HAVING
+	private final List<DBView> views = new LinkedList<>();
 	private final List<DBOrder> orders = new LinkedList<>();
 	private Iterator<?> it;
 	private boolean distinct;
@@ -42,6 +43,11 @@ public class RequestQueryBuilder {
 	
 	public RequestQueryBuilder distinct() {
 		distinct = true;
+		return this;
+	}
+	
+	public RequestQueryBuilder views(@NonNull DBView... views) {
+		Stream.of(views).forEach(this.views::add);
 		return this;
 	}
 
@@ -81,7 +87,7 @@ public class RequestQueryBuilder {
 //		requireNonEmpty(tables);
     	requireNonEmpty(columns);
 		var bg = currentTimeMillis();
-		var pb = parametrized(schema);
+		var pb = parametrized(schema, views);
 		var sb = new SqlStringBuilder(1000); //avg
 //		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
 		if(isNull(it)) {
@@ -95,16 +101,15 @@ public class RequestQueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
+    	select(sb, pb); //declare all view before FROM
     	where(sb, pb);
     	groupBy(sb);
     	having(sb, pb);
     	orderBy(sb, pb);
     	fetch(sb);
-    	sb.sb.insert(0, select(pb)); //declare all view before FROM
 	}
 
-	@Deprecated
-	String select(QueryParameterBuilder pb){
+	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
 		if(currentDatabase() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
@@ -113,13 +118,13 @@ public class RequestQueryBuilder {
 				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
 			}
 		}
-		return new SqlStringBuilder(100).append("SELECT")
+		sb.append("SELECT")
     	.appendIf(distinct, ()-> " DISTINCT")
     	.appendIf(nonNull(fetch), ()-> " TOP " + fetch)
     	.append(SPACE)
     	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb))
     	.appendIf(!pb.views().isEmpty(), " FROM ") //TODO finish this
-    	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb)).toString();
+    	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb));
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){

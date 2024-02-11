@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Arrays.copyOfRange;
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JqueryType.QUERY;
+import static org.usf.jquery.core.JQueryType.QUERY;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
