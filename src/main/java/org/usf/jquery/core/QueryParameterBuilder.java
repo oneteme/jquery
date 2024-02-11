@@ -44,7 +44,7 @@ public final class QueryParameterBuilder {
 			return null;
 		}
 		for(var i=0; i<views.size(); i++) {
-			if(views.get(i).equals(view)) {
+			if(views.get(i).id().equals(view.id())) {
 				return vPrefix + (i+1);
 			}
 		}

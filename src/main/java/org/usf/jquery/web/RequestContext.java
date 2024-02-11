@@ -17,18 +17,16 @@ public final class RequestContext {
 	
 	private final Map<String, DBView> views = new LinkedHashMap<>();
 	
-	public DBView getViews(String name) {
-		return views.get(name);
+	public DBView getView(DBView v) {
+		return views.get(v.id());
 	}
 	
-	public void setViews(String name, DBView v) {
-		views.put(name, v);
+	public void setViews(DBView v) {
+		views.put(v.id(), v);
 	}
 	
 	public DBView[] views() {
-		return views.values().stream()
-				.map(v-> v instanceof CompletableViewQuery ? ((CompletableViewQuery)v).getQuery() : v)
-				.toArray(DBView[]::new);
+		return views.values().toArray(DBView[]::new);
 	}
 
 	public static final RequestContext requestContext() {

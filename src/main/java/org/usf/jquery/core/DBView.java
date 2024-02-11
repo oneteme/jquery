@@ -9,8 +9,9 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
  * @author u$f
  *
  */
-@FunctionalInterface
 public interface DBView extends DBObject {
+	
+	String id();
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {

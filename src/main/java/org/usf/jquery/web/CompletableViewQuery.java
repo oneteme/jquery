@@ -7,7 +7,6 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
-@Getter
 @RequiredArgsConstructor
 final class CompletableViewQuery implements DBView {
 	

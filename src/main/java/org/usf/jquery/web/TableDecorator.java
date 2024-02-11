@@ -52,7 +52,7 @@ public interface TableDecorator {
 		var b = builder();
 		return nonNull(b) 
 				? b.build(identity())
-				: new DBTable(tableName(), identity());
+				: new DBTable(identity(), tableName());
 	}
 	
 	default TaggableColumn column(ColumnDecorator cd) {

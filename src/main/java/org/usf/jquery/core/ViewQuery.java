@@ -2,21 +2,23 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 
  * @author u$f
  *
  */
-//@EqualsAndHashCode(callSuper = true) //doesn't works
-public class ViewQuery extends DBTable {  //! important extends DBTable
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public final class ViewQuery implements DBView {
 
-	private final RequestQueryBuilder query; //named operation column
+	private final String id;
+	private final RequestQueryBuilder query;
 	
-	public ViewQuery(String tag, @NonNull TaggableColumn... columns) {
-		super(null, tag);
-		this.query = new RequestQueryBuilder().columns(columns);
+	public ViewQuery(@NonNull String id, @NonNull TaggableColumn... columns) {
+		this(id, new RequestQueryBuilder().columns(columns));
 	}
 
 	@Override
@@ -24,6 +26,11 @@ public class ViewQuery extends DBTable {  //! important extends DBTable
 		var s = new SqlStringBuilder(100).append("(");
 		query.build(s, builder.subQuery());
 		return s.append(")").toString();
+	}
+
+	@Override
+	public String id() {
+		return id;
 	}
 	
 	public ViewQuery columns(TaggableColumn... columns) {

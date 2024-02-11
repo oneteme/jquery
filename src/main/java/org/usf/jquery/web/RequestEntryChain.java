@@ -216,19 +216,13 @@ final class RequestEntryChain {
 	
 	private static DBColumn windowColumn(TableDecorator td, TaggableColumn column) {
 		var v = td.table();
-		var vw = requestContext().getViews(td.identity()); // TD use tag ?
+		var vw = requestContext().getView(v); // TD use tag ?
 		if(vw instanceof CompletableViewQuery) {  // already create
 			((CompletableViewQuery)vw).columns(column);
 		}
 		else {
-			if(isNull(vw)) {
-				vw = v;
-			}
-			else if(!vw.equals(v)) {
-				throw new IllegalStateException(); // 2 view same named
-			}
-			vw = new CompletableViewQuery(vw.window(td.identity(), column));
-			requestContext().setViews(td.identity(), vw); // same name
+			vw = new CompletableViewQuery((isNull(vw) ? v : vw).window(td.identity(), column));
+			requestContext().setViews(vw); // same name
 		}
 		return new ViewColumn(v, doubleQuote(column.tagname()), null, column.getType());
 	}

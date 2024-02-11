@@ -126,7 +126,7 @@ public class ArgumentParsers {
 		var args = re.evalFunction(td, "query", ofParameters(required(COLUMNS), optional(FILTERS)));  //.distinct
 		var cols = (TaggableColumn[]) args[0];
 		var flts = args.length > 1 ? (DBFilter[]) args[1] : null;
-		return new ViewQuery(td.identity(), null, cols).filters(flts);
+		return new ViewQuery(td.identity(), cols).filters(flts);
 	}
 
 	private static Object parseUnknown(String s) {
