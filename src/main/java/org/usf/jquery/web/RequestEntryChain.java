@@ -6,7 +6,7 @@ import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.Comparator.lookupComparator;
-import static org.usf.jquery.core.DBColumn.allColumns;
+import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -15,6 +15,14 @@ import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
+import static org.usf.jquery.web.Constants.COLUMN;
+import static org.usf.jquery.web.Constants.DISTINCT;
+import static org.usf.jquery.web.Constants.FETCH;
+import static org.usf.jquery.web.Constants.FILTER;
+import static org.usf.jquery.web.Constants.OFFSET;
+import static org.usf.jquery.web.Constants.ORDER;
+import static org.usf.jquery.web.Constants.PARTITION;
+import static org.usf.jquery.web.Constants.SELECT;
 import static org.usf.jquery.web.JQueryContext.context;
 import static org.usf.jquery.web.RequestContext.requestContext;
 
@@ -28,15 +36,19 @@ import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.JQueryType;
+import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.LogicalOperator;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.ParameterSet;
+import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
+import org.usf.jquery.core.ViewQuery;
 import org.usf.jquery.core.WindowFunction;
 
 import lombok.AccessLevel;
@@ -64,9 +76,46 @@ final class RequestEntryChain {
 		this(value, false);
 	}
 	
+	public ViewQuery evalQuery(TableDecorator td) {
+		if(SELECT.equals(value)) {
+			var q = new RequestQueryBuilder().columns(toColumnArgs(td));
+			var e =	this;
+			while(e.next()) { //preserve last entry
+				e = e.next;
+				switch(e.value) {//column not permitted 
+				case DISTINCT: e.requireNoArgs(); q.distinct(); break;
+				case FILTER: q.filters(e.toFilterArgs(td)); break;
+				case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
+				case OFFSET: q.offset(e.toIntArg(td)); break;
+				case FETCH: q.fetch(e.toIntArg(td)); break;
+				default: throw badSyntaxException(e);
+				}
+			}
+			return q.as(e.tag); //TD require tag to register query
+		}
+		throw cannotEvaluateException(SELECT, this);
+	}
+	
+	public Partition evalPartition(TableDecorator td) {
+		if(PARTITION.equals(value)) {
+			var p = new Partition(toColumnArgs(td));
+			if(next()) {
+				var e =	next;
+				if(ORDER.equals(e.value)) {//column not permitted
+					p.orders(e.toOderArgs(td)); //not sure
+				}
+				else {
+					throw badSyntaxException(e);
+				}
+			}
+			return p;
+		}
+		throw cannotEvaluateException(PARTITION, this);
+	}
+	
 	public TaggableColumn evalColumn(TableDecorator td) {
 		var r = chainResourceOperations(td, false)
-				.orElseThrow(()-> cannotEvaluateException("column", this));
+				.orElseThrow(()-> cannotEvaluateException(COLUMN, this));
 		if(r.entry.isLast()) {
 			if(nonNull(r.entry.tag)) { //TD: required tag if operation
 				return r.col.as(r.entry.tag);
@@ -75,12 +124,12 @@ final class RequestEntryChain {
 					? (TaggableColumn) r.col 
 					: r.col.as(r.cd.identity());
 		}
-		throw cannotEvaluateException("operation", r.entry.next);
+		throw badSyntaxException(r.entry.next);
 	}
 	
 	public DBOrder evalOrder(TableDecorator td) {
 		var r = chainResourceOperations(td, false)
-				.orElseThrow(()-> cannotEvaluateException("order", this));
+				.orElseThrow(()-> cannotEvaluateException(ORDER, this));
 		if(r.entry.isLast()) { // no order
 			return r.col.order();
 		}
@@ -89,7 +138,7 @@ final class RequestEntryChain {
 			var o = Order.valueOf(e.requireNoArgs().value.toUpperCase()); // noArgs on valid order
 			return r.col.order(o);
 		}
-		throw cannotEvaluateException("order", e);
+		throw badSyntaxException(e);
 	}
 
 	public DBFilter evalFilter(TableDecorator td) {
@@ -128,36 +177,18 @@ final class RequestEntryChain {
 				setArgs(values);
 			}
 			else {
-				throw new RequestSyntaxException(this + "=" + Utils.toString(values.toArray()));
+				throw new BadSyntaxException(this + "=" + Utils.toString(values.toArray()));
 			}
 		}
 	}
 	
-	public Object[] evalFunction(TableDecorator td, String fnName, ParameterSet ps) {
-		if(fnName.equals(value)) {
-			return requireNoNext().toArgs(td, null, ps, Object[]::new);
-		}
-		throw cannotEvaluateException(fnName, this);
-	}
-	
-	public Object[] evalArrayFunction(TableDecorator td, String fnName, JQueryType type) {
-		if(fnName.equals(value)) {
-			var c = type.typeClass();
-			if(!c.isArray()) { //basic type
-				return toArgs(td, null, ofParameters(required(type), varargs(type)), s-> (Object[]) newInstance(c, s));
-			}
-			throw new UnsupportedOperationException();
-		}
-		throw cannotEvaluateException(fnName, this);
-	}
-
 	static RequestEntryChain defaultComparatorEntry(List<RequestEntryChain> values) {
 		String cmp;
 		if(isEmpty(values)) {
 			cmp = "isNull";
 		}
 		else {
-			cmp = values.size() > 1 ? "in" : "eq";
+			cmp = values.size() > 1 ? "in" : "eq"; //query ??
 		}
 		return new RequestEntryChain(cmp); // do not set args
 	}
@@ -216,20 +247,20 @@ final class RequestEntryChain {
 	
 	private static DBColumn windowColumn(TableDecorator td, TaggableColumn column) {
 		var v = td.table();
-		var vw = requestContext().getView(v); // TD use tag ?
+		var vw = requestContext().getView(v.id()); // TD use tag ?
 		if(vw instanceof CompletableViewQuery) {  // already create
-			((CompletableViewQuery)vw).columns(column);
+			((CompletableViewQuery)vw).getQuery().columns(column);
 		}
 		else {
 			vw = new CompletableViewQuery((isNull(vw) ? v : vw).window(td.identity(), column));
-			requestContext().setViews(vw); // same name
+			requestContext().putView(vw); // same name
 		}
 		return new ViewColumn(v, doubleQuote(column.tagname()), null, column.getType());
 	}
 	
 	private Optional<ResourceCursor> lookupResource(TableDecorator td) {
-		if(next() && context().isDeclaredTable(value)) {  //sometimes td.id == cd.id
-			var rc = next.lookupViewResource(context().getTable(value), RequestEntryChain::isWindowFunction);
+		if(next() && requestContext().isDeclaredView(value)) {  //sometimes td.id == cd.id
+			var rc = next.lookupViewResource(requestContext().getViewDecorator(value), RequestEntryChain::isWindowFunction);
 			if(rc.isPresent()) {
 				requireNoArgs(); // noArgs on valid resource
 				return rc;
@@ -239,7 +270,7 @@ final class RequestEntryChain {
 	}
 	
 	private Optional<ResourceCursor> lookupViewResource(TableDecorator td, Predicate<TypedOperator> pre) {
-		return context().isDeclaredColumn(value) 
+		return requestContext().isDeclaredColumn(value) 
 				? Optional.of(new ResourceCursor(td, context().getColumn(requireNoArgs().value), this))
 				: toOperation(td, null, pre).map(op-> new ResourceCursor(td, ofColumn(value, b-> op), this));
 	}
@@ -248,31 +279,52 @@ final class RequestEntryChain {
 		return lookupOperator(value).filter(pre).map(fn-> {
 			var c = col;
 			if(isNull(c) && isEmpty(args) && "count".equals(value)) { // id is MAJ
-				c = allColumns(td.table());
+				c = b-> {
+					b.view(td.table()); // important! register view
+					return "*"; 
+				};
 			}
 			return fillArgs(td, c, fn);
 		});
 	}
 
 	private DBFilter fillArgs(TableDecorator td, DBObject col, TypedComparator cmp) {
-		try {
-			return cmp.args(toArgs(td, col, cmp.getParameterSet(), Object[]::new));
-		}
-		catch(Exception e) {
-			for(var ps : cmp.getOverloads()) {
-				try {
-					return cmp.args(toArgs(td, col, ps, Object[]::new));
-				}
-				catch(Exception e1) {
-					System.out.println(e1);
-				}
-			}
-			throw e;
-		}
+		return cmp.args(toArgs(td, col, cmp.getParameterSet()));
 	}
 	
 	private OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator opr) {
-		return opr.args(toArgs(td, col, opr.getParameterSet(), Object[]::new));
+		return opr.args(toArgs(td, col, opr.getParameterSet()));
+	}
+	
+	private TaggableColumn[] toColumnArgs(TableDecorator td) {
+		return (TaggableColumn[]) toArgs(td, null, JQueryType.COLUMN, false);
+	}
+	
+	private DBOrder[] toOderArgs(TableDecorator td) {
+		return (DBOrder[]) toArgs(td, null, JQueryType.ORDER, false);
+	}
+
+	private DBFilter[] toFilterArgs(TableDecorator td) {
+		return (DBFilter[]) toArgs(td, null, JQueryType.FILTER, false);
+	}
+
+	private Object[] toArgs(TableDecorator td, DBObject col, JavaType type, boolean allowEmpty) {
+		var c = type.typeClass();
+		if(c.isArray()) {
+			throw new UnsupportedOperationException("arrayOf " + c);
+		}
+		var ps = allowEmpty 
+				? ofParameters(varargs(type)) 
+				: ofParameters(required(type), varargs(type));
+		return toArgs(td, col, ps, s-> (Object[]) newInstance(c, s));
+	}
+	
+	private int toIntArg(TableDecorator td) {
+		return (Integer) toArgs(td, null, ofParameters(required(INTEGER)))[0];
+	}
+	
+	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps) {
+		return toArgs(td, col, ps, Object[]::new);
 	}
 	
 	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
@@ -341,6 +393,9 @@ final class RequestEntryChain {
 
 	private static EvalException cannotEvaluateException(String type, RequestEntryChain entry) {
 		return EvalException.cannotEvaluateException(type, entry.toString());
+	}
+	public static BadSyntaxException badSyntaxException(RequestEntryChain entry) {
+		return BadSyntaxException.badSyntaxException(entry.toString());
 	}
 	
 	@RequiredArgsConstructor

@@ -58,8 +58,7 @@ public final class QueryParameterBuilder {
 				return EMPTY;
 			}
 			for(var o : arr){
-				argTypes.add(type);
-				args.add(o);
+				appendArg(type, o);
 			}
 			return nParameter(arr.length);
 		}
@@ -74,10 +73,9 @@ public final class QueryParameterBuilder {
 
 	public String appendParameter(JDBCType type, Object o) {
 		if(dynamic()) {
-			argTypes.add(type);
 			return o instanceof DBObject
 					? ((DBObject)o).sql(this, null)
-					: appendArg(o);
+					: appendArg(type, o);
 		}
 		return appendLitteral(o);
 	}
@@ -88,7 +86,8 @@ public final class QueryParameterBuilder {
 				: formatValue(o);
 	}
 	
-	private String appendArg(Object o) {
+	private String appendArg(JDBCType type, Object o) {
+		argTypes.add(type);
 		args.add(o);
 		return ARG;
 	}

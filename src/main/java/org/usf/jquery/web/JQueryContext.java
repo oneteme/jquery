@@ -15,6 +15,7 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -23,6 +24,7 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
+@Getter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class JQueryContext {
 	
@@ -70,13 +72,5 @@ public final class JQueryContext {
 	public ColumnDecorator getColumn(String value) {
 		return ofNullable(columns.get(value))
 				.orElseThrow(()-> throwNoSuchColumnException(value));
-	}
-	
-	public Collection<TableDecorator> tables(){
-		return tables.values();
-	}
-
-	public Collection<ColumnDecorator> columns(){
-		return columns.values();
 	}
 }

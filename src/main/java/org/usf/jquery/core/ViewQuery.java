@@ -2,7 +2,10 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
+import org.usf.jquery.core.JavaType.Typed;
+
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
@@ -11,10 +14,11 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ViewQuery implements DBView {
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+public final class ViewQuery implements DBView, Typed {
 
 	private final String id;
+	@Getter
 	private final RequestQueryBuilder query;
 	
 	public ViewQuery(@NonNull String id, @NonNull TaggableColumn... columns) {
@@ -32,15 +36,13 @@ public final class ViewQuery implements DBView {
 	public String id() {
 		return id;
 	}
-	
-	public ViewQuery columns(TaggableColumn... columns) {
-		query.columns(columns);
-		return this;
-	}
 
-	public ViewQuery filters(DBFilter... filters){
-		query.filters(filters);
-		return this;
+	@Override
+	public JavaType getType() {
+		if(query.getColumns().size() == 1) {
+			return query.getColumns().get(0).getType();
+		}
+		throw new IllegalStateException(query.getColumns().isEmpty() ? "no columns" : "too many columns");
 	}
 	
 	@Override

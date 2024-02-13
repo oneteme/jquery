@@ -11,8 +11,7 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.COLUMN;
-import static org.usf.jquery.core.JQueryType.ORDERS;
-import static org.usf.jquery.core.JQueryType.PARTITIONS;
+import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -277,14 +276,12 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	//pipe functions
 	
 	static TypedOperator over() {
-		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), optional(PARTITIONS), optional(ORDERS)) {
+		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), required(PARTITION)) {
 			@Override
 			public OperationColumn args(Object... args) {
 				return super.args(args).aggregation(false); //over aggregation functions
 			}
-		}.argsMapper(args-> new Object[] {args[0], new OverClause(
-				args.length > 1 ? (DBColumn[])args[1] : null, 
-				args.length > 2 ? (DBOrder[]) args[2] : null)});
+		};
 	}
 
 	// constant operators

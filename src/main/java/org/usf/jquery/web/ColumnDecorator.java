@@ -24,7 +24,7 @@ public interface ColumnDecorator {
 		return jdbcArgParser(dataType(td));
 	}
 	
-	default JDBCType dataType(TableDecorator td) {
+	default JDBCType dataType(TableDecorator td) { // only if !builder
 		return td.metadata().columnMetada(this)
 		.map(ColumnMetadata::getDataType)
 		.orElse(null); 

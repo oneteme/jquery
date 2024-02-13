@@ -17,4 +17,5 @@ public final class EvalException extends WebException {
 	static EvalException cannotEvaluateException(String type, String expression) {
 		return new EvalException("cannot evaluate " + type +  " " + quote(expression));
 	}
+	
 }

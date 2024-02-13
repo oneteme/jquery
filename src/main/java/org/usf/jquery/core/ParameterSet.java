@@ -18,15 +18,15 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ParameterSet {
+public final class ParameterSet { //there is no Singleton implementation, dummy sonar rule
 
-	private static final Parameter[] NO_PARAM = new Parameter[0];
+	public static final ParameterSet NO_PARAM = new ParameterSet(0, new Parameter[0]);
 	
 	private final int nReqArgs;
 	private final Parameter[] parameters;
 	
 	public Object[] args(Object... args) {
-		var arr = isNull(args) ? NO_PARAM : args;
+		var arr = isNull(args) ? new Object[0] : args;
 		forEach(arr.length, (p,i)-> {
 			if(!p.accept(i, arr)) {
 				throw badArgumentTypeException(p.types(args), arr[i]);
@@ -54,10 +54,10 @@ public final class ParameterSet {
 	public boolean isVarags() {
 		return parameters.length > 0 && parameters[parameters.length-1].isVarargs(); 
 	}
-	
+
 	public static ParameterSet ofParameters(Parameter... parameters) {
 		if(isNull(parameters)) {
-			return new ParameterSet(0, NO_PARAM);
+			return NO_PARAM;
 		}
 		var i=0;
 		for(; i<parameters.length && parameters[i].isRequired(); i++) {

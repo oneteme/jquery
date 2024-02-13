@@ -8,13 +8,7 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JQueryType.COLUMN;
-import static org.usf.jquery.core.JQueryType.COLUMNS;
-import static org.usf.jquery.core.JQueryType.FILTER;
-import static org.usf.jquery.core.JQueryType.FILTERS;
-import static org.usf.jquery.core.JQueryType.ORDER;
-import static org.usf.jquery.core.Parameter.optional;
-import static org.usf.jquery.core.Parameter.required;
-import static org.usf.jquery.core.ParameterSet.ofParameters;
+import static org.usf.jquery.core.JQueryType.QUERY;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.ParseException.cannotParseException;
 
@@ -28,12 +22,9 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
-import org.usf.jquery.core.TaggableColumn;
-import org.usf.jquery.core.ViewQuery;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -56,7 +47,10 @@ public class ArgumentParsers {
 		if(isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance)) {
 			try {
 				return jqueryArgParser(COLUMN).parse(entry, td); //only with JDBC types
-			} catch (Exception e) {/*do not throw exception*/}
+			} catch (EvalException e) {/*do not throw exception*/}
+			try {
+				return jqueryArgParser(QUERY).parse(entry, td); //only with JDBC types
+			} catch (EvalException e) {/*do not throw exception*/}
 			if(isEmpty(types)) {
 				return jdbcArgParser(null).parse(entry, td);
 			}
@@ -108,27 +102,15 @@ public class ArgumentParsers {
 
 	public static JavaArgumentParser jqueryArgParser(@NonNull JQueryType type) {
 		switch (type) {
-		case COLUMN:		return RequestEntryChain::evalColumn;
-		case FILTER: 		return RequestEntryChain::evalFilter;
-		case ORDER: 		return RequestEntryChain::evalOrder;
-		case QUERY: 		return ArgumentParsers::evalQuery;
-		case PARTITIONS:	return (re, td)-> re.evalArrayFunction(td, Constants.PARTITION, COLUMN);
-		case COLUMNS:		return (re, td)-> re.evalArrayFunction(td, Constants.COLUMN, COLUMN);
-		case FILTERS: 		return (re, td)-> re.evalArrayFunction(td, Constants.FILTER, FILTER);
-		case ORDERS: 		return (re, td)-> re.evalArrayFunction(td, Constants.ORDER, ORDER);
-		default:			throw unsupportedTypeException(type);
+		case COLUMN:	return RequestEntryChain::evalColumn;
+		case FILTER: 	return RequestEntryChain::evalFilter;
+		case ORDER: 	return RequestEntryChain::evalOrder;
+		case QUERY: 	return RequestEntryChain::evalQuery;
+		case PARTITION: return RequestEntryChain::evalPartition;
+		default:		throw unsupportedTypeException(type);
 		}
 	}
 	
-	//move it => RequestEntryChain
-	@Deprecated(forRemoval = true)
-	private static ViewQuery evalQuery(RequestEntryChain re, TableDecorator td) {//move it
-		var args = re.evalFunction(td, "query", ofParameters(required(COLUMNS), optional(FILTERS)));  //.distinct
-		var cols = (TaggableColumn[]) args[0];
-		var flts = args.length > 1 ? (DBFilter[]) args[1] : null;
-		return new ViewQuery(td.identity(), cols).filters(flts);
-	}
-
 	private static Object parseUnknown(String s) {
 		for(var p : STD_PRS) {
 			try {

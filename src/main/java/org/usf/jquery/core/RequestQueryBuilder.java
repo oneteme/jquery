@@ -68,14 +68,27 @@ public class RequestQueryBuilder {
 
 	// the LIMIT clause is not in SQL standard.
 	public RequestQueryBuilder fetch(Integer offset, Integer fetch) {
-		this.offset = offset;
+		return offset(offset).fetch(fetch);
+	}
+	
+	public RequestQueryBuilder fetch(Integer fetch) {
 		this.fetch = fetch;
+		return this;
+	}
+	
+
+	public RequestQueryBuilder offset(Integer offset) {
+		this.offset = offset;
 		return this;
 	}
 	
 	public RequestQueryBuilder repeat(@NonNull Iterator<?> it) {
 		this.it = it;
 		return this;
+	}
+	
+	public ViewQuery as(String tag) {
+		return new ViewQuery(tag, this);
 	}
 
 	public RequestQuery build(){

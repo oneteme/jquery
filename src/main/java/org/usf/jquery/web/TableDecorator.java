@@ -76,11 +76,20 @@ public interface TableDecorator {
 		clearContext();
 		currentDatabase(database().getType()); //table database
 		var query = new RequestQueryBuilder();
+		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseFilters(query, parameterMap);
 		parseOrders (query, parameterMap);
 		parseFetch(query, parameterMap);		
 		return query.views(requestContext().views());
+	}
+	
+	default void parseViews(RequestQueryBuilder query, Map<String, String[]> parameters) {
+//		if(parameters.containsKey(VIEW)) {
+//			Stream.of(parameters.get(VIEW))
+//			.flatMap(c-> parseEntries(c).stream())
+//			.forEach(e-> requestContext().putViewDecorator(e.evalView(this))); //declare only
+//		}
 	}
 	
 	default void parseColumns(RequestQueryBuilder query, Map<String, String[]> parameters) {
@@ -151,4 +160,5 @@ public interface TableDecorator {
 	static Stream<String> flatParameters(String... arr) { //number local separator
 		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
 	}
+	
 }

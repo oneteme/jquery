@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.util.Arrays.copyOfRange;
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JQueryType.QUERY;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
@@ -33,27 +32,27 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	}
 	
 	static TypedComparator eq() {
-		return new TypedComparator(basicComparator("="), required(), required());
+		return new TypedComparator(basicComparator("="), required(), required(firstArgJdbcType()));
 	}
 
 	static TypedComparator ne() {
-		return new TypedComparator(basicComparator("<>"), required(), required());
+		return new TypedComparator(basicComparator("<>"), required(), required(firstArgJdbcType()));
 	}
 	
 	static TypedComparator lt() {
-		return new TypedComparator(basicComparator("<"), required(), required());
+		return new TypedComparator(basicComparator("<"), required(), required(firstArgJdbcType()));
 	}
 
 	static TypedComparator le() {
-		return new TypedComparator(basicComparator("<="), required(), required());
+		return new TypedComparator(basicComparator("<="), required(), required(firstArgJdbcType()));
 	}
 
 	static TypedComparator gt() {
-		return new TypedComparator(basicComparator(">"), required(), required());
+		return new TypedComparator(basicComparator(">"), required(), required(firstArgJdbcType()));
 	}
 
 	static TypedComparator ge() {
-		return new TypedComparator(basicComparator(">="), required(), required());
+		return new TypedComparator(basicComparator(">="), required(), required(firstArgJdbcType()));
 	}
 	
 	//string comparator
@@ -112,14 +111,12 @@ public interface Comparator extends DBProcessor<DBFilter> {
 
 	static TypedComparator in() {
 		return new TypedComparator(inComparator("IN"), 
-				ofParameters(required(), varargs(firstArgJdbcType())),
-				ofParameters(required(), required(QUERY)));
+				ofParameters(required(), varargs(firstArgJdbcType())));
 	}
 	
 	static TypedComparator notIn() {
 		return new TypedComparator(inComparator("NOT IN"), 
-				ofParameters(required(), varargs(firstArgJdbcType())),
-				ofParameters(required(), required(QUERY)));
+				ofParameters(required(), varargs(firstArgJdbcType())));
 	}
 	
 	static BasicComparator basicComparator(final String name) {

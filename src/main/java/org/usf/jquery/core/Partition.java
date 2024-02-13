@@ -1,11 +1,9 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -13,29 +11,33 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class OverClause implements DBObject {
+@RequiredArgsConstructor
+public final class Partition implements DBObject {
 
-	private final DBColumn[] partitions;
-	private final DBOrder[] orders;
+	private final DBColumn[] columns;
+	private DBOrder[] orders;
 	
-	public OverClause() {
-		this(null, null);
+	public Partition() {
+		this(null);
+	}
+	
+	public void orders(DBOrder[] orders) {
+		this.orders = orders;
 	}
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, OverClause.class::getSimpleName);
+		requireNoArgs(args, Partition.class::getSimpleName);
 		return sql(builder);
 	}
 	
 	String sql(QueryParameterBuilder builder) {
 		var sb = new SqlStringBuilder(100);
-		if(!isEmpty(partitions)) {
-			sb.append("PARTITION BY ").append(builder.appendLitteralArray(partitions));
+		if(!isEmpty(columns)) {
+			sb.append("PARTITION BY ").append(builder.appendLitteralArray(columns));
 		}
 		if(!isEmpty(orders)) { //require orders
-			sb.appendIf(nonNull(partitions), SPACE)
+			sb.appendIf(!isEmpty(columns), SPACE)
 			.append("ORDER BY ").append(builder.appendLitteralArray(orders));
 		}
 		return sb.toString();
