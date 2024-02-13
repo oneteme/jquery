@@ -38,9 +38,12 @@ public final class Parameter {
 	
 	@Override
 	public String toString() {
-		return isNull(typeRef) 
-				? Stream.of(types).map(Object::toString).collect(joining("|"))
-				: typeRef.toString();
+		if(isNull(typeRef)) {
+			return isEmpty(types) 
+					? "ANY" 
+					: Stream.of(types).map(Object::toString).collect(joining("|"));
+		}
+		return typeRef.toString();
 	}
 	
 	public static Parameter required(JavaType... types) {

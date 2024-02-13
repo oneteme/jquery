@@ -2,10 +2,12 @@ package org.usf.jquery.core;
 
 import static java.lang.Math.min;
 import static java.util.Objects.isNull;
+import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
 
 import java.util.function.ObjIntConsumer;
+import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -74,6 +76,27 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 		if(i<parameters.length) {
 			throw new IllegalArgumentException("required parameter cannot follow optional parameter");
 		}
-		return new ParameterSet(nReqArgs, parameters);
+		var s = new ParameterSet(nReqArgs, parameters);
+		System.out.println(s);
+		return s;
+	}
+
+	@Override
+	public String toString() {
+		var s = "";
+		if(parameters.length > 0) {
+			s = Stream.of(parameters).limit(nReqArgs).map(Parameter::toString).collect(joining(", "));
+			if(parameters.length > nReqArgs) {
+				if(nReqArgs > 0) {
+					s += ", ";
+				}
+				s += "[" + Stream.of(parameters).skip(nReqArgs).map(Parameter::toString).collect(joining(", "));
+				if(parameters[parameters.length-1].isVarargs()) {
+					s += "...";
+				}
+				s += "]";
+			}
+		}
+		return "(" + s + ")";
 	}
 }
