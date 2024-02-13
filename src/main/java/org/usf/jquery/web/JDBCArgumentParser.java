@@ -1,9 +1,6 @@
 package org.usf.jquery.web;
 
-import static java.lang.String.format;
-import static java.util.Objects.isNull;
-
-import java.util.stream.Stream;
+import static org.usf.jquery.web.ParseException.cannotParseException;
 
 /**
  * 
@@ -16,20 +13,16 @@ public interface JDBCArgumentParser extends JavaArgumentParser {
 	Object nativeParse(String v);
 	
 	@Override
-	default Object parse(RequestEntryChain entry, TableDecorator td) {
-		return parse(entry.requireNoArgs().getValue());
+	default Object parseEntry(RequestEntryChain entry, TableDecorator td) {
+		return parseValue(entry.requireNoArgs().getValue());
 	}
 
-	default Object[] parseAll(String... args) {
-		return isNull(args) ? null : Stream.of(args).map(this::parse).toArray();
-	}
-
-	default Object parse(String v) {
+	default Object parseValue(String v) {
 		try {
 			return nativeParse(v);
 		}
 		catch(Exception e) {
-			throw new ParseException(format("cannot parse %s value '%s'", toString(), v), e); 
+			throw cannotParseException(toString(), v, e); 
 		}
 	}
 }

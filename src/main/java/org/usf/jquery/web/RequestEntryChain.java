@@ -78,7 +78,7 @@ final class RequestEntryChain {
 	
 	public ViewQuery evalQuery(TableDecorator td) {
 		if(SELECT.equals(value)) {
-			var q = new RequestQueryBuilder().columns(toColumnArgs(td));
+			var q = new RequestQueryBuilder().columns(toColumnArgs(td, false));
 			var e =	this;
 			while(e.next()) { //preserve last entry
 				e = e.next;
@@ -98,7 +98,7 @@ final class RequestEntryChain {
 	
 	public Partition evalPartition(TableDecorator td) {
 		if(PARTITION.equals(value)) {
-			var p = new Partition(toColumnArgs(td));
+			var p = new Partition(toColumnArgs(td, true));
 			if(next()) {
 				var e =	next;
 				if(ORDER.equals(e.value)) {//column not permitted
@@ -296,8 +296,8 @@ final class RequestEntryChain {
 		return opr.args(toArgs(td, col, opr.getParameterSet()));
 	}
 	
-	private TaggableColumn[] toColumnArgs(TableDecorator td) {
-		return (TaggableColumn[]) toArgs(td, null, JQueryType.COLUMN, false);
+	private TaggableColumn[] toColumnArgs(TableDecorator td, boolean allowEmpty) {
+		return (TaggableColumn[]) toArgs(td, null, JQueryType.COLUMN, allowEmpty);
 	}
 	
 	private DBOrder[] toOderArgs(TableDecorator td) {

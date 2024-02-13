@@ -65,7 +65,7 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 				throw new IllegalArgumentException("varargs should be the last parameter");
 			}
 		}
-		var nReqArgs = i-1;
+		var nReqArgs = i;
 		for(; i<parameters.length && !parameters[i].isRequired(); i++) {
 			if(parameters[i].isVarargs() && i<parameters.length-1) {
 				throw new IllegalArgumentException("varargs should be the last parameter");

@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
+import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -10,7 +11,6 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.QUERY;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.ParseException.cannotParseException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -22,9 +22,12 @@ import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
+import org.usf.jquery.core.JavaType.Typed;
+import org.usf.jquery.core.ViewQuery;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -46,29 +49,29 @@ public class ArgumentParsers {
 	public static Object parse(RequestEntryChain entry, TableDecorator td, JavaType... types) {
 		if(isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance)) {
 			try {
-				return jqueryArgParser(COLUMN).parse(entry, td); //only with JDBC types
+				return matchTypes((DBColumn) jqueryArgParser(COLUMN).parseEntry(entry, td), types); //only with JDBC types
 			} catch (EvalException e) {/*do not throw exception*/}
 			try {
-				return jqueryArgParser(QUERY).parse(entry, td); //only with JDBC types
+				return matchTypes((ViewQuery) jqueryArgParser(QUERY).parseEntry(entry, td), types); //only with JDBC types
 			} catch (EvalException e) {/*do not throw exception*/}
 			if(isEmpty(types)) {
-				return jdbcArgParser(null).parse(entry, td);
+				return jdbcArgParser(null).parseEntry(entry, td);
 			}
 		}
 		for(var type : types) {
 			try {
 				if(type instanceof JQueryType) {
-					return jqueryArgParser((JQueryType) type).parse(entry, td);
+					return jqueryArgParser((JQueryType) type).parseEntry(entry, td);
 				}
 				else if(type instanceof JDBCType) {
-					return jdbcArgParser((JDBCType) type).parse(entry, td);
+					return jdbcArgParser((JDBCType) type).parseEntry(entry, td);
 				}
 				else {
 					throw unsupportedTypeException(type);
 				}
-			} catch (Exception e) {/*do not throw exception*/} // only parseException
+			} catch (ParseException | EvalException e) {/*do not throw exception*/} // only parseException
 		}
-		throw cannotParseException("value", entry.toString());
+		throw badArgumentTypeException(types, entry.toString());
 	}
 
 	public static JDBCArgumentParser jdbcArgParser(JDBCType type) {
@@ -114,10 +117,22 @@ public class ArgumentParsers {
 	private static Object parseUnknown(String s) {
 		for(var p : STD_PRS) {
 			try {
-				return p.parse(s);
-			} catch (Exception e) {/*do not throw exception*/}
+				return p.parseValue(s);
+			} catch(ParseException e) {/*do not throw exception*/}
 		}
 		return s;
+	}
+	
+	private static Object matchTypes(Typed o, JavaType... types) { // only jdbcType
+		if(isNull(o.getType()) || isEmpty(types)) {
+			return true;
+		}
+		for(var t : types) {
+			if(t.accept(o)) {
+				return o;
+			}
+		}
+		throw badArgumentTypeException(types, o);
 	}
 	
 	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {
