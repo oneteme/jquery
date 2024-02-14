@@ -30,14 +30,15 @@ public final class RequestQuery {
 	private final Object[] args;
 	private final int[] argTypes;
 	
-	public List<DynamicModel> execute(DataSource ds) {
+	public List<DynamicModel> execute(DataSource ds) throws SQLException {
 		return execute(ds, new KeyValueMapper());
 	}
 	
-	public <T> T execute(DataSource ds, ResultSetMapper<T> mapper) { // overload with sql types
+	public <T> T execute(DataSource ds, ResultSetMapper<T> mapper) throws SQLException { // overload with sql types
 		try(var cn = ds.getConnection()){
 			log.debug("preparing statement : {}", query);
 			try(var ps = cn.prepareStatement(query)){
+		        log.debug("with parameters : {}", Arrays.toString(args));
 				if(!isEmpty(args)) {
 					for(var i=0; i<args.length; i++) {
 						if(isNull(args[i])) {
@@ -48,17 +49,18 @@ public final class RequestQuery {
 						}
 					}						
 				}
-		        log.debug("with parameters : {}", Arrays.toString(args));
 		        log.debug("executing SQL query...");
 		        var bg = currentTimeMillis();
 				try(var rs = ps.executeQuery()){
 			        log.debug("query executed in {} ms", currentTimeMillis() - bg);
-					return mapper.map(rs);
+			        try {
+			        	return mapper.map(rs);
+			        }
+					catch(SQLException e) { // re-throw SQLException
+						throw new MappingException("error while mapping results", e);
+					}
 				}
 			}
-		}
-		catch(SQLException e) { // re-throw SQLException
-			throw new MappingException("error while mapping results", e);
 		}
 	}
 }

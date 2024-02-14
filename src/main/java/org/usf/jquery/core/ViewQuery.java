@@ -42,7 +42,8 @@ public final class ViewQuery implements DBView, Typed {
 		if(query.getColumns().size() == 1) {
 			return query.getColumns().get(0).getType();
 		}
-		throw new IllegalStateException(query.getColumns().isEmpty() ? "no columns" : "too many columns");
+		var msg = query.getColumns().isEmpty() ? "no columns" : "too many columns";
+		throw new UnsupportedOperationException(msg + " : " + this);
 	}
 	
 	@Override
