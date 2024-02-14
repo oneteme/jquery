@@ -4,7 +4,6 @@ import static java.lang.reflect.Array.newInstance;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.Comparator.lookupComparator;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Operator.lookupOperator;
@@ -44,7 +43,6 @@ import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
-import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
@@ -194,7 +192,7 @@ final class RequestEntryChain {
 	}
 
 	DBFilter chainComparator(TableDecorator td, ColumnDecorator cd, DBColumn col){
-		var f = lookupComparator(value).map(c-> fillArgs(td, col, c)).orElse(null); //eval comparator first => avoid overriding
+		var f = lookupComparator(value).map(c-> c.args(toArgs(td, col, c.getParameterSet()))).orElse(null); //eval comparator first => avoid overriding
 		if(isNull(f) && col instanceof TaggableColumn) { //no operation
 			var c = cd.criteria(value); //criteria lookup
 			if(nonNull(c)) {
@@ -212,12 +210,8 @@ final class RequestEntryChain {
 		while(nonNull(e)) {
 			if(e.value.matches("and|or")) {
 				var op = LogicalOperator.valueOf(e.value.toUpperCase());
-				if(!isEmpty(e.args) && e.args.size() == 1) {
-					f = f.append(op, e.args.get(0).evalFilter(td));
-				}
-				else {
-					throw badArgumentCountException(1, isEmpty(e.args) ? 0 : e.args.size());				
-				}
+				f = f.append(op, (DBFilter) e.toArgs(td, null, 
+						ofParameters(required(JQueryType.FILTER)), DBFilter[]::new)[0]);
 			}
 			else {
 				throw unexpectedEntryException(e);
@@ -284,18 +278,10 @@ final class RequestEntryChain {
 					return "*"; 
 				};
 			}
-			return fillArgs(td, c, fn);
+			return fn.args(toArgs(td, c, fn.getParameterSet()));
 		});
 	}
 
-	private DBFilter fillArgs(TableDecorator td, DBObject col, TypedComparator cmp) {
-		return cmp.args(toArgs(td, col, cmp.getParameterSet()));
-	}
-	
-	private OperationColumn fillArgs(TableDecorator td, DBColumn col, TypedOperator opr) {
-		return opr.args(toArgs(td, col, opr.getParameterSet()));
-	}
-	
 	private TaggableColumn[] toColumnArgs(TableDecorator td, boolean allowEmpty) {
 		return (TaggableColumn[]) toArgs(td, null, JQueryType.COLUMN, allowEmpty);
 	}

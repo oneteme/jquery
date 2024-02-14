@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -25,25 +25,25 @@ public final class Parameter {
 	private final boolean varargs;
 
 	public boolean accept(int idx, Object[] args) {
-		return isNull(typeRef) 
-				? isEmpty(types) || Stream.of(types).anyMatch(t-> t.accept(args[idx]))
-				: typeRef.apply(args).accept(args[idx]);
+		return nonNull(typeRef) 
+				? typeRef.apply(args).accept(args[idx])
+				: isEmpty(types) || Stream.of(types).anyMatch(t-> t.accept(args[idx]));
 	}
 	
 	public JavaType[] types(Object[] args) {
-		return isNull(typeRef) 
-				? types 
-				: new JavaType[] {typeRef.apply(args)};
+		return nonNull(typeRef) 
+				? new JavaType[] {typeRef.apply(args)}
+				: types;
 	}
 	
 	@Override
 	public String toString() {
-		if(isNull(typeRef)) {
-			return isEmpty(types) 
-					? "ANY" 
-					: Stream.of(types).map(Object::toString).collect(joining("|"));
+		if(nonNull(typeRef)) {
+			return typeRef.toString();
 		}
-		return typeRef.toString();
+		return isEmpty(types) 
+				? "ANY" 
+				: Stream.of(types).map(Object::toString).collect(joining("|"));
 	}
 	
 	public static Parameter required(JavaType... types) {

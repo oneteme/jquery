@@ -21,8 +21,10 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
@@ -47,10 +49,10 @@ public class ArgumentParsers {
 
 	public static Object parse(RequestEntryChain entry, TableDecorator td, JavaType... types) {
 		if(isEmpty(types) || Stream.of(types).allMatch(o-> o.getClass() == JDBCType.class)) {
-			return parseJdbc(entry, td, Stream.of(types).map(JDBCType.class::cast).toArray(null));
+			return parseJdbc(entry, td, cast(types, JDBCType[].class, JDBCType[]::new));
 		}
 		if(Stream.of(types).allMatch(o-> o.getClass() == JQueryType.class)) {
-			return parseJQuery(entry, td, Stream.of(types).map(JQueryType.class::cast).toArray(null));
+			return parseJQuery(entry, td, cast(types, JQueryType[].class, JQueryType[]::new));
 		}
 		throw new UnsupportedOperationException("unsupported types " + Arrays.toString(types));
 	}
@@ -58,14 +60,14 @@ public class ArgumentParsers {
 	public static Object parseJdbc(RequestEntryChain entry, TableDecorator td, JDBCType... types) {
 		try {
 			return matchTypes((Typed) parseJQuery(entry, td, COLUMN, QUERY), types); //try parse column | query first
-		} catch (EvalException e) {/*do not throw exception*/}
+		} catch (BadArgumentException e) {/*do not throw exception*/}
 		if(isEmpty(types)) {
 			return jdbcArgParser(null).parseEntry(entry, td);
 		}
 		for(var type : types) {
 			try {
 				return jdbcArgParser(type).parseEntry(entry, td);
-			} catch (ParseException e) {/*do not throw exception*/} // only parseException
+			} catch (ParseException e) {/*do not throw exception*/}
 		}
 		throw badArgumentTypeException(types, entry.toString());
 	}
@@ -74,7 +76,7 @@ public class ArgumentParsers {
 		for(var type : types) {
 			try {
 				return jqueryArgParser(type).parseEntry(entry, td);
-			} catch (EvalException e) {/*do not throw exception*/} // only parseException
+			} catch (EvalException e) {/*do not throw exception*/} 
 		}
 		throw badArgumentTypeException(types, entry.toString());
 	}
@@ -138,6 +140,10 @@ public class ArgumentParsers {
 			}
 		}
 		throw badArgumentTypeException(types, o);
+	}
+	
+	private static <T extends JavaType> T[] cast(JavaType[] types, Class<T[]> c, IntFunction<T[]> fn) {
+		return types.getClass() == c ? c.cast(types) : Stream.of(types).toArray(fn);
 	}
 	
 	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {
