@@ -17,11 +17,14 @@ public final class BadArgumentException extends JQueryException {
 	}
 	
 	public static BadArgumentException badArgumentTypeException(JavaType[] types, Object actual) {
-		return new BadArgumentException("bad argument type : " + 
-				Stream.of(types).map(Object::toString).collect(joining("|")) + " # " + actual);
+		return new BadArgumentException("bad argument type, "+ 
+				"expected: " + Stream.of(types).map(Object::toString).collect(joining("|")) + 
+				" but was: " + actual);
 	}
-	
+
 	public static BadArgumentException badArgumentCountException(int count, int actual) {
-		return new BadArgumentException("bad argument count : " + count + " # " + actual);
+		return new BadArgumentException("bad argument count, "+ 
+				"expected: " + count + 
+				" but was: " + actual);
 	}
 }

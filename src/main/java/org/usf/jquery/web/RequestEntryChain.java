@@ -4,6 +4,7 @@ import static java.lang.reflect.Array.newInstance;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
 import static org.usf.jquery.core.Comparator.lookupComparator;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Operator.lookupOperator;
@@ -86,12 +87,12 @@ final class RequestEntryChain {
 				case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
 				case OFFSET: q.offset(e.toIntArg(td)); break;
 				case FETCH: q.fetch(e.toIntArg(td)); break;
-				default: throw unexpectedEntryException(e);
+				default: throw unexpectedEntryException(e, DISTINCT, FILTER, ORDER, OFFSET, FETCH);
 				}
 			}
 			return q.as(e.tag); //TD require tag to register query
 		}
-		throw cannotEvaluateException(SELECT, this);
+		throw cannotParseException(SELECT, this);
 	}
 	
 	public Partition evalPartition(TableDecorator td) {
@@ -103,17 +104,17 @@ final class RequestEntryChain {
 					p.orders(e.toOderArgs(td)); //not sure
 				}
 				else {
-					throw unexpectedEntryException(e);
+					throw unexpectedEntryException(e, ORDER);
 				}
 			}
 			return p;
 		}
-		throw cannotEvaluateException(PARTITION, this);
+		throw cannotParseException(PARTITION, this);
 	}
 	
 	public TaggableColumn evalColumn(TableDecorator td) {
 		var r = chainResourceOperations(td, false)
-				.orElseThrow(()-> cannotEvaluateException(COLUMN, this));
+				.orElseThrow(()-> cannotParseException(COLUMN, this));
 		if(r.entry.isLast()) {
 			if(nonNull(r.entry.tag)) { //TD: required tag if operation
 				return r.col.as(r.entry.tag);
@@ -127,7 +128,7 @@ final class RequestEntryChain {
 	
 	public DBOrder evalOrder(TableDecorator td) {
 		var r = chainResourceOperations(td, false)
-				.orElseThrow(()-> cannotEvaluateException(ORDER, this));
+				.orElseThrow(()-> cannotParseException(ORDER, this));
 		if(r.entry.isLast()) { // no order
 			return r.col.order();
 		}
@@ -136,7 +137,7 @@ final class RequestEntryChain {
 			var o = Order.valueOf(e.requireNoArgs().value.toUpperCase()); // noArgs on valid order
 			return r.col.order(o);
 		}
-		throw unexpectedEntryException(e);
+		throw unexpectedEntryException(e, "asc|desc");
 	}
 
 	public DBFilter evalFilter(TableDecorator td) {
@@ -202,7 +203,7 @@ final class RequestEntryChain {
 		if(nonNull(f)) {
 			return chainComparator(td, f);
 		}
-		throw cannotEvaluateException("comparison|criteria", this);
+		throw cannotParseException("comparison|criteria", this);
 	}
 
 	DBFilter chainComparator(TableDecorator td, DBFilter f){
@@ -214,7 +215,7 @@ final class RequestEntryChain {
 						ofParameters(required(JQueryType.FILTER)), DBFilter[]::new)[0]);
 			}
 			else {
-				throw unexpectedEntryException(e);
+				throw unexpectedEntryException(e, "and|or");
 			}
 			e = e.next;
 		}
@@ -286,18 +287,18 @@ final class RequestEntryChain {
 		return (TaggableColumn[]) toArgs(td, null, JQueryType.COLUMN, allowEmpty);
 	}
 	
-	private DBOrder[] toOderArgs(TableDecorator td) {
-		return (DBOrder[]) toArgs(td, null, JQueryType.ORDER, false);
-	}
-
 	private DBFilter[] toFilterArgs(TableDecorator td) {
 		return (DBFilter[]) toArgs(td, null, JQueryType.FILTER, false);
+	}
+	
+	private DBOrder[] toOderArgs(TableDecorator td) {
+		return (DBOrder[]) toArgs(td, null, JQueryType.ORDER, false);
 	}
 
 	private Object[] toArgs(TableDecorator td, DBObject col, JavaType type, boolean allowEmpty) {
 		var c = type.typeClass();
 		if(c.isArray()) {
-			throw new UnsupportedOperationException("arrayOf " + c);
+			throw new UnsupportedOperationException("cannot create array of " + c);
 		}
 		var ps = allowEmpty 
 				? ofParameters(varargs(type)) 
@@ -322,9 +323,16 @@ final class RequestEntryChain {
 		ps.forEach(arr.length, (p,i)-> {
 			if(i>=inc) { //arg0 already parsed
 				var e = args.get(i-inc);
-				arr[i] = isNull(e.value) || e.text
-						? e.requireNoArgs().value
-						: parse(e, td, p.types(arr));
+				if(isNull(e.value) || e.text) {
+					arr[i] = e.requireNoArgs().value;
+				}
+				else {
+					try {
+						arr[i] = parse(e, td, p.types(arr));
+					} catch (ParseException ex) {
+						throw badArgumentTypeException(p.getTypes(), e);
+					}
+				}
 			}
 		});
 		return arr;
@@ -377,11 +385,11 @@ final class RequestEntryChain {
 				.toArray(String[]::new);
 	}
 
-	private static EvalException cannotEvaluateException(String type, RequestEntryChain entry) {
-		return EvalException.cannotEvaluateException(type, entry.toString());
+	private static ParseException cannotParseException(String type, RequestEntryChain entry) {
+		return ParseException.cannotParseException(type, entry.toString());
 	}
-	public static UnexpectedEntryException unexpectedEntryException(RequestEntryChain entry) {
-		return UnexpectedEntryException.unexpectedEntryException(entry.toString());
+	public static UnexpectedEntryException unexpectedEntryException(RequestEntryChain entry, String... expected) {
+		return UnexpectedEntryException.unexpectedEntryException(entry.toString(), expected);
 	}
 	
 	@RequiredArgsConstructor

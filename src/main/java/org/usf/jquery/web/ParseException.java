@@ -17,8 +17,12 @@ public final class ParseException extends WebException {
 	public ParseException(String message, Throwable cause) {
 		super(message, cause);
 	}
+	
+	static ParseException cannotParseException(String type, String value) {
+		return cannotParseException(type, value, null);
+	}
 
 	static ParseException cannotParseException(String type, String value, Throwable cause) {
-		return new ParseException("cannot parse " + type + " " + quote(value), cause);
+		return new ParseException("cannot parse " + quote(value) + " as " + quote(type), cause);
 	}
 }
