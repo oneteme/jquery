@@ -24,5 +24,4 @@ public final class BadArgumentException extends JQueryException {
 	public static BadArgumentException badArgumentCountException(int count, int actual) {
 		return new BadArgumentException("bad argument count : " + count + " # " + actual);
 	}
-	
 }

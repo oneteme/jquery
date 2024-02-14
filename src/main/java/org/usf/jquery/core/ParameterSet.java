@@ -76,9 +76,7 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 		if(i<parameters.length) {
 			throw new IllegalArgumentException("required parameter cannot follow optional parameter");
 		}
-		var s = new ParameterSet(nReqArgs, parameters);
-		System.out.println(s);
-		return s;
+		return new ParameterSet(nReqArgs, parameters);
 	}
 
 	@Override

@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 @SuppressWarnings("serial")
-public final class MappingException extends RuntimeException {
+public final class MappingException extends JQueryException {
 
 	public MappingException(Throwable cause) {
 		super(cause);

@@ -88,7 +88,7 @@ final class RequestEntryChain {
 				case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
 				case OFFSET: q.offset(e.toIntArg(td)); break;
 				case FETCH: q.fetch(e.toIntArg(td)); break;
-				default: throw badSyntaxException(e);
+				default: throw unexpectedEntryException(e);
 				}
 			}
 			return q.as(e.tag); //TD require tag to register query
@@ -105,7 +105,7 @@ final class RequestEntryChain {
 					p.orders(e.toOderArgs(td)); //not sure
 				}
 				else {
-					throw badSyntaxException(e);
+					throw unexpectedEntryException(e);
 				}
 			}
 			return p;
@@ -124,7 +124,7 @@ final class RequestEntryChain {
 					? (TaggableColumn) r.col 
 					: r.col.as(r.cd.identity());
 		}
-		throw badSyntaxException(r.entry.next);
+		throw unexpectedEntryException(r.entry.next);
 	}
 	
 	public DBOrder evalOrder(TableDecorator td) {
@@ -138,7 +138,7 @@ final class RequestEntryChain {
 			var o = Order.valueOf(e.requireNoArgs().value.toUpperCase()); // noArgs on valid order
 			return r.col.order(o);
 		}
-		throw badSyntaxException(e);
+		throw unexpectedEntryException(e);
 	}
 
 	public DBFilter evalFilter(TableDecorator td) {
@@ -177,7 +177,7 @@ final class RequestEntryChain {
 				setArgs(values);
 			}
 			else {
-				throw new BadSyntaxException(this + "=" + Utils.toString(values.toArray()));
+				throw new UnexpectedEntryException(this + "=" + Utils.toString(values.toArray()));
 			}
 		}
 	}
@@ -220,7 +220,7 @@ final class RequestEntryChain {
 				}
 			}
 			else {
-				throw cannotEvaluateException("logical operator", e);
+				throw unexpectedEntryException(e);
 			}
 			e = e.next;
 		}
@@ -348,14 +348,14 @@ final class RequestEntryChain {
 		if(isNull(args)) {
 			return this;
 		}
-		throw new IllegalArgumentException(value + " takes no args");
+		throw new UnexpectedEntryException(value + " takes no args : " + this);
 	}
 	
 	RequestEntryChain requireNoNext(){
 		if(isLast()) {
 			return this;
 		}
-		throw new IllegalArgumentException(value + " must be the last entry");
+		throw new UnexpectedEntryException(value + " must be the last entry : " + this);
 	}
 	
 	public boolean isLast() {
@@ -394,8 +394,8 @@ final class RequestEntryChain {
 	private static EvalException cannotEvaluateException(String type, RequestEntryChain entry) {
 		return EvalException.cannotEvaluateException(type, entry.toString());
 	}
-	public static BadSyntaxException badSyntaxException(RequestEntryChain entry) {
-		return BadSyntaxException.badSyntaxException(entry.toString());
+	public static UnexpectedEntryException unexpectedEntryException(RequestEntryChain entry) {
+		return UnexpectedEntryException.unexpectedEntryException(entry.toString());
 	}
 	
 	@RequiredArgsConstructor

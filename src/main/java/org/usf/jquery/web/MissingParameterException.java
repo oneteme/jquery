@@ -12,7 +12,7 @@ import org.usf.jquery.core.SqlStringBuilder;
  *
  */
 @SuppressWarnings("serial")
-public final class MissingParameterException extends IllegalArgumentException {
+public final class MissingParameterException extends WebException {
 
 	public MissingParameterException(String s) {
 		super(s);

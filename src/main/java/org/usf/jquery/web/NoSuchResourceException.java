@@ -2,15 +2,13 @@ package org.usf.jquery.web;
 
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 
-import java.util.NoSuchElementException;
-
 /**
  * 
  * @author u$f
  *
  */
 @SuppressWarnings("serial")
-final class NoSuchResourceException extends NoSuchElementException {
+final class NoSuchResourceException extends WebException {
 
 	public NoSuchResourceException(String s) {
 		super(s);
