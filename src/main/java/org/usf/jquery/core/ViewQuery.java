@@ -27,9 +27,9 @@ public final class ViewQuery implements DBView, Typed {
 
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		var s = new SqlStringBuilder(100).append("(");
-		query.build(s, builder.subQuery());
-		return s.append(")").toString();
+		var s = new SqlStringBuilder(100);
+		query.build(s, builder.subQuery()); //important! build query first
+		return "(" + s.toString() + ")";
 	}
 
 	@Override
@@ -43,7 +43,7 @@ public final class ViewQuery implements DBView, Typed {
 			return query.getColumns().get(0).getType();
 		}
 		var msg = query.getColumns().isEmpty() ? "no columns" : "too many columns";
-		throw new UnsupportedOperationException(msg + " : " + this);
+		throw new UnsupportedOperationException("typeof " + msg + " : " + this);
 	}
 	
 	@Override

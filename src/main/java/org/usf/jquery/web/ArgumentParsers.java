@@ -11,7 +11,6 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.QUERY;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.ParseException.cannotParseException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -59,6 +58,7 @@ public class ArgumentParsers {
 	}
 
 	public static Object parseJdbc(RequestEntryChain entry, TableDecorator td, JDBCType... types) {
+		ParseException ex = null; // preserve last exception
 		try {
 			return matchTypes((Typed) parseJQuery(entry, td, COLUMN, QUERY), types); //try parse column | query first
 		} catch (ParseException e) {/*do not throw exception*/}
@@ -70,20 +70,23 @@ public class ArgumentParsers {
 				return jdbcArgParser(type).parseEntry(entry, td);
 			} catch (ParseException e) { /*do not throw exception*/
 				log.trace("parse {} : '{}' => {}", type, entry, e.getMessage());
+				ex = e;
 			}
 		}
-		throw cannotParseException(entry.toString(), Arrays.toString(types));
+		throw ex;
 	}
 	
 	public static Object parseJQuery(RequestEntryChain entry, TableDecorator td, JQueryType... types) {
+		ParseException ex = null; // preserve last exception
 		for(var type : types) {
 			try {
 				return jqueryArgParser(type).parseEntry(entry, td);
 			} catch (ParseException e) {/*do not throw exception*/
 				log.trace("parse {} : '{}' => {}", type, entry, e.getMessage());
+				ex = e;
 			} 
 		}
-		throw cannotParseException(entry.toString(), Arrays.toString(types));
+		throw ex;
 	}
 	
 	public static JDBCArgumentParser jdbcArgParser(@NonNull JDBCType type) {
@@ -118,14 +121,14 @@ public class ArgumentParsers {
 		case FILTER: 	return RequestEntryChain::evalFilter;
 		case ORDER: 	return RequestEntryChain::evalOrder;
 		case QUERY: 	return RequestEntryChain::evalQuery;
-		case PARTITION: return RequestEntryChain::evalPartition;
+		case PARTITION:	return RequestEntryChain::evalPartition;
 		default:		throw unsupportedTypeException(type);
 		}
 	}
 	
 	private static Object matchTypes(Typed o, JDBCType... types) {
 		if(isNull(o.getType()) || isEmpty(types)) {
-			return true;
+			return o;
 		}
 		for(var t : types) {
 			if(t.accept(o)) {

@@ -16,10 +16,18 @@ public final class BadArgumentException extends JQueryException {
 		super(message);
 	}
 	
+	public BadArgumentException(String message, Throwable cause) {
+		super(message, cause);
+	}
+
 	public static BadArgumentException badArgumentTypeException(JavaType[] types, Object actual) {
+			return badArgumentTypeException(types, actual, null);
+	}
+	
+	public static BadArgumentException badArgumentTypeException(JavaType[] types, Object actual, Exception e) {
 		return new BadArgumentException("bad argument type, "+ 
 				"expected: " + Stream.of(types).map(Object::toString).collect(joining("|")) + 
-				" but was: " + actual);
+				" but was: " + actual, e);
 	}
 
 	public static BadArgumentException badArgumentCountException(int count, int actual) {

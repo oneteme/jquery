@@ -114,15 +114,15 @@ public class RequestQueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
-    	select(sb, pb); //declare all view before FROM
     	where(sb, pb);
     	groupBy(sb);
     	having(sb, pb);
     	orderBy(sb, pb);
     	fetch(sb);
+    	sb.sb.insert(0, select(sb, pb)); //declare all view before FROM)
 	}
 
-	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
+	String select(SqlStringBuilder sb, QueryParameterBuilder pb){
 		if(currentDatabase() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
@@ -131,13 +131,14 @@ public class RequestQueryBuilder {
 				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
 			}
 		}
-		sb.append("SELECT")
+		return new SqlStringBuilder(100).append("SELECT")
     	.appendIf(distinct, ()-> " DISTINCT")
     	.appendIf(nonNull(fetch), ()-> " TOP " + fetch)
     	.append(SPACE)
     	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb))
     	.appendIf(!pb.views().isEmpty(), " FROM ") //TODO finish this
-    	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb));
+    	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb))
+    	.toString();
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){

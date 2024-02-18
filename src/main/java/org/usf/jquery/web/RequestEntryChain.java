@@ -3,7 +3,9 @@ package org.usf.jquery.web;
 import static java.lang.reflect.Array.newInstance;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
 import static org.usf.jquery.core.Comparator.lookupComparator;
 import static org.usf.jquery.core.JDBCType.INTEGER;
@@ -23,7 +25,7 @@ import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.PARTITION;
 import static org.usf.jquery.web.Constants.SELECT;
-import static org.usf.jquery.web.JQueryContext.context;
+import static org.usf.jquery.web.ParseException.cannotParseException;
 import static org.usf.jquery.web.RequestContext.requestContext;
 
 import java.util.List;
@@ -54,12 +56,14 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
+@Slf4j
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor
@@ -81,7 +85,7 @@ final class RequestEntryChain {
 			var e =	this;
 			while(e.next()) { //preserve last entry
 				e = e.next;
-				switch(e.value) {//column not permitted 
+				switch(e.value) {//column not allowed 
 				case DISTINCT: e.requireNoArgs(); q.distinct(); break;
 				case FILTER: q.filters(e.toFilterArgs(td)); break;
 				case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
@@ -92,7 +96,7 @@ final class RequestEntryChain {
 			}
 			return q.as(e.tag); //TD require tag to register query
 		}
-		throw cannotParseException(SELECT, this);
+		throw cannotParseException(SELECT, this.toString());
 	}
 	
 	public Partition evalPartition(TableDecorator td) {
@@ -100,7 +104,7 @@ final class RequestEntryChain {
 			var p = new Partition(toColumnArgs(td, true));
 			if(next()) {
 				var e =	next;
-				if(ORDER.equals(e.value)) {//column not permitted
+				if(ORDER.equals(e.value)) {//column not allowed
 					p.orders(e.toOderArgs(td)); //not sure
 				}
 				else {
@@ -109,26 +113,26 @@ final class RequestEntryChain {
 			}
 			return p;
 		}
-		throw cannotParseException(PARTITION, this);
+		throw cannotParseException(PARTITION, this.toString());
 	}
 	
 	public TaggableColumn evalColumn(TableDecorator td) {
-		var r = chainResourceOperations(td, false)
-				.orElseThrow(()-> cannotParseException(COLUMN, this));
+		var r = chainResourceOperations(td, false); //throws ParseException
 		if(r.entry.isLast()) {
 			if(nonNull(r.entry.tag)) { //TD: required tag if operation
 				return r.col.as(r.entry.tag);
 			}
-			return r.col instanceof TaggableColumn 
-					? (TaggableColumn) r.col 
-					: r.col.as(r.cd.identity());
+			if(r.col instanceof TaggableColumn) {
+				return (TaggableColumn) r.col ;
+			}
+			log.warn("tag missing : {}", this);
+			return r.col.as(r.cd.identity());
 		}
 		throw unexpectedEntryException(r.entry.next);
 	}
 	
 	public DBOrder evalOrder(TableDecorator td) {
-		var r = chainResourceOperations(td, false)
-				.orElseThrow(()-> cannotParseException(ORDER, this));
+		var r = chainResourceOperations(td, false);  //throws ParseException
 		if(r.entry.isLast()) { // no order
 			return r.col.order();
 		}
@@ -145,32 +149,43 @@ final class RequestEntryChain {
 	}
 
 	public DBFilter evalFilter(TableDecorator td, List<RequestEntryChain> values) {
-		var o = chainResourceOperations(td, true);
-		if(o.isPresent()) {
-			var r = o.get();
-			if(r.entry.isLast()) { // no comparator
-				r.entry.setNext(defaultComparatorEntry(values));
+		try {
+			var r = chainResourceOperations(td, true);
+			var e = r.entry;
+			if(e.isLast()) { // no comparator
+				e.setNext(defaultComparatorEntry(values));
 			}
-			r.entry.next.updateArgs(values);
-			return r.entry.next.chainComparator(td, r.cd, r.col);
+			return e.next.updateArgs(values)
+					.chainComparator(td, r.cd, r.col);
 		}
-		if(next() && context().isDeclaredTable(value)) {
-			var c = context().getTable(value).criteria(next.value);
-			if(nonNull(c)) {
-				next.updateArgs(values);
-				return next.chainComparator(td, c.build(toStringArray(next.args)));
-			}
+		catch(ParseException e) {
+			return tableCriteria(td, values)
+					.orElseThrow(()-> cannotParseException(FILTER, this.toString(), e));
 		}
-		var c = td.criteria(value);
+	}
+	
+	Optional<DBFilter> tableCriteria(TableDecorator td, List<RequestEntryChain> values) {
+		RequestEntryChain e = null;
+		CriteriaBuilder<DBFilter> c = null;
+		var res = requestContext().lookupViewDecorator(value);
+		if(res.isPresent() && next()) {
+			c = res.get().criteria(next.value);
+			e = next; // only if nonNull
+		}
+		if(isNull(c)) {
+			c = td.criteria(value);
+			e = this;
+		}
 		if(nonNull(c)) {
-			updateArgs(values);
-			return chainComparator(td, c.build(toStringArray(args)));
+			e.updateArgs(values);
+			var f = e.chainComparator(td, c.build(toStringArray(args)));
+			return Optional.of(f);
 		}
-		return null;
+		return empty();
 	}
 	
 	//column.eq=v1
-	private void updateArgs(List<RequestEntryChain> values) {
+	private RequestEntryChain updateArgs(List<RequestEntryChain> values) {
 		if(!isEmpty(values)) {
 			if(isLast() && isNull(args)) {
 				setArgs(values);
@@ -179,6 +194,7 @@ final class RequestEntryChain {
 				throw new UnexpectedEntryException(this + "=" + Utils.toString(values.toArray()));
 			}
 		}
+		return this;
 	}
 	
 	static RequestEntryChain defaultComparatorEntry(List<RequestEntryChain> values) {
@@ -203,7 +219,7 @@ final class RequestEntryChain {
 		if(nonNull(f)) {
 			return chainComparator(td, f);
 		}
-		throw cannotParseException("comparison|criteria", this);
+		throw cannotParseException("comparison|criteria", this.toString());
 	}
 
 	DBFilter chainComparator(TableDecorator td, DBFilter f){
@@ -222,40 +238,39 @@ final class RequestEntryChain {
 		return f;
 	}
 	
-	private Optional<ResourceCursor> chainResourceOperations(TableDecorator td, boolean filter) {
-		return lookupResource(td).map(r-> {
-			var e = r.entry.next;
-			while(nonNull(e)) { // chain until !operator
-				var c = e.toOperation(td, r.col, fn-> true);
-				if(c.isEmpty()) {
-					break;
-				} 
-				r.entry = e;
-				r.col = filter && "over".equals(e.value) 
-						? windowColumn(r.td, c.get().as(r.cd.identity())) 
-						: c.get(); 
-				e = e.next;
-			}
-			return r;
-		});
+	private ResourceCursor chainResourceOperations(TableDecorator td, boolean filter) {
+		var r = lookupResource(td).orElseThrow(()-> cannotParseException(COLUMN, this.toString()));
+		var e = r.entry.next;
+		while(nonNull(e)) { // chain until !operator
+			var c = e.toOperation(td, r.col, fn-> true);
+			if(c.isEmpty()) {
+				break;
+			} 
+			r.entry = e;
+			r.col =  filter && "over".equals(e.value)
+					? windowColumn(r.td, c.get().as(r.cd.identity())) 
+					: c.get(); 
+			e = e.next;
+		}
+		return r;
 	}
 	
 	private static DBColumn windowColumn(TableDecorator td, TaggableColumn column) {
-		var v = td.table();
-		var vw = requestContext().getView(v.id()); // TD use tag ?
+		var vw = requestContext().getView(td.identity());
 		if(vw instanceof CompletableViewQuery) {  // already create
 			((CompletableViewQuery)vw).getQuery().columns(column);
 		}
 		else {
-			vw = new CompletableViewQuery((isNull(vw) ? v : vw).window(td.identity(), column));
+			vw = new CompletableViewQuery((isNull(vw) ? td.table() : vw).window(td.identity(), column));
 			requestContext().putView(vw); // same name
 		}
-		return new ViewColumn(v, doubleQuote(column.tagname()), null, column.getType());
+		return new ViewColumn(vw, doubleQuote(column.tagname()), null, column.getType());
 	}
 	
 	private Optional<ResourceCursor> lookupResource(TableDecorator td) {
-		if(next() && requestContext().isDeclaredView(value)) {  //sometimes td.id == cd.id
-			var rc = next.lookupViewResource(requestContext().getViewDecorator(value), RequestEntryChain::isWindowFunction);
+		if(next()) {  //check td.cd first
+			var rc = requestContext().lookupViewDecorator(value)
+					.flatMap(v-> next.lookupViewResource(v, RequestEntryChain::isWindowFunction));
 			if(rc.isPresent()) {
 				requireNoArgs(); // noArgs on valid resource
 				return rc;
@@ -265,9 +280,14 @@ final class RequestEntryChain {
 	}
 	
 	private Optional<ResourceCursor> lookupViewResource(TableDecorator td, Predicate<TypedOperator> pre) {
-		return requestContext().isDeclaredColumn(value) 
-				? Optional.of(new ResourceCursor(td, context().getColumn(requireNoArgs().value), this))
-				: toOperation(td, null, pre).map(op-> new ResourceCursor(td, ofColumn(value, b-> op), this));
+		var res = requestContext().lookupColumnDecorator(value);
+		if(res.isPresent()) {
+			requireNoArgs();
+		}
+		else {
+			res = toOperation(td, null, pre).map(op-> ofColumn(value, b-> op));
+		}
+		return res.map(cd-> new ResourceCursor(td, cd, this));
 	}
 
 	private Optional<OperationColumn> toOperation(TableDecorator td, DBColumn col, Predicate<TypedOperator> pre) {
@@ -284,26 +304,26 @@ final class RequestEntryChain {
 	}
 
 	private TaggableColumn[] toColumnArgs(TableDecorator td, boolean allowEmpty) {
-		return (TaggableColumn[]) toArgs(td, null, JQueryType.COLUMN, allowEmpty);
+		return (TaggableColumn[]) toArgs(td, JQueryType.COLUMN, allowEmpty);
 	}
 	
 	private DBFilter[] toFilterArgs(TableDecorator td) {
-		return (DBFilter[]) toArgs(td, null, JQueryType.FILTER, false);
+		return (DBFilter[]) toArgs(td, JQueryType.FILTER, false);
 	}
 	
 	private DBOrder[] toOderArgs(TableDecorator td) {
-		return (DBOrder[]) toArgs(td, null, JQueryType.ORDER, false);
+		return (DBOrder[]) toArgs(td, JQueryType.ORDER, false);
 	}
 
-	private Object[] toArgs(TableDecorator td, DBObject col, JavaType type, boolean allowEmpty) {
+	private Object[] toArgs(TableDecorator td, JavaType type, boolean allowEmpty) {
 		var c = type.typeClass();
-		if(c.isArray()) {
-			throw new UnsupportedOperationException("cannot create array of " + c);
+		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
+			var ps = allowEmpty 
+					? ofParameters(varargs(type)) 
+					: ofParameters(required(type), varargs(type));
+			return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
 		}
-		var ps = allowEmpty 
-				? ofParameters(varargs(type)) 
-				: ofParameters(required(type), varargs(type));
-		return toArgs(td, col, ps, s-> (Object[]) newInstance(c, s));
+		throw new UnsupportedOperationException("cannot create array of " + c);
 	}
 	
 	private int toIntArg(TableDecorator td) {
@@ -315,7 +335,7 @@ final class RequestEntryChain {
 	}
 	
 	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
-		int inc = nonNull(col) ? 1 : 0;
+		int inc = isNull(col) ? 0 : 1;
 		var arr = arrFn.apply(isNull(args) ? inc : args.size() + inc);
 		if(nonNull(col)) {
 			arr[0] = col;
@@ -324,13 +344,13 @@ final class RequestEntryChain {
 			if(i>=inc) { //arg0 already parsed
 				var e = args.get(i-inc);
 				if(isNull(e.value) || e.text) {
-					arr[i] = e.requireNoArgs().value;
+					arr[i] = e.requireNoArgs().value; //checked later
 				}
 				else {
 					try {
 						arr[i] = parse(e, td, p.types(arr));
-					} catch (ParseException ex) {
-						throw badArgumentTypeException(p.getTypes(), e);
+					} catch (ParseException ex) { // do not throw parse exception
+						throw badArgumentTypeException(p.types(arr), e, ex);
 					}
 				}
 			}
@@ -342,7 +362,7 @@ final class RequestEntryChain {
 		if(isNull(args)) {
 			return this;
 		}
-		throw new UnexpectedEntryException(value + " takes no args : " + this);
+		throw badArgumentCountException(0, args.size());
 	}
 	
 	RequestEntryChain requireNoNext(){
@@ -385,9 +405,6 @@ final class RequestEntryChain {
 				.toArray(String[]::new);
 	}
 
-	private static ParseException cannotParseException(String type, RequestEntryChain entry) {
-		return ParseException.cannotParseException(type, entry.toString());
-	}
 	public static UnexpectedEntryException unexpectedEntryException(RequestEntryChain entry, String... expected) {
 		return UnexpectedEntryException.unexpectedEntryException(entry.toString(), expected);
 	}

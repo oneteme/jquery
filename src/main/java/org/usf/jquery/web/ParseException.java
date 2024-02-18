@@ -23,6 +23,8 @@ public final class ParseException extends WebException {
 	}
 
 	static ParseException cannotParseException(String type, String value, Throwable cause) {
-		return new ParseException("cannot parse " + quote(value) + " as " + quote(type), cause);
+		return new ParseException("cannot parse entry, "
+				+ "expected: " + quote(type)
+				+ " but was: " + quote(value), cause);
 	}
 }
