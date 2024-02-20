@@ -26,7 +26,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
-	private static final String ARG = "?";
+	private static final String P_ARG = "?";
 	
 	@Getter
 	private final String schema;
@@ -89,7 +89,7 @@ public final class QueryParameterBuilder {
 	private String appendArg(JDBCType type, Object o) {
 		argTypes.add(type);
 		args.add(o);
-		return ARG;
+		return P_ARG;
 	}
 	
 	public Object[] args() {
@@ -108,7 +108,7 @@ public final class QueryParameterBuilder {
 		if(n < 1){
 			return EMPTY;
 		}
-        return n == 1 ? ARG : ARG + (COMA + ARG).repeat(n-1);
+        return n == 1 ? P_ARG : P_ARG + (COMA + P_ARG).repeat(n-1);
     }
 
 	public static String formatValue(Object o) {
