@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.lang.String.join;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
 
 /**
  * 
@@ -16,8 +15,6 @@ public class UnexpectedEntryException extends WebException {
 	}
 	
 	public static UnexpectedEntryException unexpectedEntryException(String entry, String... expected) {
-		return new UnexpectedEntryException("unexpected entry, " +
-				"expected: " +  join("|", expected) +
-				" but was: " + quote(entry));
+		return new UnexpectedEntryException(formatMessage("unexpected entry, ", join("|", expected), entry));
 	}
 }

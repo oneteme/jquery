@@ -139,7 +139,9 @@ public class ArgumentParsers {
 	}
 	
 	private static <T extends JavaType> T[] cast(JavaType[] types, Class<T[]> c, IntFunction<T[]> fn) {
-		return types.getClass() == c ? c.cast(types) : Stream.of(types).toArray(fn);
+		return types.getClass() == c 
+				? c.cast(types) 
+				: Stream.of(types).toArray(fn);
 	}
 	
 	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {

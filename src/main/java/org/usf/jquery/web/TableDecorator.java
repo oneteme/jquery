@@ -15,7 +15,6 @@ import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
-import static org.usf.jquery.web.RequestContext.clearContext;
 import static org.usf.jquery.web.RequestContext.requestContext;
 import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
@@ -73,14 +72,14 @@ public interface TableDecorator {
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
-		clearContext();
 		currentDatabase(database().getType()); //table database
 		var query = new RequestQueryBuilder();
 		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseFilters(query, parameterMap);
 		parseOrders (query, parameterMap);
-		parseFetch(query, parameterMap);		
+		parseFetch(query, parameterMap);
+		
 		return query.views(requestContext().views());
 	}
 	

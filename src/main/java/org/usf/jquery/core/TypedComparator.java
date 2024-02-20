@@ -47,4 +47,9 @@ public final class TypedComparator implements Comparator {
 		this.argMapper = argMapper;
 		return this;
 	}
+	
+	@Override
+	public String toString() {
+		return comparator.id() + parameterSet.toString();
+	}
 }

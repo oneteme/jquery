@@ -49,4 +49,9 @@ public class TypedOperator implements Operator {
 		this.argMapper = argMapper;
 		return this;
 	}
+	
+	@Override
+	public String toString() {
+		return operator.id() + parameterSet.toString();
+	}
 }

@@ -1,7 +1,5 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.SqlStringBuilder.quote;
-
 /**
  * 
  * @author u$f
@@ -23,8 +21,6 @@ public final class ParseException extends WebException {
 	}
 
 	static ParseException cannotParseException(String type, String value, Throwable cause) {
-		return new ParseException("cannot parse entry, "
-				+ "expected: " + quote(type)
-				+ " but was: " + quote(value), cause);
+		return new ParseException(formatMessage("cannot parse entry", type, value), cause);
 	}
 }

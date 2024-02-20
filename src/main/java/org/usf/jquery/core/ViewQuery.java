@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.SqlStringBuilder.parenthese;
 
 import org.usf.jquery.core.JavaType.Typed;
 
@@ -29,7 +30,7 @@ public final class ViewQuery implements DBView, Typed {
 	public String sql(QueryParameterBuilder builder) {
 		var s = new SqlStringBuilder(100);
 		query.build(s, builder.subQuery()); //important! build query first
-		return "(" + s.toString() + ")";
+		return parenthese(s.toString());
 	}
 
 	@Override

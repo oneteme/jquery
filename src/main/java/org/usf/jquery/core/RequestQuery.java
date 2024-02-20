@@ -49,10 +49,10 @@ public final class RequestQuery {
 						}
 					}						
 				}
-		        log.debug("executing SQL query...");
+		        log.trace("executing SQL query...");
 		        var bg = currentTimeMillis();
 				try(var rs = ps.executeQuery()){
-			        log.debug("query executed in {} ms", currentTimeMillis() - bg);
+			        log.trace("query executed in {} ms", currentTimeMillis() - bg);
 			        try {
 			        	return mapper.map(rs);
 			        }

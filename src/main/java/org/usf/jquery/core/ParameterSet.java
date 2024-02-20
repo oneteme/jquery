@@ -5,7 +5,9 @@ import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
+import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 
+import java.util.Arrays;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Stream;
 
@@ -29,12 +31,17 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 	
 	public Object[] args(Object... args) {
 		var arr = isNull(args) ? new Object[0] : args;
-		forEach(arr.length, (p,i)-> {
-			if(!p.accept(i, arr)) {
-				throw badArgumentTypeException(p.types(args), arr[i]);
-			}
-		});
-		return arr;
+		try {
+			forEach(arr.length, (p,i)-> {
+				if(!p.accept(i, arr)) {
+					throw badArgumentTypeException(p.types(args), arr[i]);
+				}
+			});
+			return arr;
+		}
+		catch (BadArgumentException e) {
+			throw badArgumentsException(this.toString(), Arrays.toString(arr), e);
+		}
 	}
 
 	public void forEach(int nArgs, ObjIntConsumer<Parameter> cons) {

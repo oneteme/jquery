@@ -96,7 +96,7 @@ public class RequestQueryBuilder {
 	}
 
 	public RequestQuery build(String schema) {
-		log.debug("building query...");
+		log.trace("building query...");
 //		requireNonEmpty(tables);
     	requireNonEmpty(columns);
 		var bg = currentTimeMillis();
@@ -109,7 +109,7 @@ public class RequestQueryBuilder {
 		else {
 			sb.forEach(it, " UNION ALL ", o-> build(sb, pb));
 		}
-		log.debug("query built in {} ms", currentTimeMillis() - bg);
+		log.trace("query built in {} ms", currentTimeMillis() - bg);
 		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
 	}
 
