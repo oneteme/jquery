@@ -236,7 +236,7 @@ final class RequestEntryChain {
 	}
 	
 	private ResourceCursor chainColumnOperations(TableDecorator td, boolean filter) {
-		var r = lookupResource(td).orElseThrow(()-> cannotParseException(JQueryType.COLUMN, this.toString()));
+		var r = lookupResource(td).orElseThrow(()-> cannotParseException(COLUMN, this.toString()));
 		var e = r.entry.next;
 		while(nonNull(e)) { // chain until !operator
 			var c = e.toOperation(td, r.col, fn-> true);
