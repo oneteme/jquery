@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -36,7 +37,7 @@ final class WhenExpression implements DBExpression, Typed {
 
 	@Override
 	public JavaType getType() {
-		return JDBCType.typeOf(value).orElse(null);
+		return typeOf(value).orElse(null);
 	}
 	
 	@Override

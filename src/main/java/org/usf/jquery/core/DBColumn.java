@@ -7,6 +7,7 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
 import org.usf.jquery.core.JavaType.Typed;
@@ -19,7 +20,7 @@ import lombok.NonNull;
  *
  */
 @FunctionalInterface
-public interface DBColumn extends DBObject, Typed, NestedSql {
+public interface DBColumn extends DBObject, Typed, Groupable {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
@@ -33,9 +34,10 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 	default boolean isAggregation() {
 		return false;
 	}
-
-	default boolean isConstant() {
-		return false;
+	
+	@Override
+	default Stream<DBColumn> groupKeys() {
+		return Stream.of(this);
 	}
 	
 	default JavaType getType() {
@@ -164,16 +166,17 @@ public interface DBColumn extends DBObject, Typed, NestedSql {
 			}
 			
 			@Override
-			public boolean isConstant() {
-				return true;
+			public boolean isAggregation() {
+				return false;
+			}
+			
+			@Override
+			public Stream<DBColumn> groupKeys() {
+				return Stream.empty();
 			}
 		};
 	}
-	
-	static boolean isColumnConstant(Object o) {
-		return !(o instanceof DBColumn) || ((DBColumn)o).isConstant();
-	}
-	
+
 	static OperationColumn count() {
 		return count(column("*"));
 	}

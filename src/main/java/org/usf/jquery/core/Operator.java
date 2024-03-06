@@ -26,7 +26,7 @@ import java.util.Optional;
  * @author u$f
  *
  */
-public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
+public interface Operator extends DBProcessor<OperationColumn> {
 	
 	String id();
 
@@ -276,12 +276,7 @@ public interface Operator extends DBProcessor<OperationColumn>, NestedSql {
 	//pipe functions
 	
 	static TypedOperator over() {
-		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), required(PARTITION)) {
-			@Override
-			public OperationColumn args(Object... args) {
-				return super.args(args).aggregation(false); //over aggregation functions
-			}
-		};
+		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), required(PARTITION));
 	}
 
 	// constant operators

@@ -9,7 +9,7 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-public interface ComparisonExpression extends DBExpression, NestedSql, Chainable<ComparisonExpression> {
+public interface ComparisonExpression extends DBExpression, Aggregable, Chainable<ComparisonExpression> {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {

@@ -8,8 +8,4 @@ package org.usf.jquery.core;
 @FunctionalInterface
 public interface AggregateFunction extends WindowFunction {
 
-	@Override
-	default boolean isAggregation() {
-		return true;
-	}
 }

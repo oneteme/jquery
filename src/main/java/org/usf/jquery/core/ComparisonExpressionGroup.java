@@ -36,8 +36,7 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	
 	@Override
 	public boolean isAggregation() {
-		return expressions.stream()
-				.allMatch(NestedSql::aggregation);
+		return expressions.stream().anyMatch(ComparisonExpression::isAggregation);
 	}
 
 	@Override

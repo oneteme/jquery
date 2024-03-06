@@ -35,8 +35,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	
 	@Override
 	public boolean isAggregation() {
-		return filters.stream()
-				.anyMatch(NestedSql::isAggregation);
+		return filters.stream().anyMatch(DBFilter::isAggregation);
 	}
 
 	@Override

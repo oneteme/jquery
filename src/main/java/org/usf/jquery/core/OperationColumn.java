@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
-import java.util.Objects;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -21,7 +20,6 @@ public final class OperationColumn implements DBColumn {
 	private final Operator operator;
 	private final Object[] args;
 	private final JavaType type;
-	private Boolean aggregation;
 
 	public OperationColumn(Operator operation, Object[] args) {
 		this(operation, args, null);
@@ -31,7 +29,7 @@ public final class OperationColumn implements DBColumn {
 	public String sql(QueryParameterBuilder builder) {
 		return operator.sql(builder, args);
 	}
-
+	
 	@Override
 	public JavaType getType() {
 		return type;
@@ -39,27 +37,26 @@ public final class OperationColumn implements DBColumn {
 	
 	@Override
 	public boolean isAggregation() {
-		if(Objects.isNull(aggregation)) {
-			return operator.isAggregation() 
-					|| Stream.of(args).anyMatch(NestedSql::aggregation);
-		}
-		return aggregation;
+		return operator instanceof AggregateFunction 
+				|| (!isOver() && Stream.of(args).anyMatch(Aggregable::aggregation)); //can do better
 	}
-
-	//see Operator::over
-	OperationColumn aggregation(boolean aggregation) {
-		this.aggregation = aggregation;
-		return this;
-	}
-
+	
 	@Override
-	public boolean isConstant() {
-		return Stream.of(args).allMatch(DBColumn::isColumnConstant);
+	public Stream<DBColumn> groupKeys() {
+		if(isOver()) {
+			return ((Partition)args[1]).groupKeys();
+		}
+		return operator instanceof AggregateFunction || operator instanceof ConstantOperator
+				? Stream.empty() 
+				: DBColumn.super.groupKeys();
+	}
+	
+	private boolean isOver() {
+		return "OVER".equals(operator.id());
 	}
 
 	@Override
 	public String toString() {
 		return sql(addWithValue());
 	}
-
 }

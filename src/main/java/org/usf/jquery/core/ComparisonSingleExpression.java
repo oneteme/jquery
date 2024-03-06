@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.DBColumn.column;
-import static org.usf.jquery.core.NestedSql.aggregation;
+import static org.usf.jquery.core.Aggregable.aggregation;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
 import java.util.LinkedList;

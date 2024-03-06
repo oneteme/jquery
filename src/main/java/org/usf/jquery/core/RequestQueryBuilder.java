@@ -122,7 +122,7 @@ public class RequestQueryBuilder {
 		var queryIdx = sb.sb.length();
 		var argsIdx = pb.argCount();
     	where(sb, pb);
-    	groupBy(sb);
+    	groupBy(sb, pb);
     	having(sb, pb);
     	orderBy(sb, pb);
     	fetch(sb);
@@ -164,12 +164,12 @@ public class RequestQueryBuilder {
     	}
 	}
 	
-	void groupBy(SqlStringBuilder sb){
-        if(isAggregation()) {
+	void groupBy(SqlStringBuilder sb, QueryParameterBuilder pb){
+        if(isAggregation()) { // check filter
         	var expr = columns.stream()
-        			.filter(RequestQueryBuilder::groupable)
-        			.map(TaggableColumn::tagname) //add alias 
-        			.map(SqlStringBuilder::doubleQuote) //sql ??
+        			.filter(not(DBColumn::isAggregation))
+        			.flatMap(DBColumn::groupKeys)
+        			.map(c-> columns.contains(c) ? ((TaggableColumn)c).tagname() : c.sql(pb)) //add alias 
         			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {
         		sb.append(" GROUP BY ").append(expr);
@@ -213,10 +213,6 @@ public class RequestQueryBuilder {
 				filters.stream().anyMatch(DBFilter::isAggregation);
 	}
 
-	private static boolean groupable(DBColumn column) {
-		return !column.isAggregation() && !column.isConstant();
-	}
-	
 	@Override
 	public String toString() {
 		return this.build().getQuery();

@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
-import static org.usf.jquery.core.NestedSql.aggregation;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
 import lombok.AccessLevel;
@@ -29,7 +28,7 @@ public final class ColumnSingleFilter implements DBFilter {
 	
 	@Override
 	public boolean isAggregation() {
-		return column.isAggregation() || aggregation(expression);
+		return column.isAggregation() || expression.isAggregation();
 	}
 
 	@Override
