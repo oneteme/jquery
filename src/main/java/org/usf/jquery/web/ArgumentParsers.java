@@ -49,10 +49,10 @@ public class ArgumentParsers {
 
 	public static Object parse(RequestEntryChain entry, TableDecorator td, JavaType... types) {
 		if(isEmpty(types) || Stream.of(types).allMatch(o-> o.getClass() == JDBCType.class)) {
-			return parseJdbc(entry, td, cast(types, JDBCType[].class, JDBCType[]::new));
+			return parseJdbc(entry, td, castArray(types, JDBCType[].class, JDBCType[]::new));
 		}
 		if(Stream.of(types).allMatch(o-> o.getClass() == JQueryType.class)) {
-			return parseJQuery(entry, td, cast(types, JQueryType[].class, JQueryType[]::new));
+			return parseJQuery(entry, td, castArray(types, JQueryType[].class, JQueryType[]::new));
 		}
 		throw new UnsupportedOperationException("unsupported types " + Arrays.toString(types));
 	}
@@ -138,7 +138,7 @@ public class ArgumentParsers {
 		throw badArgumentTypeException(types, o);
 	}
 	
-	private static <T extends JavaType> T[] cast(JavaType[] types, Class<T[]> c, IntFunction<T[]> fn) {
+	private static <T extends JavaType> T[] castArray(JavaType[] types, Class<T[]> c, IntFunction<T[]> fn) {
 		return types.getClass() == c 
 				? c.cast(types) 
 				: Stream.of(types).toArray(fn);

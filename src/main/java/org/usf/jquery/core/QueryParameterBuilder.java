@@ -9,21 +9,23 @@ import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@Setter(AccessLevel.PACKAGE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
 	private static final String P_ARG = "?";
@@ -34,6 +36,7 @@ public final class QueryParameterBuilder {
 	private final List<Object> args;
 	private final List<JDBCType> argTypes;
 	private final List<DBView> views; //indexed
+	private Integer index;
 	
 	public List<DBView> views(){
 		return views;
@@ -87,9 +90,20 @@ public final class QueryParameterBuilder {
 	}
 	
 	private String appendArg(JDBCType type, Object o) {
-		argTypes.add(type);
-		args.add(o);
+		if(isNull(index)) {
+			argTypes.add(type);
+			args.add(o);
+		}
+		else {
+			argTypes.add(index, type);
+			args.add(index, o);
+			index++;
+		}
 		return P_ARG;
+	}
+	
+	public int argCount() {
+		return args.size();
 	}
 	
 	public Object[] args() {
@@ -112,24 +126,22 @@ public final class QueryParameterBuilder {
     }
 
 	public static String formatValue(Object o) {
-		if(nonNull(o)){
-			return o instanceof Number 
-					? o.toString()
-					: quote(o.toString());
+		if(o instanceof Number){
+			return o.toString();
 		}
-		return "null";
+		return nonNull(o) ? quote(o.toString()) : "null";
 	}
 	
 	public QueryParameterBuilder withValue() {
-		return new QueryParameterBuilder(schema, vPrefix, null, null, views);
+		return new QueryParameterBuilder(schema, vPrefix, null, null, views, index);
 	}
 	
 	public QueryParameterBuilder subQuery() {
-		return new QueryParameterBuilder(schema, isNull(vPrefix) ? null : vPrefix + "_s", args, argTypes, new LinkedList<>());
+		return new QueryParameterBuilder(schema, isNull(vPrefix) ? null : vPrefix + "_s", args, argTypes, new ArrayList<>(), index);
 	}
 
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null, null, null, null, null); //no args
+		return new QueryParameterBuilder(null, null, null, null, null, null); //no args
 	}
 
 	public static QueryParameterBuilder parametrized(List<DBView> views) {
@@ -137,6 +149,6 @@ public final class QueryParameterBuilder {
 	}
 	
 	public static QueryParameterBuilder parametrized(String schema, List<DBView> views) {
-		return new QueryParameterBuilder(schema, "v", new LinkedList<>(), new LinkedList<>(), views);
+		return new QueryParameterBuilder(schema, "v", new ArrayList<>(), new ArrayList<>(), views, null);
 	}
 }

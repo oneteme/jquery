@@ -26,7 +26,7 @@ import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.PARTITION;
 import static org.usf.jquery.web.Constants.SELECT;
 import static org.usf.jquery.web.ParseException.cannotParseException;
-import static org.usf.jquery.web.RequestContext.requestContext;
+import static org.usf.jquery.web.RequestContext.currentContext;
 import static org.usf.jquery.web.UnexpectedEntryException.unexpectedEntryException;
 
 import java.util.List;
@@ -39,6 +39,7 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.DBQuery;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.LogicalOperator;
@@ -55,6 +56,7 @@ import org.usf.jquery.core.ViewQuery;
 import org.usf.jquery.core.WindowFunction;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -68,6 +70,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
+@AllArgsConstructor
 @RequiredArgsConstructor
 final class RequestEntryChain {
 	
@@ -80,8 +83,12 @@ final class RequestEntryChain {
 	public RequestEntryChain(String value) {
 		this(value, false);
 	}
-	
+
 	public ViewQuery evalQuery(TableDecorator td) {
+		return evalQuery(td, false);
+	}
+	
+	public ViewQuery evalQuery(TableDecorator td, boolean requireTag) {
 		if(SELECT.equals(value)) {
 			var q = new RequestQueryBuilder().columns(toColumnArgs(td, false));
 			var e =	this;
@@ -96,7 +103,11 @@ final class RequestEntryChain {
 				default: throw unexpectedEntryException(e.toString(), DISTINCT, FILTER, ORDER, OFFSET, FETCH);
 				}
 			}
-			return q.as(e.tag); //TD require tag to register query
+			if(requireTag && isNull(e.tag)) {
+				throw new IllegalArgumentException("require tag");
+			}
+			q.views(currentContext().popQueries().toArray(DBQuery[]::new));
+			return q.as(e.tag);
 		}
 		throw cannotParseException(SELECT, this.toString());
 	}
@@ -162,6 +173,7 @@ final class RequestEntryChain {
 				else {
 					cmp = values.size() > 1 ? "in" : "eq"; //query ??
 				}
+				e = e.copy();
 				e.setNext(new RequestEntryChain(cmp)); // do not set args;
 			}
 			return e.next.updateArgs(values)
@@ -176,7 +188,7 @@ final class RequestEntryChain {
 	Optional<DBFilter> tableCriteria(TableDecorator td, List<RequestEntryChain> values) {
 		RequestEntryChain e = null;
 		CriteriaBuilder<DBFilter> c = null;
-		var res = requestContext().lookupViewDecorator(value);
+		var res = currentContext().lookupViewDecorator(value);
 		if(res.isPresent() && next()) {
 			c = res.get().criteria(next.value);
 			e = next; // only if nonNull
@@ -195,15 +207,17 @@ final class RequestEntryChain {
 
 	//column.eq=v1
 	private RequestEntryChain updateArgs(List<RequestEntryChain> values) {
+		var e = this;
 		if(!isEmpty(values)) {
 			if(isLast() && isNull(args)) {
-				setArgs(values);
+				e = copy();
+				e.setArgs(values);
 			}
 			else {
 				throw new UnexpectedEntryException(this + "=" + Utils.toString(values.toArray()));
 			}
 		}
-		return this;
+		return e;
 	}
 	
 	DBFilter chainComparator(TableDecorator td, ColumnDecorator cd, DBColumn col){
@@ -253,20 +267,20 @@ final class RequestEntryChain {
 	}
 	
 	private static DBColumn windowColumn(TableDecorator td, TaggableColumn column) {
-		var vw = requestContext().getView(td.identity());
+		var vw = currentContext().lookupView(td.identity()).orElse(null);
 		if(vw instanceof CompletableViewQuery) {  // already create
 			((CompletableViewQuery)vw).getQuery().columns(column);
 		}
 		else {
 			vw = new CompletableViewQuery((isNull(vw) ? td.table() : vw).window(td.identity(), column));
-			requestContext().putView(vw); // same name
+			currentContext().putWorkQuery(vw); // same name
 		}
 		return new ViewColumn(vw, doubleQuote(column.tagname()), null, column.getType());
 	}
 	
 	private Optional<ResourceCursor> lookupResource(TableDecorator td) {
 		if(next()) {  //check td.cd first
-			var rc = requestContext().lookupViewDecorator(value)
+			var rc = currentContext().lookupViewDecorator(value)
 					.flatMap(v-> next.lookupViewResource(v, RequestEntryChain::isWindowFunction));
 			if(rc.isPresent()) {
 				requireNoArgs(); // noArgs on valid resource
@@ -277,7 +291,9 @@ final class RequestEntryChain {
 	}
 	
 	private Optional<ResourceCursor> lookupViewResource(TableDecorator td, Predicate<TypedOperator> pre) {
-		var res = requestContext().lookupColumnDecorator(value);
+		var res = td.getClass() == QueryDecorator.class 
+				? ((QueryDecorator)td).lookupColumnDecorator(value)
+				: currentContext().lookupColumnDecorator(value);
 		if(res.isPresent()) {
 			requireNoArgs();
 		}
@@ -286,7 +302,7 @@ final class RequestEntryChain {
 		}
 		return res.map(cd-> new ResourceCursor(td, cd, this));
 	}
-
+	
 	private Optional<OperationColumn> toOperation(TableDecorator td, DBColumn col, Predicate<TypedOperator> pre) {
 		return lookupOperator(value).filter(pre).map(fn-> {
 			var c = col;
@@ -320,7 +336,7 @@ final class RequestEntryChain {
 					: ofParameters(required(type), varargs(type));
 			return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
 		}
-		throw new UnsupportedOperationException("cannot create array of " + c);
+		throw new UnsupportedOperationException("cannot instanitate type " + c);
 	}
 	
 	private Object toOneArg(TableDecorator td, JavaType type) {
@@ -390,8 +406,12 @@ final class RequestEntryChain {
 		return isNull(tag) ? s : s + ":" + tag;
 	}
 	
+	protected RequestEntryChain copy() {
+		return new RequestEntryChain(value, text, next, args, tag);
+	}
+	
 	private static boolean isWindowFunction(TypedOperator op) {
-		return op.unwrap().getClass() == WindowFunction.class;  // !instanceOf : only window function
+		return op.unwrap() instanceof WindowFunction;  // WindowFunction + COUNT
 	}
 	
 	private static String[] toStringArray(List<RequestEntryChain> entries) {
@@ -400,7 +420,6 @@ final class RequestEntryChain {
 				.toArray(String[]::new);
 	}
 
-	@RequiredArgsConstructor
 	static final class ResourceCursor {
 		
 		private final TableDecorator td;
@@ -414,7 +433,7 @@ final class RequestEntryChain {
 			this.entry = entry;
 			this.col = td.column(cd);
 		}
-		
+
 		@Override
 		public String toString() {
 			return td + "." + cd + " => " + entry.toString();

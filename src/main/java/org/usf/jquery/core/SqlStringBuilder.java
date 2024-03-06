@@ -9,11 +9,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import lombok.Setter;
+
 /**
  * 
  * @author u$f
  *
  */
+@Setter
 public final class SqlStringBuilder {
 	
 	static final String EMPTY = "";
@@ -24,7 +27,8 @@ public final class SqlStringBuilder {
 	static final String SCOMA  = COMA + SPACE;
 	
 	final StringBuilder sb;
-
+	Integer offset;
+	
 	public SqlStringBuilder(int capacity) {
 		this.sb = new StringBuilder(capacity);
 	}
@@ -56,10 +60,10 @@ public final class SqlStringBuilder {
 	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, String prefix, Function<T, String> fn) {
 		if(!list.isEmpty()) {
 			var it = list.iterator();
-			this.sb.append(prefix).append(fn.apply(it.next()));
+			append(prefix).append(fn.apply(it.next()));
 			var before = separator + prefix;
 			while(it.hasNext()) {
-				this.sb.append(before).append(fn.apply(it.next()));
+				append(before).append(fn.apply(it.next()));
 			}
 		}
 		return this;
@@ -69,7 +73,7 @@ public final class SqlStringBuilder {
 		if(it.hasNext()) {
 			cons.accept(it.next());
 			while(it.hasNext()) {
-				this.sb.append(separator);
+				append(separator);
 				cons.accept(it.next());
 			}
 		} 
@@ -77,7 +81,13 @@ public final class SqlStringBuilder {
 	}
 	
 	public SqlStringBuilder append(String s) {
-		sb.append(s);
+		if(isNull(offset)) {
+			sb.append(s);
+		}
+		else {
+			sb.insert(offset, s);
+			offset += s.length();
+		}
 		return this;
 	}
 	

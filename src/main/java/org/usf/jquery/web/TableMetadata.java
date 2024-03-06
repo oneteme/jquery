@@ -1,10 +1,9 @@
 package org.usf.jquery.web;
 
 import static java.lang.String.join;
-import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.empty;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.JDBCType.OTHER;
@@ -44,9 +43,9 @@ public class TableMetadata {
 	private Instant lastUpdate;
 	
 	public Optional<ColumnMetadata> columnMetada(ColumnDecorator cd) {
-		return columns.containsKey(cd.identity()) ? Optional.of(columns.get(cd.identity())) : empty();
+		return Optional.ofNullable(columns.get(cd.identity()));
 	}
-	
+
 	public void fetch() throws SQLException { //individually table fetching
 		try(var cn = database().getDataSource().getConnection()) {
 			fetch(cn.getMetaData());
@@ -72,13 +71,13 @@ public class TableMetadata {
 			throw new NoSuchElementException("column(s) [" + join(", ", dbMap.keySet()) + "] not found in " + tablename);
 		}
 	}
+
+	static TableMetadata emptyMetadata(TableDecorator table) {
+		return tableMetadata(table, emptyList());
+	}
 	
 	static TableMetadata tableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
 		return new TableMetadata(table.tableName(), declaredColumns(table, columns));
-	}
-
-	static TableMetadata emptyMetadata(TableDecorator table) {
-		return new TableMetadata(table.tableName(), emptyMap());
 	}
 	
 	static Map<String, ColumnMetadata> declaredColumns(TableDecorator table, Collection<ColumnDecorator> columns){

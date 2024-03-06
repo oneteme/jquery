@@ -4,12 +4,14 @@ import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 import static org.usf.jquery.web.JQueryContext.context;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.DBQuery;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -21,33 +23,45 @@ public final class RequestContext {
 	
 	private static final ThreadLocal<RequestContext> local = new ThreadLocal<>();
 	
-	private final Map<String, TableDecorator> tdMap;
-	private final Map<String, ColumnDecorator> columns;
-	private final Map<String, DBView> views = new LinkedHashMap<>(); //work views
+	private final Map<String, TableDecorator> viewDecorators;
+	private final Map<String, ColumnDecorator> columnDecorators;
+	private final Map<String, DBQuery> workQueries = new LinkedHashMap<>(); //work queries
 
 	public Optional<TableDecorator> lookupViewDecorator(String id) {
 		log.trace("lookup view decorator : {}", id);
-		return ofNullable(tdMap.get(id));
+		return ofNullable(viewDecorators.get(id));
 	}
 
 	public Optional<ColumnDecorator> lookupColumnDecorator(String id) {
 		log.trace("lookup column decorator : {}", id);
-		return ofNullable(columns.get(id));
+		return ofNullable(columnDecorators.get(id));
 	}
 
-	public DBView getView(String id) {
-		return views.get(id);
+	public Optional<DBQuery> lookupView(String id) {
+		log.trace("lookup view : {}", id);
+		return ofNullable(workQueries.get(id));
 	}
 	
-	public void putView(DBView v) {
-		views.put(v.id(), v);
+	public void putViewDecorator(TableDecorator v) {
+		if(!viewDecorators.containsKey(v.identity())) {
+			viewDecorators.put(v.identity(), v);
+		}
+		else {
+			throw new IllegalArgumentException(v.identity() + " already exist");
+		}
 	}
 	
-	public DBView[] views() {
-		return views.values().toArray(DBView[]::new);
+	public void putWorkQuery(DBQuery v) {
+		workQueries.put(v.id(), v);
 	}
-
-	public static final RequestContext requestContext() {
+	
+	public Collection<DBQuery> popQueries() {
+		var q = new ArrayList<>(workQueries.values());
+		workQueries.clear();
+		return q;
+	}
+	
+	public static final RequestContext currentContext() {
 		var rc = local.get();
 		if(isNull(rc)) {
 			var jc = context(); //can filter view & column 
@@ -55,6 +69,10 @@ public final class RequestContext {
 			local.set(rc);
 		}
 		return rc;
+	}
+	
+	public void clearWorkQueries() {
+		workQueries.clear();
 	}
 
 	public static final void clearContext() {

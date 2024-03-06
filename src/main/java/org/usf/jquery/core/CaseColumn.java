@@ -6,7 +6,7 @@ import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 
 import java.util.Collection;
 import java.util.LinkedList;
-import java.util.Optional;
+import java.util.Objects;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +17,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class CaseColumn implements DBColumn {
+public final class CaseColumn implements DBColumn { // TD override isAggregation
 
 	private final Collection<WhenExpression> expressions = new LinkedList<>();
 	
@@ -32,10 +32,9 @@ public final class CaseColumn implements DBColumn {
 	@Override
 	public JavaType getType() {
 		return expressions.stream()
-				.map(JDBCType::typeOf)
-				.filter(Optional::isPresent) // should have same type
+				.map(WhenExpression::getType)
+				.filter(Objects::nonNull) // should have same type
 				.findAny()
-				.orElseGet(Optional::empty)
 				.orElse(null);
 	}
 		

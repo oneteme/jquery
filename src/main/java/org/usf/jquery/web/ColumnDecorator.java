@@ -1,9 +1,14 @@
 package org.usf.jquery.web;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.web.ArgumentParsers.jdbcArgParser;
+import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.JDBCType;
+import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.Validation;
+import org.usf.jquery.core.ViewColumn;
 
 /**
  * 
@@ -20,6 +25,16 @@ public interface ColumnDecorator {
 		return identity();
 	}
 	
+	default TaggableColumn from(TableDecorator td) {
+		var b = builder();
+		return nonNull(b)
+				? b.build(td).as(reference())
+				: td.columnName(this) //recursive call
+				.map(Validation::requireLegalVariable)
+				.map(cn-> new ViewColumn(td.table(), cn, reference(), dataType(td)))
+				.orElseThrow(()-> undeclaredResouceException(td.identity(), identity()));
+	}
+	
 	default JDBCArgumentParser parser(TableDecorator td){ // override parser | format | local
 		return jdbcArgParser(dataType(td));
 	}
@@ -27,10 +42,10 @@ public interface ColumnDecorator {
 	default JDBCType dataType(TableDecorator td) { // only if !builder
 		return td.metadata().columnMetada(this)
 		.map(ColumnMetadata::getDataType)
-		.orElse(null); 
+		.orElse(null);
 	}
 	
-	default ColumnBuilder builder() {
+	default ColumnBuilder builder() { //set type if null
 		return null; // no builder by default
 	}
 	

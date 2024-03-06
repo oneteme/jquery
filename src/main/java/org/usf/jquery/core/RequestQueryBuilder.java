@@ -17,6 +17,7 @@ import static org.usf.jquery.core.Validation.requireNonEmpty;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import lombok.Getter;
@@ -76,7 +77,6 @@ public class RequestQueryBuilder {
 		return this;
 	}
 	
-
 	public RequestQueryBuilder offset(Integer offset) {
 		this.offset = offset;
 		return this;
@@ -85,6 +85,10 @@ public class RequestQueryBuilder {
 	public RequestQueryBuilder repeat(@NonNull Iterator<?> it) {
 		this.it = it;
 		return this;
+	}
+	
+	public Optional<TaggableColumn> getColumn(String id){
+		return columns.stream().filter(c-> c.tagname().contains(id)).findAny();
 	}
 	
 	public ViewQuery as(String tag) {
@@ -102,7 +106,6 @@ public class RequestQueryBuilder {
 		var bg = currentTimeMillis();
 		var pb = parametrized(schema, views);
 		var sb = new SqlStringBuilder(1000); //avg
-//		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
 		if(isNull(it)) {
 			build(sb, pb);
 		}
@@ -114,15 +117,19 @@ public class RequestQueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
+		views.forEach(pb::view);
+		select(sb, pb);
+		var queryIdx = sb.sb.length();
+		var argsIdx = pb.argCount();
     	where(sb, pb);
     	groupBy(sb);
     	having(sb, pb);
     	orderBy(sb, pb);
     	fetch(sb);
-    	sb.sb.insert(0, select(sb, pb)); //declare all view before FROM)
+    	from(sb, pb, queryIdx, argsIdx); //declare all view before FROM)
 	}
 
-	String select(SqlStringBuilder sb, QueryParameterBuilder pb){
+	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
 		if(currentDatabase() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
@@ -131,14 +138,20 @@ public class RequestQueryBuilder {
 				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
 			}
 		}
-		return new SqlStringBuilder(100).append("SELECT")
-    	.appendIf(distinct, ()-> " DISTINCT")
-    	.appendIf(nonNull(fetch), ()-> " TOP " + fetch)
+		sb.append("SELECT")
+    	.appendIf(distinct, " DISTINCT")
+    	.appendIf(nonNull(fetch), ()-> " TOP " + fetch) //???????
     	.append(SPACE)
-    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb))
-    	.appendIf(!pb.views().isEmpty(), " FROM ") //TODO finish this
-    	.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb))
-    	.toString();
+    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb));
+	}
+	
+	void from(SqlStringBuilder sb, QueryParameterBuilder pb, int queryIdx, int argsIdx) {
+		if(!pb.views().isEmpty()) {
+			sb.setOffset(queryIdx);
+			pb.setIndex(argsIdx);
+			sb.append(" FROM ")
+				.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb));
+		}
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
@@ -202,5 +215,10 @@ public class RequestQueryBuilder {
 
 	private static boolean groupable(DBColumn column) {
 		return !column.isAggregation() && !column.isConstant();
+	}
+	
+	@Override
+	public String toString() {
+		return this.build().getQuery();
 	}
 }

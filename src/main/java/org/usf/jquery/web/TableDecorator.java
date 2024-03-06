@@ -5,17 +5,17 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.FETCH;
 import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
+import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
-import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
-import static org.usf.jquery.web.RequestContext.requestContext;
+import static org.usf.jquery.web.RequestContext.clearContext;
+import static org.usf.jquery.web.RequestContext.currentContext;
 import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
@@ -28,11 +28,11 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.DBQuery;
 import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
-import org.usf.jquery.core.ViewColumn;
 
 /**
  * 
@@ -55,12 +55,7 @@ public interface TableDecorator {
 	}
 	
 	default TaggableColumn column(ColumnDecorator cd) {
-		var b = cd.builder();
-		if(nonNull(b)) {
-			return b.build(this).as(cd.reference());
-		}
-		var cn = columnName(cd).orElseThrow(()-> undeclaredResouceException(identity(), cd.identity()));
-		return new ViewColumn(table(), requireLegalVariable(cn), cd.reference(), cd.dataType(this));
+		return cd.from(this);
 	}
 	
 	default ViewBuilder builder() {
@@ -72,23 +67,28 @@ public interface TableDecorator {
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
-		currentDatabase(database().getType()); //table database
-		var query = new RequestQueryBuilder();
-		parseViews(query, parameterMap);
-		parseColumns(query, parameterMap);
-		parseFilters(query, parameterMap);
-		parseOrders (query, parameterMap);
-		parseFetch(query, parameterMap);
-		
-		return query.views(requestContext().views());
+		try {
+			currentDatabase(database().getType()); //table database
+			var query = new RequestQueryBuilder();
+			parseViews(query, parameterMap);
+			parseColumns(query, parameterMap);
+			parseFilters(query, parameterMap);
+			parseOrders (query, parameterMap);
+			parseFetch(query, parameterMap);
+			query.views(currentContext().popQueries().toArray(DBQuery[]::new));
+			return query;
+		}
+		finally {
+			clearContext();
+		}
 	}
 	
 	default void parseViews(RequestQueryBuilder query, Map<String, String[]> parameters) {
-//		if(parameters.containsKey(VIEW)) {
-//			Stream.of(parameters.get(VIEW))
-//			.flatMap(c-> parseEntries(c).stream())
-//			.forEach(e-> requestContext().putViewDecorator(e.evalView(this))); //declare only
-//		}
+		if(parameters.containsKey(VIEW)) {
+			Stream.of(parameters.get(VIEW))
+			.flatMap(c-> parseEntries(c).stream())
+			.forEach(e-> currentContext().putViewDecorator(new QueryDecorator(e.evalQuery(this, true))));
+		}
 	}
 	
 	default void parseColumns(RequestQueryBuilder query, Map<String, String[]> parameters) {

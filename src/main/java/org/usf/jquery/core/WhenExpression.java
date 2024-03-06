@@ -3,6 +3,8 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import org.usf.jquery.core.JavaType.Typed;
+
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -11,7 +13,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-final class WhenExpression implements DBExpression {
+final class WhenExpression implements DBExpression, Typed {
 	
 	private final DBFilter filter;
 	private final Object value;
@@ -30,6 +32,11 @@ final class WhenExpression implements DBExpression {
 				.append(filter.sql(arg))
 				.append(" THEN ");
 		return sb.append(arg.appendLitteral(value)).toString();
+	}
+
+	@Override
+	public JavaType getType() {
+		return JDBCType.typeOf(value).orElse(null);
 	}
 	
 	@Override
