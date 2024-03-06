@@ -5,7 +5,6 @@ import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -13,7 +12,6 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@Getter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class OperationColumn implements DBColumn {
 
@@ -51,7 +49,7 @@ public final class OperationColumn implements DBColumn {
 				: DBColumn.super.groupKeys();
 	}
 	
-	private boolean isOver() {
+	private boolean isOver() { //specific operator
 		return "OVER".equals(operator.id());
 	}
 

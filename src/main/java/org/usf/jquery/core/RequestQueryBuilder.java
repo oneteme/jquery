@@ -34,9 +34,10 @@ import lombok.extern.slf4j.Slf4j;
 public class RequestQueryBuilder {
 
 	private final List<TaggableColumn> columns = new LinkedList<>();
-	private final List<DBFilter> filters = new LinkedList<>();  //WERE & HAVING
+	private final List<DBFilter> filters = new LinkedList<>();  //WHERE & HAVING
 	private final List<DBView> views = new LinkedList<>();
 	private final List<DBOrder> orders = new LinkedList<>();
+	private final List<ViewJoin> joins = new LinkedList<>(); 
 	private Iterator<?> it;
 	private boolean distinct;
 	private Integer fetch;
@@ -64,6 +65,11 @@ public class RequestQueryBuilder {
 	
 	public RequestQueryBuilder orders(@NonNull DBOrder... orders) {
 		Stream.of(orders).forEach(this.orders::add);
+		return this;
+	}
+
+	public RequestQueryBuilder joins(@NonNull ViewJoin joins) {
+		Stream.of(joins).forEach(this.joins::add);
 		return this;
 	}
 
@@ -119,14 +125,17 @@ public class RequestQueryBuilder {
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
 		views.forEach(pb::view);
 		select(sb, pb);
-		var queryIdx = sb.sb.length();
+		var queryIdx = sb.sb.length(); //pos mark
 		var argsIdx = pb.argCount();
     	where(sb, pb);
     	groupBy(sb, pb);
     	having(sb, pb);
     	orderBy(sb, pb);
     	fetch(sb);
-    	from(sb, pb, queryIdx, argsIdx); //declare all view before FROM)
+		sb.setOffset(queryIdx);
+		pb.setIndex(argsIdx);
+    	from(sb, pb); //declare all view before FROM)
+    	join(sb, pb);
 	}
 
 	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
@@ -140,17 +149,27 @@ public class RequestQueryBuilder {
 		}
 		sb.append("SELECT")
     	.appendIf(distinct, " DISTINCT")
-    	.appendIf(nonNull(fetch), ()-> " TOP " + fetch) //???????
+    	.appendIf(nonNull(fetch) && currentDatabase() == TERADATA, ()-> " TOP " + fetch) //???????
     	.append(SPACE)
     	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb));
 	}
 	
-	void from(SqlStringBuilder sb, QueryParameterBuilder pb, int queryIdx, int argsIdx) {
-		if(!pb.views().isEmpty()) {
-			sb.setOffset(queryIdx);
-			pb.setIndex(argsIdx);
+	void from(SqlStringBuilder sb, QueryParameterBuilder pb) {
+		var vList = pb.views();
+		if(!joins.isEmpty()) {
+			vList = vList.stream()
+					.filter(v-> joins.stream().noneMatch(j-> j.id().equals(v.id())))
+					.collect(toList());
+		}
+		if(!vList.isEmpty()) {
 			sb.append(" FROM ")
-				.appendEach(pb.views(), SCOMA, o-> o.sqlWithTag(pb));
+				.appendEach(vList, SCOMA, o-> o.sqlWithTag(pb));
+		}
+	}
+	
+	void join(SqlStringBuilder sb, QueryParameterBuilder pb) {
+		if(!joins.isEmpty()) {
+			sb.append(SPACE).appendEach(joins, SPACE, v-> v.sql(pb));
 		}
 	}
 
@@ -165,7 +184,7 @@ public class RequestQueryBuilder {
 	}
 	
 	void groupBy(SqlStringBuilder sb, QueryParameterBuilder pb){
-        if(isAggregation()) { // check filter
+        if(isAggregation()) { // also check filter
         	var expr = columns.stream()
         			.filter(not(DBColumn::isAggregation))
         			.flatMap(DBColumn::groupKeys)
@@ -173,9 +192,6 @@ public class RequestQueryBuilder {
         			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {
         		sb.append(" GROUP BY ").append(expr);
-        	}
-        	else if(columns.size() > 1) {
-        		//throw new RuntimeException("require groupBy columns"); CONST !?
         	}
         }
 	}
