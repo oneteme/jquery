@@ -225,8 +225,8 @@ public class RequestQueryBuilder {
 	}
 	
 	public boolean isAggregation() {
-		return columns.stream().anyMatch(DBColumn::isAggregation) ||
-				filters.stream().anyMatch(DBFilter::isAggregation);
+		return columns.stream().anyMatch(Aggregable::isAggregation) ||
+				filters.stream().anyMatch(Aggregable::isAggregation);
 	}
 
 	@Override

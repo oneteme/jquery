@@ -8,6 +8,7 @@ import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.Comparator.lookupComparator;
+import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.Parameter.required;
@@ -15,12 +16,14 @@ import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.ViewJoin.join;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ColumnDecorator.ofColumn;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.DISTINCT;
 import static org.usf.jquery.web.Constants.FETCH;
 import static org.usf.jquery.web.Constants.FILTER;
+import static org.usf.jquery.web.Constants.JOIN;
 import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.PARTITION;
@@ -34,12 +37,15 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
+import javax.swing.text.View;
+
 import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.DBQuery;
+import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.LogicalOperator;
@@ -52,6 +58,8 @@ import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
+import org.usf.jquery.core.ViewJoin;
+import org.usf.jquery.core.ViewJoin.JoinType;
 import org.usf.jquery.core.ViewQuery;
 import org.usf.jquery.core.WindowFunction;
 
@@ -87,6 +95,17 @@ final class RequestEntryChain {
 	public ViewQuery evalQuery(TableDecorator td) {
 		return evalQuery(td, false);
 	}
+	
+
+	public ViewJoin evalJoin(TableDecorator td) {
+		if(value.matches(JoinType.pattern())) {
+			var jt = JoinType.valueOf(value);
+			var args = toArgs(td, null, null);
+			return join(jt, (DBView)args[0], (DBFilter[])args[0]);
+		}
+		throw cannotParseException(JOIN, this.toString()); //TD
+	}
+	
 	
 	public ViewQuery evalQuery(TableDecorator td, boolean requireTag) {
 		if(SELECT.equals(value)) {
@@ -272,7 +291,8 @@ final class RequestEntryChain {
 			((CompletableViewQuery)vw).getQuery().columns(column);
 		}
 		else {
-			vw = new CompletableViewQuery((isNull(vw) ? td.table() : vw).window(td.identity(), column));
+			var view = isNull(vw) ? td.table() : vw;
+			vw = new CompletableViewQuery(view.select(td.identity(), allColumns(view).as(null), column));
 			currentContext().putWorkQuery(vw); // same name
 		}
 		return new ViewColumn(vw, doubleQuote(column.tagname()), null, column.getType());

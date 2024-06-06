@@ -159,5 +159,4 @@ public interface TableDecorator {
 	static Stream<String> flatParameters(String... arr) { //number local separator
 		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
 	}
-	
 }

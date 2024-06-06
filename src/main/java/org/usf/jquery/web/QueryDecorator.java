@@ -12,6 +12,11 @@ import org.usf.jquery.core.ViewColumn;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Getter
 @RequiredArgsConstructor
 final class QueryDecorator implements TableDecorator {

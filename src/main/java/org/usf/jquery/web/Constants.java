@@ -23,6 +23,7 @@ public final class Constants {
 	public static final String ORDER = "order";
 	public static final String FETCH = "fetch";
 	public static final String OFFSET = "offset";
+	public static final String JOIN = "join";
 	public static final String PARTITION = "partition";
 	public static final String REVISION = "revision"; //not standard
 	public static final String REVISION_MODE = "revision.mode"; //not standard

@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -29,7 +28,4 @@ public interface DBView extends DBObject {
 		return new ViewQuery(tag, columns);
 	}
 	
-	default ViewQuery window(String tag, TaggableColumn column) {
-		return new ViewQuery(tag, allColumns(this).as(null), column);
-	}
 }

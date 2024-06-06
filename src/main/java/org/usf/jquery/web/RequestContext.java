@@ -70,10 +70,6 @@ public final class RequestContext {
 		}
 		return rc;
 	}
-	
-	public void clearWorkQueries() {
-		workQueries.clear();
-	}
 
 	public static final void clearContext() {
 		local.remove();
