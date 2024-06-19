@@ -4,11 +4,14 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedList;
 import java.util.stream.Stream;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 
@@ -16,6 +19,7 @@ import lombok.NonNull;
  *
  */
 //@see ComparisonExpressionGroup
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ColumnFilterGroup implements DBFilter {
 	
 	private final LogicalOperator operator;
@@ -40,11 +44,11 @@ public final class ColumnFilterGroup implements DBFilter {
 
 	@Override
 	public DBFilter append(LogicalOperator op, DBFilter filter) {
-		if(operator == op) {
-			filters.add(filter);
-			return this;
-		}
-		return new ColumnFilterGroup(op, this, filter);
+		var gpe = operator == op 
+				? new ColumnFilterGroup(op, new ArrayList<>(filters))
+				: new ColumnFilterGroup(op, this);
+		gpe.filters.add(filter);
+		return gpe;
 	}
 	
 	@Override

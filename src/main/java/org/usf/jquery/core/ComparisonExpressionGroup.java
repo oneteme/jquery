@@ -9,7 +9,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.stream.Stream;
 
+import lombok.AccessLevel;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 
@@ -17,16 +19,16 @@ import lombok.NonNull;
  *
  */
 //@see ColumnFilterGroup
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ComparisonExpressionGroup implements ComparisonExpression {
 	
 	private final LogicalOperator operator;
 	private final Collection<ComparisonExpression> expressions;
 	
 	public ComparisonExpressionGroup(@NonNull LogicalOperator operator, ComparisonExpression... expressions) {
-		this.operator = operator;
-		this.expressions = expressions == null 
+		this(operator, expressions == null 
 				? new ArrayList<>()
-				: Stream.of(expressions).collect(toList());
+				: Stream.of(expressions).collect(toList()));
 	}
 	
 	@Override
@@ -41,11 +43,11 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 
 	@Override
 	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
-		if(operator == op) {
-			expressions.add(exp);
-			return this;
-		}
-		return new ComparisonExpressionGroup(op, this, exp);
+		var gpe = operator == op 
+				? new ComparisonExpressionGroup(op, new ArrayList<>(expressions))
+				: new ComparisonExpressionGroup(op, this);
+		gpe.expressions.add(exp);
+		return gpe;
 	}
 	
 	@Override
