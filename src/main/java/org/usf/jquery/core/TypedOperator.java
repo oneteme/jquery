@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import lombok.Getter;
-import lombok.experimental.Delegate;
 
 /**
  * 
@@ -13,7 +12,6 @@ import lombok.experimental.Delegate;
 @Getter
 public class TypedOperator implements Operator {
 	
-	@Delegate
 	private final Operator operator;
 	private final ArgTypeRef typeFn;
 	private final ParameterSet parameterSet;
@@ -26,6 +24,15 @@ public class TypedOperator implements Operator {
 		this.operator = function;
 		this.typeFn = typeFn;
 		this.parameterSet = ofParameters(parameter);
+	}
+
+	@Override
+	public String id() {
+		return operator.id();
+	}
+	@Override
+	public String sql(QueryParameterBuilder builder, Object[] args) {
+		return operator.sql(builder, parameterSet.assertArguments(args));
 	}
 	
 	@Override
@@ -42,4 +49,5 @@ public class TypedOperator implements Operator {
 	public String toString() {
 		return operator.id() + parameterSet.toString();
 	}
+
 }
