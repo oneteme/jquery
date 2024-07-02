@@ -12,6 +12,11 @@ import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor
 public class ViewJoin implements DBObject  {
 	
@@ -21,12 +26,12 @@ public class ViewJoin implements DBObject  {
 
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, DBColumn.class::getSimpleName);
+		requireNoArgs(args, ViewJoin.class::getSimpleName);
 		return sql(builder);
 	}
 
 	public String sql(QueryParameterBuilder builder) {
-		return joinType + " JOIN " + view.sqlWithTag(builder) + " ON " +
+		return joinType + " JOIN " + view.sql(builder) + " ON " +
 				Stream.of(filters).map(f-> f.sql(builder)).collect(joining(AND.sql()));
 	}
 	

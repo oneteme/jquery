@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Optional.empty;
 
@@ -16,8 +17,8 @@ public interface DBProcessor<T> extends DBObject {
 	
 	static <T,U extends T> Optional<U> lookup(Class<T> clazz, Class<U> ext, String op) {
 		try {
-			var m = clazz.getMethod(op);
-			if(m.getReturnType() == ext && isStatic(m.getModifiers()) && m.getParameterCount() == 0) { // no private static
+			var m = clazz.getMethod(op); //no parameter
+			if(m.getReturnType() == ext && isStatic(m.getModifiers()) && !isPrivate(m.getModifiers())) {
 				return Optional.of(ext.cast(m.invoke(null)));
 			}
 		} catch (Exception e) {/* do not throw exception */}

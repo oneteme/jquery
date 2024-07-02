@@ -37,11 +37,11 @@ public final class Partition implements DBObject, Groupable {
 	String sql(QueryParameterBuilder builder) {
 		var sb = new SqlStringBuilder(100);
 		if(!isEmpty(columns)) {
-			sb.append("PARTITION BY ").append(builder.appendLitteralArray(columns));
+			sb.append("PARTITION BY ").append(builder.appendLiteralArray(columns));
 		}
 		if(!isEmpty(orders)) { //require orders
 			sb.appendIf(!isEmpty(columns), SPACE)
-			.append("ORDER BY ").append(builder.appendLitteralArray(orders));
+			.append("ORDER BY ").append(builder.appendLiteralArray(orders));
 		}
 		return sb.toString();
 	}

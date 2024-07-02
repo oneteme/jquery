@@ -12,7 +12,7 @@ public interface FunctionOperator extends Operator {
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		return new SqlStringBuilder(id())
-				.append("(").append(builder.appendLitteralArray(args)).append(")")//accept any
+				.append("(").append(builder.appendLiteralArray(args)).append(")") //accept any
 				.toString();
 	}
 }

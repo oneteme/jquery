@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
@@ -16,7 +17,6 @@ import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.Setter;
 
 /**
@@ -42,8 +42,8 @@ public final class QueryParameterBuilder {
 		return views;
 	}
 	
-	public String view(@NonNull DBView view) {
-		if(isNull(vPrefix)) {
+	public String view(DBView view) {
+		if(isNull(vPrefix) || isNull(view)) { //view can be null
 			return null;
 		}
 		for(var i=0; i<views.size(); i++) {
@@ -54,38 +54,50 @@ public final class QueryParameterBuilder {
 		views.add(view);
 		return vPrefix + views.size();
 	}
-	
-	public String appendArrayParameter(JDBCType type, @NonNull Object[] arr) {
-		if(dynamic()) {
-			if(isEmpty(arr)) {
-				return EMPTY;
-			}
-			for(var o : arr){
-				appendArg(type, o);
-			}
-			return nParameter(arr.length);
-		}
-		return appendLitteralArray(arr);
+
+	public String appendArrayParameter(Object[] arr) {
+		return appendArrayParameter(arr, 0);
 	}
 	
-	public String appendLitteralArray(@NonNull Object[] arr) {
-		return isEmpty(arr) ? EMPTY : Stream.of(arr)
-				.map(this::appendLitteral)
+	public String appendArrayParameter(Object[] arr, int from) {
+		if(dynamic()) {
+			if(isEmpty(arr) || from>=arr.length) { //throw !?
+				return EMPTY;
+			}
+			for(var i=from; i<arr.length; i++){
+				appendParameter(arr[i]);
+			}
+			return nParameter(arr.length-from);
+		}
+		return appendLiteralArray(arr, from);
+	}
+
+	public String appendLiteralArray(Object[] arr) {
+		return appendLiteralArray(arr, 0);
+	}
+	
+	public String appendLiteralArray(Object[] arr, int from) {
+		return isEmpty(arr) || from>=arr.length ? EMPTY : Stream.of(arr) //throw !?
+				.map(this::appendLiteral)
 				.collect(joining(SCOMA));
 	}
 
-	public String appendParameter(JDBCType type, Object o) {
+	public String appendParameter(Object o) {
 		if(dynamic()) {
-			return o instanceof DBObject
-					? ((DBObject)o).sql(this, null)
-					: appendArg(type, o);
+			if(o instanceof DBObject jo) {
+				return jo.sql(this, null);
+			}
+			var t = typeOf(o); //o=null=>empty
+			if(t.isPresent()) {
+				return appendArg(t.get(), o);
+			}
 		}
-		return appendLitteral(o);
+		return appendLiteral(o);
 	}
 
-	public String appendLitteral(Object o) {  //TD : stringify value using db default pattern
-		return o instanceof DBObject 
-				? ((DBObject)o).sql(this, null)
+	public String appendLiteral(Object o) {  //TD : stringify value using db default pattern
+		return o instanceof DBObject jo 
+				? jo.sql(this, null)
 				: formatValue(o);
 	}
 	

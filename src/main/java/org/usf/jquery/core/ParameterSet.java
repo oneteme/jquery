@@ -29,7 +29,7 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 	private final int nReqArgs;
 	private final Parameter[] parameters;
 	
-	public Object[] args(Object... args) {
+	public Object[] assertArguments(Object... args) {
 		var arr = isNull(args) ? new Object[0] : args;
 		try {
 			forEach(arr.length, (p,i)-> {

@@ -7,6 +7,7 @@ import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.UnaryOperator;
 
@@ -58,43 +59,59 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	//string comparator
 	
 	static TypedComparator startsLike() {
-		return like().argsMapper(wildcardSecondArg(o-> o + "%"));
+		return like(o-> o + "%");
 	}
 
 	static TypedComparator endsLike() {
-		return like().argsMapper(wildcardSecondArg(o-> "%" + o));
+		return like(o-> "%" + o);
 	}
 
 	static TypedComparator contentLike() {
-		return like().argsMapper(wildcardSecondArg(o-> "%" + o + "%"));
+		return like(o-> "%" + o + "%");
 	}
 	
 	static TypedComparator startsNotLike() {
-		return notLike().argsMapper(wildcardSecondArg(o-> o + "%"));
+		return notLike(o-> o + "%");
 	}
 
 	static TypedComparator endsNotLike() {
-		return notLike().argsMapper(wildcardSecondArg(o-> "%" + o));
+		return notLike(o-> "%" + o);
 	}
 
 	static TypedComparator contentNotLike() {
-		return notLike().argsMapper(wildcardSecondArg(o-> "%" + o + "%"));
+		return notLike(o-> "%" + o + "%");
 	}
-	
+
 	static TypedComparator like() {
-		return new TypedComparator(stringComparator("LIKE"), required(VARCHAR), required(VARCHAR));
+		return like(null);
 	}
 	
 	static TypedComparator iLike() {
-		return new TypedComparator(stringComparator("ILIKE"), required(VARCHAR), required(VARCHAR));
+		return iLike(null);
 	}
-
+	
 	static TypedComparator notLike() {
-		return new TypedComparator(stringComparator("NOT LIKE"), required(VARCHAR), required(VARCHAR));
+		return notLike(null);
 	}
 
 	static TypedComparator notILike() {
-		return new TypedComparator(stringComparator("NOT ILIKE"), required(VARCHAR), required(VARCHAR));
+		return notILike(null);
+	}
+	
+	static TypedComparator like(UnaryOperator<Object> wilcard) {
+		return new TypedComparator(stringComparator("LIKE", wilcard), required(VARCHAR), required(VARCHAR));
+	}
+
+	static TypedComparator iLike(UnaryOperator<Object> wilcard) {
+		return new TypedComparator(stringComparator("ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
+	}
+
+	static TypedComparator notLike(UnaryOperator<Object> wilcard) {
+		return new TypedComparator(stringComparator("NOT LIKE", wilcard), required(VARCHAR), required(VARCHAR));
+	}
+
+	static TypedComparator notILike(UnaryOperator<Object> wilcard) {
+		return new TypedComparator(stringComparator("NOT ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 	
 	//null comparator
@@ -123,8 +140,23 @@ public interface Comparator extends DBProcessor<DBFilter> {
 		return ()-> name;
 	}
 	
-	static StringComparator stringComparator(final String name) {
-		return ()-> name;
+	static StringComparator stringComparator(final String name, UnaryOperator<Object> wilcard) {
+		if(Objects.isNull(wilcard)) {
+			return ()-> name;
+		}
+		return new StringComparator() {
+			@Override
+			public String id() {
+				return name;
+			}
+			@Override
+			public Object wildcardArg(Object o) {
+				if(Objects.isNull(o) || o instanceof DBObject) {
+					throw new UnsupportedOperationException("cannot wildcards parameter: " + o);
+				}
+				return wilcard.apply(o);
+			}
+		};
 	}
 	
 	static NullComparator nullComparator(final String name) {
@@ -137,13 +169,6 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	
 	static Optional<TypedComparator> lookupComparator(String op) {
 		return DBProcessor.lookup(Comparator.class, TypedComparator.class, op);
-	}
-	
-	private static UnaryOperator<Object[]> wildcardSecondArg(UnaryOperator<Object> fn) {
-		return args-> {
-			args[1] = fn.apply(args[1]);
-			return args;
-		};
 	}
 	
 	static IllegalArgumentException typeCannotBeNullException() {

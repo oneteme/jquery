@@ -1,12 +1,8 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
-import java.util.function.UnaryOperator;
-
 import lombok.Getter;
-import lombok.experimental.Delegate;
 
 /**
  * 
@@ -16,10 +12,8 @@ import lombok.experimental.Delegate;
 @Getter
 public final class TypedComparator implements Comparator {
 	
-	@Delegate
 	private final Comparator comparator;
 	private final ParameterSet parameterSet;
-	private UnaryOperator<Object[]> argMapper;
 	
 	public TypedComparator(Comparator comparator, Parameter... parameters) {
 		this(comparator, ofParameters(parameters));
@@ -31,21 +25,22 @@ public final class TypedComparator implements Comparator {
 	}
 	
 	@Override
-	public DBFilter args(Object... args) {
-		args = parameterSet.args(args);
-		if(nonNull(argMapper)) {
-			args = argMapper.apply(args);
-		}
-		return comparator.args(args);
+	public String id() {
+		return comparator.id();
+	}
+
+	@Override
+	public String sql(QueryParameterBuilder builder, Object[] args) {
+		return comparator.sql(builder, parameterSet.assertArguments(args));
 	}
 	
+	@Override
+	public DBFilter args(Object... args) {
+		return comparator.args(parameterSet.assertArguments(args));
+	}
+
 	public Comparator unwrap() {
 		return comparator;
-	}
-	
-	public TypedComparator argsMapper(UnaryOperator<Object[]> argMapper) {
-		this.argMapper = argMapper;
-		return this;
 	}
 	
 	@Override

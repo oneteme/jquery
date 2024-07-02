@@ -13,7 +13,6 @@ public interface ConstantOperator extends Operator {
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireNoArgs(args, ConstantOperator.class::getSimpleName);
-		return id();
+		return id(); //use parentheses !?
 	}
-
 }

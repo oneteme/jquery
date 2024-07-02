@@ -12,6 +12,6 @@ public interface Aggregable {
 	}
 	
 	static boolean aggregation(Object o) {
-		return o instanceof Aggregable && ((Aggregable)o).isAggregation();
+		return o instanceof Aggregable agg && agg.isAggregation();
 	}
 }

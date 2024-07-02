@@ -20,6 +20,6 @@ public interface ExtractFunction extends FunctionOperator {
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireNArgs(1, args, this::id);
-		return id() + "(" + field() + " FROM " + builder.appendLitteral(args[0]) + ")";
+		return id() + "(" + field() + " FROM " + builder.appendLiteral(args[0]) + ")";
 	}
 }

@@ -23,7 +23,7 @@ public final class CaseColumn implements DBColumn { // TD override isAggregation
 	
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		var b = builder.withValue();
+		var b = builder.withValue(); //force literal parameter
 		return expressions.stream() //empty !? 
 		.map(o-> o.sql(b))
 		.collect(joining(SPACE, "CASE ", " END"));
