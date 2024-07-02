@@ -16,12 +16,8 @@ public final class TypedComparator implements Comparator {
 	private final ParameterSet parameterSet;
 	
 	public TypedComparator(Comparator comparator, Parameter... parameters) {
-		this(comparator, ofParameters(parameters));
-	}
-	
-	public TypedComparator(Comparator comparator, ParameterSet parameterSet) {
 		this.comparator = comparator;
-		this.parameterSet = parameterSet;
+		this.parameterSet = ofParameters(parameters);
 	}
 	
 	@Override

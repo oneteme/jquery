@@ -5,7 +5,6 @@ import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -127,13 +126,11 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	//in comparator
 
 	static TypedComparator in() {
-		return new TypedComparator(inComparator("IN"), 
-				ofParameters(required(), varargs(firstArgJdbcType())));
+		return new TypedComparator(inComparator("IN"), required(), varargs(firstArgJdbcType()));
 	}
 	
 	static TypedComparator notIn() {
-		return new TypedComparator(inComparator("NOT IN"), 
-				ofParameters(required(), varargs(firstArgJdbcType())));
+		return new TypedComparator(inComparator("NOT IN"), required(), varargs(firstArgJdbcType()));
 	}
 	
 	static BasicComparator basicComparator(final String name) {
