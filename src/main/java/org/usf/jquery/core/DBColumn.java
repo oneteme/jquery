@@ -58,27 +58,27 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 
 	// filters
 	default ColumnSingleFilter equal(Object value) {
-		return filter(ComparisonExpression.equal(value));
+		return filter(ComparisonExpression.eq(value));
 	}
 
 	default ColumnSingleFilter notEqual(Object value) {
-		return filter(ComparisonExpression.notEqual(value));
+		return filter(ComparisonExpression.ne(value));
 	}
 
 	default ColumnSingleFilter greaterThan(Object value) {
-		return filter(ComparisonExpression.greaterThan(value));
+		return filter(ComparisonExpression.gt(value));
 	}
 
 	default ColumnSingleFilter greaterOrEqual(Object value) {
-		return filter(ComparisonExpression.greaterOrEqual(value));
+		return filter(ComparisonExpression.ge(value));
 	}
 
 	default ColumnSingleFilter lessThan(Object value) {
-		return filter(ComparisonExpression.lessThan(value));
+		return filter(ComparisonExpression.lt(value));
 	}
 
 	default ColumnSingleFilter lessOrEqual(Object value) {
-		return filter(ComparisonExpression.lessOrEqual(value));
+		return filter(ComparisonExpression.le(value));
 	}
 
 	default ColumnSingleFilter like(Object value) {

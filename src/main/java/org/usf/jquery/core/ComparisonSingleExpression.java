@@ -1,11 +1,10 @@
 package org.usf.jquery.core;
 
+import static java.util.Collections.addAll;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.DBColumn.column;
-import static org.usf.jquery.core.Aggregable.aggregation;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -20,26 +19,21 @@ import lombok.RequiredArgsConstructor;
 public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	private final Comparator comparator;
-	private final Object right; //null|array|any
+	private final Object[] right;
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object left) {
-		var param = new LinkedList<>();
+		var param = new ArrayList<>();
 		param.add(left);
 		if(nonNull(right)) {
-			if(right.getClass().isArray()) {
-				Stream.of((Object[])right).forEach(param::add);
-			}
-			else {
-				param.add(right);
-			}
+			addAll(param, right);
 		}
 		return comparator.sql(builder, param.toArray());
 	}
 	
 	@Override
 	public boolean isAggregation() {
-		return aggregation(right);
+		return nonNull(right) && Stream.of(right).anyMatch(Aggregable::aggregation);
 	}
 	
 	@Override
@@ -49,6 +43,6 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	@Override
 	public String toString() {
-		return sql(addWithValue(), column("<left>"));
+		return sql(addWithValue(), "<left>");
 	}	
 }

@@ -48,6 +48,10 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	default OperationColumn args(Object... args) {
 		return new OperationColumn(this, args); // no type
 	}
+
+	default OperationColumn args(JavaType type, Object... args) {
+		return new OperationColumn(this, args, type);
+	}
 	
 	//Arithmetic operations
 

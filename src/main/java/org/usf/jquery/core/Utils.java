@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.copyOf;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
@@ -19,7 +20,7 @@ import lombok.NoArgsConstructor;
 public final class Utils {
 	//move this
 	static ThreadLocal<Database> context = new ThreadLocal<>(); // change it
-
+	
 	public static final int UNLIMITED = -1;
 	
 	public static <T> boolean isPresent(T[] a) {
@@ -50,5 +51,9 @@ public final class Utils {
 		context.set(db);
 	}
 	
-	
+	public static <T> T[] arrayJoin(T[] arr, T o) {
+		var res = copyOf(arr, arr.length+1);
+		res[arr.length] = o;
+		return res;
+	}
 }

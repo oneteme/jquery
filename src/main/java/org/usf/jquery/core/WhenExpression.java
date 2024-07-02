@@ -42,11 +42,10 @@ final class WhenExpression implements DBExpression, Typed {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), null);
+		return sql(addWithValue());
 	}
 	
 	public static WhenExpression orElse(Object value) {
 		return new WhenExpression(null, value);
 	}
-	
 }

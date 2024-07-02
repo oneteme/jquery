@@ -16,8 +16,8 @@ public class TypedOperator implements Operator {
 	private final ArgTypeRef typeFn;
 	private final ParameterSet parameterSet;
 	
-	public TypedOperator(JavaType type, Operator function, Parameter... args) {
-		this(o-> type, function, args);
+	public TypedOperator(JavaType type, Operator function, Parameter... parameter) {
+		this(o-> type, function, parameter);
 	}
 
 	public TypedOperator(ArgTypeRef typeFn, Operator function, Parameter... parameter) {

@@ -48,6 +48,10 @@ public final class SqlStringBuilder {
 	public SqlStringBuilder appendIf(boolean condition, Supplier<String> sup, Supplier<String> orSup) {
 		return append(condition ? sup.get() : orSup.get());
 	}
+	
+	public SqlStringBuilder appendIf(boolean condition, String sup, String orElse) {
+		return append(condition ? sup : orElse);
+	}
 
 	public SqlStringBuilder appendEach(Collection<String> list, String separator) {
 		return appendEach(list, separator, EMPTY, identity());

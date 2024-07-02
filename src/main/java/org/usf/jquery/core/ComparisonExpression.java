@@ -19,27 +19,27 @@ public interface ComparisonExpression extends DBExpression, Aggregable, Chainabl
 
 	String sql(QueryParameterBuilder builder, Object left); // do change method order
 	
-	static ComparisonExpression equal(Object right) {
+	static ComparisonExpression eq(Object right) {
 		return Comparator.eq().expression(right);
 	}
 
-	static ComparisonExpression notEqual(Object right) {
+	static ComparisonExpression ne(Object right) {
 		return Comparator.ne().expression(right);
 	}
 	
-	static ComparisonExpression lessThan(Object right) {
+	static ComparisonExpression lt(Object right) {
 		return Comparator.lt().expression(right);
 	}
 
-	static ComparisonExpression lessOrEqual(Object right) {
+	static ComparisonExpression le(Object right) {
 		return Comparator.le().expression(right);
 	}
 
-	static ComparisonExpression greaterThan(Object right) {
+	static ComparisonExpression gt(Object right) {
 		return Comparator.gt().expression(right);
 	}
 
-	static ComparisonExpression greaterOrEqual(Object right) {
+	static ComparisonExpression ge(Object right) {
 		return Comparator.ge().expression(right);
 	}
 	
@@ -60,21 +60,20 @@ public interface ComparisonExpression extends DBExpression, Aggregable, Chainabl
 	}
 
 	static ComparisonExpression isNull() {
-		return Comparator.isNull().expression(null);
+		return Comparator.isNull().expression();
 	}
 
 	static ComparisonExpression isNotNull() {
-		return Comparator.notNull().expression(null);
+		return Comparator.notNull().expression();
 	}
 
 	@SuppressWarnings("unchecked")
 	static <T> ComparisonExpression in(@NonNull T... right) {
-		return Comparator.in().expression(right);
+		return Comparator.in().expression((Object[])right);
 	}
 	
 	@SuppressWarnings("unchecked")
 	static <T> ComparisonExpression notIn(@NonNull T... right) {
-		return Comparator.notIn().expression(right);
+		return Comparator.notIn().expression((Object[])right);
 	}
-
 }

@@ -1,17 +1,10 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
+import static org.usf.jquery.core.Utils.arrayJoin;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.stream.Stream;
-
-import lombok.AccessLevel;
-import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 
 /**
  * 
@@ -19,40 +12,37 @@ import lombok.RequiredArgsConstructor;
  *
  */
 //@see ColumnFilterGroup
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ComparisonExpressionGroup implements ComparisonExpression {
 	
 	private final LogicalOperator operator;
-	private final Collection<ComparisonExpression> expressions;
+	private final ComparisonExpression[] expressions;
 	
-	public ComparisonExpressionGroup(@NonNull LogicalOperator operator, ComparisonExpression... expressions) {
-		this(operator, expressions == null 
-				? new ArrayList<>()
-				: Stream.of(expressions).collect(toList()));
+	ComparisonExpressionGroup(LogicalOperator operator, ComparisonExpression... expressions) {
+		this.operator = operator;
+		this.expressions = expressions;
 	}
-	
+
 	@Override
 	public String sql(QueryParameterBuilder builder, Object operand) {
-		return "(" + expressions.stream().map(o-> o.sql(builder, operand)).collect(joining(operator.sql())) + ")";
+		return "(" + Stream.of(expressions)
+		.map(o-> o.sql(builder, operand))
+		.collect(joining(operator.sql())) + ")";
 	}
 	
 	@Override
 	public boolean isAggregation() {
-		return expressions.stream().anyMatch(ComparisonExpression::isAggregation);
+		return Stream.of(expressions).anyMatch(ComparisonExpression::isAggregation);
 	}
 
 	@Override
 	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
-		var gpe = operator == op 
-				? new ComparisonExpressionGroup(op, new ArrayList<>(expressions))
-				: new ComparisonExpressionGroup(op, this);
-		gpe.expressions.add(exp);
-		return gpe;
+		return operator == op 
+				? new ComparisonExpressionGroup(op, arrayJoin(expressions, exp))
+		        : new ComparisonExpressionGroup(op, this, exp);
 	}
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), EMPTY);
+		return sql(addWithValue(), "<left>");
 	}
-
 }
