@@ -1,8 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
-
-import java.util.Objects;
 
 /**
  * 
@@ -15,6 +14,9 @@ public interface TaggableColumn extends DBColumn {
 	
 	default String sqlWithTag(QueryParameterBuilder builder) {
 		var s = sql(builder);
-		return Objects.isNull(tagname()) ? s : s  + " AS " + doubleQuote(tagname());
+		if(nonNull(tagname())) {
+			s += " AS " + doubleQuote(tagname());
+		}
+		return s;
 	}
 }

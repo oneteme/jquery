@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.Utils.arrayJoin;
@@ -31,7 +32,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	
 	@Override
 	public boolean isAggregation() {
-		return Stream.of(filters).anyMatch(DBFilter::isAggregation);
+		return nonNull(filters) && Stream.of(filters).anyMatch(DBFilter::isAggregation);
 	}
 
 	@Override

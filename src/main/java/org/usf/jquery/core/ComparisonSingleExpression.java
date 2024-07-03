@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	private final Comparator comparator;
-	private final Object[] right;
+	private final Object[] right; //nullable
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object left) {

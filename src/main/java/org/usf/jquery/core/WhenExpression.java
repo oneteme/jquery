@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -27,7 +28,7 @@ final class WhenExpression implements DBExpression, Typed {
 	
 	public String sql(QueryParameterBuilder arg) {
 		var sb = new StringBuilder(50);
-		sb = filter == null
+		sb = isNull(filter)
 				? sb.append("ELSE ")
 				: sb.append("WHEN ")
 				.append(filter.sql(arg))

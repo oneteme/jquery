@@ -4,8 +4,8 @@ import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Objects;
 
 import lombok.AccessLevel;
@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class CaseColumn implements DBColumn { // TD override isAggregation
 
-	private final Collection<WhenExpression> expressions = new LinkedList<>();
+	private final Collection<WhenExpression> expressions = new ArrayList<>();
 	
 	@Override
 	public String sql(QueryParameterBuilder builder) {

@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import java.util.Objects;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
@@ -14,7 +16,7 @@ public final class NamedColumn implements TaggableColumn {
 
 	@Delegate
 	private final DBColumn column;
-	private final String tag;
+	private final String tag; //nullable
 
 	@Override
 	public String tagname() {
@@ -23,11 +25,7 @@ public final class NamedColumn implements TaggableColumn {
 	
 	@Override
 	public NamedColumn as(String name) { // map
-		return tag.equals(name) ? this : new NamedColumn(unwrap(), name);
-	}
-	
-	public DBColumn unwrap() {
-		return column;
+		return Objects.equals(name, tag) ? this : new NamedColumn(column, name);
 	}
 	
 	@Override 
