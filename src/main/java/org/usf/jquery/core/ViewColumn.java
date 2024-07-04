@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.member;
 
@@ -18,13 +19,17 @@ public final class ViewColumn implements TaggableColumn {
 	private final String tag;
 	private final JavaType type;
 	
+	public ViewColumn(String name, String tag) {
+		this(null, name, tag, null);
+	}
+	
 	public ViewColumn(DBView view, String name, String tag) {
 		this(view, name, tag, null);
 	}
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {
-		return member(arg.view(view), name);
+		return nonNull(view) ? member(arg.view(view), name) : name;
 	}
 	
 	@Override

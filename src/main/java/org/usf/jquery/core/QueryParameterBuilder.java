@@ -43,7 +43,7 @@ public final class QueryParameterBuilder {
 	}
 	
 	public String view(DBView view) {
-		if(isNull(vPrefix) || isNull(view)) { //view can be null
+		if(isNull(vPrefix)) { //view can be null
 			return null;
 		}
 		for(var i=0; i<views.size(); i++) {

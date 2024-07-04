@@ -30,7 +30,7 @@ public interface ColumnDecorator {
 		return nonNull(b)
 				? b.build(td).as(reference())
 				: td.columnName(this) //recursive call
-				.map(Validation::requireLegalVariable)
+				.map(Validation::requireLegalVariable) //do it on init
 				.map(cn-> new ViewColumn(td.table(), cn, reference(), dataType(td)))
 				.orElseThrow(()-> undeclaredResouceException(td.identity(), identity()));
 	}

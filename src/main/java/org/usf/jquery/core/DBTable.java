@@ -16,6 +16,10 @@ public class DBTable implements DBView {
 	private final String id;
 	private final String name;
 
+	public DBTable(String name) {  //core usage
+		this(name, name);
+	}
+
 	@Override
 	public String sql(QueryParameterBuilder builder) {
 		return member(builder.getSchema(), name);

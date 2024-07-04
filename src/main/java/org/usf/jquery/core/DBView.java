@@ -14,7 +14,7 @@ public interface DBView extends DBObject {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNoArgs(args, DBColumn.class::getSimpleName);
+		requireNoArgs(args, DBView.class::getSimpleName);
 		return sql(builder);
 	}
 
@@ -27,5 +27,4 @@ public interface DBView extends DBObject {
 	default ViewQuery select(String tag, TaggableColumn... columns) {
 		return new ViewQuery(tag, columns);
 	}
-	
 }

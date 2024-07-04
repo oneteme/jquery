@@ -7,7 +7,6 @@ import java.util.Collection;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -22,7 +21,7 @@ public final class ViewQuery implements DBQuery {
 	@Getter // remove this
 	private final RequestQueryBuilder query;
 	
-	public ViewQuery(@NonNull String id, @NonNull TaggableColumn... columns) {
+	public ViewQuery(String id, TaggableColumn... columns) {
 		this(id, new RequestQueryBuilder().columns(columns));
 	}
 
