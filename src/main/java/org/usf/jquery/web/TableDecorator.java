@@ -2,9 +2,12 @@ package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.FETCH;
@@ -12,27 +15,29 @@ import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.Constants.VIEW;
+import static org.usf.jquery.web.JQueryContext.context;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
+import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.RequestContext.clearContext;
 import static org.usf.jquery.web.RequestContext.currentContext;
 import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
-import static org.usf.jquery.web.TableMetadata.emptyMetadata;
-import static org.usf.jquery.web.TableMetadata.tableMetadata;
 
-import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBQuery;
-import org.usf.jquery.core.DBTable;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.ViewColumn;
+
+import lombok.NonNull;
 
 /**
  * 
@@ -43,19 +48,24 @@ public interface TableDecorator {
 	
 	String identity(); //URL
 	
-	String tableName(); //SQL check schema.table
+	String tableName(); // schema.table || nullable if builder
 	
-	Optional<String> columnName(ColumnDecorator cd);
+	String columnName(ColumnDecorator cd);
 	
-	default DBView table() { //optim
-		var b = builder();
-		return nonNull(b) 
-				? b.build(identity())
-				: new DBTable(identity(), tableName());
+	default DBView table() {
+		return metadata().getView();
 	}
 	
-	default TaggableColumn column(ColumnDecorator cd) {
-		return cd.from(this);
+	default TaggableColumn column(@NonNull ColumnDecorator cd) {
+		var c = metadata().columnMetada(cd); //priority
+		if(nonNull(c)) {
+			return c.getColumn();
+		}
+		var b = cd.builder(this);
+		if(nonNull(b)) {
+			return b.build(this).as(cd.reference(this)); //set type
+		}
+		throw undeclaredResouceException(identity(), cd.identity());
 	}
 	
 	default ViewBuilder builder() {
@@ -63,7 +73,38 @@ public interface TableDecorator {
 	}
 
 	default CriteriaBuilder<DBFilter> criteria(String name) { //!aggregation 
-		return null;  // no criteria by default
+		return null; // no criteria by default
+	}
+
+	default TableMetadata metadata() {
+		return database().tableMetada(this, ()-> new TableMetadata(tableView(), declaredColumns()));
+	}
+	
+	default DBView tableView() {
+		var tn = tableName();
+		if(nonNull(tn)){
+			var idx = tn.indexOf('.'); //schema.view
+			return idx == -1 
+					? new TableView(requireLegalVariable(tn)) 
+					: new TableView(requireLegalVariable(tn.substring(0, idx)),
+							requireLegalVariable(tn.substring(idx, tn.length())));
+		}
+		var b = builder();
+		if(nonNull(b)){
+			return b.build(identity());
+		}
+		throw new IllegalArgumentException("viewName or builder expected in " + this);
+	}
+	
+	default Map<String, ColumnMetadata> declaredColumns(){
+		var columns = context().getColumns().values();
+		return columns.stream().<ColumnMetadata>mapMulti((cd, cons)-> {
+			var cn = columnName(cd);
+			if(nonNull(cn)) { //only physical column
+				var col = new ViewColumn(table(), cn, cd.reference(this), cd.type(this));
+				cons.accept(columnMetadata(col));
+			} //tag = reference
+		}).collect(toUnmodifiableMap(cm-> cm.getColumn().getTag(), Function.identity()));
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
@@ -145,15 +186,6 @@ public interface TableDecorator {
 			throw new IllegalArgumentException("too many value");
 		}
 		return null;
-	}
-
-	default TableMetadata metadata() {
-		return database().tableMetada(this) 
-				.orElseGet(()-> emptyMetadata(this)); // not binded
-	}
-	
-	default TableMetadata createMetadata(Collection<ColumnDecorator> columns) {
-		return tableMetadata(this, columns);
 	}
 
 	static Stream<String> flatParameters(String... arr) { //number local separator

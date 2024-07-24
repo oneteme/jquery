@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.DBTable;
+import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.QueryParameterBuilder;
 
 import lombok.RequiredArgsConstructor;
@@ -53,8 +53,8 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 		throw new IllegalArgumentException("no revision");
 	}
 
-	static DBTable yearTable(String name, String tagname) {
-		return new DBTable(name, tagname) {
+	static TableView yearTable(String name, String tagname) {
+		return new TableView(name, tagname) {
 			@Override
 			public String sql(QueryParameterBuilder builder) {
 				return super.sql(builder) + "_" + currentRev.get().getKey();

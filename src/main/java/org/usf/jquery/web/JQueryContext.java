@@ -51,7 +51,7 @@ public final class JQueryContext {
 		return instance;
 	}
 	
-	public DatabaseMetadata bind(DataSource ds){
+	public DatabaseMetadata bind(DataSource ds){ //default schema
 		database = create(ds, tables.values(), columns.values());
 		return database;
 	}

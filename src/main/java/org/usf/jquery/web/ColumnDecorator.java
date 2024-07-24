@@ -1,14 +1,7 @@
 package org.usf.jquery.web;
 
-import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.ArgumentParsers.jdbcArgParser;
-import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
-
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.JDBCType;
-import org.usf.jquery.core.TaggableColumn;
-import org.usf.jquery.core.Validation;
-import org.usf.jquery.core.ViewColumn;
 
 /**
  * 
@@ -19,38 +12,26 @@ import org.usf.jquery.core.ViewColumn;
 @FunctionalInterface
 public interface ColumnDecorator {
 	
-	String identity();  //URL
+	String identity();  //URL unique
 	
-	default String reference() { //JSON
+	default String reference(TableDecorator td) { //JSON
 		return identity();
 	}
 	
-	default TaggableColumn from(TableDecorator td) {
-		var b = builder();
-		return nonNull(b)
-				? b.build(td).as(reference())
-				: td.columnName(this) //recursive call
-				.map(Validation::requireLegalVariable) //do it on init
-				.map(cn-> new ViewColumn(td.table(), cn, reference(), dataType(td)))
-				.orElseThrow(()-> undeclaredResouceException(td.identity(), identity()));
+	default JDBCType type(TableDecorator td) {
+		return null;
 	}
 	
-	default JDBCArgumentParser parser(TableDecorator td){ // override parser | format | local
-		return jdbcArgParser(dataType(td));
+	default JDBCArgumentParser parser(TableDecorator td){ // override parser | format | local | validation
+		return null; // jdbcArgParser(dataType(td))
 	}
 	
-	default JDBCType dataType(TableDecorator td) { // only if !builder
-		return td.metadata().columnMetada(this)
-		.map(ColumnMetadata::getDataType)
-		.orElse(null);
-	}
-	
-	default ColumnBuilder builder() { //set type if null
+	default ColumnBuilder builder(TableDecorator td) { //set type if null
 		return null; // no builder by default
 	}
 	
 	default CriteriaBuilder<ComparisonExpression> criteria(String name) {
-		return null;  // no criteria by default
+		return null; // no criteria by default
 	}
 	
 	default String pattern(TableDecorator td) {
@@ -73,7 +54,7 @@ public interface ColumnDecorator {
 			}
 			
 			@Override
-			public ColumnBuilder builder() {
+			public ColumnBuilder builder(TableDecorator td) {
 				return cb;
 			}
 		};

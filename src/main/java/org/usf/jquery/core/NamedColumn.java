@@ -16,7 +16,8 @@ public final class NamedColumn implements TaggableColumn {
 
 	@Delegate
 	private final DBColumn column;
-	private final String tag; //nullable
+	private final String tag; //nullable 
+	//+ type
 
 	@Override
 	public String tagname() {

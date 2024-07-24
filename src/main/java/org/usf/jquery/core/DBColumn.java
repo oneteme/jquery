@@ -40,7 +40,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return Stream.of(this);
 	}
 	
-	default JavaType getType() {
+	default JDBCType getType() {
 		return null;
 	}
 

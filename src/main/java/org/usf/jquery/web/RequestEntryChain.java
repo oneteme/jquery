@@ -60,7 +60,7 @@ import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.core.ViewJoin.JoinType;
-import org.usf.jquery.core.ViewQuery;
+import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.WindowFunction;
 
 import lombok.AccessLevel;
@@ -92,7 +92,7 @@ final class RequestEntryChain {
 		this(value, false);
 	}
 
-	public ViewQuery evalQuery(TableDecorator td) {
+	public QueryView evalQuery(TableDecorator td) {
 		return evalQuery(td, false);
 	}
 	
@@ -107,7 +107,9 @@ final class RequestEntryChain {
 	}
 	
 	
-	public ViewQuery evalQuery(TableDecorator td, boolean requireTag) {
+	//evalView query|view:alias
+	
+	public QueryView evalQuery(TableDecorator td, boolean requireTag) {
 		if(SELECT.equals(value)) {
 			var q = new RequestQueryBuilder().columns(toColumnArgs(td, false));
 			var e =	this;

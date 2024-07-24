@@ -15,13 +15,13 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class ViewQuery implements DBQuery {
+public final class QueryView implements DBQuery {
 
 	private final String id;
 	@Getter // remove this
 	private final RequestQueryBuilder query;
 	
-	public ViewQuery(String id, TaggableColumn... columns) {
+	public QueryView(String id, TaggableColumn... columns) {
 		this(id, new RequestQueryBuilder().columns(columns));
 	}
 

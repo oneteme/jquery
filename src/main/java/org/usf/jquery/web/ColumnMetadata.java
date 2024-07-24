@@ -1,21 +1,26 @@
 package org.usf.jquery.web;
 
 import static java.lang.Integer.MAX_VALUE;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.DECIMAL;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.FLOAT;
 import static org.usf.jquery.core.JDBCType.NUMERIC;
+import static org.usf.jquery.core.JDBCType.OTHER;
 import static org.usf.jquery.core.JDBCType.REAL;
+import static org.usf.jquery.core.JDBCType.fromDataType;
 import static org.usf.jquery.core.Utils.UNLIMITED;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import java.sql.Timestamp;
 
 import org.usf.jquery.core.JDBCType;
+import org.usf.jquery.core.Validation;
+import org.usf.jquery.core.ViewColumn;
 
 import lombok.AccessLevel;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 
 /**
@@ -24,25 +29,36 @@ import lombok.ToString;
  * 
  */
 @Getter
-@Setter(value = AccessLevel.PACKAGE)
 @ToString
-@RequiredArgsConstructor
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ColumnMetadata {
 	
-	private final String columnName;
-	private JDBCType dataType = null;
-	private int dataSize = UNLIMITED;
-	private int precision = UNLIMITED;
+	private ViewColumn column;
+	private int dataSize;
+	private int precision;
+	private final boolean overConfigured;
 	
+	@Deprecated
 	ColumnMetadata reset() {
-		this.dataType  = null;
 		this.dataSize  = UNLIMITED;
 		this.precision = UNLIMITED;
 		return this;
 	}
-
+	
+	public void update(int type, int size, int precision) {
+		if(!overConfigured) {
+			var ct = fromDataType(type).orElse(OTHER);
+			if(ct != column.getType()) {
+				
+				column = new ViewColumn(column.getView(), column.getName(), column.getTag(), ct);
+			}
+			this.dataSize = size;
+			this.precision = precision;
+		}
+	}
+	
 	public String toJavaType(){
-		return dataType.typeClass().getSimpleName();
+		return column.getType().typeClass().getSimpleName();
 	}
 	
 	public String toSqlType(){
@@ -57,5 +73,9 @@ public final class ColumnMetadata {
 			s+= "(" + dataSize + "," + precision + ")";
 		}
 		return s;
+	}
+	
+	public static ColumnMetadata columnMetadata(ViewColumn col) {
+		return new ColumnMetadata(col, UNLIMITED, UNLIMITED, nonNull(col.getType()));
 	}
 }

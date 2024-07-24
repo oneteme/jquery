@@ -18,6 +18,6 @@ public interface JavaType {
 	
 	public interface Typed {
 		
-		JavaType getType();  // return null by default
+		JDBCType getType();  // return null by default
 	}
 }

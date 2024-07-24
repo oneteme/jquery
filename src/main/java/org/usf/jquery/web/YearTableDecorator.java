@@ -31,7 +31,7 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.DBTable;
+import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 
@@ -55,7 +55,7 @@ public interface YearTableDecorator extends TableDecorator {
     }
     
 	@Override
-	default DBTable table() {
+	default TableView table() {
 		return yearTable(tableName(), identity());
 	}
 	

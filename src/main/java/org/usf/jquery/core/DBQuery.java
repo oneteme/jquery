@@ -11,6 +11,7 @@ import org.usf.jquery.core.JavaType.Typed;
  */
 public interface DBQuery extends DBView, Typed {
 
+	@Deprecated
 	Collection<TaggableColumn> columns();
 
 	@Override

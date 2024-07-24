@@ -1,28 +1,28 @@
 package org.usf.jquery.web;
 
 import static java.lang.String.join;
-import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.core.JDBCType.OTHER;
-import static org.usf.jquery.core.JDBCType.fromDataType;
+import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
+
+import org.usf.jquery.core.DBQuery;
+import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.QueryParameterBuilder;
+import org.usf.jquery.core.TableView;
 
 import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 
@@ -33,17 +33,21 @@ import lombok.ToString;
  */
 @ToString
 @Getter(AccessLevel.PACKAGE)
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class TableMetadata {
 	
-	private final String tablename;
-	private final Map<String, ColumnMetadata> columns;
+	private DBView view; //nullable if query
+	private Map<String, ColumnMetadata> columns;
 	@Getter
 	@Setter(AccessLevel.PACKAGE)
 	private Instant lastUpdate;
+
+	public TableMetadata(DBView view, Map<String, ColumnMetadata> columns) {
+		this.view = view;
+		this.columns = columns;
+	}
 	
-	public Optional<ColumnMetadata> columnMetada(ColumnDecorator cd) {
-		return Optional.ofNullable(columns.get(cd.identity()));
+	public ColumnMetadata columnMetada(ColumnDecorator cd) {
+		return columns.get(cd.identity());
 	}
 
 	public void fetch() throws SQLException { //individually table fetching
@@ -53,37 +57,45 @@ public class TableMetadata {
 	}
 	
 	void fetch(DatabaseMetaData metadata) throws SQLException {
-		var dbMap = columns.values().stream().collect(toMap(ColumnMetadata::getColumnName, identity()));
-		try(var rs = metadata.getColumns(null, null, tablename, null)){
-			if(!rs.next()) {
-				throw new NoSuchElementException(quote(tablename) + " table not found");
+		if(view instanceof TableView tv) {
+			try(var rs = metadata.getColumns(null, tv.getSchema(), tv.getName(), null)){
+				if(rs.next()) {
+					var db = columns.values().stream().collect(toMap(m-> m.getColumn().getName(), identity()));
+					do {
+						var cm = db.remove(rs.getString("COLUMN_NAME"));
+						if(nonNull(cm)) {
+							cm.update(
+									rs.getInt("DATA_TYPE"), 
+									rs.getInt("COLUMN_SIZE"), 
+									rs.getInt("DECIMAL_DIGITS"));
+						} // else undeclared column
+					} while(rs.next());
+					if(!db.isEmpty()) {
+						throw new NoSuchElementException("column(s) [" + join(", ", db.keySet()) + "] not found in " + view.toString());
+					}
+				}
+				else {
+					throw new NoSuchElementException(quote(view.toString()) + " table not found");
+				}
 			}
-			do {
-				var meta = dbMap.remove(rs.getString("COLUMN_NAME"));
-				if(nonNull(meta)) {
-					meta.setDataType(fromDataType(rs.getInt("DATA_TYPE")).orElse(OTHER));
-					meta.setDataSize(rs.getInt("COLUMN_SIZE"));
-					meta.setPrecision(rs.getInt("DECIMAL_DIGITS"));
-				} // else undeclared column
-			} while(rs.next());
 		}
-		if(!dbMap.isEmpty()) {
-			throw new NoSuchElementException("column(s) [" + join(", ", dbMap.keySet()) + "] not found in " + tablename);
+		else if(view instanceof DBQuery qr) {
+			var b = parametrized(new ArrayList<>());
+			try(var ps = metadata.getConnection().prepareStatement("SELECT * FROM(" + qr.sql(b) + ") WHERE 1=0");
+				var rs = ps.executeQuery()){
+				var db = new HashMap<>(columns);
+				var meta = rs.getMetaData();
+				for(var i=1; i<=meta.getColumnCount(); i++) {
+					var cm = db.remove(meta.getColumnName(i));
+					if(nonNull(cm)) {
+						cm.update(meta.getColumnType(i), meta.getColumnDisplaySize(i), meta.getPrecision(i));
+					} // else undeclared column
+				}
+				if(!db.isEmpty()) {
+					throw new NoSuchElementException("column(s) [" + join(", ", db.keySet()) + "] not found in " + view.toString());
+				}
+			}
+			view = null; 
 		}
-	}
-
-	static TableMetadata emptyMetadata(TableDecorator table) {
-		return tableMetadata(table, emptyList());
-	}
-	
-	static TableMetadata tableMetadata(TableDecorator table, Collection<ColumnDecorator> columns) {
-		return new TableMetadata(table.tableName(), declaredColumns(table, columns));
-	}
-	
-	static Map<String, ColumnMetadata> declaredColumns(TableDecorator table, Collection<ColumnDecorator> columns){
-		return unmodifiableMap(columns.stream().reduce(new LinkedHashMap<String, ColumnMetadata>(), (m, cd)-> {
-			table.columnName(cd).map(ColumnMetadata::new).ifPresent(cm-> m.put(cd.identity(), cm));
-			return m;
-		}, (m1, m2)-> m1));
 	}
 }

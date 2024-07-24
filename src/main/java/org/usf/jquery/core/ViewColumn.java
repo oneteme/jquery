@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.member;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -11,13 +12,14 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
+@Getter
 @RequiredArgsConstructor
 public final class ViewColumn implements TaggableColumn {
 
 	private final DBView view;
 	private final String name;
 	private final String tag;
-	private final JavaType type;
+	private final JDBCType type;
 	
 	public ViewColumn(String name, String tag) {
 		this(null, name, tag, null);
@@ -33,7 +35,7 @@ public final class ViewColumn implements TaggableColumn {
 	}
 	
 	@Override
-	public JavaType getType() {
+	public JDBCType getType() {
 		return type;
 	}
 

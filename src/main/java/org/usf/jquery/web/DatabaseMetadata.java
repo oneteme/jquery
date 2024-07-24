@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
@@ -49,8 +50,8 @@ public final class DatabaseMetadata {
 	@Getter
 	private Database type;
 
-	public Optional<TableMetadata> tableMetada(TableDecorator td){
-		return ofNullable(tables.get(td.identity()));
+	public TableMetadata tableMetada(TableDecorator td, Supplier<TableMetadata> supp){
+		return tables.computeIfAbsent(td.identity(), id-> supp.get());
 	}
 	
 	public void fetch() {
@@ -65,12 +66,11 @@ public final class DatabaseMetadata {
 				var metadata = cn.getMetaData();
 				type = Database.of(metadata.getDatabaseProductName()).orElse(null);
 				for(var t : tables.values()) {
-					log.info("Scanning table '{}' metadata...", t.getTablename());
+					log.info("Scanning table '{}' metadata...", t.getView());
 					t.fetch(metadata);
 					logTableColumns(t.getColumns());
-					if(t instanceof YearTableMetadata) {
-						var yt = (YearTableMetadata) t;
-						log.info("Scanning table '{}' revisions...", t.getTablename());
+					if(t instanceof YearTableMetadata yt) {
+						log.info("Scanning table '{}' revisions...", t.getView());
 						yt.fetchRevisions(cn);
 						logRevisions(yt.getRevisions());
 					}
@@ -93,7 +93,7 @@ public final class DatabaseMetadata {
 			log.info(bar);
 			map.entrySet().forEach(e-> 
 			log.info(format(pattern, e.getKey(), e.getValue().toJavaType(), 
-					e.getValue().getColumnName(), e.getValue().toSqlType())));
+					e.getValue().getColumn(), e.getValue().toSqlType())));
 			log.info(bar);
 		}
 	}
