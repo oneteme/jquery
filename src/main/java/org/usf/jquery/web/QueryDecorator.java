@@ -19,14 +19,9 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-final class QueryDecorator implements TableDecorator {
+final class QueryDecorator implements ViewDecorator {
 	
 	private final DBQuery query;
-	
-	@Override
-	public String tableName() {
-		return null;
-	}
 	
 	@Override
 	public String identity() {
@@ -34,8 +29,8 @@ final class QueryDecorator implements TableDecorator {
 	}
 	
 	@Override
-	public Optional<String> columnName(ColumnDecorator cd) {
-		return column(cd.identity()).map(TaggableColumn::tagname);
+	public String columnName(ColumnDecorator cd) {
+		return column(cd.identity()).map(TaggableColumn::tagname).orElse(null);
 	}
 	
 	public Optional<ColumnDecorator> lookupColumnDecorator(String cn) {

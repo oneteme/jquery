@@ -16,11 +16,13 @@ import java.lang.annotation.Target;
 @Documented
 public @interface RequestQueryParam {
 
-	String name(); //table identity
+	String view(); //view identity
+	
+	String database() default ""; //optional database identity
 	
 	String[] defaultColumns() default {};
 	
-	String[] ignoreParameters() default {}; //should not be parsed by JQuery
+	String[] ignoreParameters() default {}; // !parsed 
 	
 	boolean aggregationOnly() default false; // else throw IllegalDataAccessException
 }

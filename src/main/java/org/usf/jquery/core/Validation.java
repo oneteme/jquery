@@ -39,8 +39,8 @@ public final class Validation {
 		return arr;
 	}
 
-	public static <T> Collection<T> requireNonEmpty(Collection<T> c){
-		illegalArgumentIf(isNull(c) || c.isEmpty(), "empty collection");
+	public static <T> Collection<T> requireNonEmpty(Collection<T> c, String name){
+		illegalArgumentIf(isNull(c) || c.isEmpty(), name + " is empty");
 		return c;
 	}
 

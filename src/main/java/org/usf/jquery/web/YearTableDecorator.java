@@ -17,13 +17,10 @@ import static org.usf.jquery.web.RevisionIterator.iterator;
 import static org.usf.jquery.web.RevisionIterator.monthFilter;
 import static org.usf.jquery.web.RevisionIterator.yearColumn;
 import static org.usf.jquery.web.RevisionIterator.yearTable;
-import static org.usf.jquery.web.TableDecorator.flatParameters;
-import static org.usf.jquery.web.YearTableMetadata.emptyMetadata;
-import static org.usf.jquery.web.YearTableMetadata.yearTableMetadata;
+import static org.usf.jquery.web.ViewDecorator.flatParameters;
 
 import java.time.Year;
 import java.time.YearMonth;
-import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -31,8 +28,8 @@ import java.util.Optional;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.TaggableColumn;
 
 /**
@@ -40,7 +37,7 @@ import org.usf.jquery.core.TaggableColumn;
  * @author u$f
  * 
  */
-public interface YearTableDecorator extends TableDecorator {
+public interface YearTableDecorator extends ViewDecorator {
 	
 	Optional<? extends ColumnDecorator> monthRevision();
 
@@ -56,12 +53,12 @@ public interface YearTableDecorator extends TableDecorator {
     
 	@Override
 	default TableView table() {
-		return yearTable(tableName(), identity());
+		return yearTable(viewName(), identity());
 	}
 	
 	@Override
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
-		var query = TableDecorator.super.query(parameterMap);
+		var query = ViewDecorator.super.query(parameterMap);
 		monthRevision().map(this::column)
 		.ifPresent(c-> query.filters(monthFilter(c)));
 		return query.repeat(iterator(parseRevisions(parameterMap)));
@@ -89,8 +86,8 @@ public interface YearTableDecorator extends TableDecorator {
 	@Override
 	default TaggableColumn column(ColumnDecorator column) {
 		return column == yearRevision() 
-				? yearColumn().as(yearRevision().reference()) 
-				: TableDecorator.super.column(column);
+				? yearColumn().as(yearRevision().reference(this)) 
+				: ViewDecorator.super.column(column);
 	}
     
     default UnaryOperator<YearMonth[]> revisionMode(String mode) {
@@ -165,13 +162,7 @@ public interface YearTableDecorator extends TableDecorator {
 
     @Override
     default YearTableMetadata metadata() {
-		return (YearTableMetadata) database().tableMetada(this) //safe cast
-				.orElseGet(()-> emptyMetadata(this)); //not binded
-    }
-    
-    @Override
-    default YearTableMetadata createMetadata(Collection<ColumnDecorator> columns) {
-    	return yearTableMetadata(this, columns);
+		return (YearTableMetadata) database().viewMetadata(this, ()-> yearTableMetadata(this)); //safe cast
     }
     
     default String defaultRevisionMode() {

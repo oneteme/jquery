@@ -8,5 +8,5 @@ package org.usf.jquery.web;
 @FunctionalInterface
 public interface JavaArgumentParser {
 	
-	Object parseEntry(RequestEntryChain entry, TableDecorator td);
+	Object parseEntry(RequestEntryChain entry, ViewDecorator td);
 }

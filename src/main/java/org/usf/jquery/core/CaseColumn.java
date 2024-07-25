@@ -30,7 +30,7 @@ public final class CaseColumn implements DBColumn { // TD override isAggregation
 	}
 	
 	@Override
-	public JavaType getType() {
+	public JDBCType getType() {
 		return expressions.stream()
 				.map(WhenExpression::getType)
 				.filter(Objects::nonNull) // should have same type

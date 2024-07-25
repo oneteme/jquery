@@ -15,7 +15,7 @@ public interface DBQuery extends DBView, Typed {
 	Collection<TaggableColumn> columns();
 
 	@Override
-	default JavaType getType() {
+	default JDBCType getType() {
 		var cols = columns();
 		if(cols.size() == 1) {
 			return cols.iterator().next().getType();

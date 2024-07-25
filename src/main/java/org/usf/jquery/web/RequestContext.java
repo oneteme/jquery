@@ -23,11 +23,11 @@ public final class RequestContext {
 	
 	private static final ThreadLocal<RequestContext> local = new ThreadLocal<>();
 	
-	private final Map<String, TableDecorator> viewDecorators;
+	private final Map<String, ViewDecorator> viewDecorators;
 	private final Map<String, ColumnDecorator> columnDecorators;
 	private final Map<String, DBQuery> workQueries = new LinkedHashMap<>(); //work queries
 
-	public Optional<TableDecorator> lookupViewDecorator(String id) {
+	public Optional<ViewDecorator> lookupViewDecorator(String id) {
 		log.trace("lookup view decorator : {}", id);
 		return ofNullable(viewDecorators.get(id));
 	}
@@ -42,7 +42,7 @@ public final class RequestContext {
 		return ofNullable(workQueries.get(id));
 	}
 	
-	public void putViewDecorator(TableDecorator v) {
+	public void putViewDecorator(ViewDecorator v) {
 		if(!viewDecorators.containsKey(v.identity())) {
 			viewDecorators.put(v.identity(), v);
 		}

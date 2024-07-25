@@ -49,7 +49,7 @@ public interface Operator extends DBProcessor<OperationColumn> {
 		return new OperationColumn(this, args); // no type
 	}
 
-	default OperationColumn args(JavaType type, Object... args) {
+	default OperationColumn args(JDBCType type, Object... args) {
 		return new OperationColumn(this, args, type);
 	}
 	

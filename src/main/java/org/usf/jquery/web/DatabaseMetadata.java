@@ -3,28 +3,27 @@ package org.usf.jquery.web;
 import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Instant.now;
-import static java.util.Collections.emptyMap;
 import static java.util.Comparator.comparing;
 import static java.util.Objects.isNull;
-import static java.util.Optional.ofNullable;
+import static java.util.Objects.nonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.Utils.isPresent;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
 
 import java.sql.SQLException;
 import java.time.Instant;
 import java.time.YearMonth;
-import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
-import javax.sql.DataSource;
-
 import org.usf.jquery.core.Database;
+import org.usf.jquery.core.ViewColumn;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -37,38 +36,48 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@Getter(AccessLevel.PACKAGE)
+@RequiredArgsConstructor
 public final class DatabaseMetadata {
 
 	private final Object mutex = new Object();
 
-	@Getter(AccessLevel.PACKAGE)	
-	private final DataSource dataSource; //nullable if no sync
-	private final Map<String, TableMetadata> tables; //empty if no sync
+	private final DatabaseConfiguration config;
+	private final Map<String, ViewMetadata> tables = new HashMap<>(); //lazy loading
 	@Getter
 	private Instant lastUpdate;
 	@Getter
 	private Database type;
 
-	public TableMetadata tableMetada(TableDecorator td, Supplier<TableMetadata> supp){
-		return tables.computeIfAbsent(td.identity(), id-> supp.get());
+	public ViewMetadata viewMetadata(ViewDecorator td){
+		return tables.computeIfAbsent(td.identity(), id-> {
+			var view = config.getDatabase().tableView(td);
+			var meta = config.getColumns().values().stream().<ColumnMetadata>mapMulti((cd, acc)-> {
+				var cn = td.columnName(cd);
+				if(nonNull(cn)) { //ViewColumn only
+					var col = new ViewColumn(view, requireLegalVariable(cn), requireLegalVariable(cd.reference(td)), cd.type(td));
+					acc.accept(columnMetadata(col));
+				} //tag = reference
+			}).collect(toUnmodifiableMap(cm-> cm.getColumn().getTag(), identity()));
+			return new ViewMetadata(view, meta);
+		});
 	}
 	
 	public void fetch() {
-		if(isNull(dataSource) || tables.isEmpty()) {
+		var ds = config.getDataSource();
+		if(isNull(ds) || tables.isEmpty()) {
 			log.warn("database resources not initialized"); //full scan ? next release
 			return;
 		}
 		synchronized (mutex) { //thread safe
 			var time = currentTimeMillis();
-			log.info("Scanning database metadata...");
-			try(var cn = dataSource.getConnection()){
+			log.info("scanning database metadata...");
+			try(var cn = ds.getConnection()){
 				var metadata = cn.getMetaData();
 				type = Database.of(metadata.getDatabaseProductName()).orElse(null);
 				for(var t : tables.values()) {
 					log.info("Scanning table '{}' metadata...", t.getView());
-					t.fetch(metadata);
-					logTableColumns(t.getColumns());
+					t.fetch(metadata, config.getSchema());
 					if(t instanceof YearTableMetadata yt) {
 						log.info("Scanning table '{}' revisions...", t.getView());
 						yt.fetchRevisions(cn);
@@ -84,20 +93,6 @@ public final class DatabaseMetadata {
 		}
 	}
 	
-	static void logTableColumns(Map<String, ColumnMetadata> map) {
-		if(!map.isEmpty()) {
-			var pattern = "|%-20s|%-15s|%-25s|%-20s|";
-			var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
-			log.info(bar);
-			log.info(format(pattern, "ID", "CLASS", "COLUMN", "TYPE"));
-			log.info(bar);
-			map.entrySet().forEach(e-> 
-			log.info(format(pattern, e.getKey(), e.getValue().toJavaType(), 
-					e.getValue().getColumn(), e.getValue().toSqlType())));
-			log.info(bar);
-		}
-	}
-	
 	static void logRevisions(YearMonth[] revs) {
 		if(isPresent(revs)) {
 			var pattern = "|%-5s|%-40s|";
@@ -110,15 +105,6 @@ public final class DatabaseMetadata {
 			log.info(format(pattern, e.getKey(), e.getValue().stream().map(o-> o.getMonthValue() + "").collect(joining(", ")))));
 			log.info(bar);
 		}
-	}
-
-	static DatabaseMetadata create(DataSource ds, Collection<TableDecorator> tables, Collection<ColumnDecorator> columns) {
-		return new DatabaseMetadata(ds, tables.stream()
-				.collect(toUnmodifiableMap(TableDecorator::identity, t-> t.createMetadata(columns))));
-	}
-	
-	static DatabaseMetadata emptyMetadata() {
-		return new DatabaseMetadata(null, emptyMap());
 	}
 }
 

@@ -10,12 +10,9 @@ import static org.usf.jquery.core.JDBCType.OTHER;
 import static org.usf.jquery.core.JDBCType.REAL;
 import static org.usf.jquery.core.JDBCType.fromDataType;
 import static org.usf.jquery.core.Utils.UNLIMITED;
-import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import java.sql.Timestamp;
 
-import org.usf.jquery.core.JDBCType;
-import org.usf.jquery.core.Validation;
 import org.usf.jquery.core.ViewColumn;
 
 import lombok.AccessLevel;
@@ -49,7 +46,6 @@ public final class ColumnMetadata {
 		if(!overConfigured) {
 			var ct = fromDataType(type).orElse(OTHER);
 			if(ct != column.getType()) {
-				
 				column = new ViewColumn(column.getView(), column.getName(), column.getTag(), ct);
 			}
 			this.dataSize = size;
@@ -62,15 +58,18 @@ public final class ColumnMetadata {
 	}
 	
 	public String toSqlType(){
+		var dataType = column.getType();
 		var s = dataType.name();
-		if(dataType.typeClass() == String.class && dataSize < MAX_VALUE) {
-			s+= "(" + dataSize + ")";
-		}
-		if(dataType.typeClass() == Timestamp.class) {
-			s+= "(" + precision + ")";
-		}
-		if(dataType == REAL || dataType == NUMERIC || dataType == DECIMAL || dataType == FLOAT || dataType == DOUBLE) {
-			s+= "(" + dataSize + "," + precision + ")";
+		if(!overConfigured) {
+			if(dataType.typeClass() == String.class && dataSize < MAX_VALUE) {
+				s+= "(" + dataSize + ")";
+			}
+			if(dataType.typeClass() == Timestamp.class) {
+				s+= "(" + precision + ")";
+			}
+			if(dataType == REAL || dataType == NUMERIC || dataType == DECIMAL || dataType == FLOAT || dataType == DOUBLE) {
+				s+= "(" + dataSize + "," + precision + ")";
+			}
 		}
 		return s;
 	}

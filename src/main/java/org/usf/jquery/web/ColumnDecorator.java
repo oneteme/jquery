@@ -14,19 +14,19 @@ public interface ColumnDecorator {
 	
 	String identity();  //URL unique
 	
-	default String reference(TableDecorator td) { //JSON
+	default String reference(ViewDecorator td) { //JSON
 		return identity();
 	}
 	
-	default JDBCType type(TableDecorator td) {
+	default JDBCType type(ViewDecorator td) {
 		return null;
 	}
 	
-	default JDBCArgumentParser parser(TableDecorator td){ // override parser | format | local | validation
+	default JDBCArgumentParser parser(ViewDecorator td){ // override parser | format | local | validation
 		return null; // jdbcArgParser(dataType(td))
 	}
 	
-	default ColumnBuilder builder(TableDecorator td) { //set type if null
+	default ColumnBuilder builder(ViewDecorator td) { //set type if null
 		return null; // no builder by default
 	}
 	
@@ -34,15 +34,15 @@ public interface ColumnDecorator {
 		return null; // no criteria by default
 	}
 	
-	default String pattern(TableDecorator td) {
+	default String pattern(ViewDecorator td) {
 		throw new UnsupportedOperationException(); //improve API security and performance
 	}
 
-	default boolean canSelect(TableDecorator td) {
+	default boolean canSelect(ViewDecorator td) {
 		throw new UnsupportedOperationException(); //authorization inject
 	}
 
-	default boolean canFilter(TableDecorator td) {
+	default boolean canFilter(ViewDecorator td) {
 		throw new UnsupportedOperationException(); //authorization inject
 	}
 	
@@ -54,7 +54,7 @@ public interface ColumnDecorator {
 			}
 			
 			@Override
-			public ColumnBuilder builder(TableDecorator td) {
+			public ColumnBuilder builder(ViewDecorator td) {
 				return cb;
 			}
 		};

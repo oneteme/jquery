@@ -17,7 +17,7 @@ public final class OperationColumn implements DBColumn {
 
 	private final Operator operator;
 	private final Object[] args;
-	private final JavaType type;
+	private final JDBCType type;
 
 	public OperationColumn(Operator operation, Object[] args) {
 		this(operation, args, null);
@@ -29,7 +29,7 @@ public final class OperationColumn implements DBColumn {
 	}
 	
 	@Override
-	public JavaType getType() {
+	public JDBCType getType() {
 		return type;
 	}
 	

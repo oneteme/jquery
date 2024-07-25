@@ -37,8 +37,6 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
-import javax.swing.text.View;
-
 import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -53,6 +51,7 @@ import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
@@ -60,7 +59,6 @@ import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.core.ViewJoin.JoinType;
-import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.WindowFunction;
 
 import lombok.AccessLevel;
@@ -92,12 +90,12 @@ final class RequestEntryChain {
 		this(value, false);
 	}
 
-	public QueryView evalQuery(TableDecorator td) {
+	public QueryView evalQuery(ViewDecorator td) {
 		return evalQuery(td, false);
 	}
 	
 
-	public ViewJoin evalJoin(TableDecorator td) {
+	public ViewJoin evalJoin(ViewDecorator td) {
 		if(value.matches(JoinType.pattern())) {
 			var jt = JoinType.valueOf(value);
 			var args = toArgs(td, null, null);
@@ -109,7 +107,7 @@ final class RequestEntryChain {
 	
 	//evalView query|view:alias
 	
-	public QueryView evalQuery(TableDecorator td, boolean requireTag) {
+	public QueryView evalQuery(ViewDecorator td, boolean requireTag) {
 		if(SELECT.equals(value)) {
 			var q = new RequestQueryBuilder().columns(toColumnArgs(td, false));
 			var e =	this;
@@ -133,7 +131,7 @@ final class RequestEntryChain {
 		throw cannotParseException(SELECT, this.toString());
 	}
 	
-	public Partition evalPartition(TableDecorator td) {
+	public Partition evalPartition(ViewDecorator td) {
 		if(PARTITION.equals(value)) {
 			var p = new Partition(toColumnArgs(td, true));
 			if(next()) { //TD loop
@@ -150,7 +148,7 @@ final class RequestEntryChain {
 		throw cannotParseException(PARTITION, this.toString());
 	}
 	
-	public TaggableColumn evalColumn(TableDecorator td) {
+	public TaggableColumn evalColumn(ViewDecorator td) {
 		var r = chainColumnOperations(td, false); //throws ParseException
 		if(r.entry.isLast()) {
 			if(nonNull(r.entry.tag)) { //TD: required tag if operation
@@ -165,7 +163,7 @@ final class RequestEntryChain {
 		throw unexpectedEntryException(r.entry.next.toString(), "[view].column[.op]*");
 	}
 	
-	public DBOrder evalOrder(TableDecorator td) {
+	public DBOrder evalOrder(ViewDecorator td) {
 		var r = chainColumnOperations(td, false);  //throws ParseException
 		if(r.entry.isLast()) { // no order
 			return r.col.order();
@@ -178,11 +176,11 @@ final class RequestEntryChain {
 		throw unexpectedEntryException(e.toString(), "asc|desc");
 	}
 
-	public DBFilter evalFilter(TableDecorator td) {
+	public DBFilter evalFilter(ViewDecorator td) {
 		return evalFilter(td, null);
 	}
 
-	public DBFilter evalFilter(TableDecorator td, List<RequestEntryChain> values) {
+	public DBFilter evalFilter(ViewDecorator td, List<RequestEntryChain> values) {
 		try {
 			var r = chainColumnOperations(td, true);
 			var e = r.entry;
@@ -206,7 +204,7 @@ final class RequestEntryChain {
 		}
 	}
 	
-	Optional<DBFilter> tableCriteria(TableDecorator td, List<RequestEntryChain> values) {
+	Optional<DBFilter> tableCriteria(ViewDecorator td, List<RequestEntryChain> values) {
 		RequestEntryChain e = null;
 		CriteriaBuilder<DBFilter> c = null;
 		var res = currentContext().lookupViewDecorator(value);
@@ -241,7 +239,7 @@ final class RequestEntryChain {
 		return e;
 	}
 	
-	DBFilter chainComparator(TableDecorator td, ColumnDecorator cd, DBColumn col){
+	DBFilter chainComparator(ViewDecorator td, ColumnDecorator cd, DBColumn col){
 		var f = lookupComparator(value).map(c-> c.args(toArgs(td, col, c.getParameterSet()))).orElse(null); //eval comparator first => avoid overriding
 		if(isNull(f) && col instanceof TaggableColumn) { //no operation
 			var c = cd.criteria(value); //criteria lookup
@@ -255,7 +253,7 @@ final class RequestEntryChain {
 		throw cannotParseException("comparison|criteria", this.toString());
 	}
 
-	DBFilter chainComparator(TableDecorator td, DBFilter f){
+	DBFilter chainComparator(ViewDecorator td, DBFilter f){
 		var e = next;
 		while(nonNull(e)) {
 			if(e.value.matches("and|or")) {
@@ -270,7 +268,7 @@ final class RequestEntryChain {
 		return f;
 	}
 	
-	private ResourceCursor chainColumnOperations(TableDecorator td, boolean filter) {
+	private ResourceCursor chainColumnOperations(ViewDecorator td, boolean filter) {
 		var r = lookupResource(td).orElseThrow(()-> cannotParseException(COLUMN, this.toString()));
 		var e = r.entry.next;
 		while(nonNull(e)) { // chain until !operator
@@ -287,7 +285,7 @@ final class RequestEntryChain {
 		return r;
 	}
 	
-	private static DBColumn windowColumn(TableDecorator td, TaggableColumn column) {
+	private static DBColumn windowColumn(ViewDecorator td, TaggableColumn column) {
 		var vw = currentContext().lookupView(td.identity()).orElse(null);
 		if(vw instanceof CompletableViewQuery) {  // already create
 			((CompletableViewQuery)vw).getQuery().columns(column);
@@ -300,7 +298,7 @@ final class RequestEntryChain {
 		return new ViewColumn(vw, doubleQuote(column.tagname()), null, column.getType());
 	}
 	
-	private Optional<ResourceCursor> lookupResource(TableDecorator td) {
+	private Optional<ResourceCursor> lookupResource(ViewDecorator td) {
 		if(next()) {  //check td.cd first
 			var rc = currentContext().lookupViewDecorator(value)
 					.flatMap(v-> next.lookupViewResource(v, RequestEntryChain::isWindowFunction));
@@ -312,7 +310,7 @@ final class RequestEntryChain {
 		return lookupViewResource(td, fn-> true); // all operations
 	}
 	
-	private Optional<ResourceCursor> lookupViewResource(TableDecorator td, Predicate<TypedOperator> pre) {
+	private Optional<ResourceCursor> lookupViewResource(ViewDecorator td, Predicate<TypedOperator> pre) {
 		var res = td.getClass() == QueryDecorator.class 
 				? ((QueryDecorator)td).lookupColumnDecorator(value)
 				: currentContext().lookupColumnDecorator(value);
@@ -325,7 +323,7 @@ final class RequestEntryChain {
 		return res.map(cd-> new ResourceCursor(td, cd, this));
 	}
 	
-	private Optional<OperationColumn> toOperation(TableDecorator td, DBColumn col, Predicate<TypedOperator> pre) {
+	private Optional<OperationColumn> toOperation(ViewDecorator td, DBColumn col, Predicate<TypedOperator> pre) {
 		return lookupOperator(value).filter(pre).map(fn-> {
 			var c = col;
 			if(isNull(c) && isEmpty(args) && "count".equals(value)) { // id is MAJ
@@ -338,19 +336,19 @@ final class RequestEntryChain {
 		});
 	}
 
-	private TaggableColumn[] toColumnArgs(TableDecorator td, boolean allowEmpty) {
+	private TaggableColumn[] toColumnArgs(ViewDecorator td, boolean allowEmpty) {
 		return (TaggableColumn[]) toArgs(td, JQueryType.COLUMN, allowEmpty);
 	}
 	
-	private DBFilter[] toFilterArgs(TableDecorator td) {
+	private DBFilter[] toFilterArgs(ViewDecorator td) {
 		return (DBFilter[]) toArgs(td, JQueryType.FILTER, false);
 	}
 	
-	private DBOrder[] toOderArgs(TableDecorator td) {
+	private DBOrder[] toOderArgs(ViewDecorator td) {
 		return (DBOrder[]) toArgs(td, JQueryType.ORDER, false);
 	}
 
-	private Object[] toArgs(TableDecorator td, JavaType type, boolean allowEmpty) {
+	private Object[] toArgs(ViewDecorator td, JavaType type, boolean allowEmpty) {
 		var c = type.typeClass();
 		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
 			var ps = allowEmpty 
@@ -361,15 +359,15 @@ final class RequestEntryChain {
 		throw new UnsupportedOperationException("cannot instanitate type " + c);
 	}
 	
-	private Object toOneArg(TableDecorator td, JavaType type) {
+	private Object toOneArg(ViewDecorator td, JavaType type) {
 		return toArgs(td, null, ofParameters(required(type)))[0];
 	}
 	
-	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps) {
+	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps) {
 		return toArgs(td, col, ps, Object[]::new);
 	}
 	
-	private Object[] toArgs(TableDecorator td, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
+	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
 		int inc = isNull(col) ? 0 : 1;
 		var arr = arrFn.apply(isNull(args) ? inc : args.size() + inc);
 		if(nonNull(col)) {
@@ -444,12 +442,12 @@ final class RequestEntryChain {
 
 	static final class ResourceCursor {
 		
-		private final TableDecorator td;
+		private final ViewDecorator td;
 		private final ColumnDecorator cd;
 		private RequestEntryChain entry;
 		private DBColumn col;
 		
-		public ResourceCursor(TableDecorator td, ColumnDecorator cd, RequestEntryChain entry) {
+		public ResourceCursor(ViewDecorator td, ColumnDecorator cd, RequestEntryChain entry) {
 			this.td = td;
 			this.cd = cd;
 			this.entry = entry;

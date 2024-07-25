@@ -10,7 +10,7 @@ import java.util.function.Function;
  * @author u$f
  *
  */
-interface ArgTypeRef extends Function<Object[], JavaType> {
+interface ArgTypeRef extends Function<Object[], JDBCType> {
 
 	static ArgTypeRef firstArgJdbcType() {
 		return arr-> typeOf(requireAtLeastNArgs(1, arr, 

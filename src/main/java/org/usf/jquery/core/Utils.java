@@ -47,6 +47,7 @@ public final class Utils {
 		return context.get();
 	}
 
+	@Deprecated
 	public static void currentDatabase(Database db) {
 		context.set(db);
 	}

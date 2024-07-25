@@ -4,7 +4,8 @@ import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
-import static org.usf.jquery.web.JQueryContext.context;
+import static org.usf.jquery.web.DatabaseManager.currentDatabase;
+import static org.usf.jquery.web.DatabaseManager.switchDatabase;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -26,7 +27,7 @@ import lombok.extern.slf4j.Slf4j;
 public final class RequestQueryParamResolver {
 	
 	public RequestQueryBuilder requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
-		var t = System.currentTimeMillis();
+		var t = currentTimeMillis();
 		log.trace("parsing request...");
 		parameterMap = new LinkedHashMap<>(parameterMap); //unmodifiable map
 		if(!parameterMap.containsKey(COLUMN) && !parameterMap.containsKey(COLUMN_DISTINCT)) {
@@ -35,8 +36,9 @@ public final class RequestQueryParamResolver {
 		if(isPresent(ant.ignoreParameters())) {
 			Stream.of(ant.ignoreParameters()).forEach(parameterMap::remove);
 		}
-		var req = context()
-				.getTable(ant.name())
+		var db = ant.database().isEmpty() ? currentDatabase() : switchDatabase(ant.database());
+		var req = db.getConfig()
+				.getTable(ant.view())
 				.query(parameterMap); //may edit map
 		if(ant.aggregationOnly() && !req.isAggregation()) {
 			throw new IllegalDataAccessException("non aggregation query");

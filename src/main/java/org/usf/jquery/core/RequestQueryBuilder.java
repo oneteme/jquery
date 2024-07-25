@@ -108,7 +108,7 @@ public class RequestQueryBuilder {
 	public RequestQuery build(String schema) {
 		log.trace("building query...");
 //		requireNonEmpty(tables);
-    	requireNonEmpty(columns);
+    	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
 		var pb = parametrized(schema, views);
 		var sb = new SqlStringBuilder(1000); //avg

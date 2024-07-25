@@ -37,7 +37,7 @@ final class WhenExpression implements DBExpression, Typed {
 	}
 
 	@Override
-	public JavaType getType() {
+	public JDBCType getType() {
 		return typeOf(value).orElse(null);
 	}
 	

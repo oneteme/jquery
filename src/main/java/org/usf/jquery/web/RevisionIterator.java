@@ -12,8 +12,8 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.QueryParameterBuilder;
+import org.usf.jquery.core.TableView;
 
 import lombok.RequiredArgsConstructor;
 

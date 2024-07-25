@@ -47,7 +47,7 @@ public class ArgumentParsers {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE };
 
-	public static Object parse(RequestEntryChain entry, TableDecorator td, JavaType... types) {
+	public static Object parse(RequestEntryChain entry, ViewDecorator td, JavaType... types) {
 		if(isEmpty(types) || Stream.of(types).allMatch(o-> o.getClass() == JDBCType.class)) {
 			return parseJdbc(entry, td, castArray(types, JDBCType[].class, JDBCType[]::new));
 		}
@@ -57,7 +57,7 @@ public class ArgumentParsers {
 		throw new UnsupportedOperationException("unsupported types " + Arrays.toString(types));
 	}
 
-	public static Object parseJdbc(RequestEntryChain entry, TableDecorator td, JDBCType... types) {
+	public static Object parseJdbc(RequestEntryChain entry, ViewDecorator td, JDBCType... types) {
 		ParseException ex = null; // preserve last exception
 		try {
 			return matchTypes((Typed) parseJQuery(entry, td, COLUMN, QUERY), types); //try parse column | query first
@@ -76,7 +76,7 @@ public class ArgumentParsers {
 		throw ex;
 	}
 	
-	public static Object parseJQuery(RequestEntryChain entry, TableDecorator td, JQueryType... types) {
+	public static Object parseJQuery(RequestEntryChain entry, ViewDecorator td, JQueryType... types) {
 		ParseException ex = null; // preserve last exception
 		for(var type : types) {
 			try {

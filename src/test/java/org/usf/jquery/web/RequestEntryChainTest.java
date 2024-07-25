@@ -3,8 +3,6 @@ package org.usf.jquery.web;
 import static java.util.Collections.emptyList;
 import static org.usf.jquery.web.RequestParser.parseEntry;
 
-import java.util.Optional;
-
 import org.junit.jupiter.api.Test;
 
 class RequestEntryChainTest {
@@ -12,12 +10,7 @@ class RequestEntryChainTest {
 	@Test
 	void test() {
 		JQueryContext.register(emptyList(), emptyList());
-		parseEntry("count()").evalColumn(new TableDecorator() {
-			
-			@Override
-			public String tableName() {
-				return null;
-			}
+		parseEntry("count()").evalColumn(new ViewDecorator() {
 			
 			@Override
 			public String identity() {
@@ -25,8 +18,8 @@ class RequestEntryChainTest {
 			}
 			
 			@Override
-			public Optional<String> columnName(ColumnDecorator cd) {
-				return Optional.empty();
+			public String columnName(ColumnDecorator cd) {
+				return null;
 			}
 		});
 	}
