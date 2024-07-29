@@ -29,7 +29,6 @@ public final class ContextManager {
 			}
 			throw new IllegalStateException("context environement conflict " + quote(id));
 		});
-		config.fetch(); //outer fetch
 	}
 
 	public static ContextEnvironment currentContext() {

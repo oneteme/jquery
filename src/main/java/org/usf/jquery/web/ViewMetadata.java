@@ -9,6 +9,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
@@ -40,10 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 public class ViewMetadata {
 	
 	private static final Object LOG_LOCK = new Object();
-	private final Object mutex = new Object();
 	
 	private final DBView view; //cache
-	private final Map<String, ColumnMetadata> columns;
+	private final Map<String, ColumnMetadata> columns; //empty!?
 	@Getter
 	private Instant lastUpdate;
 	
@@ -51,8 +51,8 @@ public class ViewMetadata {
 		return columns.get(cd.identity());
 	}
 	
-	final void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
-		synchronized (mutex) {
+	final ViewMetadata fetch(DatabaseMetaData metadata, String schema) throws SQLException {
+		if(!isEmpty(columns)) {
 			var time = currentTimeMillis();
 			log.info("scanning table '{}' metadata...", view);
 			if(view instanceof TableView tab) {
@@ -66,8 +66,9 @@ public class ViewMetadata {
 			}
 			lastUpdate = now();
 			log.info("metadata scanned in {} ms", currentTimeMillis() - time);
+			printViewColumnMap();
 		}
-		printViewColumnMap();
+		return this;
 	}
 	
 	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
@@ -113,7 +114,7 @@ public class ViewMetadata {
 	
 	void printViewColumnMap() {
 		if(!columns.isEmpty() && log.isInfoEnabled()) {
-			synchronized (LOG_LOCK) {
+			synchronized(LOG_LOCK) {
 				var pattern = "|%-20s|%-15s|%-25s|%-20s|";
 				var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
 				log.info(bar);

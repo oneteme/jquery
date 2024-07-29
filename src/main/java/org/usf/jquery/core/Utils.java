@@ -6,6 +6,7 @@ import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Collection;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -32,6 +33,10 @@ public final class Utils {
 	}
 	
 	public static boolean isEmpty(Collection<?> c) {
+		return isNull(c) || c.isEmpty();
+	}
+	
+	public static boolean isEmpty(Map<?,?> c) {
 		return isNull(c) || c.isEmpty();
 	}
 

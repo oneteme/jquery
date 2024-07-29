@@ -42,7 +42,7 @@ public final class RequestQueryParamResolver {//spring connection bridge
 				: context(ant.database());
 		try {
 			var req = ctx
-					.getTable(ant.view())
+					.lookupTable(ant.view())
 					.query(parameterMap); //may edit map
 			if(!ant.aggregationOnly() || req.isAggregation()) {
 		        log.trace("request parsed in {} ms", currentTimeMillis() - t);

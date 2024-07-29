@@ -1,18 +1,22 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
+import static java.util.Comparator.comparing;
 import static java.util.Comparator.reverseOrder;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.function.Function.identity;
 import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.JDBCType.OTHER;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.JQueryContext.database;
 
@@ -26,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.stream.Stream;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
@@ -145,5 +150,20 @@ public final class YearTableMetadata extends ViewMetadata {
 		return new YearTableMetadata(table.viewName(), 
 				table.monthRevision().map(table::columnName).orElse(null), 
 				table.declaredColumns());
+	}
+	
+	@Deprecated
+	static void logRevisions(YearMonth[] revs) {
+		if(isPresent(revs)) {
+			var pattern = "|%-5s|%-40s|";
+			var bar = format(pattern, "", "").replace("|", "+").replace(" ", "-");
+			var map = Stream.of(revs).collect(groupingBy(YearMonth::getYear));
+			log.info(bar);
+			log.info(format(pattern, "YEAR", "MONTHS"));
+			log.info(bar);
+			map.entrySet().stream().sorted(comparing(Entry::getKey)).forEach(e-> 
+			log.info(format(pattern, e.getKey(), e.getValue().stream().map(o-> o.getMonthValue() + "").collect(joining(", ")))));
+			log.info(bar);
+		}
 	}
 }

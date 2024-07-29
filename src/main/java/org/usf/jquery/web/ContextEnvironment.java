@@ -17,12 +17,14 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import org.usf.jquery.core.JQueryException;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.Validation;
 
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
@@ -30,6 +32,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @Getter
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ContextEnvironment {
 	
@@ -49,7 +52,7 @@ public final class ContextEnvironment {
 		this.metadata = ctx.metadata;
 	}
 	
-	public ViewDecorator getTable(String name) {
+	public ViewDecorator lookupTable(String name) {
 		var vd = views.get(name);
 		if(nonNull(vd)) {
 			return vd;
@@ -58,9 +61,26 @@ public final class ContextEnvironment {
 	}
 	
 	ViewMetadata computeTableMetadata(ViewDecorator vd, Function<Collection<ColumnDecorator>, ViewMetadata> fn) {
-		return metadata.getTables().computeIfAbsent(vd.identity(), key-> fn.apply(columns.values()));
+		var meta = metadata.getTables().computeIfAbsent(vd.identity(), key-> fn.apply(columns.values()));
+		if(nonNull(dataSource)) { //outer fetch
+			synchronized(meta) {
+				if(isNull(meta.getLastUpdate())) {
+					fetch(meta);
+				}
+			}
+		}
+		return meta;
 	}
 	
+	private void fetch(ViewMetadata metadata) {
+		try(var cnx = dataSource.getConnection()) {
+			metadata.fetch(cnx.getMetaData(), schema);
+		}
+		catch(SQLException | JQueryException e) {
+			log.error("error while scanning database metadata", e);
+		}
+	}
+
 	void registerQuery(QueryView query) {
 		views.compute(query.id(), (k,v)-> {
 			if(isNull(v)){
@@ -76,33 +96,6 @@ public final class ContextEnvironment {
 			}
 			throw new IllegalStateException("already exists");
 		}));
-	}
-	
-	void fetch() {
-		if(nonNull(dataSource)) {
-			try(var cnx = dataSource.getConnection()) {
-				views.values().stream().sorted(this::comparator).forEach(v->{ //parallel
-					try {
-						v.metadata().fetch(cnx.getMetaData(), schema);
-					}
-					catch (Exception e) {
-						throw new WebException("error while fetching table metadata " + v.identity(), e);
-					}
-				});
-			}
-			catch(SQLException e) {
-				throw new WebException("", e);
-			}
-		}
-	}
-	
-	int comparator(ViewDecorator v1, ViewDecorator v2) {
-		var n1 = database.viewName(v1);
-		var n2 = database.viewName(v2);
-		if((isNull(v1) && isNull(v2)) || (nonNull(n1) && nonNull(n2))) {
-			return 0;
-		}
-		return nonNull(n1) ? 1 : -1;
 	}
 	
 	public static final ContextEnvironment of(DatabaseDecorator database, 
