@@ -14,7 +14,7 @@ final class NoSuchResourceException extends WebException {
 		super(s);
 	}
 
-	static NoSuchResourceException throwNoSuchTableException(String resource) {
+	static NoSuchResourceException noSuchViewException(String resource) {
 		return noSuchResouceException("view", resource);
 	}
 	

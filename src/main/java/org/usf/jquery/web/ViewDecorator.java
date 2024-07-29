@@ -2,8 +2,13 @@ package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElseGet;
+import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.FETCH;
@@ -11,24 +16,28 @@ import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.Constants.VIEW;
-import static org.usf.jquery.web.DatabaseManager.currentDatabase;
+import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchViewException;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.RequestContext.clearContext;
-import static org.usf.jquery.web.RequestContext.currentContext;
+import static org.usf.jquery.web.RequestContext.currentContext_;
 import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
 
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBQuery;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.Utils;
+import org.usf.jquery.core.ViewColumn;
 
 import lombok.NonNull;
 
@@ -44,21 +53,29 @@ public interface ViewDecorator {
 	String columnName(ColumnDecorator cd);
 	
 	default ViewBuilder builder() {
-		return null; // no builder by default
+		return this::buildView; //avoid recursive call
 	}
 
 	default CriteriaBuilder<DBFilter> criteria(String name) { //!aggregation 
 		return null; // no criteria by default
 	}
 	
-	default DBView table() {
-		return metadata().getView(); //cached view
+	default JoinBuilder joiner() {
+		return null; // no builder by default
+	}
+
+	default DBView view() {
+		return requireNonNullElseGet(metadata().getView(), builder()::build); //nullable !?
 	}
 	
 	default TaggableColumn column(@NonNull ColumnDecorator cd) {
-		var c = metadata().columnMetada(cd); //priority order
+		var c = metadata().columnMetada(cd);
 		if(nonNull(c)) {
 			return c.getColumn();
+		}
+		var cn = columnName(cd);
+		if(nonNull(cn)) { //ViewColumn only
+			return buildViewColumn(cd, view(), cn);
 		}
 		var b = cd.builder(this);
 		if(nonNull(b)) {
@@ -68,19 +85,47 @@ public interface ViewDecorator {
 	}
 
 	default ViewMetadata metadata() {
-		return currentDatabase().viewMetadata(this);
+		return currentContext().computeTableMetadata(this, cols-> {
+			var view = requireNonNull(builder(), identity() + ".builder cannot be null").build();
+			var meta = cols.stream().<ColumnMetadata>mapMulti((cd, acc)-> {
+				var cn = columnName(cd);  //ViewColumn only
+				if(nonNull(cn)) {
+					acc.accept(columnMetadata(buildViewColumn(cd, view, cn)));
+				} //tag = reference
+			}).collect(toUnmodifiableMap(cm-> cm.getColumn().getTag(), Function.identity())); //tag = identity
+			return new ViewMetadata(view, meta);
+		});
+	}
+	
+	private DBView buildView() {
+		var tn = currentContext().getDatabase().viewName(this);
+		if(nonNull(tn)){
+			var idx = tn.indexOf('.');
+			return idx == -1 
+					? new TableView(requireLegalVariable(tn)) 
+					: new TableView(requireLegalVariable(tn.substring(0, idx)),
+							requireLegalVariable(tn.substring(idx, tn.length())));
+		}
+		throw noSuchViewException(identity());
+	}
+	
+	private ViewColumn buildViewColumn(ColumnDecorator cd, DBView view, String name) { 
+		return new ViewColumn(view, 
+				requireLegalVariable(name), 
+				requireLegalVariable(cd.reference(this)), 
+				cd.type(this));
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
 		try {
-			Utils.currentDatabase(currentDatabase().getType()); //table database
+			Utils.currentDatabase(currentContext().getMetadata().getType()); //table database
 			var query = new RequestQueryBuilder();
 			parseViews(query, parameterMap);
 			parseColumns(query, parameterMap);
-			parseFilters(query, parameterMap);
 			parseOrders (query, parameterMap);
 			parseFetch(query, parameterMap);
-			query.views(currentContext().popQueries().toArray(DBQuery[]::new));
+			parseFilters(query, parameterMap);
+			query.views(currentContext_().popQueries().toArray(DBQuery[]::new));
 			return query;
 		}
 		finally {
@@ -92,7 +137,7 @@ public interface ViewDecorator {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.get(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> currentContext().putViewDecorator(new QueryDecorator(e.evalQuery(this, true))));
+			.forEach(e-> currentContext().registerQuery(e.evalQuery(this, true)));
 		}
 	}
 	
@@ -116,7 +161,7 @@ public interface ViewDecorator {
 
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
-    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
+//    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());
     		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseArgs(v)));

@@ -22,7 +22,11 @@ public @interface RequestQueryParam {
 	
 	String[] defaultColumns() default {};
 	
-	String[] ignoreParameters() default {}; // !parsed 
+	String[] ignoreParameters() default {}; // will be not parsed 
 	
 	boolean aggregationOnly() default false; // else throw IllegalDataAccessException
+	
+	//allowWorkView
+	
+	//allowJoinView
 }

@@ -2,6 +2,8 @@ package org.usf.jquery.web;
 
 import static java.lang.String.format;
 import static java.lang.String.join;
+import static java.lang.System.currentTimeMillis;
+import static java.time.Instant.now;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -23,7 +25,6 @@ import org.usf.jquery.core.TableView;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -38,31 +39,39 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class ViewMetadata {
 	
+	private static final Object LOG_LOCK = new Object();
+	private final Object mutex = new Object();
+	
 	private final DBView view; //cache
 	private final Map<String, ColumnMetadata> columns;
 	@Getter
-	@Setter(AccessLevel.PACKAGE)
 	private Instant lastUpdate;
 	
 	public ColumnMetadata columnMetada(ColumnDecorator cd) {
 		return columns.get(cd.identity());
 	}
 	
-	void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
-		if(view instanceof TableView tab) {
-			fetch(metadata, tab, schema);
+	final void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
+		synchronized (mutex) {
+			var time = currentTimeMillis();
+			log.info("scanning table '{}' metadata...", view);
+			if(view instanceof TableView tab) {
+				fetch(metadata, tab, schema);
+			}
+			else if(view instanceof DBQuery query) {
+				fetch(metadata, query);
+			}
+			else {
+				throw new UnsupportedOperationException("unsupported view type " + view);
+			}
+			lastUpdate = now();
+			log.info("metadata scanned in {} ms", currentTimeMillis() - time);
 		}
-		else if(view instanceof DBQuery query) {
-			fetch(metadata, query);
-		}
-		else {
-			throw new UnsupportedOperationException("unsupported view " + view);
-		}
-		logTableColumns();
+		printViewColumnMap();
 	}
 	
 	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
-		try(var rs = metadata.getColumns(null, view.schema(schema), view.getName(), null)){
+		try(var rs = metadata.getColumns(null, view.getSchemaOrElse(schema), view.getName(), null)){
 			if(rs.next()) {
 				var db = columns.values().stream().collect(toMap(m-> m.getColumn().getName(), identity()));
 				do {
@@ -102,17 +111,19 @@ public class ViewMetadata {
 		}
 	}
 	
-	void logTableColumns() {
+	void printViewColumnMap() {
 		if(!columns.isEmpty() && log.isInfoEnabled()) {
-			var pattern = "|%-20s|%-15s|%-25s|%-20s|";
-			var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
-			log.info(bar);
-			log.info(format(pattern, "ID", "CLASS", "COLUMN", "TYPE"));
-			log.info(bar);
-			columns.entrySet().forEach(e-> 
-			log.info(format(pattern, e.getKey(), e.getValue().toJavaType(), 
-					e.getValue().getColumn(), e.getValue().toSqlType())));
-			log.info(bar);
+			synchronized (LOG_LOCK) {
+				var pattern = "|%-20s|%-15s|%-25s|%-20s|";
+				var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
+				log.info(bar);
+				log.info(format(pattern, "ID", "CLASS", "COLUMN", "TYPE"));
+				log.info(bar);
+				columns.entrySet().forEach(e-> 
+				log.info(format(pattern, e.getKey(), e.getValue().toJavaType(), 
+						e.getValue().getColumn(), e.getValue().toSqlType())));
+				log.info(bar);
+			}
 		}
 	}
 	

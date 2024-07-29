@@ -18,11 +18,12 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public class ViewJoin implements DBObject  {
+public class ViewJoin implements DBObject {
 	
 	private final JoinType joinType;
 	private final DBView view;
 	private final DBFilter[] filters;
+	//join results !?
 
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {

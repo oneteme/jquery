@@ -61,7 +61,7 @@ public final class RequestContext {
 		return q;
 	}
 	
-	public static final RequestContext currentContext() {
+	public static final RequestContext currentContext_() {
 		var rc = local.get();
 		if(isNull(rc)) {
 			var jc = context(); //can filter view & column 

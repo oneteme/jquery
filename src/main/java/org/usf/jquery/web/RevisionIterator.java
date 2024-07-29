@@ -53,8 +53,8 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 		throw new IllegalArgumentException("no revision");
 	}
 
-	static TableView yearTable(String name, String tagname) {
-		return new TableView(name, tagname) {
+	static TableView yearTable(String schema, String name) {
+		return new TableView(schema, name) {
 			@Override
 			public String sql(QueryParameterBuilder builder) {
 				return super.sql(builder) + "_" + currentRev.get().getKey();
@@ -75,5 +75,4 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 			return filter.sql(b);
 		};
 	}
-
 }

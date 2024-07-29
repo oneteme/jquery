@@ -30,6 +30,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.Set;
 
+import org.usf.jquery.core.DBQuery;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.TableView;
 
@@ -60,22 +61,14 @@ public final class YearTableMetadata extends ViewMetadata {
 	public Optional<YearMonth> latestRevision() {
 		return isEmpty(revisions) ? empty() : Optional.of(revisions[0]);
 	}
-	
+		
 	@Override
-	public void fetch() throws SQLException { //individually fetching
-		try(var cn = database().getDataSource().getConnection()) {
-			fetch(cn.getMetaData());
-			fetchRevisions(cn);
-		}
-	}
-	
-	@Override
-	void fetch(DatabaseMetaData metadata, TableView view) throws SQLException  {
+	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException  {
 		tablenames.clear();
 		var dbMap = getColumns().values().stream().collect(toMap(cm-> cm.getColumn().getName(), ColumnMetadata::reset)); //important! reset columns
 		Set<String> dirtyColumns = new LinkedHashSet<>();
 		Map<String, Set<String>> columnTables = new LinkedHashMap<>();
-		try(var rs = metadata.getColumns(null, view.getSchema(), view.getName() + "_20__", null)){
+		try(var rs = metadata.getColumns(null, view.getSchemaOrElse(schema), view.getName() + "_20__", null)){
 			if(!rs.next()) {
 				throw new NoSuchElementException("no tables found with pattern " + view + PATTERN);
 			}
@@ -108,6 +101,11 @@ public final class YearTableMetadata extends ViewMetadata {
 		if(!dirtyColumns.isEmpty()) {
 			throw new IllegalStateException("column(s) [" + join(", ", dirtyColumns) + "] must have the same definition in all tables " + view + PATTERN);
 		}
+	}
+	
+	@Override
+	void fetch(DatabaseMetaData metadata, DBQuery qr) throws SQLException {
+		throw new UnsupportedOperationException("query");
 	}
 	
 	void fetchRevisions(Connection cn) { // change this call
@@ -143,10 +141,9 @@ public final class YearTableMetadata extends ViewMetadata {
 		}
 	}
 
-	static YearTableMetadata yearTableMetadata(YearTableDecorator table) {
+	static YearTableMetadata yearTableMetadata(YearViewDecorator table) {
 		return new YearTableMetadata(table.viewName(), 
 				table.monthRevision().map(table::columnName).orElse(null), 
 				table.declaredColumns());
 	}
-	
 }

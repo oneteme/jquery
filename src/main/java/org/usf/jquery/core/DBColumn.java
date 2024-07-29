@@ -162,7 +162,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 			
 			@Override
 			public String sql(QueryParameterBuilder arg) {
-				return formatValue(value.get());
+				return formatValue(value.get()); //lazy 
 			}
 			
 			@Override

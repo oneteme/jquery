@@ -10,6 +10,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
+import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
 import static org.usf.jquery.web.ParseException.cannotParseException;
@@ -37,22 +38,23 @@ import org.usf.jquery.core.TaggableColumn;
  * @author u$f
  * 
  */
-public interface YearTableDecorator extends ViewDecorator {
-	
-	Optional<? extends ColumnDecorator> monthRevision();
+@Deprecated
+public interface YearViewDecorator extends ViewDecorator {
 
-	ColumnDecorator yearRevision(); // !table column
+	ColumnDecorator yearRevision(); //!table column
+	
+	ColumnDecorator monthRevision(); //optional
 
 	/**
 	 * loaded from db if null
 	 * 
 	 */
-    default YearMonth[] availableRevisions() {//reduce data revision access
+    default YearMonth[] availableRevisions() {//cache
     	return metadata().getRevisions(); 
     }
     
 	@Override
-	default TableView table() {
+	default TableView view() {
 		return yearTable(viewName(), identity());
 	}
 	
@@ -162,7 +164,7 @@ public interface YearTableDecorator extends ViewDecorator {
 
     @Override
     default YearTableMetadata metadata() {
-		return (YearTableMetadata) database().viewMetadata(this, ()-> yearTableMetadata(this)); //safe cast
+		return (YearTableMetadata) currentContext().computeTableMetadata(this, null); //safe cast
     }
     
     default String defaultRevisionMode() {

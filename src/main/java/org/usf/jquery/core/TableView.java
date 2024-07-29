@@ -30,16 +30,16 @@ public class TableView implements DBView {
 
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		return member(schema(builder.getSchema()), name);
-	}
-	
-	public String schema(String defaultSchema) {
-		return nonNull(schema) ? schema : defaultSchema; //priority order
+		return member(getSchemaOrElse(builder.getSchema()), name);
 	}
 
 	@Override
 	public String id() {
 		return id;
+	}
+	
+	public String getSchemaOrElse(String defaultSchema) {
+		return nonNull(schema) ? schema : defaultSchema; //priority order
 	}
 	
 	@Override

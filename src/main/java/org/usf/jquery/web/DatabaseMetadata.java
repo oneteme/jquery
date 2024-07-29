@@ -20,7 +20,10 @@ import java.time.YearMonth;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
+
+import javax.sql.DataSource;
 
 import org.usf.jquery.core.Database;
 import org.usf.jquery.core.ViewColumn;
@@ -37,35 +40,22 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter(AccessLevel.PACKAGE)
-@RequiredArgsConstructor
 public final class DatabaseMetadata {
 
 	private final Object mutex = new Object();
 
-	private final DatabaseConfiguration config;
 	private final Map<String, ViewMetadata> tables = new HashMap<>(); //lazy loading
 	@Getter
 	private Instant lastUpdate;
 	@Getter
 	private Database type;
 
-	public ViewMetadata viewMetadata(ViewDecorator td){
-		return tables.computeIfAbsent(td.identity(), id-> {
-			var view = config.getDatabase().tableView(td);
-			var meta = config.getColumns().values().stream().<ColumnMetadata>mapMulti((cd, acc)-> {
-				var cn = td.columnName(cd);
-				if(nonNull(cn)) { //ViewColumn only
-					var col = new ViewColumn(view, requireLegalVariable(cn), requireLegalVariable(cd.reference(td)), cd.type(td));
-					acc.accept(columnMetadata(col));
-				} //tag = reference
-			}).collect(toUnmodifiableMap(cm-> cm.getColumn().getTag(), identity()));
-			return new ViewMetadata(view, meta);
-		});
+	public ViewMetadata viewMetadata(ViewDecorator td, Supplier<? extends ViewMetadata> supp){
+		return tables.computeIfAbsent(td.identity(), id-> supp.get());
 	}
 	
-	public void fetch() {
-		var ds = config.getDataSource();
-		if(isNull(ds) || tables.isEmpty()) {
+	public void fetch(DataSource ds) {
+		if(tables.isEmpty()) {
 			log.warn("database resources not initialized"); //full scan ? next release
 			return;
 		}
@@ -83,7 +73,7 @@ public final class DatabaseMetadata {
 						yt.fetchRevisions(cn);
 						logRevisions(yt.getRevisions());
 					}
-					t.setLastUpdate(now());
+//					t.setLastUpdate(now());
 				}
 				lastUpdate = now();
 				log.info("Completed metadata scan in {} ms", currentTimeMillis() - time);

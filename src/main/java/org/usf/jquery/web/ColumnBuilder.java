@@ -10,5 +10,5 @@ import org.usf.jquery.core.DBColumn;
 @FunctionalInterface
 public interface ColumnBuilder {
 
-	DBColumn build(ViewDecorator table);
+	DBColumn build(ViewDecorator vd);
 }

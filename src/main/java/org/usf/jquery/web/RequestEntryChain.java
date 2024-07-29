@@ -29,7 +29,7 @@ import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.PARTITION;
 import static org.usf.jquery.web.Constants.SELECT;
 import static org.usf.jquery.web.ParseException.cannotParseException;
-import static org.usf.jquery.web.RequestContext.currentContext;
+import static org.usf.jquery.web.RequestContext.currentContext_;
 import static org.usf.jquery.web.UnexpectedEntryException.unexpectedEntryException;
 
 import java.util.List;
@@ -125,7 +125,7 @@ final class RequestEntryChain {
 			if(requireTag && isNull(e.tag)) {
 				throw new IllegalArgumentException("require tag");
 			}
-			q.views(currentContext().popQueries().toArray(DBQuery[]::new));
+			q.views(currentContext_().popQueries().toArray(DBQuery[]::new));
 			return q.as(e.tag);
 		}
 		throw cannotParseException(SELECT, this.toString());
@@ -207,7 +207,7 @@ final class RequestEntryChain {
 	Optional<DBFilter> tableCriteria(ViewDecorator td, List<RequestEntryChain> values) {
 		RequestEntryChain e = null;
 		CriteriaBuilder<DBFilter> c = null;
-		var res = currentContext().lookupViewDecorator(value);
+		var res = currentContext_().lookupViewDecorator(value);
 		if(res.isPresent() && next()) {
 			c = res.get().criteria(next.value);
 			e = next; // only if nonNull
@@ -286,21 +286,21 @@ final class RequestEntryChain {
 	}
 	
 	private static DBColumn windowColumn(ViewDecorator td, TaggableColumn column) {
-		var vw = currentContext().lookupView(td.identity()).orElse(null);
+		var vw = currentContext_().lookupView(td.identity()).orElse(null);
 		if(vw instanceof CompletableViewQuery) {  // already create
 			((CompletableViewQuery)vw).getQuery().columns(column);
 		}
 		else {
-			var view = isNull(vw) ? td.table() : vw;
+			var view = isNull(vw) ? td.view() : vw;
 			vw = new CompletableViewQuery(view.select(td.identity(), allColumns(view).as(null), column));
-			currentContext().putWorkQuery(vw); // same name
+			currentContext_().putWorkQuery(vw); // same name
 		}
 		return new ViewColumn(vw, doubleQuote(column.tagname()), null, column.getType());
 	}
 	
 	private Optional<ResourceCursor> lookupResource(ViewDecorator td) {
 		if(next()) {  //check td.cd first
-			var rc = currentContext().lookupViewDecorator(value)
+			var rc = currentContext_().lookupViewDecorator(value)
 					.flatMap(v-> next.lookupViewResource(v, RequestEntryChain::isWindowFunction));
 			if(rc.isPresent()) {
 				requireNoArgs(); // noArgs on valid resource
@@ -313,7 +313,7 @@ final class RequestEntryChain {
 	private Optional<ResourceCursor> lookupViewResource(ViewDecorator td, Predicate<TypedOperator> pre) {
 		var res = td.getClass() == QueryDecorator.class 
 				? ((QueryDecorator)td).lookupColumnDecorator(value)
-				: currentContext().lookupColumnDecorator(value);
+				: currentContext_().lookupColumnDecorator(value);
 		if(res.isPresent()) {
 			requireNoArgs();
 		}
@@ -328,7 +328,7 @@ final class RequestEntryChain {
 			var c = col;
 			if(isNull(c) && isEmpty(args) && "count".equals(value)) { // id is MAJ
 				c = b-> {
-					b.view(td.table()); // important! register view
+					b.view(td.view()); // important! register view
 					return "*"; 
 				};
 			}

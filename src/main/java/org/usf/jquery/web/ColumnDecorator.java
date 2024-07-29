@@ -19,11 +19,11 @@ public interface ColumnDecorator {
 	}
 	
 	default JDBCType type(ViewDecorator td) {
-		return null;
+		return null; // auto type
 	}
 	
 	default JDBCArgumentParser parser(ViewDecorator td){ // override parser | format | local | validation
-		return null; // jdbcArgParser(dataType(td))
+		return null; // auto parser
 	}
 	
 	default ColumnBuilder builder(ViewDecorator td) { //set type if null
@@ -45,7 +45,7 @@ public interface ColumnDecorator {
 	default boolean canFilter(ViewDecorator td) {
 		throw new UnsupportedOperationException(); //authorization inject
 	}
-	
+		
 	static ColumnDecorator ofColumn(String ref, ColumnBuilder cb) {
 		return new ColumnDecorator() {
 			@Override
