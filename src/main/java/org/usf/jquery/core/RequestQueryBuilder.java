@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
@@ -54,22 +55,22 @@ public class RequestQueryBuilder {
 	}
 
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
-		Stream.of(columns).forEach(this.columns::add);
+		addAll(this.columns, columns);
 		return this;
 	}
 
 	public RequestQueryBuilder filters(@NonNull DBFilter... filters){
-		Stream.of(filters).forEach(this.filters::add);
+		addAll(this.filters, filters);
 		return this;
 	}
 	
 	public RequestQueryBuilder orders(@NonNull DBOrder... orders) {
-		Stream.of(orders).forEach(this.orders::add);
+		addAll(this.orders, orders);
 		return this;
 	}
 
 	public RequestQueryBuilder joins(@NonNull ViewJoin joins) {
-		Stream.of(joins).forEach(this.joins::add);
+		addAll(this.joins, joins);
 		return this;
 	}
 
@@ -97,7 +98,7 @@ public class RequestQueryBuilder {
 		return columns.stream().filter(c-> c.tagname().contains(id)).findAny();
 	}
 	
-	public QueryView as(String tag) {
+	public QueryView asView(String tag) {
 		return new QueryView(tag, this);
 	}
 
@@ -159,7 +160,7 @@ public class RequestQueryBuilder {
 		if(!joins.isEmpty()) {
 			vList = vList.stream()
 					.filter(v-> joins.stream().noneMatch(j-> j.id().equals(v.id())))
-					.collect(toList());
+					.toList();
 		}
 		if(!vList.isEmpty()) {
 			sb.append(" FROM ")
@@ -225,8 +226,8 @@ public class RequestQueryBuilder {
 	}
 	
 	public boolean isAggregation() {
-		return columns.stream().anyMatch(Aggregable::isAggregation) ||
-				filters.stream().anyMatch(Aggregable::isAggregation);
+		return columns.stream().anyMatch(Nested::isAggregation) ||
+				filters.stream().anyMatch(Nested::isAggregation);
 	}
 
 	@Override

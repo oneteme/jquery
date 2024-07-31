@@ -75,6 +75,6 @@ class RequestParserTest {
 		"aa.fn(\"a:3,b,c,d&\")",
 	})
 	void testParse2(String s) {
-		assertThrows(ParseException.class, ()-> parseEntry(s));
+		assertThrows(EntryParseException.class, ()-> parseEntry(s));
 	}
 }

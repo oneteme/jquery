@@ -14,7 +14,6 @@ import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.FETCH;
 import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
-import static org.usf.jquery.web.Constants.RESERVED_WORDS;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
@@ -137,7 +136,7 @@ public interface ViewDecorator {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.get(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> currentContext().registerQuery(e.evalQuery(this, true)));
+			.forEach(e-> currentContext().declareView(e.evalQuery(this, true)));
 		}
 	}
 	

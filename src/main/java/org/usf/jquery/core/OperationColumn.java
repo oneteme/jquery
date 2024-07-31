@@ -35,13 +35,13 @@ public final class OperationColumn implements DBColumn {
 	
 	@Override
 	public boolean isAggregation() {
-		return operator instanceof AggregateFunction 
-				|| (!isOver() && Stream.of(args).anyMatch(Aggregable::aggregation)); //can do better
+		return operator instanceof AggregateFunction || 
+				(!isOverFunction() && Stream.of(args).anyMatch(Nested::aggregation)); //can do better
 	}
 	
 	@Override
 	public Stream<DBColumn> groupKeys() {
-		if(isOver()) {
+		if(isOverFunction()) {
 			return ((Partition)args[1]).groupKeys();
 		}
 		return operator instanceof AggregateFunction || operator instanceof ConstantOperator
@@ -49,7 +49,7 @@ public final class OperationColumn implements DBColumn {
 				: DBColumn.super.groupKeys();
 	}
 	
-	private boolean isOver() { //specific operator
+	boolean isOverFunction() {
 		return "OVER".equals(operator.id());
 	}
 
@@ -57,4 +57,5 @@ public final class OperationColumn implements DBColumn {
 	public String toString() {
 		return sql(addWithValue());
 	}
+	
 }

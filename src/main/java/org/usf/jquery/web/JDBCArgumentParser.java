@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.web.ParseException.cannotParseException;
+import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 
 /**
  * 
@@ -22,7 +22,7 @@ public interface JDBCArgumentParser extends JavaArgumentParser {
 			return nativeParse(v);
 		}
 		catch(Exception e) {
-			throw cannotParseException(toString(), v, e); 
+			throw cannotParseEntryException(toString(), v, e); 
 		}
 	}
 }

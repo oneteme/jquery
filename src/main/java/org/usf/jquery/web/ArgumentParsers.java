@@ -58,17 +58,17 @@ public class ArgumentParsers {
 	}
 
 	public static Object parseJdbc(RequestEntryChain entry, ViewDecorator td, JDBCType... types) {
-		ParseException ex = null; // preserve last exception
+		EntryParseException ex = null; // preserve last exception
 		try {
 			return matchTypes((Typed) parseJQuery(entry, td, COLUMN, QUERY), types); //try parse column | query first
-		} catch (ParseException e) {/*do not throw exception*/}
+		} catch (EntryParseException e) {/*do not throw exception*/}
 		if(isEmpty(types)) {
 			types = STD_TYPES;
 		}
 		for(var type : types) {
 			try {
 				return jdbcArgParser(type).parseEntry(entry, td);
-			} catch (ParseException e) { /*do not throw exception*/
+			} catch (EntryParseException e) { /*do not throw exception*/
 				log.trace("parse {} : '{}' => {}", type, entry, e.getMessage());
 				ex = e;
 			}
@@ -77,11 +77,11 @@ public class ArgumentParsers {
 	}
 	
 	public static Object parseJQuery(RequestEntryChain entry, ViewDecorator td, JQueryType... types) {
-		ParseException ex = null; // preserve last exception
+		EntryParseException ex = null; // preserve last exception
 		for(var type : types) {
 			try {
 				return jqueryArgParser(type).parseEntry(entry, td);
-			} catch (ParseException e) {/*do not throw exception*/
+			} catch (EntryParseException e) {/*do not throw exception*/
 				log.trace("parse {} : '{}' => {}", type, entry, e.getMessage());
 				ex = e;
 			} 

@@ -10,6 +10,7 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
  */
 public interface DBView extends DBObject {
 	
+	@Deprecated
 	String id(); //technical use 
 	
 	@Override
@@ -23,8 +24,4 @@ public interface DBView extends DBObject {
 	}
 
 	String sql(QueryParameterBuilder builder);
-
-	default QueryView select(String tag, TaggableColumn... columns) {
-		return new QueryView(tag, columns);
-	}
 }

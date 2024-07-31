@@ -33,7 +33,7 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	public boolean isAggregation() {
 		return Stream.of(expressions).anyMatch(ComparisonExpression::isAggregation);
 	}
-
+	
 	@Override
 	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
 		return operator == op 

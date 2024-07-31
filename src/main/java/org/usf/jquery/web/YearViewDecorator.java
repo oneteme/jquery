@@ -13,7 +13,7 @@ import static org.usf.jquery.web.Constants.REVISION_MODE;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.JQueryContext.database;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
-import static org.usf.jquery.web.ParseException.cannotParseException;
+import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 import static org.usf.jquery.web.RevisionIterator.iterator;
 import static org.usf.jquery.web.RevisionIterator.monthFilter;
 import static org.usf.jquery.web.RevisionIterator.yearColumn;
@@ -158,7 +158,7 @@ public interface YearViewDecorator extends ViewDecorator {
     		return YearMonth.parse(revision);
     	}
     	catch (Exception e) {
-    		throw cannotParseException(REVISION, revision ,e);
+    		throw cannotParseEntryException(REVISION, revision ,e);
 		}
     }
 

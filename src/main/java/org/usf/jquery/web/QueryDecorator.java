@@ -28,26 +28,39 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public String columnName(ColumnDecorator cd) {
-		return null;
+	public DBView view() {
+		return query;
+	}
+
+	public TaggableColumn column(String id) {
+		return query.getBuilder().getColumns().stream()
+		.filter(c-> c.tagname().equals(id)) //tagname nullable !
+		.findAny()
+		.map(c-> new ViewColumn(query, c.tagname(), c.tagname(), c.getType()))
+		.orElseThrow(()-> throwNoSuchColumnException(id));
 	}
 	
 	@Override
-	public DBView view() {
-		return query;
+	public String columnName(ColumnDecorator cd) {
+		throw unsupportedOperationException("columnName");
 	}
 	
 	@Override
 	public TaggableColumn column(@NonNull ColumnDecorator cd) {
-		return query.getQuery().getColumns().stream()
-		.filter(c-> c.tagname().equals(cd.identity())) //tagname nullable !
-		.findAny()
-		.map(c-> new ViewColumn(query, c.tagname(), c.tagname(), c.getType()))
-		.orElseThrow(()-> throwNoSuchColumnException(cd.identity()));
+		throw unsupportedOperationException("column");
+	}
+	
+	@Override
+	public ViewBuilder builder() {
+		throw unsupportedOperationException("builder");
 	}
 	
 	@Override
 	public ViewMetadata metadata() {
-		throw new UnsupportedOperationException("query metadata");
+		throw unsupportedOperationException("metadata");
+	}
+	
+	UnsupportedOperationException unsupportedOperationException(String method) {
+		return new UnsupportedOperationException(this.getClass().getSimpleName() + "." + method);
 	}
 }

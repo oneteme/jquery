@@ -43,7 +43,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	default JDBCType getType() {
 		return null;
 	}
-
+	
 	default NamedColumn as(String name) {
 		return new NamedColumn(this, Objects.isNull(name) ? null : requireLegalVariable(name));
 	}
@@ -145,8 +145,8 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return b-> value;
 	}
 
-	static DBColumn allColumns(@NonNull DBView view) {
-		return column(view, "*");
+	static TaggableColumn allColumns(@NonNull DBView view) {
+		return column(view, "*").as(null); //no tag
 	}
 
 	static DBColumn column(@NonNull DBView view, @NonNull String value) {

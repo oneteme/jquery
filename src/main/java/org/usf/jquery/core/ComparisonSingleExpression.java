@@ -33,7 +33,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	
 	@Override
 	public boolean isAggregation() {
-		return nonNull(right) && Stream.of(right).anyMatch(Aggregable::aggregation);
+		return nonNull(right) && Stream.of(right).anyMatch(Nested::aggregation);
 	}
 	
 	@Override

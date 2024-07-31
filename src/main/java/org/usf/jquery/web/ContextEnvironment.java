@@ -3,22 +3,27 @@ package org.usf.jquery.web;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchViewException;
+import static org.usf.jquery.web.ConflictingResourceException.resourceAlreadyExistsException;
 
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import javax.sql.DataSource;
 
+import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JQueryException;
 import org.usf.jquery.core.QueryView;
+import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.Validation;
 
 import lombok.AccessLevel;
@@ -31,8 +36,8 @@ import lombok.extern.slf4j.Slf4j;
  * @author u$f
  *
  */
-@Getter
 @Slf4j
+@Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ContextEnvironment {
 	
@@ -41,7 +46,10 @@ public final class ContextEnvironment {
 	private final Map<String, ColumnDecorator> columns;
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
-	private final DatabaseMetadata metadata;
+	private final DatabaseMetadata metadata = new DatabaseMetadata();
+	
+	private final Map<DBView, QueryView> overView = new HashMap<>();
+	private final Map<String, TaggableColumn> declaredColumns = new HashMap<>();
 	
 	public ContextEnvironment(ContextEnvironment ctx) {
 		this.database = ctx.database;
@@ -49,15 +57,40 @@ public final class ContextEnvironment {
 		this.columns = new HashMap<>(ctx.columns); //modifiable
 		this.dataSource = ctx.dataSource;
 		this.schema = ctx.schema;
-		this.metadata = ctx.metadata;
 	}
 	
-	public ViewDecorator lookupTable(String name) {
-		var vd = views.get(name);
-		if(nonNull(vd)) {
-			return vd;
-		}
-		throw noSuchViewException(name);
+	public Optional<ViewDecorator> lookupRegistredView(String name) {
+		return ofNullable(views.get(name));
+	}
+	
+	public Optional<ColumnDecorator> lookupRegistredColumn(String name) {
+		return ofNullable(columns.get(name));
+	}
+	
+	Optional<TaggableColumn> lookupDeclaredColumn(String name) {
+		return ofNullable(declaredColumns.get(name));
+	}
+	
+	void declareView(ViewDecorator view) {
+		views.compute(view.identity(), (k,v)-> {
+			if(isNull(v)){
+				return view;
+			}
+			throw resourceAlreadyExistsException("view", k);
+		});
+	}
+	
+	void declareColumn(TaggableColumn col) {
+		declaredColumns.compute(col.tagname(), (k,v)-> {
+			if(isNull(v)){
+				return col;
+			}
+			throw resourceAlreadyExistsException("column", k);
+		});
+	}
+	
+	QueryView overView(DBView v1, Supplier<QueryView> supp) {
+		return overView.computeIfAbsent(v1, k-> supp.get());
 	}
 	
 	ViewMetadata computeTableMetadata(ViewDecorator vd, Function<Collection<ColumnDecorator>, ViewMetadata> fn) {
@@ -65,39 +98,18 @@ public final class ContextEnvironment {
 		if(nonNull(dataSource)) { //outer fetch
 			synchronized(meta) {
 				if(isNull(meta.getLastUpdate())) {
-					fetch(meta);
+					try(var cnx = dataSource.getConnection()) {
+						meta.fetch(cnx.getMetaData(), schema);
+					}
+					catch(SQLException | JQueryException e) {
+						log.error("error while scanning database metadata", e);
+					}
 				}
 			}
 		}
 		return meta;
 	}
-	
-	private void fetch(ViewMetadata metadata) {
-		try(var cnx = dataSource.getConnection()) {
-			metadata.fetch(cnx.getMetaData(), schema);
-		}
-		catch(SQLException | JQueryException e) {
-			log.error("error while scanning database metadata", e);
-		}
-	}
 
-	void registerQuery(QueryView query) {
-		views.compute(query.id(), (k,v)-> {
-			if(isNull(v)){
-				return new QueryDecorator(query);
-			}
-			throw new IllegalStateException("already exists");
-		});
-		query.getQuery().getColumns()
-		.stream().<ColumnDecorator>map(c-> c::tagname)
-		.forEach(cd-> columns.compute(cd.identity(), (k,v)-> {
-			if(isNull(v)) {
-				return cd;
-			}
-			throw new IllegalStateException("already exists");
-		}));
-	}
-	
 	public static final ContextEnvironment of(DatabaseDecorator database, 
 			Collection<ViewDecorator> views,  Collection<ColumnDecorator> columns) {
 		return of(database, views, columns, null, null);
@@ -109,13 +121,13 @@ public final class ContextEnvironment {
 	}
 	
 	public static final ContextEnvironment of(DatabaseDecorator database, 
-			Collection<ViewDecorator> views,  Collection<ColumnDecorator> columns, DataSource ds, String schema) {
+			Collection<ViewDecorator> views, Collection<ColumnDecorator> columns, DataSource ds, String schema) {
 		requireLegalVariable(database.identity());
 		return new ContextEnvironment(
 				requireNonNull(database, "configuration.database"), 
 				unmodifiableIdentityMap(requireNonEmpty(views, "configuration.views"), ViewDecorator::identity), 
 				unmodifiableIdentityMap(requireNonEmpty(columns, "configuration.columns"), ColumnDecorator::identity),
-				ds, schema, new DatabaseMetadata());
+				ds, schema);
 	}
 	
 	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn){

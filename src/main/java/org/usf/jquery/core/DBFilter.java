@@ -8,7 +8,7 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
  *
  */
 @FunctionalInterface
-public interface DBFilter extends DBObject, Aggregable, Chainable<DBFilter> {
+public interface DBFilter extends DBObject, Nested, Chainable<DBFilter> {
 
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {

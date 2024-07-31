@@ -11,7 +11,9 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -36,6 +38,9 @@ public final class QueryParameterBuilder {
 	private final List<Object> args;
 	private final List<JDBCType> argTypes;
 	private final List<DBView> views; //indexed
+	
+	private final Map<DBView, DBView> overView = new HashMap<>();
+	
 	private Integer index;
 	
 	public List<DBView> views(){
@@ -46,13 +51,24 @@ public final class QueryParameterBuilder {
 		if(isNull(vPrefix)) { //view can be null
 			return null;
 		}
-		for(var i=0; i<views.size(); i++) {
-			if(views.get(i).id().equals(view.id())) {
-				return vPrefix + (i+1);
-			}
+		view = overView.getOrDefault(view, view);
+		var idx = views.indexOf(view);
+		if(idx > -1) {
+			return vPrefix + (idx+1);
 		}
 		views.add(view);
 		return vPrefix + views.size();
+	}
+	
+	public void overView(DBView oldView, DBView newView) { //WindowFunction
+		var idx = views.indexOf(oldView);
+		if(idx > -1) {
+			views.set(idx, newView); //replace
+		}
+		else {
+			views.add(newView);
+		}
+		overView.put(oldView, newView);
 	}
 
 	public String appendArrayParameter(Object[] arr) {

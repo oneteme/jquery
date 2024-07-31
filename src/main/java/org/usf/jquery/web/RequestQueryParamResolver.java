@@ -7,6 +7,7 @@ import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.ContextManager.context;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.ContextManager.releaseContext;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchViewException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -42,7 +43,8 @@ public final class RequestQueryParamResolver {//spring connection bridge
 				: context(ant.database());
 		try {
 			var req = ctx
-					.lookupTable(ant.view())
+					.lookupRegistredView(ant.view())
+					.orElseThrow(()-> noSuchViewException(ant.view()))
 					.query(parameterMap); //may edit map
 			if(!ant.aggregationOnly() || req.isAggregation()) {
 		        log.trace("request parsed in {} ms", currentTimeMillis() - t);

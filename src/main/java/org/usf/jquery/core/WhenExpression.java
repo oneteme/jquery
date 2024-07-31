@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.Validation.requireNoArgs;
+import static org.usf.jquery.core.Nested.*;
 
 import org.usf.jquery.core.JavaType.Typed;
 
@@ -35,7 +36,7 @@ final class WhenExpression implements DBExpression, Typed {
 				.append(" THEN ");
 		return sb.append(arg.appendLiteral(value)).toString();
 	}
-
+	
 	@Override
 	public JDBCType getType() {
 		return typeOf(value).orElse(null);

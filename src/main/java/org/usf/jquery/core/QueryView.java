@@ -19,16 +19,12 @@ public final class QueryView implements DBQuery {
 
 	private final String id;
 	@Getter // remove this
-	private final RequestQueryBuilder query;
+	private final RequestQueryBuilder builder;
 	
-	public QueryView(String id, TaggableColumn... columns) {
-		this(id, new RequestQueryBuilder().columns(columns));
-	}
-
 	@Override
-	public String sql(QueryParameterBuilder builder) {
+	public String sql(QueryParameterBuilder param) {
 		var s = new SqlStringBuilder(100);
-		query.build(s, builder.subQuery()); //important! build query first
+		builder.build(s, param.subQuery()); //important! build query first
 		return parenthese(s.toString());
 	}
 
@@ -39,11 +35,11 @@ public final class QueryView implements DBQuery {
 
 	@Override
 	public Collection<TaggableColumn> columns() {
-		return query.getColumns();
+		return builder.getColumns();
 	}
-	
+
 	@Override
 	public String toString() {
 		return sql(addWithValue()); 
-	}
+	}	
 }

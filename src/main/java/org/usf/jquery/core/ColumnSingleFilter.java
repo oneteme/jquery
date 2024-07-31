@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Aggregable.aggregation;
+import static org.usf.jquery.core.Nested.aggregation;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 
 import lombok.AccessLevel;

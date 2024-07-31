@@ -115,7 +115,7 @@ public final class RequestParser {
 	
 	private void requireChar(char rc) {
 		if(c != rc) {
-			throw new ParseException("'" + rc + "' expected at index=" + idx); // before ends
+			throw new EntryParseException("'" + rc + "' expected at index=" + idx); // before ends
 		}
 	}
 	
@@ -125,15 +125,15 @@ public final class RequestParser {
 		}
 		throw s.isEmpty() && idx < size 
 			? unexpectedCharException() 
-			: new ParseException("illegal variable name : " + quote(s));
+			: new EntryParseException("illegal variable name : " + quote(s));
 	}
 	
-	private ParseException unexpectedCharException() {
-		return new ParseException("unexpected character '" + c + "' at index=" + idx); //end
+	private EntryParseException unexpectedCharException() {
+		return new EntryParseException("unexpected character '" + c + "' at index=" + idx); //end
 	}
 	
-	private ParseException somethingExpectedException() {
-		return new ParseException("something expected after '" + s.charAt(size-1) + "'");
+	private EntryParseException somethingExpectedException() {
+		return new EntryParseException("something expected after '" + s.charAt(size-1) + "'");
 	}
 	
 	private static boolean legalTxtChar(char c) {
