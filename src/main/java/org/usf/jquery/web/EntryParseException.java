@@ -33,4 +33,10 @@ public final class EntryParseException extends WebException {
 	static EntryParseException requireEntryException(String name) {
 		return new EntryParseException(name + " required");
 	}
+
+	static EntryParseException entryTackesNoArgException(String name, String entry) {
+		return new EntryParseException(format("%s takes no arg : '%s'", name, entry));
+	}
+	
+	
 }

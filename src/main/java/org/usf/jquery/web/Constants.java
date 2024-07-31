@@ -15,7 +15,7 @@ import lombok.NoArgsConstructor;
 public final class Constants {
 
 	public static final String VIEW = "view";
-	public static final String SELECT = "select"; //select
+	public static final String SELECT = "select";
 	public static final String COLUMN = "column"; //select
 	public static final String DISTINCT = "distinct";  //select.distinct
 	public static final String COLUMN_DISTINCT = "column.distinct";  //select.distinct
@@ -24,6 +24,7 @@ public final class Constants {
 	public static final String FETCH = "fetch";
 	public static final String OFFSET = "offset";
 	public static final String JOIN = "join";
+	public static final String TAG = "tag";
 	public static final String PARTITION = "partition";
 	public static final String REVISION = "revision"; //not standard
 	public static final String REVISION_MODE = "revision.mode"; //not standard

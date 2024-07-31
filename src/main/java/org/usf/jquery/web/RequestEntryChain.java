@@ -29,13 +29,16 @@ import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.PARTITION;
 import static org.usf.jquery.web.Constants.SELECT;
+import static org.usf.jquery.web.Constants.TAG;
+import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
+import static org.usf.jquery.web.EntryParseException.entryTackesNoArgException;
 import static org.usf.jquery.web.EntryParseException.requireEntryException;
 import static org.usf.jquery.web.EntryParseException.unexpectedEntryException;
 import static org.usf.jquery.web.RequestContext.currentContext_;
-import static org.usf.jquery.web.UnexpectedEntryException.unexpectedEntryException;
 
+import java.text.ParseException;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.IntFunction;
@@ -119,21 +122,20 @@ final class RequestEntryChain {
 			while(e.hasNext()) { //preserve last entry
 				e = e.next;
 				switch(e.value) {//column not allowed 
-				case DISTINCT: e.requireNoArgs(); q.distinct(); break;
+				case DISTINCT: e.requireNoArgs(DISTINCT); q.distinct(); break;
 				case FILTER: q.filters(e.toFilterArgs(td)); break;
 				case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
 				case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
 				case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
-				default: throw unexpectedEntryException(e.toString(), DISTINCT, FILTER, ORDER, OFFSET, FETCH);
+				default: throw unexpectedEntryException(e.toString());
 				}
 			}
 			if(requireTag && isNull(e.tag)) {
-				throw new IllegalArgumentException("require tag");
+				throw requireEntryException(TAG);
 			}
-			q.views(currentContext_().popQueries().toArray(DBQuery[]::new));
 			return new QueryDecorator(q.asView(e.tag));
 		}
-		throw cannotParseEntryException(SELECT, this.toString());
+		throw cannotParseEntryException(SELECT, toString());
 	}
 	
 	public Partition evalPartition(ViewDecorator td) {
@@ -145,7 +147,7 @@ final class RequestEntryChain {
 					p.orders(e.toOderArgs(td)); //not sure
 				}
 				else {
-					throw unexpectedEntryException(e.toString(), ORDER);
+					throw unexpectedEntryException(e.toString());
 				}
 			}//require no tag
 			return p;
@@ -162,7 +164,7 @@ final class RequestEntryChain {
 			if(r.col instanceof TaggableColumn col) {
 				return col;
 			}
-			throw requireEntryException("tag");
+			throw requireEntryException(TAG);
 		}
 		throw unexpectedEntryException(r.entry.next.toString());
 	}
@@ -175,7 +177,7 @@ final class RequestEntryChain {
 		var e = r.entry.next;
 		if(e.isLast()) { // next must be last
 			if(e.value.matches("asc|desc")) {
-				var o = Order.valueOf(e.requireNoArgs().value.toUpperCase()); // order takes no args
+				var o = Order.valueOf(e.requireNoArgs(ORDER).value.toUpperCase()); // order takes no args
 				return r.col.order(o);
 			}
 			cannotParseEntryException(ORDER, e.toString());
@@ -305,24 +307,24 @@ final class RequestEntryChain {
 			var rc = currentContext().lookupRegistredView(value)
 					.flatMap(v-> next.lookupViewResource(v, RequestEntryChain::isWindowFunction));
 			if(rc.isPresent()) {
-				requireNoArgs(); //view takes no args
+				requireNoArgs(VIEW); //view takes no args
 				return rc;
 			}
 		}
 		return currentContext().lookupDeclaredColumn(value)  //declared column
-				.map(c-> new ResourceCursor(null, null, requireNoArgs(), c)) 
+				.map(c-> new ResourceCursor(null, null, requireNoArgs(COLUMN), c)) 
 				.or(()-> lookupViewResource(td, fn-> true)); //registered column
 	}
 	
 	private Optional<ResourceCursor> lookupViewResource(ViewDecorator td, Predicate<TypedOperator> pre) {
 		if(td instanceof QueryDecorator qd) { //query column
-			var res = ofNullable(qd.column(value)).map(c-> new ResourceCursor(td, null, requireNoArgs(), c));
+			var res = ofNullable(qd.column(value)).map(c-> new ResourceCursor(td, null, requireNoArgs(COLUMN), c));
 			if(res.isPresent()) {
 				return res;
 			}
 		}
 		return currentContext().lookupRegistredColumn(value)
-				.map(cd-> new ResourceCursor(td, cd, requireNoArgs(), td.column(cd)))
+				.map(cd-> new ResourceCursor(td, cd, requireNoArgs(COLUMN), td.column(cd)))
 				.or(()-> lookupOperation(td, null, pre).map(col-> new ResourceCursor(td, null, this, col)));
 	}
 	
@@ -391,13 +393,12 @@ final class RequestEntryChain {
 			throw badArgumentsException(ps.toString(), this.toString(), e);
 		}
 	}
-	
 
-	RequestEntryChain requireTag() {
-		if(nonNull(tag)) {
+	RequestEntryChain requireNoArgs(String name) {
+		if(isNull(args)) {
 			return this;
 		}
-		throw new UnexpectedEntryException(value + " must be the last entry : " + this);
+		throw entryTackesNoArgException(name, toString());
 	}
 
 	RequestEntryChain requireNoArgs() {
