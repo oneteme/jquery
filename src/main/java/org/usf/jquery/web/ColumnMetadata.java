@@ -13,7 +13,7 @@ import static org.usf.jquery.core.Utils.UNLIMITED;
 
 import java.sql.Timestamp;
 
-import org.usf.jquery.core.ViewColumn;
+import org.usf.jquery.core.JDBCType;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -29,52 +29,52 @@ import lombok.ToString;
 @ToString
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ColumnMetadata {
-	
-	private ViewColumn column;
+
+	private final String name;
+	private JDBCType type;
 	private int dataSize;
 	private int precision;
 	private final boolean overConfigured;
 	
 	@Deprecated
 	ColumnMetadata reset() {
-		this.dataSize  = UNLIMITED;
-		this.precision = UNLIMITED;
+		if(!overConfigured) {
+			this.type = null;
+			this.dataSize  = UNLIMITED;
+			this.precision = UNLIMITED;
+		}
 		return this;
 	}
 	
 	public void update(int type, int size, int precision) {
 		if(!overConfigured) {
-			var ct = fromDataType(type).orElse(OTHER);
-			if(ct != column.getType()) {
-				column = new ViewColumn(column.getView(), column.getName(), column.getTag(), ct);
-			}
+			this.type = fromDataType(type).orElse(OTHER);
 			this.dataSize = size;
 			this.precision = precision;
 		}
 	}
 	
 	public String toJavaType(){
-		return column.getType().typeClass().getSimpleName();
+		return type.typeClass().getSimpleName();
 	}
 	
 	public String toSqlType(){
-		var dataType = column.getType();
-		var s = dataType.name();
+		var s = type.name();
 		if(!overConfigured) {
-			if(dataType.typeClass() == String.class && dataSize < MAX_VALUE) {
+			if(type.typeClass() == String.class && dataSize < MAX_VALUE) {
 				s+= "(" + dataSize + ")";
 			}
-			if(dataType.typeClass() == Timestamp.class) {
+			if(type.typeClass() == Timestamp.class) {
 				s+= "(" + precision + ")";
 			}
-			if(dataType == REAL || dataType == NUMERIC || dataType == DECIMAL || dataType == FLOAT || dataType == DOUBLE) {
+			if(type == REAL || type == NUMERIC || type == DECIMAL || type == FLOAT || type == DOUBLE) {
 				s+= "(" + dataSize + "," + precision + ")";
 			}
 		}
 		return s;
 	}
 	
-	public static ColumnMetadata columnMetadata(ViewColumn col) {
-		return new ColumnMetadata(col, UNLIMITED, UNLIMITED, nonNull(col.getType()));
+	public static ColumnMetadata columnMetadata(String name, JDBCType type) {
+		return new ColumnMetadata(name, type, UNLIMITED, UNLIMITED, nonNull(type));
 	}
 }

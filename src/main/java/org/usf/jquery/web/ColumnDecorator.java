@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import org.usf.jquery.core.ComparisonExpression;
-import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.JDBCType;
 
 /**
@@ -47,18 +46,4 @@ public interface ColumnDecorator {
 		throw new UnsupportedOperationException(); //authorization inject
 	}
 		
-	static ColumnDecorator ofColumn(String ref, DBColumn column) {
-		final ColumnBuilder builder = b-> column;
-		return new ColumnDecorator() {
-			@Override
-			public String identity() {
-				return ref; // default column tag
-			}
-			
-			@Override
-			public ColumnBuilder builder(ViewDecorator td) {
-				return builder;
-			}
-		};
-	}
 }

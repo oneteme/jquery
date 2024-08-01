@@ -98,8 +98,8 @@ public class RequestQueryBuilder {
 		return columns.stream().filter(c-> c.tagname().contains(id)).findAny();
 	}
 	
-	public QueryView asView(String tag) {
-		return new QueryView(tag, this);
+	public QueryView asView() {
+		return new QueryView(this);
 	}
 
 	public RequestQuery build(){

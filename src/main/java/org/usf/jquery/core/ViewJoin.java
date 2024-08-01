@@ -36,10 +36,6 @@ public class ViewJoin implements DBObject {
 				Stream.of(filters).map(f-> f.sql(builder)).collect(joining(AND.sql()));
 	}
 	
-	public String id() {
-		return view.id();
-	}
-	
 	public static ViewJoin innerJoin(DBView view, DBFilter... filters) {
 		return join(INNER, view, filters);
 	}

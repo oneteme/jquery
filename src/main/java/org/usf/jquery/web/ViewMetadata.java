@@ -47,7 +47,7 @@ public class ViewMetadata {
 	@Getter
 	private Instant lastUpdate;
 	
-	public ColumnMetadata columnMetada(ColumnDecorator cd) {
+	public ColumnMetadata columnMetadata(ColumnDecorator cd) {
 		return columns.get(cd.identity());
 	}
 	
@@ -74,7 +74,7 @@ public class ViewMetadata {
 	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
 		try(var rs = metadata.getColumns(null, view.getSchemaOrElse(schema), view.getName(), null)){
 			if(rs.next()) {
-				var db = columns.values().stream().collect(toMap(m-> m.getColumn().getName(), identity()));
+				var db = columns.values().stream().collect(toMap(m-> m.getName(), identity()));
 				do {
 					var cm = db.remove(rs.getString("COLUMN_NAME"));
 					if(nonNull(cm)) {
@@ -122,7 +122,7 @@ public class ViewMetadata {
 				log.info(bar);
 				columns.entrySet().forEach(e-> 
 				log.info(format(pattern, e.getKey(), e.getValue().toJavaType(), 
-						e.getValue().getColumn(), e.getValue().toSqlType())));
+						e.getValue().getName(), e.getValue().toSqlType())));
 				log.info(bar);
 			}
 		}

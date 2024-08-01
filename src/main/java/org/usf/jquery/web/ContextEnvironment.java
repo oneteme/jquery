@@ -9,6 +9,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ConflictingResourceException.resourceAlreadyExistsException;
+import static org.usf.jquery.web.Constants.COLUMN;
+import static org.usf.jquery.web.Constants.VIEW;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -47,7 +49,8 @@ public final class ContextEnvironment {
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
 	private final DatabaseMetadata metadata = new DatabaseMetadata();
-	
+	//runtime scope
+	private final Map<ViewDecorator, DBView> viewCache = new HashMap<>();
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private final Map<String, TaggableColumn> declaredColumns = new HashMap<>();
 	
@@ -71,12 +74,16 @@ public final class ContextEnvironment {
 		return ofNullable(declaredColumns.get(name));
 	}
 	
+	public DBView getView(ViewDecorator vd, Supplier<DBView> supp) {
+		return ofNullable(viewCache.get(vd)).orElseGet(supp);
+	}
+	
 	void declareView(ViewDecorator view) {
 		views.compute(view.identity(), (k,v)-> {
 			if(isNull(v)){
 				return view;
 			}
-			throw resourceAlreadyExistsException("view", k);
+			throw resourceAlreadyExistsException(VIEW, k);
 		});
 	}
 	
@@ -85,12 +92,12 @@ public final class ContextEnvironment {
 			if(isNull(v)){
 				return col;
 			}
-			throw resourceAlreadyExistsException("column", k);
+			throw resourceAlreadyExistsException(COLUMN, k);
 		});
 	}
 	
-	QueryView overView(DBView v1, Supplier<QueryView> supp) {
-		return overView.computeIfAbsent(v1, k-> supp.get());
+	QueryView overView(DBView view, Supplier<QueryView> supp) {
+		return overView.computeIfAbsent(view, k-> supp.get());
 	}
 	
 	ViewMetadata computeTableMetadata(ViewDecorator vd, Function<Collection<ColumnDecorator>, ViewMetadata> fn) {
@@ -125,8 +132,8 @@ public final class ContextEnvironment {
 		requireLegalVariable(database.identity());
 		return new ContextEnvironment(
 				requireNonNull(database, "configuration.database"), 
-				unmodifiableIdentityMap(requireNonEmpty(views, "configuration.views"), ViewDecorator::identity), 
-				unmodifiableIdentityMap(requireNonEmpty(columns, "configuration.columns"), ColumnDecorator::identity),
+				unmodifiableIdentityMap(requireNonEmpty(views, database.identity() + ".views"), ViewDecorator::identity), 
+				unmodifiableIdentityMap(requireNonEmpty(columns, database.identity() + ".columns"), ColumnDecorator::identity),
 				ds, schema);
 	}
 	

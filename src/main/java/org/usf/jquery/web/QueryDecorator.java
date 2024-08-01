@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.web.NoSuchResourceException.throwNoSuchColumnException;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchColumnException;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryView;
@@ -20,6 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 final class QueryDecorator implements ViewDecorator {
 	
+	private final String id;
 	private final QueryView query;
 
 	@Override
@@ -37,7 +38,7 @@ final class QueryDecorator implements ViewDecorator {
 		.filter(c-> c.tagname().equals(id)) //tagname nullable !
 		.findAny()
 		.map(c-> new ViewColumn(query, c.tagname(), c.tagname(), c.getType()))
-		.orElseThrow(()-> throwNoSuchColumnException(id));
+		.orElseThrow(()-> noSuchColumnException(id));
 	}
 	
 	@Override

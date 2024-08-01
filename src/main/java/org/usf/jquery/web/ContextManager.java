@@ -2,11 +2,14 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.web.ConflictingResourceException.resourceAlreadyExistsException;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchDatabaseException;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+
+import org.usf.jquery.core.Utils;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -27,7 +30,7 @@ public final class ContextManager {
 			if(isNull(dm)) {
 				return config;
 			}
-			throw new IllegalStateException("context environement conflict " + quote(id));
+			throw resourceAlreadyExistsException("context", id);
 		});
 	}
 
@@ -49,16 +52,18 @@ public final class ContextManager {
 		if(nonNull(ctx)) {
 			return setCurrentContext(ctx);
 		}
-		throw new NoSuchElementException(database);
+		throw noSuchDatabaseException(database);
 	}
 
 	static ContextEnvironment setCurrentContext(ContextEnvironment ctx) {
 		ctx = new ContextEnvironment(ctx); //copy
 		CURRENT.set(ctx);
+		Utils.currentDatabase(ctx.getMetadata().getType()); //table database
 		return ctx;
 	}
 
 	static void releaseContext() {
 		CURRENT.remove();
+		Utils.currentDatabase(null); //table database
 	}
 }

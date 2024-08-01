@@ -16,16 +16,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TableView implements DBView {
 	
-	private final String id;
 	private final String schema;
 	private final String name;
 
 	public TableView(String name) {
-		this(name, null, name); //use tablename as id
-	}
-
-	public TableView(String schema, String name) {
-		this(name, schema, name); //use tablename as id
+		this(name, null); //use tablename as id
 	}
 
 	@Override
@@ -33,11 +28,6 @@ public class TableView implements DBView {
 		return member(getSchemaOrElse(builder.getSchema()), name);
 	}
 
-	@Override
-	public String id() {
-		return id;
-	}
-	
 	public String getSchemaOrElse(String defaultSchema) {
 		return nonNull(schema) ? schema : defaultSchema; //priority order
 	}

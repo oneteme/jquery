@@ -17,7 +17,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class QueryView implements DBQuery {
 
-	private final String id;
 	@Getter // remove this
 	private final RequestQueryBuilder builder;
 	
@@ -26,11 +25,6 @@ public final class QueryView implements DBQuery {
 		var s = new SqlStringBuilder(100);
 		builder.build(s, param.subQuery()); //important! build query first
 		return parenthese(s.toString());
-	}
-
-	@Override
-	public String id() {
-		return id;
 	}
 
 	@Override

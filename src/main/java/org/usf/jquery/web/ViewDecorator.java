@@ -3,7 +3,7 @@ package org.usf.jquery.web;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
-import static java.util.Objects.requireNonNullElseGet;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -17,10 +17,7 @@ import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.MissingParameterException.missingParameterException;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchViewException;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
-import static org.usf.jquery.web.RequestContext.clearContext;
-import static org.usf.jquery.web.RequestContext.currentContext_;
 import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
@@ -30,12 +27,10 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.DBQuery;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.TaggableColumn;
-import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 
 import lombok.NonNull;
@@ -56,44 +51,27 @@ public interface ViewDecorator {
 	}
 
 	default CriteriaBuilder<DBFilter> criteria(String name) { //!aggregation 
-		return null; // no criteria by default
+		return null; //no criteria by default
 	}
 	
-	default JoinBuilder joiner() {
-		return null; // no builder by default
+	default JoinBuilder joiner(String name) {
+		return null; //no builder by default
 	}
 
-	default DBView view() {
-		return requireNonNullElseGet(metadata().getView(), builder()::build); //nullable !?
+	default DBView view() { //final
+		return currentContext().getView(this, requireNonNull(builder(), identity() + ".builder")::build); //nullable !?
 	}
 	
 	default TaggableColumn column(@NonNull ColumnDecorator cd) {
-		var c = metadata().columnMetada(cd);
-		if(nonNull(c)) {
-			return c.getColumn();
-		}
-		var cn = columnName(cd);
-		if(nonNull(cn)) { //ViewColumn only
-			return buildViewColumn(cd, view(), cn);
+		var meta = metadata().columnMetadata(cd);
+		if(nonNull(meta)) {
+			return new ViewColumn(view(), meta.getName(), cd.reference(this), meta.getType());
 		}
 		var b = cd.builder(this);
 		if(nonNull(b)) {
 			return b.build(this).as(cd.reference(this)); //set type
 		}
-		throw undeclaredResouceException(identity(), cd.identity());
-	}
-
-	default ViewMetadata metadata() {
-		return currentContext().computeTableMetadata(this, cols-> {
-			var view = requireNonNull(builder(), identity() + ".builder cannot be null").build();
-			var meta = cols.stream().<ColumnMetadata>mapMulti((cd, acc)-> {
-				var cn = columnName(cd);  //ViewColumn only
-				if(nonNull(cn)) {
-					acc.accept(columnMetadata(buildViewColumn(cd, view, cn)));
-				} //tag = reference
-			}).collect(toUnmodifiableMap(cm-> cm.getColumn().getTag(), Function.identity())); //tag = identity
-			return new ViewMetadata(view, meta);
-		});
+		throw undeclaredResouceException(cd.identity(), identity());
 	}
 	
 	private DBView buildView() {
@@ -105,31 +83,25 @@ public interface ViewDecorator {
 					: new TableView(requireLegalVariable(tn.substring(0, idx)),
 							requireLegalVariable(tn.substring(idx, tn.length())));
 		}
-		throw noSuchViewException(identity());
+		throw undeclaredResouceException(identity(), currentContext().getDatabase().identity());
 	}
-	
-	private ViewColumn buildViewColumn(ColumnDecorator cd, DBView view, String name) { 
-		return new ViewColumn(view, 
-				requireLegalVariable(name), 
-				requireLegalVariable(cd.reference(this)), 
-				cd.type(this));
+
+	default ViewMetadata metadata() {
+		return currentContext().computeTableMetadata(this, cols-> new ViewMetadata(view(), 
+				cols.stream().<ColumnMetadata>mapMulti((cd, acc)-> ofNullable(columnName(cd))
+						.map(cn-> columnMetadata(cn, cd.type(this)))
+						.ifPresent(acc)) //view column only
+				.collect(toUnmodifiableMap(ColumnMetadata::getName, Function.identity()))));
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
-		try {
-			Utils.currentDatabase(currentContext().getMetadata().getType()); //table database
-			var query = new RequestQueryBuilder();
-			parseViews(query, parameterMap);
-			parseColumns(query, parameterMap);
-			parseOrders (query, parameterMap);
-			parseFetch(query, parameterMap);
-			parseFilters(query, parameterMap);
-			query.views(currentContext_().popQueries().toArray(DBQuery[]::new));
-			return query;
-		}
-		finally {
-			clearContext();
-		}
+		var query = new RequestQueryBuilder();
+		parseViews(query, parameterMap);
+		parseColumns(query, parameterMap);
+		parseOrders(query, parameterMap);
+		parseFetch(query, parameterMap);
+		parseFilters(query, parameterMap);
+		return query;
 	}
 	
 	default void parseViews(RequestQueryBuilder query, Map<String, String[]> parameters) {

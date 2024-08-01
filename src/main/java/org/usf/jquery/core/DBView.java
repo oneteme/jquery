@@ -8,10 +8,8 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
  * @author u$f
  *
  */
+@FunctionalInterface
 public interface DBView extends DBObject {
-	
-	@Deprecated
-	String id(); //technical use 
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {

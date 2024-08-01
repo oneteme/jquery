@@ -112,7 +112,6 @@ final class RequestEntryChain {
 		throw cannotParseEntryException(JOIN, this.toString()); //TD
 	}
 	
-	
 	//evalView query|view:alias
 	
 	public ViewDecorator evalQuery(ViewDecorator td, boolean requireTag) { //sub context
@@ -133,7 +132,7 @@ final class RequestEntryChain {
 			if(requireTag && isNull(e.tag)) {
 				throw requireEntryException(TAG);
 			}
-			return new QueryDecorator(q.asView(e.tag));
+			return new QueryDecorator(e.tag, q.asView());
 		}
 		throw cannotParseEntryException(SELECT, toString());
 	}
@@ -250,7 +249,7 @@ final class RequestEntryChain {
 	
 	DBFilter chainComparator(ViewDecorator td, ColumnDecorator cd, DBColumn col){
 		var f = lookupComparator(value).map(c-> c.args(toArgs(td, col, c.getParameterSet()))).orElse(null); //eval comparator first => avoid overriding
-		if(isNull(f) && col instanceof TaggableColumn) { //no operation
+		if(isNull(f) && nonNull(col)) { //no operation
 			var c = cd.criteria(value); //criteria lookup
 			if(nonNull(c)) {
 				f = col.filter(c.build(toStringArray(args)));
@@ -270,7 +269,7 @@ final class RequestEntryChain {
 				f = f.append(op, (DBFilter) e.toOneArg(td, JQueryType.FILTER));
 			}
 			else {
-				throw unexpectedEntryException(e.toString(), "and|or");
+				throw cannotParseEntryException("LogicalOperator", e.toString());
 			}
 			e = e.next;
 		}
@@ -298,7 +297,7 @@ final class RequestEntryChain {
 		var v = vd.view();
 		currentContext().overView(v, ()-> new RequestQueryBuilder()
 				.columns(allColumns(v))
-				.asView(vd.identity())).getBuilder().columns(col); //append over column
+				.asView()).getBuilder().columns(col); //append over column
 		return new ViewColumn(v, doubleQuote(col.tagname()), null, col.getType());
 	}
 	
