@@ -25,7 +25,7 @@ final class QueryDecorator implements ViewDecorator {
 
 	@Override
 	public String identity() {	
-		return query.id();
+		return id;
 	}
 	
 	@Override

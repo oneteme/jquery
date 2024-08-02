@@ -6,6 +6,6 @@ package org.usf.jquery.core;
  *
  */
 @FunctionalInterface
-public interface AggregateFunction extends WindowFunction {
+public interface AggregateFunction extends FunctionOperator {
 
 }

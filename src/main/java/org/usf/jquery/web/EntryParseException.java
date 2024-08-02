@@ -18,16 +18,16 @@ public final class EntryParseException extends WebException {
 		super(message, cause);
 	}
 	
-	static EntryParseException cannotParseEntryException(String type, String value) {
-		return cannotParseEntryException(type, value, null);
+	static EntryParseException cannotParseEntryException(String type, RequestEntryChain entry) {
+		return cannotParseEntryException(type, entry, null);
 	}
 
-	static EntryParseException cannotParseEntryException(String type, String value, Throwable cause) {
-		return new EntryParseException(format("cannot parse %s : '%s'", type, value), cause);
+	static EntryParseException cannotParseEntryException(String type, RequestEntryChain entry, Throwable cause) {
+		return new EntryParseException(format("cannot parse %s : '%s'", type, entry.toString()), cause);
 	}
 	
-	static EntryParseException unexpectedEntryException(String entry) {
-		return new EntryParseException(format("unexpected entry : '%s'", entry));
+	static EntryParseException unexpectedEntryException(RequestEntryChain entry) {
+		return new EntryParseException(format("unexpected entry : '%s'", entry.toString()));
 	}
 	
 	static EntryParseException requireEntryException(String name) {

@@ -70,7 +70,7 @@ public final class YearTableMetadata extends ViewMetadata {
 	@Override
 	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException  {
 		tablenames.clear();
-		var dbMap = getColumns().values().stream().collect(toMap(cm-> cm.getColumn().getName(), ColumnMetadata::reset)); //important! reset columns
+		var dbMap = getColumns().values().stream().collect(toMap(cm-> cm.getName(), ColumnMetadata::reset)); //important! reset columns
 		Set<String> dirtyColumns = new LinkedHashSet<>();
 		Map<String, Set<String>> columnTables = new LinkedHashMap<>();
 		try(var rs = metadata.getColumns(null, view.getSchemaOrElse(schema), view.getName() + "_20__", null)){
@@ -82,15 +82,15 @@ public final class YearTableMetadata extends ViewMetadata {
 				var cm = dbMap.get(rs.getString("COLUMN_NAME"));
 				if(nonNull(cm) && tn.matches(view.getName() + "_20\\d{2}")) {// untyped SQL pattern
 					tablenames.add(tn);
-					columnTables.computeIfAbsent(cm.getColumn().getName(), k-> new LinkedHashSet<>()).add(tn);
+					columnTables.computeIfAbsent(cm.getName(), k-> new LinkedHashSet<>()).add(tn);
 					var type = rs.getInt("DATA_TYPE");
 					var size = rs.getInt("COLUMN_SIZE");
-					if(isNull(cm.getColumn().getType())) { //first time
+					if(isNull(cm.getType())) { //first time
 						cm.setDataType(typeOf(type).orElse(OTHER));
 						cm.setDataSize(size);
 					}
-					else if(cm.getDataType().getValue() != type || cm.getDataSize() != size) {
-						dirtyColumns.add(cm.getColumnName());
+					else if(cm.getType().getValue() != type || cm.getDataSize() != size) {
+						dirtyColumns.add(cm.getName());
 					}
 				}//else undeclared column
 			} while(rs.next());

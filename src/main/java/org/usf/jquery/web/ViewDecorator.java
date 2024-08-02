@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
@@ -47,7 +46,7 @@ public interface ViewDecorator {
 	String columnName(ColumnDecorator cd);
 	
 	default ViewBuilder builder() {
-		return this::buildView; //avoid recursive call
+		return this::buildView;
 	}
 
 	default CriteriaBuilder<DBFilter> criteria(String name) { //!aggregation 
@@ -59,7 +58,7 @@ public interface ViewDecorator {
 	}
 
 	default DBView view() { //final
-		return currentContext().getView(this, requireNonNull(builder(), identity() + ".builder")::build); //nullable !?
+		return currentContext().getView(this, builder()::build);
 	}
 	
 	default TaggableColumn column(@NonNull ColumnDecorator cd) {
@@ -127,7 +126,8 @@ public interface ViewDecorator {
 		}
 		Stream.of(cols)
 		.flatMap(v-> parseEntries(v).stream())
-		.forEach(e-> query.columns(e.evalColumn(this)));
+		.map(e-> e.evalColumn(this))
+		.forEach(c-> query.columns(currentContext().declareColumn(c)));
 	}
 
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {

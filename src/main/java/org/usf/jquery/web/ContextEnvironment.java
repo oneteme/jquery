@@ -87,8 +87,8 @@ public final class ContextEnvironment {
 		});
 	}
 	
-	void declareColumn(TaggableColumn col) {
-		declaredColumns.compute(col.tagname(), (k,v)-> {
+	TaggableColumn declareColumn(TaggableColumn col) {
+		return declaredColumns.compute(col.tagname(), (k,v)-> {
 			if(isNull(v)){
 				return col;
 			}

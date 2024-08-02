@@ -9,6 +9,6 @@ import org.usf.jquery.core.ViewJoin;
  */
 public interface JoinBuilder {
 
-	ViewJoin[] build(ViewDecorator[] selectedViews);
+	ViewJoin[] build();
 	
 }
