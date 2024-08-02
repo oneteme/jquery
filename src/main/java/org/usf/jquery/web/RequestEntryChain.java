@@ -236,7 +236,7 @@ final class RequestEntryChain {
 				 args = values;
 			}
 			else {
-				//throw 
+				throw new IllegalStateException(toString() + "=" + values);
 			}
 		}
 		var cmp = lookupComparator(value);
