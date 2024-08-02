@@ -40,7 +40,6 @@ import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 import static org.usf.jquery.web.EntryParseException.entryTackesNoArgException;
 import static org.usf.jquery.web.EntryParseException.requireEntryException;
 import static org.usf.jquery.web.EntryParseException.unexpectedEntryException;
-import static org.usf.jquery.web.RequestContext.currentContext_;
 
 import java.text.ParseException;
 import java.util.Arrays;
@@ -143,6 +142,7 @@ final class RequestEntryChain {
 			}
 			return new QueryDecorator(e.tag, q.asView());
 		}
+		//TODO parse view::alias
 		throw cannotParseEntryException(SELECT, this);
 	}
 	
@@ -225,7 +225,7 @@ final class RequestEntryChain {
 			}
 			return chainComparator(td, f);
 		}
-		catch (Exception e) {
+		catch(Exception e) {
 			throw cannotParseEntryException(FILTER, this, e);
 		}
 	}
@@ -236,7 +236,7 @@ final class RequestEntryChain {
 				 args = values;
 			}
 			else {
-				throw new IllegalStateException(toString() + "=" + values);
+				throw new IllegalStateException(toString() + "=" + values); // args + parameters
 			}
 		}
 		var cmp = lookupComparator(value);
@@ -258,59 +258,26 @@ final class RequestEntryChain {
 	}
 	
 	DBFilter tableCriteria(ViewDecorator td, List<RequestEntryChain> values) {
-		RequestEntryChain e = null;
-		CriteriaBuilder<DBFilter> c = null;
-		var res = currentContext_().lookupViewDecorator(value);
-		if(res.isPresent() && hasNext()) {
-			c = res.get().criteria(next.value);
-			e = next; // only if nonNull
+		RequestEntryChain e;
+		CriteriaBuilder<DBFilter> cb = null;
+		if(hasNext()) {
+			var res = currentContext().lookupRegistredView(value).map(v-> v.criteria(next.value));
+			if(res.isPresent()){
+				cb = res.get();
+				e = next;
+			}
 		}
-		if(isNull(c)) {
-			c = td.criteria(value);
+		if(isNull(cb)) {
+			cb = td.criteria(value);
 			e = this;
 		}
-		if(nonNull(c)) {
-			e.updateArgs(values);
-			var f = e.chainComparator(td, c.build(toStringArray(args)));
-			return Optional.of(f);
-		}
-		return empty();
-	}
-
-	//column.eq=v1
-	private RequestEntryChain updateArgs(List<RequestEntryChain> values) {
-		var e = this;
-		if(!isEmpty(values)) {
-			if(isLast() && isNull(args)) {
-				e = copy();
-				e.setArgs(values);
-			}
-			else {
-				throw new UnexpectedEntryException(this + "=" + Utils.toString(values.toArray()));
-			}
-		}
-		return e;
-	}
-	
-	DBFilter columnCriteria(ViewDecorator td, ColumnDecorator cd, DBColumn col){
-		var f = lookupComparator(value).map(c-> c.args(toArgs(td, col, c.getParameterSet()))).orElse(null); //eval comparator first => avoid overriding
-		if(isNull(f) && nonNull(cd)) { //no operation
-			var c = cd.criteria(value); //criteria lookup
-			if(nonNull(c)) {
-				var strArgs = toStringArray(args);
-				var ce = requireNonNull(c.build(strArgs), 
-						()-> format("%s.builder(%s).build(%s)", cd.identity(), value, Arrays.toString(strArgs)));
-				f = col.filter(ce);
-			}
-		}
-		if(nonNull(f)) {
-			return chainComparator(td, f);
-		}
-		throw cannotParseEntryException("comparison|criteria", this);
+		var strArgs = toStringArray(values);
+		return requireNonNull(cb.build(strArgs), 
+				()-> format("%s.builder(%s).build(%s)", td.identity(), value, Arrays.toString(strArgs)));
 	}
 
 	DBFilter chainComparator(ViewDecorator td, DBFilter f) {
-		var e = next;
+		var e = next; //TODO => this
 		while(nonNull(e)) {
 			if(e.value.matches("and|or")) {
 				var op = LogicalOperator.valueOf(e.value.toUpperCase());
@@ -335,7 +302,7 @@ final class RequestEntryChain {
 				r.cd = null;
 				r.entry = e;
 				r.col = filter && "over".equals(e.value)
-						? windowColumn(r.td, o.get().as(r.cd.identity())) //require tag | random tag
+						? windowColumn(r.td, o.get().as(r.cd.identity())) //TODO require tag | random tag
 						: o.get(); 
 				e = e.next;
 			}
