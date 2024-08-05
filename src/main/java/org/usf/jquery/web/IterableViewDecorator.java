@@ -22,5 +22,4 @@ public interface IterableViewDecorator<T> extends ViewDecorator {
 		query.repeat(iterator(parseIterable(parameters)));
 		ViewDecorator.super.parseFilters(query, parameters);
 	}
-	
 }

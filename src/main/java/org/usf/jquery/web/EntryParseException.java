@@ -23,20 +23,18 @@ public final class EntryParseException extends WebException {
 	}
 
 	static EntryParseException cannotParseEntryException(String type, RequestEntryChain entry, Throwable cause) {
-		return new EntryParseException(format("cannot parse %s : '%s'", type, entry.toString()), cause);
+		return new EntryParseException(format("cannot parse %s : '%s'", type, entry), cause);
 	}
 	
 	static EntryParseException unexpectedEntryException(RequestEntryChain entry) {
-		return new EntryParseException(format("unexpected entry : '%s'", entry.toString()));
+		return new EntryParseException(format("unexpected entry : '%s'", entry));
 	}
 	
 	static EntryParseException requireEntryException(String name) {
 		return new EntryParseException(name + " required");
 	}
 
-	static EntryParseException entryTackesNoArgException(String name, String entry) {
+	static EntryParseException badEntryArgsException(String name, RequestEntryChain entry) {
 		return new EntryParseException(format("%s takes no arg : '%s'", name, entry));
-	}
-	
-	
+	}	
 }

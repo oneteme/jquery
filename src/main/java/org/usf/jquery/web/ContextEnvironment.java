@@ -78,7 +78,7 @@ public final class ContextEnvironment {
 		return ofNullable(viewCache.get(vd)).orElseGet(supp);
 	}
 	
-	void declareView(ViewDecorator view) {
+	void declareView(ViewDecorator view) { //additional request views
 		views.compute(view.identity(), (k,v)-> {
 			if(isNull(v)){
 				return view;
@@ -101,20 +101,26 @@ public final class ContextEnvironment {
 	}
 	
 	ViewMetadata computeTableMetadata(ViewDecorator vd, Function<Collection<ColumnDecorator>, ViewMetadata> fn) {
-		var meta = metadata.getTables().computeIfAbsent(vd.identity(), key-> fn.apply(columns.values()));
+		return metadata.getTables().computeIfAbsent(vd.identity(), key-> fn.apply(columns.values()));
+	}
+	
+	ContextEnvironment bind() {
 		if(nonNull(dataSource)) { //outer fetch
-			synchronized(meta) {
-				if(isNull(meta.getLastUpdate())) {
-					try(var cnx = dataSource.getConnection()) {
-						meta.fetch(cnx.getMetaData(), schema);
-					}
-					catch(SQLException | JQueryException e) {
-						log.error("error while scanning database metadata", e);
+			for(var v : views.values()) {
+				var meta = requireNonNull(v.metadata(), v.identity() + ".metadata");
+				synchronized(meta) {
+					if(isNull(meta.getLastUpdate())) {
+						try(var cnx = dataSource.getConnection()) {
+							meta.fetch(cnx.getMetaData(), schema);
+						}
+						catch(SQLException | JQueryException e) {
+							log.error("error while scanning database metadata", e);
+						}
 					}
 				}
 			}
 		}
-		return meta;
+		return this;
 	}
 
 	public static final ContextEnvironment of(DatabaseDecorator database, 
@@ -132,12 +138,13 @@ public final class ContextEnvironment {
 		requireLegalVariable(database.identity());
 		return new ContextEnvironment(
 				requireNonNull(database, "configuration.database"), 
-				unmodifiableIdentityMap(requireNonEmpty(views, database.identity() + ".views"), ViewDecorator::identity), 
-				unmodifiableIdentityMap(requireNonEmpty(columns, database.identity() + ".columns"), ColumnDecorator::identity),
+				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), 
+				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"),
 				ds, schema);
 	}
 	
-	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn){
-		return c.stream().collect(toUnmodifiableMap(fn.andThen(Validation::requireLegalVariable), identity()));
+	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn, String msg){
+		return requireNonEmpty(c, msg).stream()
+				.collect(toUnmodifiableMap(fn.andThen(Validation::requireLegalVariable), identity()));
 	}
 }

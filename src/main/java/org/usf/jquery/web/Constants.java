@@ -26,7 +26,9 @@ public final class Constants {
 	public static final String JOIN = "join";
 	public static final String TAG = "tag";
 	public static final String PARTITION = "partition";
+	@Deprecated
 	public static final String REVISION = "revision"; //not standard
+	@Deprecated
 	public static final String REVISION_MODE = "revision.mode"; //not standard
 	
 	static final Set<String> RESERVED_WORDS = 

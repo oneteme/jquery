@@ -18,7 +18,6 @@ import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
-import static org.usf.jquery.web.JQueryContext.database;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;

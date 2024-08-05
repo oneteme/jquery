@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.Utils.isPresent;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Iterator;
 import java.util.stream.Stream;
@@ -24,7 +24,7 @@ public final class ModelIterator<T> implements Iterator<T> {
 		if(it.hasNext()) {
 			return true;
 		}
-		currentRev.remove();
+		currentRev.remove(); //auto clean
 		return false;
 	}
 	
@@ -36,7 +36,7 @@ public final class ModelIterator<T> implements Iterator<T> {
 	}
 
 	public static <T> ModelIterator<T> iterator(T[] model){
-		if(isPresent(model)) {
+		if(!isEmpty(model)) {
 			return new ModelIterator<>(Stream.of(model).iterator());
 		}
 		throw new IllegalArgumentException("no revision");

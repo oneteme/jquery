@@ -1,7 +1,5 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.web.NoSuchResourceException.noSuchColumnException;
-
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.TaggableColumn;
@@ -38,7 +36,7 @@ final class QueryDecorator implements ViewDecorator {
 		.filter(c-> c.tagname().equals(id)) //tagname nullable !
 		.findAny()
 		.map(c-> new ViewColumn(query, c.tagname(), c.tagname(), c.getType()))
-		.orElseThrow(()-> noSuchColumnException(id));
+		.orElse(null);
 	}
 	
 	@Override
@@ -61,7 +59,7 @@ final class QueryDecorator implements ViewDecorator {
 		throw unsupportedOperationException("metadata");
 	}
 	
-	UnsupportedOperationException unsupportedOperationException(String method) {
-		return new UnsupportedOperationException(this.getClass().getSimpleName() + "." + method);
+	private UnsupportedOperationException unsupportedOperationException(String method) {
+		return new UnsupportedOperationException(identity() + "." + method);
 	}
 }

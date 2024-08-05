@@ -17,7 +17,7 @@ final class NoSuchResourceException extends WebException {
 	}
 
 	static NoSuchResourceException noSuchDatabaseException(String resource) {
-		return noSuchResouceException(VIEW, resource);
+		return noSuchResouceException("database", resource);
 	}
 
 	static NoSuchResourceException noSuchViewException(String resource) {
@@ -26,6 +26,10 @@ final class NoSuchResourceException extends WebException {
 	
 	static NoSuchResourceException noSuchColumnException(String resource) {
 		return noSuchResouceException(COLUMN, resource);
+	}
+
+	static NoSuchResourceException noSuchResouceException(String resource) {
+		return noSuchResouceException("resource", resource);
 	}
 	
 	static NoSuchResourceException noSuchResouceException(String type, String resource) {

@@ -1,6 +1,5 @@
 package org.usf.jquery.web;
 
-import static java.lang.String.format;
 import static java.lang.reflect.Array.newInstance;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -36,42 +35,34 @@ import static org.usf.jquery.web.Constants.SELECT;
 import static org.usf.jquery.web.Constants.TAG;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
+import static org.usf.jquery.web.EntryParseException.badEntryArgsException;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
-import static org.usf.jquery.web.EntryParseException.entryTackesNoArgException;
 import static org.usf.jquery.web.EntryParseException.requireEntryException;
 import static org.usf.jquery.web.EntryParseException.unexpectedEntryException;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
 
-import java.text.ParseException;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import org.usf.jquery.core.AggregateFunction;
 import org.usf.jquery.core.BadArgumentException;
-import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
-import org.usf.jquery.core.DBQuery;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.LogicalOperator;
 import org.usf.jquery.core.OperationColumn;
-import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
-import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.core.ViewJoin.JoinType;
@@ -165,12 +156,13 @@ final class RequestEntryChain {
 	
 	public TaggableColumn evalColumn(ViewDecorator td) {
 		try {
-			var r = chainColumnOperations(td, false).orElseThrow(); //throws ParseException
+			var r = chainColumnOperations(td, false)
+					.orElseThrow(()-> noSuchResouceException(toString()));
 			if(r.entry.isLast()) {
-				if(nonNull(r.entry.tag)) { //TD: required tag if operation
+				if(nonNull(r.entry.tag)) {
 					return r.col.as(r.entry.tag);
 				}
-				if(r.col instanceof TaggableColumn col) {
+				if(r.col instanceof TaggableColumn col) { // no operation
 					return col;
 				}
 				throw requireEntryException(TAG);
@@ -183,19 +175,19 @@ final class RequestEntryChain {
 	
 	public DBOrder evalOrder(ViewDecorator td) {
 		try {
-			var r = chainColumnOperations(td, false).orElseThrow();  //throws ParseException
-			if(r.entry.isLast()) { // no order
+			var r = chainColumnOperations(td, false)
+					.orElseThrow(()-> noSuchResouceException(toString()));
+			if(r.entry.isLast()) { // default order
 				return r.col.order();
 			}
-			var e = r.entry.next;
-			if(r.entry.next.isLast()) { // next must be last
-				if(e.value.matches("asc|desc")) {
-					var o = Order.valueOf(e.requireNoArgs(ORDER).value.toUpperCase()); // order takes no args
-					return r.col.order(o);
+			var ord = r.entry.next;
+			if(ord.value.matches("asc|desc")) {
+				if(ord.isLast()) { // next must be last
+					return r.col.order(Order.valueOf(ord.requireNoArgs(ORDER).value.toUpperCase()));
 				}
-				cannotParseEntryException(ORDER, e);
+				throw unexpectedEntryException(ord.next);
 			}
-			throw unexpectedEntryException(e);
+			throw noSuchResouceException(ORDER, ord.value);
 		} catch (Exception e) {
 			throw cannotParseEntryException(ORDER, this, e);
 		}
@@ -208,83 +200,83 @@ final class RequestEntryChain {
 	public DBFilter evalFilter(ViewDecorator td, List<RequestEntryChain> values) {
 		try {
 			var res = chainColumnOperations(td, true);
-			DBFilter f;
 			if(res.isEmpty()) { //not a column
-				f = tableCriteria(td, values);
+				return viewCriteria(td, values)
+						.orElseThrow(()-> noSuchResouceException(toString())); 
 			}
-			else {
-				var rc = res.get();
-				if(rc.entry.isLast()) {
-					var fn = values.size() == 1 ? eq() : in();
-					f = fn.args(new RequestEntryChain(null, false, null, values, null)
-							.toArgs(rc.td, rc.col, fn.getParameterSet()));
-				}
-				else {
-					f = rc.entry.next.columnCriteria(rc.td, rc.cd, rc.col, values);
-				}
+			var rc = res.get();
+			if(rc.entry.isLast()) { //no comparator, no criteria
+				var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
+				var e = new RequestEntryChain(null, false, null, values, null); 
+				return fn.args(e.toArgs(rc.td, rc.col, fn.getParameterSet())); //no chain
 			}
-			return chainComparator(td, f);
+			return rc.entry.next.columnCriteria(rc.td, rc.cd, rc.col, values);
 		}
 		catch(Exception e) {
 			throw cannotParseEntryException(FILTER, this, e);
 		}
 	}
-	
-	DBFilter columnCriteria(ViewDecorator vc, ColumnDecorator cd, DBColumn col, List<RequestEntryChain> values) {
-		if(!values.isEmpty()) {
-			if(isNull(args) && isLast()) {
-				 args = values;
-			}
-			else {
-				throw new IllegalStateException(toString() + "=" + values); // args + parameters
-			}
-		}
-		var cmp = lookupComparator(value);
-		if(cmp.isPresent()) {
-			var fn = cmp.get();
-			return fn.args(toArgs(vc, col, fn.getParameterSet()));
-		}
-		if(nonNull(cd)) {
-			var c = cd.criteria(value); //criteria lookup
-			if(nonNull(c)) {
-				var strArgs = toStringArray(args);
-				var ce = requireNonNull(c.build(strArgs), 
-						()-> format("%s.builder(%s).build(%s)", cd.identity(), value, Arrays.toString(strArgs)));
-				return col.filter(ce);
-			}
-			throw cannotParseEntryException("comparison|criteria", this);
-		}
-		throw cannotParseEntryException("comparison", this);
-	}
-	
-	DBFilter tableCriteria(ViewDecorator td, List<RequestEntryChain> values) {
-		RequestEntryChain e;
-		CriteriaBuilder<DBFilter> cb = null;
+
+	Optional<DBFilter> viewCriteria(ViewDecorator td, List<RequestEntryChain> values) {
+		CriteriaBuilder<DBFilter> b = null;
+		RequestEntryChain e = this;
 		if(hasNext()) {
 			var res = currentContext().lookupRegistredView(value).map(v-> v.criteria(next.value));
 			if(res.isPresent()){
-				cb = res.get();
+				b = res.get();
 				e = next;
 			}
 		}
-		if(isNull(cb)) {
-			cb = td.criteria(value);
+		if(isNull(b)) {
+			b = td.criteria(value);
 			e = this;
 		}
-		var strArgs = toStringArray(values);
-		return requireNonNull(cb.build(strArgs), 
-				()-> format("%s.builder(%s).build(%s)", td.identity(), value, Arrays.toString(strArgs)));
+		if(nonNull(b)) {
+			return Optional.of(e.assertArguments(values)
+					.chainComparator(td, b.build(toStringArray(args))));
+		}
+		return empty();
+	}
+	
+	DBFilter columnCriteria(ViewDecorator vc, ColumnDecorator cd, DBColumn col, List<RequestEntryChain> values) {
+		var cmp = lookupComparator(value);
+		if(cmp.isPresent()) {
+			var fn = cmp.get();
+			return assertArguments(values)
+					.chainComparator(vc, fn.args(toArgs(vc, col, fn.getParameterSet())));
+		}
+		if(nonNull(cd)) { // no operation
+			var c = cd.criteria(value); //criteria lookup
+			if(nonNull(c)) {
+				return assertArguments(values)
+						.chainComparator(vc, col.filter(c.build(toStringArray(args))));
+			}
+			throw noSuchResouceException("comparator|criteria", value);
+		}
+		throw noSuchResouceException("comparator", value);
+	}
+	
+	private RequestEntryChain assertArguments(List<RequestEntryChain> values) {
+		if(!isEmpty(values)) {
+			if(isNull(args) && isLast()) { //update args
+				 args = values;
+			}
+			else {
+				throw new IllegalStateException(this + "=" + values); //denied
+			}
+		}
+		return this;
 	}
 
 	DBFilter chainComparator(ViewDecorator td, DBFilter f) {
-		var e = next; //TODO => this
+		var e = next;
 		while(nonNull(e)) {
 			if(e.value.matches("and|or")) {
 				var op = LogicalOperator.valueOf(e.value.toUpperCase());
 				f = f.append(op, (DBFilter) e.toOneArg(td, JQueryType.FILTER));
 			}
 			else {
-				throw cannotParseEntryException("LogicalOperator", e);
+				throw noSuchResouceException("LogicalOperator(and|or)", e.value);
 			}
 			e = e.next;
 		}
@@ -415,7 +407,7 @@ final class RequestEntryChain {
 		if(isNull(args)) {
 			return this;
 		}
-		throw entryTackesNoArgException(name, toString());
+		throw badEntryArgsException(name, this);
 	}
 
 	RequestEntryChain requireNoArgs() {
@@ -429,7 +421,7 @@ final class RequestEntryChain {
 		if(isLast()) {
 			return this;
 		}
-		throw new UnexpectedEntryException(value + " must be the last entry : " + this);
+		throw unexpectedEntryException(next);
 	}
 	
 	public boolean isLast() {
