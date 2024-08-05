@@ -32,13 +32,12 @@ import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.PARTITION;
 import static org.usf.jquery.web.Constants.SELECT;
-import static org.usf.jquery.web.Constants.TAG;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryParseException.badEntryArgsException;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
-import static org.usf.jquery.web.EntryParseException.requireEntryException;
-import static org.usf.jquery.web.EntryParseException.unexpectedEntryException;
+import static org.usf.jquery.web.EntrySyntaxException.requireEntryTagException;
+import static org.usf.jquery.web.EntrySyntaxException.unexpectedEntryException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
 
 import java.util.List;
@@ -113,7 +112,26 @@ final class RequestEntryChain {
 	
 	//evalView query|view:alias
 	
-	public ViewDecorator evalQuery(ViewDecorator td, boolean requireTag) { //sub context
+	public ViewDecorator evalView(ViewDecorator vd) {
+		try {
+			var res = currentContext().lookupRegistredView(value);
+			if(res.isPresent()) {
+				if(requireNoArgs().isLast()) {
+					if(nonNull(tag)) {
+						return new ViewDecoratorWrapper(res.get(), tag);
+					}
+					throw requireEntryTagException(this);
+				}
+				throw unexpectedEntryException(next);
+			}
+			return evalQuery(vd, true).orElseThrow();
+		}
+		catch (Exception e) {
+			throw cannotParseEntryException(VIEW, this, e);
+		}
+	}
+	
+	Optional<ViewDecorator> evalQuery(ViewDecorator td, boolean requireTag) { //sub context
 		if(SELECT.equals(value)) {
 			var q = new RequestQueryBuilder().columns(toColumnArgs(td, false));
 			var e =	this;
@@ -128,13 +146,12 @@ final class RequestEntryChain {
 				default: throw unexpectedEntryException(e);
 				}
 			}
-			if(requireTag && isNull(e.tag)) {
-				throw requireEntryException(TAG);
+			if(!requireTag || nonNull(e.tag)) {
+				return Optional.of(new QueryDecorator(e.tag, q.asView()));
 			}
-			return new QueryDecorator(e.tag, q.asView());
+			throw requireEntryTagException(e);
 		}
-		//TODO parse view::alias
-		throw cannotParseEntryException(SELECT, this);
+		return empty();
 	}
 	
 	public Partition evalPartition(ViewDecorator td) {
@@ -156,8 +173,7 @@ final class RequestEntryChain {
 	
 	public TaggableColumn evalColumn(ViewDecorator td) {
 		try {
-			var r = chainColumnOperations(td, false)
-					.orElseThrow(()-> noSuchResouceException(toString()));
+			var r = chainColumnOperations(td, false).orElseThrow();
 			if(r.entry.isLast()) {
 				if(nonNull(r.entry.tag)) {
 					return r.col.as(r.entry.tag);
@@ -165,7 +181,7 @@ final class RequestEntryChain {
 				if(r.col instanceof TaggableColumn col) { // no operation
 					return col;
 				}
-				throw requireEntryException(TAG);
+				throw requireEntryTagException(r.entry);
 			}
 			throw unexpectedEntryException(r.entry.next);
 		} catch (Exception e) {
@@ -175,8 +191,7 @@ final class RequestEntryChain {
 	
 	public DBOrder evalOrder(ViewDecorator td) {
 		try {
-			var r = chainColumnOperations(td, false)
-					.orElseThrow(()-> noSuchResouceException(toString()));
+			var r = chainColumnOperations(td, false).orElseThrow();
 			if(r.entry.isLast()) { // default order
 				return r.col.order();
 			}
@@ -201,8 +216,7 @@ final class RequestEntryChain {
 		try {
 			var res = chainColumnOperations(td, true);
 			if(res.isEmpty()) { //not a column
-				return viewCriteria(td, values)
-						.orElseThrow(()-> noSuchResouceException(toString())); 
+				return viewCriteria(td, values).orElseThrow(); 
 			}
 			var rc = res.get();
 			if(rc.entry.isLast()) { //no comparator, no criteria
@@ -415,13 +429,6 @@ final class RequestEntryChain {
 			return this;
 		}
 		throw badArgumentCountException(0, args.size()); //TODO 
-	}
-	
-	RequestEntryChain requireNoNext(){
-		if(isLast()) {
-			return this;
-		}
-		throw unexpectedEntryException(next);
 	}
 	
 	public boolean isLast() {

@@ -24,7 +24,6 @@ public final class Constants {
 	public static final String FETCH = "fetch";
 	public static final String OFFSET = "offset";
 	public static final String JOIN = "join";
-	public static final String TAG = "tag";
 	public static final String PARTITION = "partition";
 	@Deprecated
 	public static final String REVISION = "revision"; //not standard

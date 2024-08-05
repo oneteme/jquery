@@ -107,7 +107,7 @@ public interface ViewDecorator {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.get(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> currentContext().declareView(e.evalQuery(this, true)));
+			.forEach(e-> currentContext().declareView(e.evalView(this)));
 		}
 	}
 	
@@ -167,7 +167,7 @@ public interface ViewDecorator {
 		}
 		return null;
 	}
-
+	
 	static Stream<String> flatParameters(String... arr) { //number local separator
 		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
 	}

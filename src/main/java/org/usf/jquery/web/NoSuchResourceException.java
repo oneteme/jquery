@@ -28,10 +28,6 @@ final class NoSuchResourceException extends WebException {
 		return noSuchResouceException(COLUMN, resource);
 	}
 
-	static NoSuchResourceException noSuchResouceException(String resource) {
-		return noSuchResouceException("resource", resource);
-	}
-	
 	static NoSuchResourceException noSuchResouceException(String type, String resource) {
 		return new NoSuchResourceException(quote(resource)  + " " + type + " not found");
 	}

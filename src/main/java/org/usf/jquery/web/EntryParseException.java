@@ -30,8 +30,8 @@ public final class EntryParseException extends WebException {
 		return new EntryParseException(format("unexpected entry : '%s'", entry));
 	}
 	
-	static EntryParseException requireEntryException(String name) {
-		return new EntryParseException(name + " required");
+	static EntryParseException requireEntryException(String name, String entry) {
+		return new EntryParseException(format("%s required after '%s'", name, entry));
 	}
 
 	static EntryParseException badEntryArgsException(String name, RequestEntryChain entry) {
