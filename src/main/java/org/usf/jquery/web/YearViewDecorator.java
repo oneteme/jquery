@@ -12,7 +12,7 @@ import static org.usf.jquery.web.Constants.REVISION;
 import static org.usf.jquery.web.Constants.REVISION_MODE;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.JQueryContext.database;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchResouceException;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 import static org.usf.jquery.web.RevisionIterator.iterator;
 import static org.usf.jquery.web.RevisionIterator.monthFilter;
@@ -79,7 +79,7 @@ public interface YearViewDecorator extends ViewDecorator {
     			: new YearMonth[] {now()};
 		var revs = mod.apply(values);
 		if(isEmpty(revs)) {
-			throw noSuchResouceException(REVISION, 
+			throw noSuchResourceException(REVISION, 
 					Stream.of(values).map(YearMonth::toString).collect(joining(", "))); //require available revisions
 		}
 		return revs;

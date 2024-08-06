@@ -122,6 +122,7 @@ public class ArgumentParsers {
 		case ORDER: 	return RequestEntryChain::evalOrder;
 		case QUERY: 	return RequestEntryChain::evalQuery;
 		case PARTITION:	return RequestEntryChain::evalPartition;
+		//TODO join
 		default:		throw unsupportedTypeException(type);
 		}
 	}
