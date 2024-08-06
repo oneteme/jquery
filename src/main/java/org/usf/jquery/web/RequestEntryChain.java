@@ -96,23 +96,44 @@ final class RequestEntryChain {
 		this(value, false);
 	}
 
-	public ViewDecorator evalQuery(ViewDecorator td) {
-		return evalQuery(td, false);
-	}
-	
-
-	public ViewJoin evalJoin(ViewDecorator td) {
-		if(value.matches(JoinType.pattern())) {
-			var jt = JoinType.valueOf(value);
-			var args = toArgs( td, null, null);
-			return join(jt, (DBView)args[0], (DBFilter[])args[0]);
+	public ViewJoin[] evalJoin(ViewDecorator td) {
+		try {
+			RequestEntryChain e = null;
+			JoinBuilder j = null;
+			if(hasNext()) {
+				var res = currentContext().lookupRegistredView(value).map(v-> v.joiner(next.value));
+				if(res.isPresent()) {
+					j = res.get();
+					e = next;
+				}
+			}
+			if(isNull(j)) {
+				j = td.joiner(value);
+				e = this;
+			}
+			if(nonNull(j)) {
+				if(e.isLast()) {
+					e.requireNoArgs();
+					return j.build();
+				}
+				throw unexpectedEntryException(e.next);
+			}
 		}
-		throw cannotParseEntryException(JOIN, this); //TD
+		catch (Exception e) {
+			throw cannotParseEntryException(JOIN, this, e);
+		}
+	}
+
+	public ViewDecorator evalQuery(ViewDecorator td) {
+		try {
+			return evalQuery(td, false).orElseThrow();
+		}
+		catch (Exception e) {
+			throw cannotParseEntryException("query", this, e);
+		}
 	}
 	
-	//evalView query|view:alias
-	
-	public ViewDecorator evalView(ViewDecorator vd) {
+	public ViewDecorator evalView(ViewDecorator vd) {// [query|view]:alias
 		try {
 			var res = currentContext().lookupRegistredView(value);
 			if(res.isPresent()) {
@@ -124,7 +145,7 @@ final class RequestEntryChain {
 				}
 				throw unexpectedEntryException(next);
 			}
-			return evalQuery(vd, true).orElseThrow();
+			return evalQuery(vd, true).orElseThrow(); //not a query
 		}
 		catch (Exception e) {
 			throw cannotParseEntryException(VIEW, this, e);
