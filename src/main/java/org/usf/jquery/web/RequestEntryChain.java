@@ -476,9 +476,8 @@ final class RequestEntryChain {
 	}
 	
 	private static boolean isWindowFunction(TypedOperator op) {
-		var fn = op.unwrap();
-		return fn instanceof WindowFunction || 
-				fn instanceof AggregateFunction;
+		return isCountFunction(op) 
+				|| op.unwrap() instanceof WindowFunction;
 	}
 	
 	private static boolean isCountFunction(TypedOperator fn) {
@@ -492,8 +491,8 @@ final class RequestEntryChain {
 	}
 	
 	static NoSuchResourceException noSuchViewColumnException(RequestEntryChain e) {
-		return noSuchResourceException(COLUMN, 
-				e.hasNext() && currentContext().lookupRegisteredColumn(e.value).isPresent() 
+		return noSuchResourceException(COLUMN, e.hasNext() 
+				&& currentContext().lookupRegisteredColumn(e.value).isPresent() 
 						? e.value + "." + e.next.value
 						: e.value);
 	}
