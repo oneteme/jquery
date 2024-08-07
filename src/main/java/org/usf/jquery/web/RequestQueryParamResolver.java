@@ -4,10 +4,12 @@ import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
+import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.context;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.ContextManager.releaseContext;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchViewException;
+import static org.usf.jquery.web.NoSuchResourceException.*;
+import static org.usf.jquery.web.ResourceAccessException.accessDeniedException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -43,14 +45,14 @@ public final class RequestQueryParamResolver {//spring connection bridge
 				: context(ant.database());
 		try {
 			var req = ctx
-					.lookupRegistredView(ant.view())
-					.orElseThrow(()-> noSuchViewException(ant.view()))
+					.lookupRegisteredView(ant.view())
+					.orElseThrow(()-> noSuchResourceException(VIEW, ant.view()))
 					.query(parameterMap); //may edit map
 			if(!ant.aggregationOnly() || req.isAggregation()) {
 		        log.trace("request parsed in {} ms", currentTimeMillis() - t);
 				return req;
 			}
-			throw new IllegalDataAccessException("non aggregation query");
+			throw accessDeniedException("non-aggregate query");
 		}
 		finally {
 			releaseContext();

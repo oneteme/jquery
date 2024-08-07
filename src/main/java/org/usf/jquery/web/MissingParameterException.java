@@ -11,6 +11,7 @@ import org.usf.jquery.core.SqlStringBuilder;
  * @author u$f
  *
  */
+@Deprecated(forRemoval = true)
 @SuppressWarnings("serial")
 public final class MissingParameterException extends WebException {
 

@@ -2,8 +2,8 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.ConflictingResourceException.resourceAlreadyExistsException;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchDatabaseException;
+import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
+import static org.usf.jquery.web.NoSuchResourceException.*;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -52,7 +52,7 @@ public final class ContextManager {
 		if(nonNull(ctx)) {
 			return setCurrentContext(ctx);
 		}
-		throw noSuchDatabaseException(database);
+		throw noSuchResourceException("database", database);
 	}
 
 	static ContextEnvironment setCurrentContext(ContextEnvironment ctx) {

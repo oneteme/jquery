@@ -14,6 +14,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Constants {
 
+	public static final String QUERY = "query";
 	public static final String VIEW = "view";
 	public static final String SELECT = "select";
 	public static final String COLUMN = "column"; //select

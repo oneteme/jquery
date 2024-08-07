@@ -8,7 +8,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
-import static org.usf.jquery.web.ConflictingResourceException.resourceAlreadyExistsException;
+import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.VIEW;
 
@@ -62,11 +62,11 @@ public final class ContextEnvironment {
 		this.schema = ctx.schema;
 	}
 	
-	public Optional<ViewDecorator> lookupRegistredView(String name) {
+	public Optional<ViewDecorator> lookupRegisteredView(String name) {
 		return ofNullable(views.get(name));
 	}
 	
-	public Optional<ColumnDecorator> lookupRegistredColumn(String name) {
+	public Optional<ColumnDecorator> lookupRegisteredColumn(String name) {
 		return ofNullable(columns.get(name));
 	}
 	
@@ -88,6 +88,9 @@ public final class ContextEnvironment {
 	}
 	
 	TaggableColumn declareColumn(TaggableColumn col) {
+		if(views.containsKey(col.tagname())) { //cannot overwrite registered views
+			throw resourceAlreadyExistsException(COLUMN, col.tagname());
+		} //but can overwrite registered columns
 		return declaredColumns.compute(col.tagname(), (k,v)-> {
 			if(isNull(v)){
 				return col;
