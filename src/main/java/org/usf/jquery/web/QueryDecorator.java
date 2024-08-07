@@ -1,7 +1,5 @@
 package org.usf.jquery.web;
 
-import java.util.Objects;
-
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.TaggableColumn;

@@ -16,7 +16,6 @@ public class ResourceAccessException extends WebException { //read & write acces
 		return new ResourceAccessException(name + " already exists : " + value);
 	}
 
-
 	public static ResourceAccessException accessDeniedException(String reason) {
 		return new ResourceAccessException("access denied : " + reason);
 	}

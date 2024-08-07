@@ -8,9 +8,9 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
-import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.VIEW;
+import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
 import java.sql.SQLException;
 import java.util.Collection;
@@ -89,7 +89,7 @@ public final class ContextEnvironment {
 	
 	TaggableColumn declareColumn(TaggableColumn col) {
 		if(views.containsKey(col.tagname())) { //cannot overwrite registered views
-			throw resourceAlreadyExistsException(COLUMN, col.tagname());
+			throw resourceAlreadyExistsException(VIEW, col.tagname());
 		} //but can overwrite registered columns
 		return declaredColumns.compute(col.tagname(), (k,v)-> {
 			if(isNull(v)){

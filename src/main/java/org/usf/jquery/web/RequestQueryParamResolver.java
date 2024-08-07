@@ -8,7 +8,7 @@ import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.context;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.ContextManager.releaseContext;
-import static org.usf.jquery.web.NoSuchResourceException.*;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.ResourceAccessException.accessDeniedException;
 
 import java.util.LinkedHashMap;

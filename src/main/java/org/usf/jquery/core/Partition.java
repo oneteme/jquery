@@ -18,15 +18,7 @@ import lombok.RequiredArgsConstructor;
 public final class Partition implements DBObject, Groupable {
 
 	private final DBColumn[] columns;
-	private DBOrder[] orders;
-	
-	public Partition() {
-		this(null);
-	}
-	
-	public void orders(DBOrder[] orders) {
-		this.orders = orders;
-	}
+	private final  DBOrder[] orders;
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object[] args) {

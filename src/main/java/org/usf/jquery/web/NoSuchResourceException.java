@@ -15,7 +15,7 @@ final class NoSuchResourceException extends WebException {
 		super(s);
 	}
 	
-	static NoSuchResourceException w(String type, String resource) {
+	static NoSuchResourceException noSuchResourceException(String type, String resource) {
 		return new NoSuchResourceException(format("%s: '%s'", type, resource));
 	}
 

@@ -1,7 +1,7 @@
 package org.usf.jquery.web;
 
-import static java.lang.String.format;
 import static java.lang.reflect.Array.newInstance;
+import static java.util.Collections.addAll;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -41,6 +41,7 @@ import static org.usf.jquery.web.EntrySyntaxException.unexpectedEntryException;
 import static org.usf.jquery.web.EntrySyntaxException.unexpectedEntryValueException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.function.IntFunction;
@@ -95,7 +96,7 @@ final class RequestEntryChain {
 		this(value, false);
 	}
 	
-	// [view|query]:alias
+	// [view|query]:tag
 	public ViewDecorator evalView(ViewDecorator vd) {
 		try {
 			return currentContext().lookupRegisteredView(value) //check args & next only if view exists
@@ -151,7 +152,7 @@ final class RequestEntryChain {
 			var join = vd.joiner(e.value);
 			if(nonNull(join)) {
 				e.requireNoArgs().requireNoNext(); //check args & next only if joiner exists
-				return requireNonNull(join.build(), format("%s.joiner(%s).build()", vd.identity(), value));
+				return requireNonNull(join.build(), "view.joiner: " + e);
 			}
 			throw noSuchResourceException(vd.identity() + ".joiner", e.value);
 		}
@@ -160,22 +161,23 @@ final class RequestEntryChain {
 		}
 	}
 	
+	//[partition.order]*
 	public Partition evalPartition(ViewDecorator td) {
+		List<DBColumn> cols = new ArrayList<>();
+		List<DBOrder> ords = new ArrayList<>();
 		try {
-			if(PARTITION.equals(value)) {
-				var p = new Partition(toColumnArgs(td, true));
-				if(hasNext()) { //TD loop
-					var e =	next;
-					if(ORDER.equals(e.value)) {//column not allowed
-						p.orders(e.toOderArgs(td)); //not sure
-					}
-					else {
-						throw unexpectedEntryValueException(e);
-					}
+			var e = this;
+			do {
+				switch (e.value) {
+				case PARTITION: addAll(cols, e.toColumnArgs(td, true)); break;
+				case ORDER: addAll(ords, e.toOderArgs(td)); break;
+				default: throw unexpectedEntryValueException(e);
 				}
-				return p;
-			}
-			throw unexpectedEntryValueException(this); //unknown
+				e = e.next;
+			} while(nonNull(e));
+			return new Partition(
+					cols.toArray(DBColumn[]::new), 
+					ords.toArray(DBOrder[]::new));
 		}
 		catch (Exception e) {
 			throw cannotParseEntryException(PARTITION, this, e);
@@ -186,7 +188,7 @@ final class RequestEntryChain {
 	public TaggableColumn evalColumn(ViewDecorator td) {
 		try {
 			var r = chainColumnOperations(td, false)
-					.orElseThrow(()-> noSuchViewResourceException(COLUMN, this));
+					.orElseThrow(()-> noSuchViewColumnException(this));
 			r.entry.requireNoNext(); //check next only if column exists
 			if(nonNull(r.entry.tag)) {
 				return r.col.as(r.entry.tag);
@@ -204,12 +206,12 @@ final class RequestEntryChain {
 	public DBOrder evalOrder(ViewDecorator td) {
 		try {
 			var r = chainColumnOperations(td, false)
-					.orElseThrow(()-> noSuchViewResourceException(COLUMN, this));
+					.orElseThrow(()-> noSuchViewColumnException(this));
 			if(r.entry.isLast()) { // default order
 				return r.col.order();
 			}
 			var ord = r.entry.next;
-			if(ord.value.matches("asc|desc")) {//check args & next only if order exists
+			if(ord.value.matches("asc|desc")) { //check args & next only if order exists
 				var s = ord.requireNoArgs().requireNoNext().value.toUpperCase();
 				return r.col.order(Order.valueOf(s));
 			}
@@ -224,20 +226,20 @@ final class RequestEntryChain {
 	}
 
 	//[view.]criteria | [view.]column.criteria |  [view.]column[.operator]*[.comparator]
-	public DBFilter evalFilter(ViewDecorator td, List<RequestEntryChain> values) { //supply values
+	public DBFilter evalFilter(ViewDecorator vd, List<RequestEntryChain> values) { //supply values
 		try {
-			var res = chainColumnOperations(td, true);
+			var res = chainColumnOperations(vd, true);
 			if(res.isEmpty()) { //not a column
-				return viewCriteria(td, values)
-						.orElseThrow(()-> noSuchViewResourceException(COLUMN, this)); 
+				return viewCriteria(vd, values)
+						.orElseThrow(()-> noSuchViewColumnException(this)); 
 			}
 			var rc = res.get();
 			if(rc.entry.isLast()) { //no comparator, no criteria
 				var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
 				var e = new RequestEntryChain(null, false, null, values, null); 
-				return fn.args(e.toArgs(rc.td, rc.col, fn.getParameterSet())); //no chain
+				return fn.args(e.toArgs(vd, rc.col, fn.getParameterSet())); //no chain
 			}
-			return rc.entry.next.columnCriteria(rc.td, rc.cd, rc.col, values);
+			return rc.entry.next.columnCriteria(vd, rc.cd, rc.col, values);
 		}
 		catch(Exception e) {
 			throw cannotParseEntryException(FILTER, this, e);
@@ -260,7 +262,8 @@ final class RequestEntryChain {
 			e = this;
 		}
 		if(nonNull(b)) {
-			var f = b.build(toStringArray(e.assertOuterParameters(values))); //nonNull !?
+			var strArgs = toStringArray(e.assertOuterParameters(values));
+			var f = requireNonNull(b.build(strArgs), "view.criteria: " + e);
 			return Optional.of(e.chainComparator(td, f));
 		}
 		return Optional.empty();
@@ -274,9 +277,10 @@ final class RequestEntryChain {
 			return chainComparator(vc, fn.args(cp.toArgs(vc, col, fn.getParameterSet())));
 		}
 		if(nonNull(cd)) { // no operation
-			var c = cd.criteria(value); //criteria lookup
+			var c = cd.criteria(value);
 			if(nonNull(c)) {
-				var ex = c.build(toStringArray(assertOuterParameters(values))); //nonNull !?
+				var strArgs = toStringArray(assertOuterParameters(values));
+				var ex = requireNonNull(c.build(strArgs), "column.criteria: " + this);
 				return chainComparator(vc, col.filter(ex));
 			}
 			throw noSuchResourceException("comparator|criteria", value);
@@ -300,11 +304,11 @@ final class RequestEntryChain {
 			if(e.value.matches("and|or")) {
 				var op = LogicalOperator.valueOf(e.value.toUpperCase());
 				f = f.append(op, (DBFilter) e.toOneArg(td, JQueryType.FILTER));
+				e = e.next;
 			}
 			else {
 				throw unexpectedEntryValueException(e);
 			}
-			e = e.next;
 		}
 		return f;
 	}
@@ -320,7 +324,7 @@ final class RequestEntryChain {
 				r.cd = null;
 				r.entry = e;
 				r.col = filter && "over".equals(e.value)
-						? windowColumn(r.td, o.get())
+						? windowColumn(r.vd, o.get())
 						: o.get(); 
 				e = e.next;
 			}
@@ -329,7 +333,7 @@ final class RequestEntryChain {
 	}
 	
 	private static DBColumn windowColumn(ViewDecorator vd, DBColumn col) {
-		var v = vd.view();
+		var v = requireNonNull(vd, "column view").view(); //Declared column
 		var tag = "over_" + vd.identity() + "_" + col.hashCode();  //over_view_hash
 		currentContext().overView(v, ()-> new RequestQueryBuilder()
 				.columns(allColumns(v)).asView())
@@ -353,15 +357,12 @@ final class RequestEntryChain {
 	
 	private Optional<ViewResource> lookupViewResource(ViewDecorator td, Predicate<TypedOperator> pre) {
 		if(td instanceof QueryDecorator qd) { //query column
-			var res = ofNullable(qd.column(value))
-					.map(c-> new ViewResource(td, null, requireNoArgs(), c));
-			if(res.isPresent()) {
-				return res;
-			}
+			return ofNullable(qd.column(value))
+					.map(c-> new ViewResource(td, null, requireNoArgs(), c)); //no column decorator
 		}
 		return currentContext().lookupRegisteredColumn(value)
 				.map(cd-> new ViewResource(td, cd, requireNoArgs(), td.column(cd)))
-				.or(()-> lookupOperation(td, null, pre).map(col-> new ViewResource(td, null, this, col)));
+				.or(()-> lookupOperation(td, null, pre).map(col-> new ViewResource(td, null, this, col)));  //no column decorator
 	}
 	
 	private Optional<OperationColumn> lookupOperation(ViewDecorator td, DBColumn col, Predicate<TypedOperator> opr) {
@@ -490,8 +491,8 @@ final class RequestEntryChain {
 				.toArray(String[]::new);
 	}
 	
-	static NoSuchResourceException noSuchViewResourceException(String type, RequestEntryChain e) {
-		return noSuchResourceException(type, 
+	static NoSuchResourceException noSuchViewColumnException(RequestEntryChain e) {
+		return noSuchResourceException(COLUMN, 
 				e.hasNext() && currentContext().lookupRegisteredColumn(e.value).isPresent() 
 						? e.value + "." + e.next.value
 						: e.value);
@@ -501,7 +502,7 @@ final class RequestEntryChain {
 	@AllArgsConstructor
 	static final class ViewResource {
 		
-		private final ViewDecorator td; //optional
+		private ViewDecorator vd; //optional
 		private ColumnDecorator cd; //optional
 		private RequestEntryChain entry;
 		private DBColumn col;
@@ -509,7 +510,7 @@ final class RequestEntryChain {
 
 		@Override
 		public String toString() {
-			return td + "." + cd + " => " + entry.toString();
+			return vd + "." + cd + " => " + entry.toString();
 		}
 	}
 }
