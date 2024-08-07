@@ -261,7 +261,7 @@ final class RequestEntryChain {
 		var cmp = lookupComparator(value);
 		if(cmp.isPresent()) {
 			var fn = cmp.get();
-			var cp = new RequestEntryChain(null, false, null, assertOuterParameters(values), null); //do not set args=values
+			var cp = new RequestEntryChain(null, false, null, assertOuterParameters(values), null);
 			return chainComparator(vc, fn.args(cp.toArgs(vc, col, fn.getParameterSet())));
 		}
 		if(nonNull(cd)) { // no operation
@@ -279,25 +279,30 @@ final class RequestEntryChain {
 		if(isEmpty(values)) {
 			return args;
 		}
-		if(isNull(args) && isLast()) { //update args
-			 return values;  //!danger @see ViewDecorator
+		if(isNull(args) && isLast()) {  //do not set args=values
+			 return values;
 		}
 		throw new IllegalStateException(this + "=" + values); //denied
 	}
 
 	DBFilter chainComparator(ViewDecorator td, DBFilter f) {
 		var e = next;
-		while(nonNull(e)) {
-			if(e.value.matches("and|or")) {
-				var op = LogicalOperator.valueOf(e.value.toUpperCase());
-				f = f.append(op, (DBFilter) e.toOneArg(td, JQueryType.FILTER));
+		try {
+			while(nonNull(e)) {
+				if(e.value.matches("and|or")) {
+					var op = LogicalOperator.valueOf(e.value.toUpperCase());
+					f = f.append(op, (DBFilter) e.toOneArg(td, JQueryType.FILTER));
+				}
+				else {
+					throw noSuchResourceException("LogicalOperator(and|or)", e.value);
+				}
+				e = e.next;
 			}
-			else {
-				throw noSuchResourceException("LogicalOperator(and|or)", e.value);
-			}
-			e = e.next;
+			return f;
 		}
-		return f;
+		catch (Exception ex) {
+			throw cannotParseEntryException("comparator.chain", e, ex);
+		}
 	}
 	
 	private Optional<ViewResource> chainColumnOperations(ViewDecorator td, boolean filter) {
