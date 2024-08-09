@@ -59,7 +59,7 @@ public class ViewMetadata {
 				fetch(metadata, tab, schema);
 			}
 			else if(view instanceof DBQuery query) {
-				fetch(metadata, query);
+				fetch(metadata, query, schema);
 			}
 			else {
 				throw new UnsupportedOperationException("unsupported view type " + view);
@@ -94,8 +94,8 @@ public class ViewMetadata {
 		}
 	}
 
-	void fetch(DatabaseMetaData metadata, DBQuery qr) throws SQLException {
-		var query = qr.sql(parametrized(new ArrayList<>()));
+	void fetch(DatabaseMetaData metadata, DBQuery qr, String schema) throws SQLException {
+		var query = qr.sql(parametrized(schema));
 		try(var ps = metadata.getConnection().prepareStatement("SELECT * FROM(" + query + ") WHERE 1=0");
 			var rs = ps.executeQuery()){
 			var db = new HashMap<>(columns);

@@ -55,7 +55,8 @@ public final class ColumnMetadata {
 	}
 	
 	public String toJavaType(){
-		return type.typeClass().getSimpleName();
+		var t = type.typeClass().getSimpleName();
+		return overConfigured ? t+"!" : t;
 	}
 	
 	public String toSqlType(){
@@ -70,6 +71,9 @@ public final class ColumnMetadata {
 			if(type == REAL || type == NUMERIC || type == DECIMAL || type == FLOAT || type == DOUBLE) {
 				s+= "(" + dataSize + "," + precision + ")";
 			}
+		}
+		else {
+			s+="!";
 		}
 		return s;
 	}

@@ -9,14 +9,11 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
-import lombok.Setter;
-
 /**
  * 
  * @author u$f
  *
  */
-@Setter
 public final class SqlStringBuilder {
 	
 	static final String EMPTY = "";
@@ -26,8 +23,7 @@ public final class SqlStringBuilder {
 	static final String DQUOT = "\"";
 	static final String SCOMA  = COMA + SPACE;
 	
-	final StringBuilder sb;
-	Integer offset;
+	private final StringBuilder sb;
 	
 	public SqlStringBuilder(int capacity) {
 		this.sb = new StringBuilder(capacity);
@@ -85,13 +81,7 @@ public final class SqlStringBuilder {
 	}
 	
 	public SqlStringBuilder append(String s) {
-		if(isNull(offset)) {
-			sb.append(s);
-		}
-		else {
-			sb.insert(offset, s);
-			offset += s.length();
-		}
+		sb.append(s);
 		return this;
 	}
 	

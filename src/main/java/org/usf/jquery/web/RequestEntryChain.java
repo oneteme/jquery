@@ -47,7 +47,6 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
-import org.usf.jquery.core.AggregateFunction;
 import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -191,7 +190,7 @@ final class RequestEntryChain {
 					.orElseThrow(()-> noSuchViewColumnException(this));
 			r.entry.requireNoNext(); //check next only if column exists
 			if(nonNull(r.entry.tag)) {
-				return r.col.as(r.entry.tag);
+				return currentContext().declareColumn(r.col.as(r.entry.tag));
 			}
 			if(r.col instanceof TaggableColumn col) {
 				return col;
@@ -365,16 +364,13 @@ final class RequestEntryChain {
 				.or(()-> lookupOperation(td, null, pre).map(col-> new ViewResource(td, null, this, col)));  //no column decorator
 	}
 	
-	private Optional<OperationColumn> lookupOperation(ViewDecorator td, DBColumn col, Predicate<TypedOperator> opr) {
+	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, DBColumn col, Predicate<TypedOperator> opr) {
 		return lookupOperator(value).filter(opr).map(fn-> {
 			var c = col;
 			if(isNull(c) && isEmpty(args) && isCountFunction(fn)) {
-				c = b-> {
-					b.view(td.view()); // declare view
-					return "*"; 
-				};
+				c = allColumns(vd.view());
 			}
-			return fn.args(toArgs(td, c, fn.getParameterSet()));
+			return fn.args(toArgs(vd, c, fn.getParameterSet()));
 		});
 	}
 
@@ -496,7 +492,6 @@ final class RequestEntryChain {
 						? e.value + "." + e.next.value
 						: e.value);
 	}
-
 
 	@AllArgsConstructor
 	static final class ViewResource {

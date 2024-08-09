@@ -36,7 +36,6 @@ public class RequestQueryBuilder {
 
 	private final List<TaggableColumn> columns = new LinkedList<>();
 	private final List<DBFilter> filters = new LinkedList<>();  //WHERE & HAVING
-	private final List<DBView> views = new LinkedList<>();
 	private final List<DBOrder> orders = new LinkedList<>();
 	private final List<ViewJoin> joins = new LinkedList<>(); 
 	private Iterator<?> it;
@@ -49,11 +48,6 @@ public class RequestQueryBuilder {
 		return this;
 	}
 	
-	public RequestQueryBuilder views(@NonNull DBView... views) {
-		Stream.of(views).forEach(this.views::add);
-		return this;
-	}
-
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
 		addAll(this.columns, columns);
 		return this;
@@ -111,7 +105,7 @@ public class RequestQueryBuilder {
 //		requireNonEmpty(tables);
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
-		var pb = parametrized(schema, views);
+		var pb = parametrized(schema);
 		var sb = new SqlStringBuilder(1000); //avg
 		if(isNull(it)) {
 			build(sb, pb);
@@ -124,18 +118,13 @@ public class RequestQueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
-		views.forEach(pb::view);
 		select(sb, pb);
-		var queryIdx = sb.sb.length(); //pos mark
-		var argsIdx = pb.argCount();
+		from(sb, pb);
     	where(sb, pb);
     	groupBy(sb, pb);
     	having(sb, pb);
     	orderBy(sb, pb);
     	fetch(sb);
-		sb.setOffset(queryIdx);
-		pb.setIndex(argsIdx);
-    	from(sb, pb); //declare all view before FROM)
     	join(sb, pb);
 	}
 
@@ -157,11 +146,6 @@ public class RequestQueryBuilder {
 	
 	void from(SqlStringBuilder sb, QueryParameterBuilder pb) {
 		var vList = pb.views();
-		if(!joins.isEmpty()) {
-			vList = vList.stream()
-					.filter(v-> joins.stream().noneMatch(j-> j.id().equals(v.id())))
-					.toList();
-		}
 		if(!vList.isEmpty()) {
 			sb.append(" FROM ")
 				.appendEach(vList, SCOMA, o-> o.sqlWithTag(pb));

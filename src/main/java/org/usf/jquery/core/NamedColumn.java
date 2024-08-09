@@ -28,9 +28,4 @@ public final class NamedColumn implements TaggableColumn {
 	public NamedColumn as(String name) { // map
 		return Objects.equals(name, tag) ? this : new NamedColumn(column, name);
 	}
-	
-	@Override 
-	public String toString() {
-		return column.toString();
-	}
 }

@@ -146,11 +146,11 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 
 	static TaggableColumn allColumns(@NonNull DBView view) {
-		return column(view, "*").as(null); //no tag
-	}
-
-	static DBColumn column(@NonNull DBView view, @NonNull String value) {
-		return b-> member(b.view(view), value);
+		DBColumn c = b-> {
+			b.view(view);
+			return "*"; //avoid view.* as ""
+		};
+		return c.as(null);
 	}
 	
 	static DBColumn constant(Object value) {

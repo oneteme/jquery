@@ -40,9 +40,7 @@ public final class QueryParameterBuilder {
 	private final List<DBView> views; //indexed
 	
 	private final Map<DBView, DBView> overView = new HashMap<>();
-	
-	private Integer index;
-	
+		
 	public List<DBView> views(){
 		return views;
 	}
@@ -118,20 +116,9 @@ public final class QueryParameterBuilder {
 	}
 	
 	private String appendArg(JDBCType type, Object o) {
-		if(isNull(index)) {
-			argTypes.add(type);
-			args.add(o);
-		}
-		else {
-			argTypes.add(index, type);
-			args.add(index, o);
-			index++;
-		}
+		argTypes.add(type);
+		args.add(o);
 		return P_ARG;
-	}
-	
-	public int argCount() {
-		return args.size();
 	}
 	
 	public Object[] args() {
@@ -161,22 +148,18 @@ public final class QueryParameterBuilder {
 	}
 	
 	public QueryParameterBuilder withValue() {
-		return new QueryParameterBuilder(schema, vPrefix, null, null, views, index);
+		return new QueryParameterBuilder(schema, vPrefix, null, null, views);
 	}
 	
 	public QueryParameterBuilder subQuery() {
-		return new QueryParameterBuilder(schema, isNull(vPrefix) ? null : vPrefix + "_s", args, argTypes, new ArrayList<>(), index);
+		return new QueryParameterBuilder(schema, isNull(vPrefix) ? null : vPrefix + "_s", args, argTypes, new ArrayList<>());
 	}
 
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null, null, null, null, null, null); //no args
+		return new QueryParameterBuilder(null, null, null, null, null); //no args
 	}
 
-	public static QueryParameterBuilder parametrized(List<DBView> views) {
-		return parametrized(null, views);
-	}
-	
-	public static QueryParameterBuilder parametrized(String schema, List<DBView> views) {
-		return new QueryParameterBuilder(schema, "v", new ArrayList<>(), new ArrayList<>(), views, null);
+	public static QueryParameterBuilder parametrized(String schema) {
+		return new QueryParameterBuilder(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
 	}
 }

@@ -28,10 +28,11 @@ public final class ContextManager {
 	public static void register(ContextEnvironment config) {
 		CONTEXTS.compute(config.getDatabase().identity(), (id,dm)-> {
 			if(isNull(dm)) {
-				return config.bind();
+				return config;
 			}
 			throw resourceAlreadyExistsException("context", id);
 		});
+		config.bind(); // outer bind
 	}
 
 	public static ContextEnvironment currentContext() {

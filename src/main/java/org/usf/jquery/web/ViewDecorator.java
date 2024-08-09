@@ -22,7 +22,7 @@ import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
 
 import java.util.Map;
-import java.util.function.Function;
+import java.util.Map.Entry;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
@@ -57,11 +57,11 @@ public interface ViewDecorator {
 		return null; //no builder by default
 	}
 
-	default DBView view() { //final
+	default DBView view() {//final
 		return currentContext().getView(this, builder()::build);
 	}
 	
-	default TaggableColumn column(@NonNull ColumnDecorator cd) {
+	default TaggableColumn column(@NonNull ColumnDecorator cd) {//final
 		var meta = metadata().columnMetadata(cd);
 		if(nonNull(meta)) {
 			return new ViewColumn(view(), meta.getName(), cd.reference(this), meta.getType());
@@ -73,24 +73,24 @@ public interface ViewDecorator {
 		throw undeclaredResouceException(cd.identity(), identity());
 	}
 	
-	private DBView buildView() {
+	private TableView buildView() {
 		var tn = currentContext().getDatabase().viewName(this);
 		if(nonNull(tn)){
 			var idx = tn.indexOf('.');
 			return idx == -1 
-					? new TableView(requireLegalVariable(tn)) 
+					? new TableView(null, requireLegalVariable(tn), identity()) 
 					: new TableView(requireLegalVariable(tn.substring(0, idx)),
-							requireLegalVariable(tn.substring(idx, tn.length())));
+							requireLegalVariable(tn.substring(idx, tn.length())), identity());
 		}
 		throw undeclaredResouceException(identity(), currentContext().getDatabase().identity());
 	}
 
 	default ViewMetadata metadata() {
 		return currentContext().computeTableMetadata(this, cols-> new ViewMetadata(view(), 
-				cols.stream().<ColumnMetadata>mapMulti((cd, acc)-> ofNullable(columnName(cd))
-						.map(cn-> columnMetadata(cn, cd.type(this)))
+				cols.stream().<Entry<String,ColumnMetadata>>mapMulti((cd, acc)-> ofNullable(columnName(cd))
+						.map(cn-> Map.entry(cd.identity(), columnMetadata(cn, cd.type(this))))
 						.ifPresent(acc)) //view column only
-				.collect(toUnmodifiableMap(ColumnMetadata::getName, Function.identity()))));
+				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue))));
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
@@ -105,7 +105,7 @@ public interface ViewDecorator {
 	
 	default void parseViews(RequestQueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(VIEW)) {
-			Stream.of(parameters.get(VIEW))
+			Stream.of(parameters.remove(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
 			.forEach(e-> currentContext().declareView(e.evalView(this)));
 		}
@@ -115,19 +115,21 @@ public interface ViewDecorator {
 		if(parameters.containsKey(COLUMN_DISTINCT) && parameters.containsKey(COLUMN)) {
 			throw new IllegalArgumentException("cannot use both parameters " + quote(COLUMN_DISTINCT) + " and " + quote(COLUMN));
 		}
-		var cols = parameters.containsKey(COLUMN_DISTINCT) 
-				? parameters.get(COLUMN_DISTINCT) 
-				: parameters.get(COLUMN); //can be combined in PG (distinct on)
+		String[] cols;
+		if(parameters.containsKey(COLUMN_DISTINCT)) {
+			cols = parameters.remove(COLUMN_DISTINCT);
+			query.distinct();
+		}
+		else {
+			cols = parameters.remove(COLUMN);	
+		}
 		if(isEmpty(cols)) {
 			throw missingParameterException(COLUMN, COLUMN_DISTINCT);
-		}
-		if(parameters.containsKey(COLUMN_DISTINCT)){
-			query.distinct();
 		}
 		Stream.of(cols)
 		.flatMap(v-> parseEntries(v).stream())
 		.map(e-> e.evalColumn(this))
-		.forEach(c-> query.columns(currentContext().declareColumn(c)));
+		.forEach(query::columns);
 	}
 
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
@@ -142,7 +144,7 @@ public interface ViewDecorator {
 
 	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(ORDER)) {
-			Stream.of(parameters.get(ORDER))
+			Stream.of(parameters.remove(ORDER))
 			.flatMap(c-> parseEntries(c).stream())
 			.forEach(e-> query.orders(e.evalOrder(this)));
 		}

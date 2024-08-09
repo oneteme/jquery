@@ -22,7 +22,7 @@ public interface JDBCArgumentParser extends JavaArgumentParser {
 			return nativeParse(v);
 		}
 		catch(Exception e) {
-			throw cannotParseEntryException(toString(), v, e); 
+			throw cannotParseEntryException("", null, e); //TODO finish 
 		}
 	}
 }

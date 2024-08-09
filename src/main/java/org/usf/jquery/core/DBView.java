@@ -1,6 +1,8 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 /**
@@ -17,9 +19,13 @@ public interface DBView extends DBObject {
 		return sql(builder);
 	}
 
+	String sql(QueryParameterBuilder builder);
+	
+	default NamedView as(String tag) {
+		return new NamedView(this, isNull(tag) ? null : requireLegalVariable(tag));
+	}
+	
 	default String sqlWithTag(QueryParameterBuilder builder) {
 		return sql(builder) + SPACE + builder.view(this);
 	}
-
-	String sql(QueryParameterBuilder builder);
 }

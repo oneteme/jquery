@@ -75,7 +75,7 @@ public final class ContextEnvironment {
 	}
 	
 	public DBView getView(ViewDecorator vd, Supplier<DBView> supp) {
-		return ofNullable(viewCache.get(vd)).orElseGet(supp);
+		return viewCache.computeIfAbsent(vd, k-> supp.get());
 	}
 	
 	void declareView(ViewDecorator view) { //additional request views
@@ -126,17 +126,17 @@ public final class ContextEnvironment {
 		return this;
 	}
 
-	public static final ContextEnvironment of(DatabaseDecorator database, 
+	public static ContextEnvironment of(DatabaseDecorator database, 
 			Collection<ViewDecorator> views,  Collection<ColumnDecorator> columns) {
 		return of(database, views, columns, null, null);
 	}
 
-	public static final ContextEnvironment of(DatabaseDecorator database, 
+	public static ContextEnvironment of(DatabaseDecorator database, 
 			Collection<ViewDecorator> views,  Collection<ColumnDecorator> columns, DataSource ds) {
 		return of(database, views, columns, ds, null);
 	}
 	
-	public static final ContextEnvironment of(DatabaseDecorator database, 
+	public static ContextEnvironment of(DatabaseDecorator database, 
 			Collection<ViewDecorator> views, Collection<ColumnDecorator> columns, DataSource ds, String schema) {
 		requireLegalVariable(database.identity());
 		return new ContextEnvironment(
