@@ -236,7 +236,7 @@ final class RequestEntryChain {
 			if(rc.entry.isLast()) { //no comparator, no criteria
 				var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
 				var e = new RequestEntryChain(null, false, null, values, null); 
-				return fn.args(e.toArgs(vd, rc.col, fn.getParameterSet())); //no chain
+				return fn.filter(e.toArgs(vd, rc.col, fn.getParameterSet())); //no chain
 			}
 			return rc.entry.next.columnCriteria(vd, rc.cd, rc.col, values);
 		}
@@ -273,7 +273,7 @@ final class RequestEntryChain {
 		if(cmp.isPresent()) {
 			var fn = cmp.get();
 			var cp = new RequestEntryChain(null, false, null, assertOuterParameters(values), null);
-			return chainComparator(vc, fn.args(cp.toArgs(vc, col, fn.getParameterSet())));
+			return chainComparator(vc, fn.filter(cp.toArgs(vc, col, fn.getParameterSet())));
 		}
 		if(nonNull(cd)) { // no operation
 			var c = cd.criteria(value);
@@ -370,7 +370,7 @@ final class RequestEntryChain {
 			if(isNull(c) && isEmpty(args) && isCountFunction(fn)) {
 				c = allColumns(vd.view());
 			}
-			return fn.args(toArgs(vd, c, fn.getParameterSet()));
+			return fn.operation(toArgs(vd, c, fn.getParameterSet()));
 		});
 	}
 

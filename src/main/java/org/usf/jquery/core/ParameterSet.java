@@ -24,17 +24,21 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ParameterSet { //there is no Singleton implementation, dummy sonar rule
 
-	public static final ParameterSet NO_PARAM = new ParameterSet(0, new Parameter[0]);
+	static final ParameterSet NO_PARAM = new ParameterSet(0, new Parameter[0]);
 	
 	private final int nReqArgs;
 	private final Parameter[] parameters;
-	
+
 	public Object[] assertArguments(Object... args) {
+		return assertArgumentsFrom(0, args);
+	}
+	
+	public Object[] assertArgumentsFrom(int idx, Object... args) {
 		var arr = isNull(args) ? new Object[0] : args;
 		try {
 			forEach(arr.length, (p,i)-> {
-				if(!p.accept(i, arr)) {
-					throw badArgumentTypeException(p.types(args), arr[i]);
+				if(i>=idx && !p.accept(i, arr)) {
+					throw badArgumentTypeException(p.types(arr), arr[i]);
 				}
 			});
 			return arr;

@@ -168,7 +168,4 @@ public interface Comparator extends DBProcessor<DBFilter> {
 		return DBProcessor.lookup(Comparator.class, TypedComparator.class, op);
 	}
 	
-	static IllegalArgumentException typeCannotBeNullException() {
-		return new IllegalArgumentException("type cannot be null");
-	}
 }

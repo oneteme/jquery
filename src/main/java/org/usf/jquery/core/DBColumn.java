@@ -121,19 +121,19 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	// operations
 	
 	default OperationColumn plus(Object o) {
-		return Operator.plus().args(this, o);
+		return Operator.plus().operation(this, o);
 	}
 
 	default OperationColumn minus(Object o) {
-		return Operator.minus().args(this, o);
+		return Operator.minus().operation(this, o);
 	}
 
 	default OperationColumn multiply(Object o) {
-		return Operator.multiply().args(this, o);
+		return Operator.multiply().operation(this, o);
 	}
 
 	default OperationColumn divide(Object o) {
-		return Operator.divide().args(this, o);
+		return Operator.divide().operation(this, o);
 	}
 	
 	default WhenFilterBridge when(ComparisonExpression ex) {
@@ -181,65 +181,65 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 
 	static OperationColumn count(Object arg) {
-		return Operator.count().args(arg);
+		return Operator.count().operation(arg);
 	}
 
 	static OperationColumn min(Object arg) {
-		return Operator.min().args(arg);
+		return Operator.min().operation(arg);
 	}
 
 	static OperationColumn max(Object arg) {
-		return Operator.max().args(arg);
+		return Operator.max().operation(arg);
 	}
 
 	static OperationColumn sum(Object arg) {
-		return Operator.sum().args(arg);
+		return Operator.sum().operation(arg);
 	}
 	
 	static OperationColumn avg(Object arg) {
-		return Operator.avg().args(arg);
+		return Operator.avg().operation(arg);
 	}
 	
 	//numeric
 	
 	static OperationColumn abs(Object arg) {
-		return Operator.abs().args(arg);
+		return Operator.abs().operation(arg);
 	}
 	
 	static OperationColumn sqrt(Object arg) {
-		return Operator.sqrt().args(arg);
+		return Operator.sqrt().operation(arg);
 	}
 
 	static OperationColumn trunc(Object arg) {
-		return Operator.trunc().args(arg);
+		return Operator.trunc().operation(arg);
 	}
 
 	static OperationColumn ceil(Object arg) {
-		return Operator.ceil().args(arg);
+		return Operator.ceil().operation(arg);
 	}
 
 	static OperationColumn floor(Object arg) {
-		return Operator.floor().args(arg);
+		return Operator.floor().operation(arg);
 	}
 	
 	//string
 	static OperationColumn trim(Object arg) {
-		return Operator.trim().args(arg);
+		return Operator.trim().operation(arg);
 	}
 
 	static OperationColumn length(Object arg) {
-		return Operator.length().args(arg);
+		return Operator.length().operation(arg);
 	}
 
 	static OperationColumn upper(Object arg) {
-		return Operator.upper().args(arg);
+		return Operator.upper().operation(arg);
 	}
 
 	static OperationColumn lower(Object arg) {
-		return Operator.lower().args(arg);
+		return Operator.lower().operation(arg);
 	}
 	
 	static OperationColumn substring(Object arg, int start, int length) {
-		return Operator.substring().args(arg, start, length);
+		return Operator.substring().operation(arg, start, length);
 	}
 }

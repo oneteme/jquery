@@ -26,7 +26,7 @@ public class TypedOperator {
 		this.parameterSet = ofParameters(parameter);
 	}
 
-	public OperationColumn args(Object... args) {
+	public OperationColumn operation(Object... args) {
 		args = parameterSet.assertArguments(args);
 		return operator.args(typeFn.apply(args), args);
 	}

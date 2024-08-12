@@ -10,7 +10,7 @@ import lombok.Getter;
  *
  */
 @Getter
-public final class TypedComparator implements Comparator {
+public final class TypedComparator {
 	
 	private final Comparator comparator;
 	private final ParameterSet parameterSet;
@@ -20,18 +20,11 @@ public final class TypedComparator implements Comparator {
 		this.parameterSet = ofParameters(parameters);
 	}
 	
-	@Override
-	public String id() {
-		return comparator.id();
-	}
-
-	@Override
-	public String sql(QueryParameterBuilder builder, Object[] args) {
-		return comparator.sql(builder, parameterSet.assertArguments(args));
+	public ComparisonExpression expression(Object... right) {
+		return comparator.expression(parameterSet.assertArgumentsFrom(1, right)); //no left 
 	}
 	
-	@Override
-	public DBFilter args(Object... args) {
+	public DBFilter filter(Object... args) {
 		return comparator.args(parameterSet.assertArguments(args));
 	}
 
