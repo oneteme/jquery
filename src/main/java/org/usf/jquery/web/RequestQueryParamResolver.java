@@ -1,7 +1,8 @@
 package org.usf.jquery.web;
 
 import static java.lang.System.currentTimeMillis;
-import static org.usf.jquery.core.Utils.isPresent;
+import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.VIEW;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.Validation;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -37,7 +39,7 @@ public final class RequestQueryParamResolver {//spring connection bridge
 		if(!parameterMap.containsKey(COLUMN) && !parameterMap.containsKey(COLUMN_DISTINCT)) {
 			parameterMap.put(COLUMN, ant.defaultColumns());
 		}
-		if(isPresent(ant.ignoreParameters())) {
+		if(!isEmpty(ant.ignoreParameters())) {
 			Stream.of(ant.ignoreParameters()).forEach(parameterMap::remove);
 		}
 		var ctx = ant.database().isEmpty() 
@@ -45,11 +47,11 @@ public final class RequestQueryParamResolver {//spring connection bridge
 				: context(ant.database());
 		try {
 			var req = ctx
-					.lookupRegisteredView(ant.view())
+					.lookupRegisteredView(requireLegalVariable(ant.view()))
 					.orElseThrow(()-> noSuchResourceException(VIEW, ant.view()))
 					.query(parameterMap); //may edit map
+			log.trace("request parsed in {} ms", currentTimeMillis() - t);
 			if(!ant.aggregationOnly() || req.isAggregation()) {
-		        log.trace("request parsed in {} ms", currentTimeMillis() - t);
 				return req;
 			}
 			throw accessDeniedException("non-aggregate query");

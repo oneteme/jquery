@@ -10,7 +10,7 @@ import lombok.Getter;
  *
  */
 @Getter
-public class TypedOperator implements Operator {
+public class TypedOperator {
 	
 	private final Operator operator;
 	private final ArgTypeRef typeFn;
@@ -26,19 +26,9 @@ public class TypedOperator implements Operator {
 		this.parameterSet = ofParameters(parameter);
 	}
 
-	@Override
-	public String id() {
-		return operator.id();
-	}
-	@Override
-	public String sql(QueryParameterBuilder builder, Object[] args) {
-		return operator.sql(builder, parameterSet.assertArguments(args));
-	}
-	
-	@Override
 	public OperationColumn args(Object... args) {
 		args = parameterSet.assertArguments(args);
-		return new OperationColumn(operator, args, typeFn.apply(args));
+		return operator.args(typeFn.apply(args), args);
 	}
 	
 	public Operator unwrap() {
@@ -49,5 +39,4 @@ public class TypedOperator implements Operator {
 	public String toString() {
 		return operator.id() + parameterSet.toString();
 	}
-
 }

@@ -15,7 +15,7 @@ public interface DBProcessor<T> extends DBObject {
 	
 	T args(Object... args);
 	
-	static <T,U extends T> Optional<U> lookup(Class<T> clazz, Class<U> ext, String op) {
+	static <T,U> Optional<U> lookup(Class<T> clazz, Class<U> ext, String op) {
 		try {
 			var m = clazz.getMethod(op); //no parameter
 			if(m.getReturnType() == ext && isStatic(m.getModifiers()) && !isPrivate(m.getModifiers())) {

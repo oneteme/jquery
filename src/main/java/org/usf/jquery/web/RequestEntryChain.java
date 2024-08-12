@@ -477,7 +477,7 @@ final class RequestEntryChain {
 	}
 	
 	private static boolean isCountFunction(TypedOperator fn) {
-		return "COUNT".equals(fn.id());
+		return "COUNT".equals(fn.unwrap().id());
 	}
 	
 	private static String[] toStringArray(List<RequestEntryChain> entries) {

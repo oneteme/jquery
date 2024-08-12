@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public class TableView implements TaggableView {
+public class TableView implements DBView {
 	
 	private final String schema;
 	private final String name;
@@ -33,11 +33,6 @@ public class TableView implements TaggableView {
 		return nonNull(schema) ? schema : defaultSchema; //schema priority order
 	}
 
-	@Override
-	public String tagname() {
-		return tag;
-	}
-	
 	@Override
 	public String toString() {
 		return sql(addWithValue());

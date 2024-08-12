@@ -27,6 +27,6 @@ public final class EntrySyntaxException extends WebException {
 	}
 	
 	static EntrySyntaxException expectedEntryTagException(RequestEntryChain entry) {
-		return new EntrySyntaxException(format("expected <tag> : %s", entry));
+		return new EntrySyntaxException(format("expected <tag> after '%s'", entry));
 	}
 }

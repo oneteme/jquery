@@ -46,7 +46,7 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	};
 	
 	default OperationColumn args(Object... args) {
-		return new OperationColumn(this, args); // no type
+		return args(null, args); // no type
 	}
 
 	default OperationColumn args(JDBCType type, Object... args) {
@@ -56,19 +56,19 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	//Arithmetic operations
 
 	static TypedOperator plus() {
-		return new TypedOperator(DOUBLE, operator("+"), required(), required(firstArgJdbcType()));
+		return new TypedOperator(firstArgJdbcType(), operator("+"), required(), required(firstArgJdbcType()));
 	}
 
 	static TypedOperator minus() {
-		return new TypedOperator(DOUBLE, operator("-"), required(), required(firstArgJdbcType())); //date|datetime
+		return new TypedOperator(firstArgJdbcType(), operator("-"), required(), required(firstArgJdbcType())); //date|datetime
 	}
 
 	static TypedOperator multiply() {
-		return new TypedOperator(DOUBLE, operator("*"), required(), required(firstArgJdbcType()));
+		return new TypedOperator(firstArgJdbcType(), operator("*"), required(), required(firstArgJdbcType()));
 	}
 	
 	static TypedOperator divide() {
-		return new TypedOperator(DOUBLE, operator("/"), required(), required(firstArgJdbcType()));
+		return new TypedOperator(firstArgJdbcType(), operator("/"), required(), required(firstArgJdbcType()));
 	}
 	
 	//numeric functions

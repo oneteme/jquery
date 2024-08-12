@@ -10,7 +10,7 @@ import java.util.stream.Stream;
  */
 public enum Database {
 
-	MYSQL, POSTGRESQL, ORACLE, SQLSERVER, TERADATA;
+	MYSQL, POSTGRESQL, ORACLE, SQLSERVER, TERADATA, H2;
 	
 	public static Optional<Database> of(String name) {
 		var v = name.toUpperCase();

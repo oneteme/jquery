@@ -157,7 +157,7 @@ public interface ViewDecorator {
 	
 	private static Integer requirePositiveInt(String key, Map<String, String[]> parameters) {
 		if(parameters.containsKey(key)) {
-			var values = parameters.get(key);
+			var values = parameters.remove(key);
 			if(values.length == 1) {
 				var v = parseInt(values[0]);
 				if(v >= 0) {

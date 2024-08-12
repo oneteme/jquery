@@ -48,7 +48,7 @@ public final class ContextEnvironment {
 	private final Map<String, ColumnDecorator> columns;
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
-	private final DatabaseMetadata metadata = new DatabaseMetadata();
+	private final DatabaseMetadata metadata;
 	//runtime scope
 	private final Map<ViewDecorator, DBView> viewCache = new HashMap<>();
 	private final Map<DBView, QueryView> overView = new HashMap<>();
@@ -60,6 +60,7 @@ public final class ContextEnvironment {
 		this.columns = new HashMap<>(ctx.columns); //modifiable
 		this.dataSource = ctx.dataSource;
 		this.schema = ctx.schema;
+		this.metadata = ctx.metadata;
 	}
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) {
@@ -143,7 +144,7 @@ public final class ContextEnvironment {
 				requireNonNull(database, "configuration.database"), 
 				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), 
 				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"),
-				ds, schema);
+				ds, schema, new DatabaseMetadata());
 	}
 	
 	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn, String msg){
