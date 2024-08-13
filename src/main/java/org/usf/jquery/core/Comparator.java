@@ -167,5 +167,4 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	static Optional<TypedComparator> lookupComparator(String op) {
 		return DBProcessor.lookup(Comparator.class, TypedComparator.class, op);
 	}
-	
 }

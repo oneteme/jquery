@@ -15,9 +15,7 @@ import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
 import static org.usf.jquery.core.Utils.currentDatabase;
-import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Optional;
 
@@ -30,21 +28,6 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	
 	String id();
 
-	@Deprecated(forRemoval = true)
-	static final Operator VALUE_RETURN = new Operator() {
-		
-		@Override
-		public String sql(QueryParameterBuilder builder, Object[] args) {
-			requireNArgs(1, args, this::id);
-			return formatValue(args[0]);
-		}
-		
-		@Override
-		public String id() {
-			return "value";
-		}
-	};
-	
 	default OperationColumn args(Object... args) {
 		return args(null, args); // no type
 	}
@@ -295,11 +278,6 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	
 	static TypedOperator ctimestamp() {
 		return new TypedOperator(TIMESTAMP_WITH_TIMEZONE, constant("CURRENT_TIMESTAMP"));
-	}
-	
-	@Deprecated(forRemoval = true)
-	static TypedOperator value() {
-		return new TypedOperator(firstArgJdbcType(), VALUE_RETURN, required());
 	}
 
 	static ArithmeticOperator operator(String symbol) {
