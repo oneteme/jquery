@@ -1,7 +1,9 @@
 package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
+import static java.util.Map.entry;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
@@ -58,7 +60,7 @@ public interface ViewDecorator {
 	}
 
 	default DBView view() {//final
-		return currentContext().getView(this, builder()::build);
+		return metadata().getView();
 	}
 	
 	default TaggableColumn column(@NonNull ColumnDecorator cd) {//final
@@ -86,9 +88,10 @@ public interface ViewDecorator {
 	}
 
 	default ViewMetadata metadata() {
-		return currentContext().computeTableMetadata(this, cols-> new ViewMetadata(view(), 
+		var view = requireNonNull(builder(), identity() + ".builder").build();
+		return currentContext().computeTableMetadata(this, cols-> new ViewMetadata(view, 
 				cols.stream().<Entry<String,ColumnMetadata>>mapMulti((cd, acc)-> ofNullable(columnName(cd))
-						.map(cn-> Map.entry(cd.identity(), columnMetadata(cn, cd.type(this))))
+						.map(cn-> entry(cd.identity(), columnMetadata(cn, cd.type(this))))
 						.ifPresent(acc)) //view column only
 				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue))));
 	}

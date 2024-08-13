@@ -1,11 +1,12 @@
 package org.usf.jquery.web;
 
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toUnmodifiableMap;
+import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.Constants.COLUMN;
@@ -15,10 +16,12 @@ import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsEx
 import java.sql.SQLException;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collector;
 
 import javax.sql.DataSource;
 
@@ -50,7 +53,6 @@ public final class ContextEnvironment {
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
 	//runtime scope
-	private final Map<ViewDecorator, DBView> viewCache = new HashMap<>();
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private final Map<String, TaggableColumn> declaredColumns = new HashMap<>();
 	
@@ -73,10 +75,6 @@ public final class ContextEnvironment {
 	
 	Optional<TaggableColumn> lookupDeclaredColumn(String name) {
 		return ofNullable(declaredColumns.get(name));
-	}
-	
-	public DBView getView(ViewDecorator vd, Supplier<DBView> supp) {
-		return viewCache.computeIfAbsent(vd, k-> supp.get());
 	}
 	
 	void declareView(ViewDecorator view) { //additional request views
@@ -139,16 +137,23 @@ public final class ContextEnvironment {
 	
 	public static ContextEnvironment of(DatabaseDecorator database, 
 			Collection<ViewDecorator> views, Collection<ColumnDecorator> columns, DataSource ds, String schema) {
-		requireLegalVariable(database.identity());
-		return new ContextEnvironment(
-				requireNonNull(database, "configuration.database"), 
+		requireLegalVariable(requireNonNull(database, "configuration.database").identity());
+		return new ContextEnvironment(database,
 				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), 
 				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"),
 				ds, schema, new DatabaseMetadata());
 	}
 	
 	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn, String msg){
-		return requireNonEmpty(c, msg).stream()
-				.collect(toUnmodifiableMap(fn.andThen(Validation::requireLegalVariable), identity()));
+		return unmodifiableMap(requireNonEmpty(c, msg).stream()
+				.collect(toLinkedMap(fn.andThen(Validation::requireLegalVariable), identity())));
+	}
+	
+	static <T, K, U> Collector<T, ?, Map<K,U>> toLinkedMap(
+    		Function<? super T, ? extends K> keyMapper, 
+    		Function<? super T, ? extends U> valueMapper) {
+		return toMap(keyMapper, valueMapper, 
+				(v1, v2) -> {throw new IllegalStateException("!parallel");},
+                LinkedHashMap::new);
 	}
 }

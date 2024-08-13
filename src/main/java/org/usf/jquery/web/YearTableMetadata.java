@@ -16,7 +16,6 @@ import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.JDBCType.OTHER;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Utils.isPresent;
 import static org.usf.jquery.web.Constants.EMPTY_REVISION;
 
 import java.sql.Connection;
