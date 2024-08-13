@@ -153,7 +153,7 @@ public final class YearTableMetadata extends ViewMetadata {
 	
 	@Deprecated
 	static void logRevisions(YearMonth[] revs) {
-		if(isPresent(revs)) {
+		if(!isEmpty(revs)) {
 			var pattern = "|%-5s|%-40s|";
 			var bar = format(pattern, "", "").replace("|", "+").replace(" ", "-");
 			var map = Stream.of(revs).collect(groupingBy(YearMonth::getYear));

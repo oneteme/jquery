@@ -16,8 +16,8 @@ import java.sql.SQLException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
-import org.usf.jquery.core.DBQuery;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.TableView;
 
@@ -41,7 +41,7 @@ public class ViewMetadata {
 	private static final Object LOG_LOCK = new Object();
 	
 	private final DBView view; //cache
-	private final Map<String, ColumnMetadata> columns; //empty!?
+	private final Map<String, ColumnMetadata> columns; //key=identity
 	@Getter
 	private Instant lastUpdate;
 	
@@ -52,19 +52,19 @@ public class ViewMetadata {
 	final ViewMetadata fetch(DatabaseMetaData metadata, String schema) throws SQLException {
 		if(!isEmpty(columns)) {
 			var time = currentTimeMillis();
-			log.info("scanning table '{}' metadata...", view);
+			log.info("scanning view '{}' metadata...", view);
 			if(view instanceof TableView tab) {
 				fetch(metadata, tab, schema);
 			}
-			else if(view instanceof DBQuery query) {
-				fetch(metadata, query, schema);
-			}
 			else {
-				throw new UnsupportedOperationException("unsupported view type " + view);
+				fetch(metadata, view, schema);
 			}
 			lastUpdate = now();
-			log.info("metadata scanned in {} ms", currentTimeMillis() - time);
+			log.trace("'{}' metadata scanned in {} ms", view, currentTimeMillis() - time);
 			printViewColumnMap();
+		}
+		else {
+			log.warn("'{}' has no declared columns", view);
 		}
 		return this;
 	}
@@ -72,7 +72,7 @@ public class ViewMetadata {
 	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
 		try(var rs = metadata.getColumns(null, view.getSchemaOrElse(schema), view.getName(), null)){
 			if(rs.next()) {
-				var db = columns.values().stream().collect(toMap(m-> m.getName(), identity())); //reverse key
+				var db = reverseMapKeys(); //reverse key
 				do {
 					var cm = db.remove(rs.getString("COLUMN_NAME"));
 					if(nonNull(cm)) {
@@ -82,8 +82,8 @@ public class ViewMetadata {
 								rs.getInt("DECIMAL_DIGITS"));
 					} // else undeclared column
 				} while(rs.next());
-				if(!db.isEmpty()) {
-					throw columnsNotFoundException(db);
+				if(!db.isEmpty()) { //no such columns
+					throw columnsNotFoundException(db.keySet());
 				}
 			}
 			else {
@@ -92,11 +92,11 @@ public class ViewMetadata {
 		}
 	}
 
-	void fetch(DatabaseMetaData metadata, DBQuery qr, String schema) throws SQLException {
-		var query = qr.sql(parametrized(schema));
-		try(var ps = metadata.getConnection().prepareStatement("SELECT * FROM(" + query + ") WHERE 1=0");
+	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
+		var query = "SELECT * FROM " + qr.sql(parametrized(schema)) + " WHERE 1=0"; // rows=0
+		try(var ps = metadata.getConnection().prepareStatement(query);
 			var rs = ps.executeQuery()){
-			var db = columns.values().stream().collect(toMap(m-> m.getName(), identity())); //reverse key
+			var db = reverseMapKeys();
 			var meta = rs.getMetaData();
 			for(var i=1; i<=meta.getColumnCount(); i++) {
 				var cm = db.remove(meta.getColumnLabel(i)); //tag or name
@@ -104,29 +104,33 @@ public class ViewMetadata {
 					cm.update(meta.getColumnType(i), meta.getPrecision(i), meta.getScale(i));
 				} // else undeclared column
 			}
-			if(!db.isEmpty()) {
-				throw columnsNotFoundException(db);
+			if(!db.isEmpty()) { //no such columns
+				throw columnsNotFoundException(db.keySet());
 			}
 		}
+	}
+	
+	private Map<String, ColumnMetadata> reverseMapKeys(){ //key=columnName
+		return columns.values().stream().collect(toMap(ColumnMetadata::getName, identity()));
 	}
 	
 	void printViewColumnMap() {
 		if(!columns.isEmpty() && log.isInfoEnabled()) {
 			synchronized(LOG_LOCK) {
-				var pattern = "|%-20s|%-15s|%-25s|%-20s|";
-				var bar = format(pattern, "", "", "", "").replace("|", "+").replace(" ", "-");
+				var ptr = "|%-20s|%-15s|%-25s|%-20s|";
+				var bar = format(ptr, "", "", "", "").replace("|", "+").replace(" ", "-");
 				log.info(bar);
-				log.info(format(pattern, "ID", "CLASS", "COLUMN", "TYPE"));
+				log.info(format(ptr, "ID", "CLASS", "COLUMN", "TYPE"));
 				log.info(bar);
 				columns.entrySet().forEach(e-> 
-				log.info(format(pattern, e.getKey(), e.getValue().toJavaType(), 
+				log.info(format(ptr, e.getKey(), e.getValue().toJavaType(), 
 						e.getValue().getName(), e.getValue().toSqlType())));
 				log.info(bar);
 			}
 		}
 	}
 	
-	NoSuchElementException columnsNotFoundException(Map<String, ColumnMetadata> db) {
-		return new NoSuchElementException("column(s) [" + join(", ", db.keySet()) + "] not found in " + view.toString());
+	NoSuchElementException columnsNotFoundException(Set<String> columns) {
+		return new NoSuchElementException("column(s) [" + join(", ", columns) + "] not found in " + view);
 	}
 }

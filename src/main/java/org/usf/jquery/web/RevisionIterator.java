@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.util.stream.Collectors.groupingBy;
 import static org.usf.jquery.core.DBColumn.constant;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.isPresent;
 
 import java.time.YearMonth;
@@ -14,6 +15,7 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.QueryParameterBuilder;
 import org.usf.jquery.core.TableView;
+import org.usf.jquery.core.Utils;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,7 +48,7 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	}
 
 	public static RevisionIterator iterator(YearMonth[] revisions){
-		if(isPresent(revisions)) {
+		if(!isEmpty(revisions)) {
 			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
 			return new RevisionIterator(map.entrySet().iterator());
 		}

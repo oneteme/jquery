@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -20,6 +21,8 @@ public interface DBView extends DBObject {
 	String sql(QueryParameterBuilder builder);
 	
 	default String sqlWithTag(QueryParameterBuilder builder) {
-		return sql(builder) + SPACE + builder.view(this);
+		var tag = builder.view(this);
+		var sql = sql(builder);
+		return isNull(tag) ? sql : sql + SPACE + tag;
 	}
 }

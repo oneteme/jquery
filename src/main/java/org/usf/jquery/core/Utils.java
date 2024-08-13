@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.util.Arrays.copyOf;
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Collection;
@@ -23,10 +22,6 @@ public final class Utils {
 	static ThreadLocal<Database> context = new ThreadLocal<>(); // change it
 	
 	public static final int UNLIMITED = -1;
-	
-	public static <T> boolean isPresent(T[] a) {
-		return nonNull(a) && a.length > 0;
-	}
 	
 	public static <T> boolean isEmpty(T[] a) {
 		return isNull(a) || a.length == 0;
