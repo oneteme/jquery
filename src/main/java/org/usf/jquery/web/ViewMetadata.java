@@ -14,8 +14,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 
@@ -74,7 +72,7 @@ public class ViewMetadata {
 	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
 		try(var rs = metadata.getColumns(null, view.getSchemaOrElse(schema), view.getName(), null)){
 			if(rs.next()) {
-				var db = columns.values().stream().collect(toMap(m-> m.getName(), identity()));
+				var db = columns.values().stream().collect(toMap(m-> m.getName(), identity())); //reverse key
 				do {
 					var cm = db.remove(rs.getString("COLUMN_NAME"));
 					if(nonNull(cm)) {
@@ -98,12 +96,12 @@ public class ViewMetadata {
 		var query = qr.sql(parametrized(schema));
 		try(var ps = metadata.getConnection().prepareStatement("SELECT * FROM(" + query + ") WHERE 1=0");
 			var rs = ps.executeQuery()){
-			var db = new HashMap<>(columns);
+			var db = columns.values().stream().collect(toMap(m-> m.getName(), identity())); //reverse key
 			var meta = rs.getMetaData();
 			for(var i=1; i<=meta.getColumnCount(); i++) {
 				var cm = db.remove(meta.getColumnLabel(i)); //tag or name
 				if(nonNull(cm)) {
-					cm.update(meta.getColumnType(i), meta.getColumnDisplaySize(i), meta.getPrecision(i));
+					cm.update(meta.getColumnType(i), meta.getPrecision(i), meta.getScale(i));
 				} // else undeclared column
 			}
 			if(!db.isEmpty()) {

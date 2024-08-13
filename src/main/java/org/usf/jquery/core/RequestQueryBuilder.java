@@ -117,14 +117,16 @@ public class RequestQueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
+		var sub = new SqlStringBuilder(100);
+		join(sub, pb);
+    	where(sub, pb);
+    	groupBy(sub, pb);
+    	having(sub, pb);
+    	orderBy(sub, pb);
+    	fetch(sub);
 		select(sb, pb);
 		from(sb, pb);
-    	where(sb, pb);
-    	groupBy(sb, pb);
-    	having(sb, pb);
-    	orderBy(sb, pb);
-    	fetch(sb);
-    	join(sb, pb);
+		sb.append(sub.toString()); //TODO optim
 	}
 
 	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
@@ -144,10 +146,9 @@ public class RequestQueryBuilder {
 	}
 	
 	void from(SqlStringBuilder sb, QueryParameterBuilder pb) {
-		var vList = pb.views();
-		if(!vList.isEmpty()) {
-			sb.append(" FROM ")
-				.appendEach(vList, SCOMA, o-> o.sqlWithTag(pb));
+		var views = pb.views();
+		if(!views.isEmpty()) {
+			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(pb));
 		}
 	}
 	
