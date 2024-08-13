@@ -15,13 +15,17 @@ import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -41,6 +45,9 @@ public class RequestQueryBuilder {
 	private boolean distinct;
 	private Integer fetch;
 	private Integer offset;
+	
+	@Setter
+	private Map<DBView, QueryView> overView;
 	
 	public RequestQueryBuilder distinct() {
 		distinct = true;
@@ -105,6 +112,7 @@ public class RequestQueryBuilder {
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
 		var pb = parametrized(schema);
+		overView.forEach(pb::overView); //over clause
 		var sb = new SqlStringBuilder(1000); //avg
 		if(isNull(it)) {
 			build(sb, pb);

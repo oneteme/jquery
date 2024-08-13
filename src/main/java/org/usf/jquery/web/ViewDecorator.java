@@ -59,7 +59,7 @@ public interface ViewDecorator {
 		return null; //no builder by default
 	}
 
-	default DBView view() {//final
+	default DBView view() {
 		return metadata().getView();
 	}
 	
@@ -103,6 +103,7 @@ public interface ViewDecorator {
 		parseOrders(query, parameterMap);
 		parseFetch(query, parameterMap);
 		parseFilters(query, parameterMap);
+		query.setOverView(currentContext().getOverView()); //over clause
 		return query;
 	}
 	
@@ -135,16 +136,6 @@ public interface ViewDecorator {
 		.forEach(query::columns);
 	}
 
-	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
-    	parameters.entrySet().stream()
-//    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
-    	.flatMap(e-> {
-    		var re = parseEntry(e.getKey());
-    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseArgs(v)));
-    	})
-    	.forEach(query::filters);
-	}
-
 	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.remove(ORDER))
@@ -156,6 +147,16 @@ public interface ViewDecorator {
 	default void parseFetch(RequestQueryBuilder query, Map<String, String[]> parameters) {
 		query.fetch(requirePositiveInt(OFFSET, parameters), 
 				requirePositiveInt(FETCH, parameters));
+	}
+
+	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
+    	parameters.entrySet().stream()
+//    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
+    	.flatMap(e-> {
+    		var re = parseEntry(e.getKey());
+    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseArgs(v)));
+    	})
+    	.forEach(query::filters);
 	}
 	
 	private static Integer requirePositiveInt(String key, Map<String, String[]> parameters) {

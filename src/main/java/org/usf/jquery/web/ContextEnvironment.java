@@ -111,13 +111,11 @@ public final class ContextEnvironment {
 			for(var v : views.values()) {
 				var meta = requireNonNull(v.metadata(), v.identity() + ".metadata");
 				synchronized(meta) {
-					if(isNull(meta.getLastUpdate())) {
-						try(var cnx = dataSource.getConnection()) {
-							meta.fetch(cnx.getMetaData(), schema);
-						}
-						catch(SQLException | JQueryException e) {
-							log.error("error while scanning database metadata", e);
-						}
+					try(var cnx = dataSource.getConnection()) {
+						meta.fetch(cnx.getMetaData(), schema);
+					}
+					catch(SQLException | JQueryException e) {
+						log.error("error while scanning database metadata", e);
 					}
 				}
 			}

@@ -38,7 +38,6 @@ public final class QueryParameterBuilder {
 	private final List<Object> args;
 	private final List<JDBCType> argTypes;
 	private final List<DBView> views; //indexed
-	
 	private final Map<DBView, DBView> overView = new HashMap<>();
 		
 	public List<DBView> views(){
@@ -54,14 +53,7 @@ public final class QueryParameterBuilder {
 		return isNull(vPrefix) ? null : vPrefix + (idx+1);
 	}
 	
-	public void overView(DBView oldView, DBView newView) { //WindowFunction
-		var idx = views.indexOf(oldView);
-		if(idx > -1) {
-			views.set(idx, newView); //replace
-		}
-		else {
-			views.add(newView);
-		}
+	public void overView(DBView oldView, DBView newView) {
 		overView.put(oldView, newView);
 	}
 
