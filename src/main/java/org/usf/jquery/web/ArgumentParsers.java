@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -21,6 +22,7 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
@@ -31,7 +33,7 @@ import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import  lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -140,9 +142,12 @@ public class ArgumentParsers {
 	}
 	
 	private static <T extends JavaType> T[] castArray(JavaType[] types, Class<T[]> c, IntFunction<T[]> fn) {
-		return types.getClass() == c 
-				? c.cast(types) 
-				: Stream.of(types).toArray(fn);
+		if(nonNull(types)) {
+			return types.getClass() == c 
+					? c.cast(types) 
+					: Stream.of(types).toArray(fn);
+		}
+		return null;
 	}
 	
 	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {
