@@ -13,8 +13,6 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -22,14 +20,12 @@ import java.util.stream.Stream;
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
 
 /**
  * 
  * @author u$f
  *
  */
-@Setter(AccessLevel.PACKAGE)
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
@@ -48,19 +44,15 @@ public final class QueryParameterBuilder {
 	}
 	
 	public String view(DBView view) {
-		var v = overView.getOrDefault(view, view);
-		var idx = views.indexOf(v);
+		view = overView.getOrDefault(view, view);
+		var idx = views.indexOf(view);
 		if(idx < 0) {
 			idx = views.size();
-			views.add(v);
+			views.add(view);
 		}
 		return isNull(vPrefix) ? null : vPrefix + (idx+1);
 	}
 	
-	public void overView(DBView oldView, DBView newView) {
-		overView.put(oldView, newView);
-	}
-
 	public String appendArrayParameter(Object[] arr) {
 		return appendArrayParameter(arr, 0);
 	}
