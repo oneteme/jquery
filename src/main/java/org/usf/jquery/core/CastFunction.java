@@ -25,7 +25,7 @@ public interface CastFunction extends FunctionOperator {
 				.append(builder.appendLiteral(args[0])).append(" AS ").append(asType());
 		if(args.length > 1) {
 			sb.append("(")
-			.append(builder.appendArrayParameter(args, 1))
+			.append(builder.appendLiteralArray(args, 1))
 			.append(")");
 		}
 		return sb.append(")").toString();

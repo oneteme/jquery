@@ -4,6 +4,7 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Instant.now;
+import static java.util.Collections.emptyMap;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
@@ -93,7 +94,7 @@ public class ViewMetadata {
 	}
 
 	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
-		var query = "SELECT * FROM " + qr.sql(parametrized(schema)) + " WHERE 1=0"; // rows=0
+		var query = "SELECT * FROM " + qr.sql(parametrized(schema, emptyMap())) + " WHERE 1=0"; // rows=0
 		try(var ps = metadata.getConnection().prepareStatement(query);
 			var rs = ps.executeQuery()){
 			var db = reverseMapKeys();

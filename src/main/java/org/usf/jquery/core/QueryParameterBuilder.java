@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
@@ -11,6 +13,7 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,23 +41,20 @@ public final class QueryParameterBuilder {
 	private final List<Object> args;
 	private final List<JDBCType> argTypes;
 	private final List<DBView> views; //indexed
-	private final Map<DBView, DBView> overView = new HashMap<>();
+	private final Map<DBView, DBView> overView;
 		
 	public List<DBView> views(){
 		return views;
 	}
 	
 	public String view(DBView view) {
-		if(nonNull(views)) {
-			var v = overView.getOrDefault(view, view);
-			var idx = views.indexOf(v);
-			if(idx < 0) {
-				idx = views.size();
-				views.add(v);
-			}
-			return isNull(vPrefix) ? null : vPrefix + (idx+1);
+		var v = overView.getOrDefault(view, view);
+		var idx = views.indexOf(v);
+		if(idx < 0) {
+			idx = views.size();
+			views.add(v);
 		}
-		return null;
+		return isNull(vPrefix) ? null : vPrefix + (idx+1);
 	}
 	
 	public void overView(DBView oldView, DBView newView) {
@@ -84,6 +84,7 @@ public final class QueryParameterBuilder {
 	
 	public String appendLiteralArray(Object[] arr, int from) {
 		return isEmpty(arr) || from>=arr.length ? EMPTY : Stream.of(arr) //throw !?
+				.skip(from)
 				.map(this::appendLiteral)
 				.collect(joining(SCOMA));
 	}
@@ -140,18 +141,19 @@ public final class QueryParameterBuilder {
 	}
 	
 	public QueryParameterBuilder withValue() {
-		return new QueryParameterBuilder(schema, vPrefix, null, null, views);
+		return new QueryParameterBuilder(schema, vPrefix, null, null, views, overView);
 	}
 	
 	public QueryParameterBuilder subQuery() {
-		return new QueryParameterBuilder(schema, isNull(vPrefix) ? null : vPrefix + "_s", args, argTypes, new ArrayList<>());
+		var pre = isNull(vPrefix) ? null : vPrefix + "_s";
+		return new QueryParameterBuilder(schema, pre, args, argTypes, new ArrayList<>(), emptyMap());
 	}
 
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null, null, null, null, null); //no args
+		return new QueryParameterBuilder(null, null, null, null, new ArrayList<>(), emptyMap()); //no args
 	}
 
-	public static QueryParameterBuilder parametrized(String schema) {
-		return new QueryParameterBuilder(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+	public static QueryParameterBuilder parametrized(String schema, Map<DBView, ? extends DBView> overView) {
+		return new QueryParameterBuilder(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), unmodifiableMap(overView));
 	}
 }
