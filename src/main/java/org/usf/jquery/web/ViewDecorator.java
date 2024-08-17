@@ -137,7 +137,9 @@ public interface ViewDecorator {
 			.map(e-> (TaggableColumn) e.evalColumn(this, true, true))
 			.forEach(query::columns);
 		}
-		throw missingParameterException(COLUMN, COLUMN_DISTINCT);
+		else {
+			throw missingParameterException(COLUMN, COLUMN_DISTINCT);
+		}
 	}
 
 	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {

@@ -56,27 +56,27 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 
 	// filters
-	default ColumnSingleFilter equal(Object value) {
+	default ColumnSingleFilter eq(Object value) {
 		return filter(ComparisonExpression.eq(value));
 	}
 
-	default ColumnSingleFilter notEqual(Object value) {
+	default ColumnSingleFilter ne(Object value) {
 		return filter(ComparisonExpression.ne(value));
 	}
 
-	default ColumnSingleFilter greaterThan(Object value) {
+	default ColumnSingleFilter gt(Object value) {
 		return filter(ComparisonExpression.gt(value));
 	}
 
-	default ColumnSingleFilter greaterOrEqual(Object value) {
+	default ColumnSingleFilter ge(Object value) {
 		return filter(ComparisonExpression.ge(value));
 	}
 
-	default ColumnSingleFilter lessThan(Object value) {
+	default ColumnSingleFilter lt(Object value) {
 		return filter(ComparisonExpression.lt(value));
 	}
 
-	default ColumnSingleFilter lessOrEqual(Object value) {
+	default ColumnSingleFilter le(Object value) {
 		return filter(ComparisonExpression.le(value));
 	}
 
@@ -145,11 +145,10 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 
 	static TaggableColumn allColumns(@NonNull DBView view) {
-		DBColumn c = b-> {
+		 return ((DBColumn) b-> {
 			b.view(view);
 			return "*"; //avoid view.* as ""
-		};
-		return c.as(null);
+		}).as(null);
 	}
 	
 	static DBColumn constant(Object value) {

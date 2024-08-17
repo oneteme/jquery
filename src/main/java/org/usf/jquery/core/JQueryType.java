@@ -12,7 +12,7 @@ public enum JQueryType implements JavaType {
 
 	VIEW(DBView.class),
 	COLUMN(DBColumn.class),
-	TAGGABLE(TaggableColumn.class),
+	NAMED_COLUMN(TaggableColumn.class),
 	FILTER(DBFilter.class),
 	ORDER(DBOrder.class),
 	QUERY(QueryView.class),

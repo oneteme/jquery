@@ -57,8 +57,10 @@ import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.LogicalOperator;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
+import org.usf.jquery.core.Parameter;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.QueryColumn;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
@@ -96,7 +98,7 @@ final class RequestEntryChain {
 	}
 	
 	// [view|query]:tag
-	public ViewDecorator evalView(ViewDecorator vd) {
+	public ViewDecorator evalView(ViewDecorator vd) { //TODO level isolation
 		try {
 			return currentContext().lookupRegisteredView(value) //check args & next only if view exists
 					.<ViewDecorator>map(v-> new ViewDecoratorWrapper(v, requireNoArgs().requireNoNext().requireTag()))
@@ -106,6 +108,10 @@ final class RequestEntryChain {
 		catch (Exception e) {
 			throw cannotParseEntryException(VIEW, this, e);
 		}
+	}
+	
+	public QueryColumn evalQueryColumn(ViewDecorator td) {
+		return null;
 	}
 	
 	public ViewDecorator evalQuery(ViewDecorator td) {
@@ -377,7 +383,7 @@ final class RequestEntryChain {
 	}
 
 	private TaggableColumn[] toTaggableArgs(ViewDecorator td) {
-		return (TaggableColumn[]) toArgs(td, JQueryType.TAGGABLE);
+		return (TaggableColumn[]) toArgs(td, JQueryType.NAMED_COLUMN);
 	}
 
 	private DBColumn[] toColumnArgs(ViewDecorator td) {
@@ -403,6 +409,20 @@ final class RequestEntryChain {
 	
 	private Object toOneArg(ViewDecorator td, JavaType type) {
 		return toArgs(td, null, ofParameters(required(type)))[0];
+	}
+
+	private Object[] toFilterArgs(ViewDecorator td, DBObject col, ParameterSet ps) {
+		if(ps.getNReqArgs() == 2) {
+			try {
+				return toArgs(td, col, ofParameters(required(JQueryType.COLUMN)));
+			}
+			catch (Exception e) {} //TODO explicit exception
+			try {
+				return toArgs(td, col, ofParameters(required(JQueryType.QUERY)));
+			}
+			catch (Exception e) {}  //TODO explicit exception
+		}
+		return toArgs(td, col, ps);
 	}
 	
 	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps) {

@@ -15,6 +15,7 @@ import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -36,12 +37,11 @@ public class RequestQueryBuilder {
 	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING
 	private final List<DBOrder> orders = new ArrayList<>();
 	private final List<ViewJoin> joins = new ArrayList<>(); 
+	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private Iterator<?> it;
 	private boolean distinct;
 	private Integer fetch;
 	private Integer offset;
-	
-	private Map<DBView, QueryView> overView;
 	
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
 		addAll(this.columns, columns);

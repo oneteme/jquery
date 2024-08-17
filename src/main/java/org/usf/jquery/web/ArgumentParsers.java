@@ -9,8 +9,6 @@ import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
-import static org.usf.jquery.core.JQueryType.COLUMN;
-import static org.usf.jquery.core.JQueryType.QUERY;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.math.BigDecimal;
@@ -59,13 +57,10 @@ public class ArgumentParsers {
 	}
 
 	public static Object parseJdbc(RequestEntryChain entry, ViewDecorator td, JDBCType... types) {
-		EntryParseException ex = null; // preserve last exception
-		try {
-			return matchTypes((Typed) parseJQuery(entry, td, COLUMN, QUERY), types); //try parse column | query first
-		} catch (EntryParseException e) {/*do not throw exception*/}
 		if(isEmpty(types)) {
 			types = STD_TYPES;
 		}
+		EntryParseException ex = null; // preserve last exception
 		for(var type : types) {
 			try {
 				return jdbcArgParser(type).parseEntry(entry, td);
@@ -118,7 +113,7 @@ public class ArgumentParsers {
 
 	public static JavaArgumentParser jqueryArgParser(@NonNull JQueryType type) {
 		switch (type) {
-		case TAGGABLE:	return (e,v)-> e.evalColumn(v, true, false);
+		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, true, false);
 		case COLUMN:	return (e,v)-> e.evalColumn(v, false, false);
 		case FILTER: 	return RequestEntryChain::evalFilter;
 		case ORDER: 	return RequestEntryChain::evalOrder;

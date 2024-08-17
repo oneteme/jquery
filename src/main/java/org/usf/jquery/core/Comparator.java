@@ -126,11 +126,11 @@ public interface Comparator extends DBProcessor<DBFilter> {
 	//in comparator
 
 	static TypedComparator in() {
-		return new TypedComparator(inComparator("IN"), required(), varargs(firstArgJdbcType()));
+		return new TypedComparator(inComparator("IN"), required(), required(firstArgJdbcType()), varargs(firstArgJdbcType()));
 	}
 	
 	static TypedComparator notIn() {
-		return new TypedComparator(inComparator("NOT IN"), required(), varargs(firstArgJdbcType()));
+		return new TypedComparator(inComparator("NOT IN"), required(), required(firstArgJdbcType()), varargs(firstArgJdbcType()));
 	}
 	
 	static BasicComparator basicComparator(final String name) {
