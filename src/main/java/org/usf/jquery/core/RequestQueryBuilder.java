@@ -65,18 +65,18 @@ public class RequestQueryBuilder {
 		return this;
 	}
 	
-	public RequestQueryBuilder fetch(Integer fetch) {
+	public RequestQueryBuilder repeat(@NonNull Iterator<?> it) {
+		this.it = it;
+		return this;
+	}
+	
+	public RequestQueryBuilder fetch(int fetch) {
 		this.fetch = fetch;
 		return this;
 	}
 	
-	public RequestQueryBuilder offset(Integer offset) {
+	public RequestQueryBuilder offset(int offset) {
 		this.offset = offset;
-		return this;
-	}
-	
-	public RequestQueryBuilder repeat(@NonNull Iterator<?> it) {
-		this.it = it;
 		return this;
 	}
 	

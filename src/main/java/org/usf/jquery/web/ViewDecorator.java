@@ -26,6 +26,7 @@ import static org.usf.jquery.web.RequestParser.parseEntry;
 
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
@@ -155,11 +156,11 @@ public interface ViewDecorator {
 	}
 
 	default void parseFetch(RequestQueryBuilder query, Map<String, String[]> parameters) {
-		query.fetch(requirePositiveInt(FETCH, parameters));
+		requirePositiveInt(FETCH, parameters).ifPresent(query::fetch);
 	}
 	
 	default void parseOffset(RequestQueryBuilder query, Map<String, String[]> parameters) {
-		query.fetch(requirePositiveInt(OFFSET, parameters));
+		requirePositiveInt(OFFSET, parameters).ifPresent(query::offset);
 	}
 	
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
@@ -172,19 +173,19 @@ public interface ViewDecorator {
     	.forEach(query::filters);
 	}
 	
-	private static Integer requirePositiveInt(String key, Map<String, String[]> parameters) {
+	private static Optional<Integer> requirePositiveInt(String key, Map<String, String[]> parameters) {
 		if(parameters.containsKey(key)) {
 			var values = parameters.remove(key);
 			if(values.length == 1) {
 				var v = parseInt(values[0]);
 				if(v >= 0) {
-					return v;
+					return Optional.of(v);
 				}
 				throw new IllegalArgumentException(key + " cannot be negative");
 			}
 			throw new IllegalArgumentException("too many value");
 		}
-		return null;
+		return Optional.empty();
 	}
 	
 	static Stream<String> flatParameters(String... arr) { //number local separator
