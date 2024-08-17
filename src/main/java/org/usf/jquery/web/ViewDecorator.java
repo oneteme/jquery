@@ -107,7 +107,7 @@ public interface ViewDecorator {
 		parseFetch(query, parameterMap);
 		parseOffset(query, parameterMap);
 		parseFilters(query, parameterMap); //remove all entries before parse filters
-		query.setOverView(currentContext().getOverView()); //over clause: after filters 
+		query.overViews(currentContext().getOverView()); //over clause: after filters 
 		return query;
 	}
 	

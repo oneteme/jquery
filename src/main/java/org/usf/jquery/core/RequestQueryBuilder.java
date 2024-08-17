@@ -21,7 +21,6 @@ import java.util.Map;
 
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -42,7 +41,6 @@ public class RequestQueryBuilder {
 	private Integer fetch;
 	private Integer offset;
 	
-	@Setter
 	private Map<DBView, QueryView> overView;
 	
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
@@ -82,6 +80,11 @@ public class RequestQueryBuilder {
 	
 	public RequestQueryBuilder distinct() {
 		distinct = true;
+		return this;
+	}
+	
+	public RequestQueryBuilder overViews(Map<DBView, QueryView> overs) {
+		overView.putAll(overs);
 		return this;
 	}
 	
