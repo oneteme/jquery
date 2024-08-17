@@ -131,13 +131,13 @@ public interface ViewDecorator {
 		else {
 			cols = parameters.remove(COLUMN);	
 		}
-		if(isEmpty(cols)) {
-			throw missingParameterException(COLUMN, COLUMN_DISTINCT);
+		if(!isEmpty(cols)) {
+			Stream.of(cols)
+			.flatMap(v-> parseEntries(v).stream())
+			.map(e-> (TaggableColumn) e.evalColumn(this, true, true))
+			.forEach(query::columns);
 		}
-		Stream.of(cols)
-		.flatMap(v-> parseEntries(v).stream())
-		.map(e-> (TaggableColumn) e.evalColumn(this, true, true))
-		.forEach(query::columns);
+		throw missingParameterException(COLUMN, COLUMN_DISTINCT);
 	}
 
 	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {
