@@ -47,6 +47,7 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
+import org.usf.jquery.core.AggregateFunction;
 import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -500,8 +501,8 @@ final class RequestEntryChain {
 	}
 	
 	private static boolean isWindowFunction(TypedOperator op) {
-		return isCountFunction(op) 
-				|| op.unwrap() instanceof WindowFunction;
+		var fn = op.unwrap();
+		return fn instanceof WindowFunction || fn instanceof AggregateFunction; //rank() | sum(col)
 	}
 	
 	private static boolean isCountFunction(TypedOperator fn) {

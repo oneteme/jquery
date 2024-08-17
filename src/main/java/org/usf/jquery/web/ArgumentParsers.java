@@ -1,8 +1,7 @@
 package org.usf.jquery.web;
 
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
+import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -10,6 +9,7 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -19,14 +19,11 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.Arrays;
-import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
-import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -47,42 +44,25 @@ public class ArgumentParsers {
 			TIME, TIMESTAMP_WITH_TIMEZONE };
 
 	public static Object parse(RequestEntryChain entry, ViewDecorator td, JavaType... types) {
-		if(isEmpty(types) || Stream.of(types).allMatch(o-> o.getClass() == JDBCType.class)) {
-			return parseJdbc(entry, td, castArray(types, JDBCType[].class, JDBCType[]::new));
-		}
-		if(Stream.of(types).allMatch(o-> o.getClass() == JQueryType.class)) {
-			return parseJQuery(entry, td, castArray(types, JQueryType[].class, JQueryType[]::new));
-		}
-		throw new UnsupportedOperationException("unsupported types " + Arrays.toString(types));
-	}
-
-	public static Object parseJdbc(RequestEntryChain entry, ViewDecorator td, JDBCType... types) {
 		if(isEmpty(types)) {
 			types = STD_TYPES;
 		}
-		EntryParseException ex = null; // preserve last exception
 		for(var type : types) {
 			try {
-				return jdbcArgParser(type).parseEntry(entry, td);
+				if(type instanceof JDBCType jt) {
+					return jdbcArgParser(jt).parseEntry(entry, td);
+				}
+				if(type instanceof JQueryType jt) {
+					return jqueryArgParser(jt).parseEntry(entry, td);
+				}
+				else {
+					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
+				}
 			} catch (EntryParseException e) { /*do not throw exception*/
 				log.trace("parse {} : '{}' => {}", type, entry, e.getMessage());
-				ex = e;
 			}
 		}
-		throw ex;
-	}
-	
-	public static Object parseJQuery(RequestEntryChain entry, ViewDecorator td, JQueryType... types) {
-		EntryParseException ex = null; // preserve last exception
-		for(var type : types) {
-			try {
-				return jqueryArgParser(type).parseEntry(entry, td);
-			} catch (EntryParseException e) {/*do not throw exception*/
-				log.trace("parse {} : '{}' => {}", type, entry, e.getMessage());
-				ex = e;
-			} 
-		}
-		throw ex;
+		throw cannotParseEntryException(Stream.of(types).map(Object::toString).collect(joining("|")), entry);
 	}
 	
 	public static JDBCArgumentParser jdbcArgParser(@NonNull JDBCType type) {
@@ -124,28 +104,7 @@ public class ArgumentParsers {
 		default:			throw unsupportedTypeException(type);
 		}
 	}
-	
-	private static Object matchTypes(Typed o, JDBCType... types) {
-		if(isNull(o.getType()) || isEmpty(types)) {
-			return o;
-		}
-		for(var t : types) {
-			if(t.accept(o)) {
-				return o;
-			}
-		}
-		throw badArgumentTypeException(types, o);
-	}
-	
-	private static <T extends JavaType> T[] castArray(JavaType[] types, Class<T[]> c, IntFunction<T[]> fn) {
-		if(nonNull(types)) {
-			return types.getClass() == c 
-					? c.cast(types) 
-					: Stream.of(types).toArray(fn);
-		}
-		return null;
-	}
-	
+		
 	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {
 		return new UnsupportedOperationException("unsupported type " + type.toString());
 	}
