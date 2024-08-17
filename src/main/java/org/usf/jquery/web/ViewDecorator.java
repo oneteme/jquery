@@ -13,6 +13,7 @@ import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.FETCH;
+import static org.usf.jquery.web.Constants.JOIN;
 import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.VIEW;
@@ -101,9 +102,10 @@ public interface ViewDecorator {
 		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
+		parseJoin(query, parameterMap);
 		parseFetch(query, parameterMap);
 		parseFilters(query, parameterMap);
-		query.setOverView(currentContext().getOverView()); //over clause
+		query.setOverView(currentContext().getOverView()); //over clause: after filters 
 		return query;
 	}
 	
@@ -132,7 +134,7 @@ public interface ViewDecorator {
 		}
 		Stream.of(cols)
 		.flatMap(v-> parseEntries(v).stream())
-		.map(e-> e.evalColumn(this))
+		.map(e-> (TaggableColumn)e.evalColumn(this, true, true))
 		.forEach(query::columns);
 	}
 
@@ -143,12 +145,19 @@ public interface ViewDecorator {
 			.forEach(e-> query.orders(e.evalOrder(this)));
 		}
 	}
-	
+	default void parseJoin(RequestQueryBuilder query, Map<String, String[]> parameters) {
+		if(parameters.containsKey(JOIN)) {
+			Stream.of(parameters.remove(JOIN))
+			.flatMap(c-> parseEntries(c).stream())
+			.forEach(e-> query.joins(e.evalJoin(this)));
+		}
+	}
+
 	default void parseFetch(RequestQueryBuilder query, Map<String, String[]> parameters) {
 		query.fetch(requirePositiveInt(OFFSET, parameters), 
 				requirePositiveInt(FETCH, parameters));
 	}
-
+	
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
 //    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))

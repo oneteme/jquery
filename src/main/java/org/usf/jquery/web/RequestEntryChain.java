@@ -121,7 +121,7 @@ final class RequestEntryChain {
 	//select[.distinct|filter|order|offset|fetch]*
 	Optional<ViewDecorator> evalQuery(ViewDecorator td, boolean requireTag) { //sub context
 		if(SELECT.equals(value)) {
-			var q = new RequestQueryBuilder().columns(toColumnArgs(td, false));
+			var q = new RequestQueryBuilder().columns(toTaggableArgs(td));
 			var e =	this;
 			while(e.hasNext()) {
 				e = e.next;
@@ -129,6 +129,7 @@ final class RequestEntryChain {
 				case DISTINCT: e.requireNoArgs(); q.distinct(); break;
 				case FILTER: q.filters(e.toFilterArgs(td)); break;
 				case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
+				case JOIN: q.joins(e.evalJoin(td)); break;
 				case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
 				case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
 				default: throw unexpectedEntryValueException(e);
@@ -168,7 +169,7 @@ final class RequestEntryChain {
 			var e = this;
 			do {
 				switch (e.value) {
-				case PARTITION: addAll(cols, e.toColumnArgs(td, true)); break;
+				case PARTITION: addAll(cols, toColumnArgs(td)); break;
 				case ORDER: addAll(ords, e.toOderArgs(td)); break;
 				default: throw unexpectedEntryValueException(e);
 				}
@@ -184,16 +185,17 @@ final class RequestEntryChain {
 	}
 	
 	//[view.]column[.operator]*
-	public TaggableColumn evalColumn(ViewDecorator td) {
+	public DBColumn evalColumn(ViewDecorator td, boolean requireTag, boolean declare) {
 		try {
 			var r = chainColumnOperations(td, false)
 					.orElseThrow(()-> noSuchViewColumnException(this));
 			r.entry.requireNoNext(); //check next only if column exists
 			if(nonNull(r.entry.tag)) {
-				return currentContext().declareColumn(r.col.as(r.entry.tag));
+				var c = r.col.as(r.entry.tag);
+				return declare ? currentContext().declareColumn(c) : c;
 			}
-			if(r.col instanceof TaggableColumn col) {
-				return col;
+			if(!requireTag || r.col instanceof TaggableColumn) {
+				return r.col;
 			}
 			throw expectedEntryTagException(r.entry);
 		} catch (Exception e) {
@@ -374,27 +376,29 @@ final class RequestEntryChain {
 		});
 	}
 
-	private TaggableColumn[] toColumnArgs(ViewDecorator td, boolean allowEmpty) {
-		return (TaggableColumn[]) toArgs(td, JQueryType.COLUMN, allowEmpty);
+	private TaggableColumn[] toTaggableArgs(ViewDecorator td) {
+		return (TaggableColumn[]) toArgs(td, JQueryType.TAGGABLE);
+	}
+
+	private DBColumn[] toColumnArgs(ViewDecorator td) {
+		return (DBColumn[]) toArgs(td, JQueryType.COLUMN);
 	}
 	
 	private DBFilter[] toFilterArgs(ViewDecorator td) {
-		return (DBFilter[]) toArgs(td, JQueryType.FILTER, false);
+		return (DBFilter[]) toArgs(td, JQueryType.FILTER);
 	}
 	
 	private DBOrder[] toOderArgs(ViewDecorator td) {
-		return (DBOrder[]) toArgs(td, JQueryType.ORDER, false);
+		return (DBOrder[]) toArgs(td, JQueryType.ORDER);
 	}
 
-	private Object[] toArgs(ViewDecorator td, JavaType type, boolean allowEmpty) {
+	private Object[] toArgs(ViewDecorator td, JavaType type) {
 		var c = type.typeClass();
 		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
-			var ps = allowEmpty 
-					? ofParameters(varargs(type)) 
-					: ofParameters(required(type), varargs(type));
+			var ps = ofParameters(required(type), varargs(type));
 			return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
 		}
-		throw new UnsupportedOperationException("cannot instanitate type " + c);
+		throw new UnsupportedOperationException("cannot instantiate type " + c);
 	}
 	
 	private Object toOneArg(ViewDecorator td, JavaType type) {

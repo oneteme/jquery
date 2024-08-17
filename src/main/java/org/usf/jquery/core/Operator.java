@@ -263,7 +263,7 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	//pipe functions
 	
 	static TypedOperator over() {
-		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), required(PARTITION));
+		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), required(PARTITION)); //optional !?
 	}
 
 	// constant operators

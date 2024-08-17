@@ -11,10 +11,12 @@ import lombok.RequiredArgsConstructor;
 public enum JQueryType implements JavaType {
 
 	VIEW(DBView.class),
-	COLUMN(TaggableColumn.class), //TD DBColumn !?
+	COLUMN(DBColumn.class),
+	TAGGABLE(TaggableColumn.class),
 	FILTER(DBFilter.class),
 	ORDER(DBOrder.class),
 	QUERY(QueryView.class),
+	JOIN(ViewJoin[].class),
 	PARTITION(Partition.class);
 	
 	private final Class<?> type;
@@ -23,5 +25,4 @@ public enum JQueryType implements JavaType {
 	public Class<?> typeClass() {
 		return type;
 	}
-
 }

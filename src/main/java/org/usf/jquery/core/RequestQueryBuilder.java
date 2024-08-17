@@ -69,7 +69,7 @@ public class RequestQueryBuilder {
 		return this;
 	}
 
-	public RequestQueryBuilder joins(@NonNull ViewJoin joins) {
+	public RequestQueryBuilder joins(@NonNull ViewJoin... joins) {
 		addAll(this.joins, joins);
 		return this;
 	}
