@@ -4,13 +4,13 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,9 +34,9 @@ public final class QueryParameterBuilder {
 	@Getter
 	private final String schema;
 	private final String vPrefix;
-	private final List<Object> args;
+	private final List<Object> args; //dynamic flag
 	private final List<JDBCType> argTypes;
-	private final List<DBView> views; //indexed
+	private final List<DBView> views; //indexed view
 	private final Map<DBView, DBView> overView;
 		
 	public List<DBView> views(){
@@ -58,16 +58,16 @@ public final class QueryParameterBuilder {
 	}
 	
 	public String appendArrayParameter(Object[] arr, int from) {
-		if(dynamic()) {
-			if(isEmpty(arr) || from>=arr.length) { //throw !?
-				return EMPTY;
+		if(from < requireNonNull(arr).length) {
+			if(dynamic()) {
+				for(var i=from; i<arr.length; i++){
+					appendParameter(arr[i]);
+				}
+				return nParameter(arr.length-from);
 			}
-			for(var i=from; i<arr.length; i++){
-				appendParameter(arr[i]);
-			}
-			return nParameter(arr.length-from);
+			return appendLiteralArray(arr, from);
 		}
-		return appendLiteralArray(arr, from);
+		throw new IllegalStateException(from + ">=" + arr.length);
 	}
 
 	public String appendLiteralArray(Object[] arr) {
@@ -75,10 +75,13 @@ public final class QueryParameterBuilder {
 	}
 	
 	public String appendLiteralArray(Object[] arr, int from) {
-		return isEmpty(arr) || from>=arr.length ? EMPTY : Stream.of(arr) //throw !?
-				.skip(from)
-				.map(this::appendLiteral)
-				.collect(joining(SCOMA));
+		if(from < requireNonNull(arr).length) {
+			return Stream.of(arr)
+					.skip(from)
+					.map(this::appendLiteral)
+					.collect(joining(SCOMA));
+		}
+		throw new IllegalStateException(from + ">=" + arr.length);
 	}
 
 	public String appendParameter(Object o) {
