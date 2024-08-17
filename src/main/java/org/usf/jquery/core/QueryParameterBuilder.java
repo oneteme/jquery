@@ -39,10 +39,6 @@ public final class QueryParameterBuilder {
 	private final List<DBView> views; //indexed view
 	private final Map<DBView, DBView> overView;
 		
-	public List<DBView> views(){
-		return views;
-	}
-	
 	public String view(DBView view) {
 		view = overView.getOrDefault(view, view);
 		var idx = views.indexOf(view);
@@ -53,6 +49,10 @@ public final class QueryParameterBuilder {
 		return vPrefix + (idx+1);
 	}
 	
+	public List<DBView> views(){
+		return views;
+	}
+	
 	public String appendArrayParameter(Object[] arr) {
 		return appendArrayParameter(arr, 0);
 	}
@@ -60,7 +60,7 @@ public final class QueryParameterBuilder {
 	public String appendArrayParameter(Object[] arr, int from) {
 		return dynamic() 
 				? appendArray(arr, from, this::appendParameter) 
-				:  appendLiteralArray(arr, from);
+				: appendLiteralArray(arr, from);
 	}
 
 	public String appendLiteralArray(Object[] arr) {

@@ -57,7 +57,6 @@ import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.LogicalOperator;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
-import org.usf.jquery.core.Parameter;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.QueryColumn;
@@ -99,7 +98,7 @@ final class RequestEntryChain {
 	}
 	
 	// [view|query]:tag
-	public ViewDecorator evalView(ViewDecorator vd) { //TODO level isolation
+	public ViewDecorator evalView(ViewDecorator vd) {
 		try {
 			return currentContext().lookupRegisteredView(value) //check args & next only if view exists
 					.<ViewDecorator>map(v-> new ViewDecoratorWrapper(v, requireNoArgs().requireNoNext().requireTag()))
@@ -115,10 +114,10 @@ final class RequestEntryChain {
 		return evalQuery(td, false)
 				.map(QueryDecorator::getQuery)
 				.map(QueryView::asColumn)
-				.orElseThrow(); //TODO exception
+				.orElseThrow(()-> cannotParseEntryException(QUERY, this));
 	}
 	
-	public ViewDecorator evalQuery(ViewDecorator td) {
+	public ViewDecorator evalQuery(ViewDecorator td) { //TODO level isolation : window function
 		try {
 			return evalQuery(td, false)
 					.orElseThrow(()-> unexpectedEntryValueException(this));
