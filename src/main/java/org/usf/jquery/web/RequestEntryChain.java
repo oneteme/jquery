@@ -59,6 +59,7 @@ import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.QueryParameterBuilder;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;

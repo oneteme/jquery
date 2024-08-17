@@ -45,12 +45,16 @@ public final class QueryParameterBuilder {
 	}
 	
 	public String view(DBView view) {
-		var idx = views.indexOf(overView.getOrDefault(view, view));
-		if(idx < 0) {
-			idx = views.size();
-			views.add(view);
+		if(nonNull(views)) {
+			var v = overView.getOrDefault(view, view);
+			var idx = views.indexOf(v);
+			if(idx < 0) {
+				idx = views.size();
+				views.add(v);
+			}
+			return isNull(vPrefix) ? null : vPrefix + (idx+1);
 		}
-		return isNull(vPrefix) ? null : vPrefix + (idx+1);
+		return null;
 	}
 	
 	public void overView(DBView oldView, DBView newView) {
