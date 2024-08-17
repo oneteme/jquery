@@ -99,12 +99,13 @@ public interface ViewDecorator {
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
 		var query = new RequestQueryBuilder();
-		parseViews(query, parameterMap);
+		parseViews(query, parameterMap); //variable isolation !?
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
 		parseJoin(query, parameterMap);
 		parseFetch(query, parameterMap);
-		parseFilters(query, parameterMap);
+		parseOffset(query, parameterMap);
+		parseFilters(query, parameterMap); //remove all entries before parse filters
 		query.setOverView(currentContext().getOverView()); //over clause: after filters 
 		return query;
 	}
@@ -118,8 +119,8 @@ public interface ViewDecorator {
 	}
 	
 	default void parseColumns(RequestQueryBuilder query, Map<String, String[]> parameters) {
-		if(parameters.containsKey(COLUMN_DISTINCT) && parameters.containsKey(COLUMN)) {
-			throw new IllegalArgumentException("cannot use both parameters " + quote(COLUMN_DISTINCT) + " and " + quote(COLUMN));
+		if(parameters.containsKey(COLUMN) && parameters.containsKey(COLUMN_DISTINCT)) {
+			throw new IllegalStateException("both parameters are present " + quote(COLUMN_DISTINCT) + " and " + quote(COLUMN));
 		}
 		String[] cols;
 		if(parameters.containsKey(COLUMN_DISTINCT)) {
@@ -134,7 +135,7 @@ public interface ViewDecorator {
 		}
 		Stream.of(cols)
 		.flatMap(v-> parseEntries(v).stream())
-		.map(e-> (TaggableColumn)e.evalColumn(this, true, true))
+		.map(e-> (TaggableColumn) e.evalColumn(this, true, true))
 		.forEach(query::columns);
 	}
 
@@ -154,8 +155,11 @@ public interface ViewDecorator {
 	}
 
 	default void parseFetch(RequestQueryBuilder query, Map<String, String[]> parameters) {
-		query.fetch(requirePositiveInt(OFFSET, parameters), 
-				requirePositiveInt(FETCH, parameters));
+		query.fetch(requirePositiveInt(FETCH, parameters));
+	}
+	
+	default void parseOffset(RequestQueryBuilder query, Map<String, String[]> parameters) {
+		query.fetch(requirePositiveInt(OFFSET, parameters));
 	}
 	
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {

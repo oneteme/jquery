@@ -31,7 +31,7 @@ public final class QueryView implements DBQuery {
 	public Collection<TaggableColumn> columns() {
 		return builder.getColumns();
 	}
-
+	
 	@Override
 	public String toString() {
 		return sql(addWithValue()); 

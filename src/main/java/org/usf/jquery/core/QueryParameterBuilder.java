@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -50,7 +49,7 @@ public final class QueryParameterBuilder {
 			idx = views.size();
 			views.add(view);
 		}
-		return isNull(vPrefix) ? null : vPrefix + (idx+1);
+		return vPrefix + (idx+1);
 	}
 	
 	public String appendArrayParameter(Object[] arr) {
@@ -140,12 +139,15 @@ public final class QueryParameterBuilder {
 	}
 	
 	public QueryParameterBuilder subQuery() {
-		var pre = isNull(vPrefix) ? null : vPrefix + "_s";
-		return new QueryParameterBuilder(schema, pre, args, argTypes, new ArrayList<>(), emptyMap());
+		return new QueryParameterBuilder(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), emptyMap());
 	}
 
 	public static QueryParameterBuilder addWithValue() {
-		return new QueryParameterBuilder(null, null, null, null, new ArrayList<>(), emptyMap()); //no args
+		return addWithValue(null, emptyMap()); //no args
+	}
+
+	public static QueryParameterBuilder addWithValue(String schema, Map<DBView, ? extends DBView> overView) {
+		return new QueryParameterBuilder(schema, "v", null, null, new ArrayList<>(), unmodifiableMap(overView)); //no args
 	}
 
 	public static QueryParameterBuilder parametrized(String schema, Map<DBView, ? extends DBView> overView) {

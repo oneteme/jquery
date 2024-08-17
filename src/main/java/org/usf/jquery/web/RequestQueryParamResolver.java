@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Constants.VIEW;
@@ -14,7 +13,6 @@ import static org.usf.jquery.web.ResourceAccessException.accessDeniedException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.usf.jquery.core.RequestQueryBuilder;
 
@@ -34,19 +32,21 @@ public final class RequestQueryParamResolver {//spring connection bridge
 	public RequestQueryBuilder requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
 		var t = currentTimeMillis();
 		log.trace("parsing request...");
-		parameterMap = new LinkedHashMap<>(parameterMap); //unmodifiable map
-		if(!parameterMap.containsKey(COLUMN) && !parameterMap.containsKey(COLUMN_DISTINCT)) {
-			parameterMap.put(COLUMN, ant.defaultColumns());
+		parameterMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
+		if(!parameterMap.containsKey(COLUMN_DISTINCT)) {
+			parameterMap.computeIfAbsent(COLUMN, k-> ant.defaultColumns());
 		}
 		if(!isEmpty(ant.ignoreParameters())) {
-			Stream.of(ant.ignoreParameters()).forEach(parameterMap::remove);
+			for(var k : ant.ignoreParameters()) {
+				parameterMap.remove(k);
+			}
 		}
 		var ctx = ant.database().isEmpty() 
-				? currentContext() 
+				? currentContext()
 				: context(ant.database());
 		try {
 			var req = ctx
-					.lookupRegisteredView(requireLegalVariable(ant.view()))
+					.lookupRegisteredView(ant.view())
 					.orElseThrow(()-> noSuchResourceException(VIEW, ant.view()))
 					.query(parameterMap); //may edit map
 			log.trace("request parsed in {} ms", currentTimeMillis() - t);

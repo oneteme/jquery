@@ -6,7 +6,6 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
@@ -15,11 +14,10 @@ import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
+import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -35,10 +33,10 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class RequestQueryBuilder {
 
-	private final List<TaggableColumn> columns = new LinkedList<>();
-	private final List<DBFilter> filters = new LinkedList<>();  //WHERE & HAVING
-	private final List<DBOrder> orders = new LinkedList<>();
-	private final List<ViewJoin> joins = new LinkedList<>(); 
+	private final List<TaggableColumn> columns = new ArrayList<>();
+	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING
+	private final List<DBOrder> orders = new ArrayList<>();
+	private final List<ViewJoin> joins = new ArrayList<>(); 
 	private Iterator<?> it;
 	private boolean distinct;
 	private Integer fetch;
@@ -46,11 +44,6 @@ public class RequestQueryBuilder {
 	
 	@Setter
 	private Map<DBView, QueryView> overView;
-	
-	public RequestQueryBuilder distinct() {
-		distinct = true;
-		return this;
-	}
 	
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
 		addAll(this.columns, columns);
@@ -71,11 +64,6 @@ public class RequestQueryBuilder {
 		addAll(this.joins, joins);
 		return this;
 	}
-
-	// the LIMIT clause is not in SQL standard.
-	public RequestQueryBuilder fetch(Integer offset, Integer fetch) {
-		return offset(offset).fetch(fetch);
-	}
 	
 	public RequestQueryBuilder fetch(Integer fetch) {
 		this.fetch = fetch;
@@ -92,8 +80,9 @@ public class RequestQueryBuilder {
 		return this;
 	}
 	
-	public Optional<TaggableColumn> getColumn(String id){
-		return columns.stream().filter(c-> c.tagname().contains(id)).findAny();
+	public RequestQueryBuilder distinct() {
+		distinct = true;
+		return this;
 	}
 	
 	public QueryView asView() {
@@ -106,7 +95,6 @@ public class RequestQueryBuilder {
 
 	public RequestQuery build(String schema) {
 		log.trace("building query...");
-//		requireNonEmpty(tables);
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
 		var pb = parametrized(schema, overView); //over clause
@@ -130,7 +118,7 @@ public class RequestQueryBuilder {
     	orderBy(sub, pb);
     	fetch(sub);
 		select(sb, pb);
-		from(sb, pb);
+		from(sb, pb); //enumerate all view before from clause
 		sb.append(sub.toString()); //TODO optim
 	}
 
@@ -189,7 +177,7 @@ public class RequestQueryBuilder {
 	void having(SqlStringBuilder sb, QueryParameterBuilder pb){
 		var having = filters.stream()
 				.filter(DBFilter::isAggregation)
-				.collect(toList());
+				.toList();
     	if(!having.isEmpty()) {
     		sb.append(" HAVING ")
     		.appendEach(having, AND.sql(), f-> f.sql(pb));
