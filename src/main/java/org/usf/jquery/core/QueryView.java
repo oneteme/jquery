@@ -24,7 +24,7 @@ public final class QueryView implements DBView {
 		return s.append(")").toString();
 	}
 	
-	public DBColumn asColumn(){
+	public QueryColumn asColumn(){
 		if(builder.getColumns().size() == 1) {
 			return new QueryColumn(this, builder.getColumns().get(0).getType());
 		}

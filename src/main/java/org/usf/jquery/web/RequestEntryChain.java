@@ -61,6 +61,7 @@ import org.usf.jquery.core.Parameter;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.QueryColumn;
+import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
@@ -111,7 +112,10 @@ final class RequestEntryChain {
 	}
 	
 	public QueryColumn evalQueryColumn(ViewDecorator td) {
-		return null;
+		return evalQuery(td, false)
+				.map(QueryDecorator::getQuery)
+				.map(QueryView::asColumn)
+				.orElseThrow(); //TODO exception
 	}
 	
 	public ViewDecorator evalQuery(ViewDecorator td) {
@@ -125,7 +129,7 @@ final class RequestEntryChain {
 	}
 	
 	//select[.distinct|filter|order|offset|fetch]*
-	Optional<ViewDecorator> evalQuery(ViewDecorator td, boolean requireTag) { //sub context
+	Optional<QueryDecorator> evalQuery(ViewDecorator td, boolean requireTag) { //sub context
 		if(SELECT.equals(value)) {
 			var q = new RequestQueryBuilder().columns(toTaggableArgs(td));
 			var e =	this;
@@ -244,7 +248,7 @@ final class RequestEntryChain {
 			if(rc.entry.isLast()) { //no comparator, no criteria
 				var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
 				var e = new RequestEntryChain(null, false, null, values, null); 
-				return fn.filter(e.toArgs(vd, rc.col, fn.getParameterSet())); //no chain
+				return fn.filter(e.toFilterArgs(vd, rc.col, fn.getParameterSet())); //no chain
 			}
 			return rc.entry.next.columnCriteria(vd, rc.cd, rc.col, values);
 		}
@@ -281,7 +285,7 @@ final class RequestEntryChain {
 		if(cmp.isPresent()) {
 			var fn = cmp.get();
 			var cp = new RequestEntryChain(null, false, null, assertOuterParameters(values), null);
-			return chainComparator(vc, fn.filter(cp.toArgs(vc, col, fn.getParameterSet())));
+			return chainComparator(vc, fn.filter(cp.toFilterArgs(vc, col, fn.getParameterSet())));
 		}
 		if(nonNull(cd)) { // no operation
 			var c = cd.criteria(value);
@@ -413,12 +417,13 @@ final class RequestEntryChain {
 
 	private Object[] toFilterArgs(ViewDecorator td, DBObject col, ParameterSet ps) {
 		if(ps.getNReqArgs() == 2) {
+			var first = ps.getParameters()[0];
 			try {
-				return toArgs(td, col, ofParameters(required(JQueryType.COLUMN)));
+				return toArgs(td, col, ofParameters(first, required(JQueryType.COLUMN)));
 			}
 			catch (Exception e) {} //TODO explicit exception
 			try {
-				return toArgs(td, col, ofParameters(required(JQueryType.QUERY)));
+				return toArgs(td, col, ofParameters(first, required(JQueryType.QUERY_COLUMN)));
 			}
 			catch (Exception e) {}  //TODO explicit exception
 		}

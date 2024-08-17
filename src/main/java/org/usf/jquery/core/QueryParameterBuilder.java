@@ -14,6 +14,7 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -57,16 +58,9 @@ public final class QueryParameterBuilder {
 	}
 	
 	public String appendArrayParameter(Object[] arr, int from) {
-		if(from < requireNonNull(arr).length) {
-			if(dynamic()) {
-				for(var i=from; i<arr.length; i++){
-					appendParameter(arr[i]);
-				}
-				return nParameter(arr.length-from);
-			}
-			return appendLiteralArray(arr, from);
-		}
-		throw new IllegalStateException(from + ">=" + arr.length);
+		return dynamic() 
+				? appendArray(arr, from, this::appendParameter) 
+				:  appendLiteralArray(arr, from);
 	}
 
 	public String appendLiteralArray(Object[] arr) {
@@ -74,10 +68,14 @@ public final class QueryParameterBuilder {
 	}
 	
 	public String appendLiteralArray(Object[] arr, int from) {
+		return appendArray(arr, from, this::appendLiteral);
+	}
+
+	String appendArray(Object[] arr, int from, Function<Object, String> fn) {
 		if(from < requireNonNull(arr).length) {
 			return Stream.of(arr)
 					.skip(from)
-					.map(this::appendLiteral)
+					.map(fn)
 					.collect(joining(SCOMA));
 		}
 		throw new IllegalStateException(from + ">=" + arr.length);

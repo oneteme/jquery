@@ -114,13 +114,14 @@ public class ArgumentParsers {
 	public static JavaArgumentParser jqueryArgParser(@NonNull JQueryType type) {
 		switch (type) {
 		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, true, false);
-		case COLUMN:	return (e,v)-> e.evalColumn(v, false, false);
-		case FILTER: 	return RequestEntryChain::evalFilter;
-		case ORDER: 	return RequestEntryChain::evalOrder;
-		case QUERY: 	return RequestEntryChain::evalQuery;
-		case JOIN:		return RequestEntryChain::evalJoin;
-		case PARTITION:	return RequestEntryChain::evalPartition;
-		default:		throw unsupportedTypeException(type);
+		case QUERY_COLUMN:	return RequestEntryChain::evalQueryColumn;
+		case COLUMN:		return (e,v)-> e.evalColumn(v, false, false);
+		case FILTER: 		return RequestEntryChain::evalFilter;
+		case ORDER: 		return RequestEntryChain::evalOrder;
+		case QUERY: 		return RequestEntryChain::evalQuery;
+		case JOIN:			return RequestEntryChain::evalJoin;
+		case PARTITION:		return RequestEntryChain::evalPartition;
+		default:			throw unsupportedTypeException(type);
 		}
 	}
 	
