@@ -289,7 +289,7 @@ final class RequestEntryChain {
 		var cmp = lookupComparator(value);
 		if(cmp.isPresent()) {
 			var fn = cmp.get();
-			var cp = new RequestEntryChain(null, false, null, assertOuterParameters(values), null);
+			var cp = new RequestEntryChain(value, false, null, assertOuterParameters(values), null);
 			return chainComparator(vc, fn.filter(cp.toFilterArgs(vc, col, fn.getParameterSet())));
 		}
 		if(nonNull(cd)) { // no operation
