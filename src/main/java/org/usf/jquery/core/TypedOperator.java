@@ -2,6 +2,8 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.Utils.join;
 
 import java.util.Arrays;
 
@@ -34,7 +36,7 @@ public class TypedOperator {
 			args = parameterSet.assertArguments(args);
 			return operator.args(typeFn.apply(args), args);
 		} catch (BadArgumentException e) {
-			throw badArgumentsException(this.toString(), Arrays.toString(args), e);
+			throw badArgumentsException(toString(), operator.id() + join(SCOMA, "(", ")", args), e);
 		}
 	}
 	

@@ -45,9 +45,14 @@ public final class Utils {
 	
 	@SuppressWarnings("unchecked")
 	public static <T> String join(String delemiter, T... args) {
+		return join(delemiter, "", "", args);
+	}
+
+	@SuppressWarnings("unchecked")
+	public static <T> String join(String delemiter, String before, String after, T... args) {
 		return isNull(args) 
 				? null 
-				: Stream.of(args).map(Object::toString).collect(joining(delemiter));
+				: Stream.of(args).map(Object::toString).collect(joining(delemiter, before, after));
 	}
 
 	@Deprecated
