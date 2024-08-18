@@ -37,4 +37,16 @@ public final class EntrySyntaxException extends WebException {
 	static EntrySyntaxException expectedEntryTagException(RequestEntryChain entry) {
 		return new EntrySyntaxException(format("expected <tag> after '%s'", entry));
 	}
+	
+	
+	
+
+	static EntrySyntaxException badEntrySyntaxException(String type, String value) {
+		return badEntrySyntaxException(type, value, null);
+	}
+
+	static EntrySyntaxException badEntrySyntaxException(String type, String value, Exception e) {
+		return new EntrySyntaxException(format("bad %s : %s", type, value), e);
+	}
+	
 }

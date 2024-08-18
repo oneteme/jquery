@@ -58,7 +58,7 @@ public class ArgumentParsers {
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
 				}
-			} catch (EntryParseException ex) { /*do not throw exception*/
+			} catch (NoSuchResourceException | EntryParseException ex) { /*do not throw exception*/
 				log.trace("parse {} : '{}' => {}", type, entry, ex.getMessage());
 				e = ex;
 			}
