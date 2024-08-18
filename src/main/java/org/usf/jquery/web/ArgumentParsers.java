@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -9,6 +8,7 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Utils.join;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 
 import java.math.BigDecimal;
@@ -19,7 +19,6 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
-import java.util.stream.Stream;
 
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JQueryType;
@@ -47,6 +46,7 @@ public class ArgumentParsers {
 		if(isEmpty(types)) {
 			types = STD_TYPES;
 		}
+		Exception e = null;
 		for(var type : types) {
 			try {
 				if(type instanceof JDBCType jt) {
@@ -58,11 +58,12 @@ public class ArgumentParsers {
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
 				}
-			} catch (EntryParseException e) { /*do not throw exception*/
-				log.trace("parse {} : '{}' => {}", type, entry, e.getMessage());
+			} catch (EntryParseException ex) { /*do not throw exception*/
+				log.trace("parse {} : '{}' => {}", type, entry, ex.getMessage());
+				e = ex;
 			}
 		}
-		throw cannotParseEntryException(Stream.of(types).map(Object::toString).collect(joining("|")), entry);
+		throw cannotParseEntryException(join("|", types), entry, types.length == 1 ? e : null);
 	}
 	
 	public static JDBCArgumentParser jdbcArgParser(@NonNull JDBCType type) {

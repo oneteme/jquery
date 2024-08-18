@@ -14,11 +14,14 @@ public interface JDBCArgumentParser extends JavaArgumentParser {
 	
 	@Override
 	default Object parseEntry(RequestEntryChain entry, ViewDecorator td) {
+		Object v = null;
 		try {
-			return nativeParse(entry.requireNoArgs().requireNoNext().getValue());
+			v = nativeParse(entry.getValue());
 		}
 		catch(Exception e) {
 			throw cannotParseEntryException("value", entry, e);
 		}
+		entry.requireNoArgs().requireNoNext(); //check after parse
+		return v;
 	}
 }

@@ -9,7 +9,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.Comparator.lookupComparator;
@@ -35,6 +34,7 @@ import static org.usf.jquery.web.Constants.SELECT;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
+import static org.usf.jquery.web.EntrySyntaxException.badEntryArgsException;
 import static org.usf.jquery.web.EntrySyntaxException.expectedEntryTagException;
 import static org.usf.jquery.web.EntrySyntaxException.unexpectedEntryArgsException;
 import static org.usf.jquery.web.EntrySyntaxException.unexpectedEntryException;
@@ -131,21 +131,26 @@ final class RequestEntryChain {
 	//select[.distinct|filter|order|offset|fetch]*
 	Optional<QueryDecorator> evalQuery(ViewDecorator td, boolean requireTag) { //sub context
 		if(SELECT.equals(value)) {
-			var q = new RequestQueryBuilder().columns(toTaggableArgs(td));
 			var e =	this;
-			while(e.hasNext()) {
-				e = e.next;
-				switch(e.value) {//column not allowed 
-				case DISTINCT: e.requireNoArgs(); q.distinct(); break;
-				case FILTER: q.filters(e.toFilterArgs(td)); break;
-				case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
-				case JOIN: q.joins(e.evalJoin(td)); break;
-				case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
-				case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
-				default: throw unexpectedEntryValueException(e);
+			try {
+				var q = new RequestQueryBuilder().columns(toTaggableArgs(td));
+				while(e.hasNext()) {
+					e = e.next;
+					switch(e.value) {//column not allowed 
+					case DISTINCT: e.requireNoArgs(); q.distinct(); break;
+					case FILTER: q.filters(e.toFilterArgs(td)); break;
+					case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
+					case JOIN: q.joins(e.evalJoin(td)); break;
+					case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
+					case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
+					default: throw unexpectedEntryValueException(e);
+					}
 				}
+				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
 			}
-			return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
+			catch (Exception ex) {
+				throw badEntryArgsException(e, ex);
+			}
 		}
 		return empty();
 	}
@@ -421,11 +426,11 @@ final class RequestEntryChain {
 			try {
 				return toArgs(td, col, ofParameters(first, required(JQueryType.COLUMN)));
 			}
-			catch (Exception e) {} //TODO explicit exception
+			catch (EntryParseException e) {} //TODO explicit exception
 			try {
 				return toArgs(td, col, ofParameters(first, required(JQueryType.QUERY_COLUMN)));
 			}
-			catch (Exception e) {}  //TODO explicit exception
+			catch (EntryParseException e) {}  //TODO explicit exception
 		}
 		return toArgs(td, col, ps);
 	}
@@ -451,8 +456,8 @@ final class RequestEntryChain {
 			});
 			return arr;
 		}
-		catch (EntryParseException | BadArgumentException e) {
-			throw badArgumentsException(ps.toString(), this.toString(), e);
+		catch (BadArgumentException e) {
+			throw badEntryArgsException(this, e);
 		}
 	}
 

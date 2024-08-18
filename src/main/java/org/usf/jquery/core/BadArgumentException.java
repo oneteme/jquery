@@ -1,8 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.stream.Collectors.joining;
-
-import java.util.stream.Stream;
+import static org.usf.jquery.core.Utils.join;
 
 /**
  * 
@@ -21,12 +19,7 @@ public final class BadArgumentException extends JQueryException {
 	}
 
 	public static BadArgumentException badArgumentTypeException(JavaType[] types, Object actual) {
-		return badArgumentTypeException(types, actual, null);
-	}
-	
-	public static BadArgumentException badArgumentTypeException(JavaType[] types, Object actual, Exception e) {
-		return new BadArgumentException(formatMessage("bad argument type", 
-				Stream.of(types).map(Object::toString).collect(joining("|")), actual), e);
+		return new BadArgumentException(formatMessage("bad argument type", join("|", types), actual));
 	}
 
 	public static BadArgumentException badArgumentCountException(int count, int actual) {

@@ -39,12 +39,15 @@ public final class Utils {
 		return isNull(s) || s.isBlank();
 	}
 	
-	public static String toString(Object[] a) {
-		return Stream.of(a).map(Object::toString).collect(joining(","));
-	}
-	
 	public static Database currentDatabase() {
 		return context.get();
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> String join(String delemiter, T... args) {
+		return isNull(args) 
+				? null 
+				: Stream.of(args).map(Object::toString).collect(joining(delemiter));
 	}
 
 	@Deprecated
