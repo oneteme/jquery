@@ -35,17 +35,12 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 	
 	public Object[] assertArgumentsFrom(int idx, Object... args) {
 		var arr = isNull(args) ? new Object[0] : args;
-		try {
-			forEach(arr.length, (p,i)-> {
-				if(i>=idx && !p.accept(i, arr)) {
-					throw badArgumentTypeException(p.types(arr), arr[i]);
-				}
-			});
-			return arr;
-		}
-		catch (BadArgumentException e) {
-			throw badArgumentsException(this.toString(), Arrays.toString(arr), e);
-		}
+		forEach(arr.length, (p,i)-> {
+			if(i>=idx && !p.accept(i, arr)) {
+				throw badArgumentTypeException(p.types(arr), arr[i]);
+			}
+		});
+		return arr;
 	}
 
 	public void forEach(int nArgs, ObjIntConsumer<Parameter> cons) {

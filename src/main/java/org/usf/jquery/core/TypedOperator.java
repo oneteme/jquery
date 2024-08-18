@@ -1,6 +1,9 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
+
+import java.util.Arrays;
 
 import lombok.Getter;
 
@@ -27,8 +30,12 @@ public class TypedOperator {
 	}
 
 	public OperationColumn operation(Object... args) {
-		args = parameterSet.assertArguments(args);
-		return operator.args(typeFn.apply(args), args);
+		try {
+			args = parameterSet.assertArguments(args);
+			return operator.args(typeFn.apply(args), args);
+		} catch (BadArgumentException e) {
+			throw badArgumentsException(this.toString(), Arrays.toString(args), e);
+		}
 	}
 	
 	public Operator unwrap() {

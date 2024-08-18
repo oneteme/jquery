@@ -1,6 +1,9 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
+
+import java.util.Arrays;
 
 import lombok.Getter;
 
@@ -21,11 +24,19 @@ public final class TypedComparator {
 	}
 	
 	public ComparisonExpression expression(Object... right) {
-		return comparator.expression(parameterSet.assertArgumentsFrom(1, right)); //no left 
+		try {
+			return comparator.expression(parameterSet.assertArgumentsFrom(1, right)); //no left 
+		} catch (BadArgumentException e) {
+			throw badArgumentsException(this.toString(), Arrays.toString(right), e);
+		}
 	}
 	
 	public DBFilter filter(Object... args) {
-		return comparator.args(parameterSet.assertArguments(args));
+		try {
+			return comparator.args(parameterSet.assertArguments(args));
+		} catch (BadArgumentException e) {
+			throw badArgumentsException(this.toString(), Arrays.toString(args), e);
+		}
 	}
 
 	public Comparator unwrap() {
