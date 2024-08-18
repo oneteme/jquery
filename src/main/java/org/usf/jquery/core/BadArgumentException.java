@@ -19,7 +19,8 @@ public final class BadArgumentException extends JQueryException {
 	}
 
 	public static BadArgumentException badArgumentTypeException(JavaType[] types, Object actual) {
-		return new BadArgumentException(formatMessage("bad argument type", join("|", types), actual));
+		String type = actual instanceof DBColumn c ? ":"+ c.getType() : "";
+		return new BadArgumentException(formatMessage("bad argument type", join("|", types), actual + type));
 	}
 
 	public static BadArgumentException badArgumentCountException(int count, int actual) {

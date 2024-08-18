@@ -5,9 +5,7 @@ import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
 import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
-import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 
-import java.util.Arrays;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Stream;
 

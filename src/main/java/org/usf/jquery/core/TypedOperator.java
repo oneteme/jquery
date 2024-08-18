@@ -5,8 +5,6 @@ import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.join;
 
-import java.util.Arrays;
-
 import lombok.Getter;
 
 /**
