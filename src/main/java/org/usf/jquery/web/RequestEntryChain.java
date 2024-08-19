@@ -138,7 +138,7 @@ final class RequestEntryChain {
 				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
 			}
 			catch (Exception ex) {
-				throw new EntrySyntaxException("incorrect query syntax: " + e);
+				throw new EntrySyntaxException("incorrect query syntax: " + e, ex);
 			}
 		}
 		return empty();

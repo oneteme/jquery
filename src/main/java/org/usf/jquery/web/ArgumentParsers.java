@@ -9,7 +9,7 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JQueryType.COLUMN;
-import static org.usf.jquery.core.JQueryType.QUERY;
+import static org.usf.jquery.core.JQueryType.QUERY_COLUMN;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.join;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
@@ -52,9 +52,9 @@ public class ArgumentParsers {
 		List<JavaType> list = new ArrayList<>();
 		if(isEmpty(types) || Stream.of(types).anyMatch(JDBCType.class::isInstance)) {
 			list.add(COLUMN);
-			list.add(QUERY);
-			addAll(list, isEmpty(types) ? STD_TYPES : types);
+			list.add(QUERY_COLUMN);
 		}
+		addAll(list, isEmpty(types) ? STD_TYPES : types);
 		Exception e = null;
 		for(var type : list) {
 			try {
