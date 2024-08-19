@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Utils.join;
+import static org.usf.jquery.core.Utils.joinAndDelemit;
 
 /**
  * 

@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.lang.String.format;
 import static java.lang.reflect.Array.newInstance;
-import static java.util.Arrays.asList;
 import static java.util.Collections.addAll;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -37,7 +36,6 @@ import static org.usf.jquery.web.Constants.SELECT;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
-import static org.usf.jquery.web.EntrySyntaxException.badEntrySyntaxException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 
 import java.util.ArrayList;
@@ -124,13 +122,13 @@ final class RequestEntryChain {
 		if(SELECT.equals(value)) {
 			var e =	this;
 			try {
-				var q = new RequestQueryBuilder().columns(toTaggableArgs(td));
+				var q = new RequestQueryBuilder().columns(taggableVarargs(td));
 				while(e.hasNext()) {
 					e = e.next;
 					switch(e.value) {//column not allowed 
 					case DISTINCT: e.requireNoArgs(); q.distinct(); break;
-					case FILTER: q.filters(e.toFilterArgs(td)); break;
-					case ORDER: q.orders(e.toOderArgs(td)); break; //not sure
+					case FILTER: q.filters(e.filterVarargs(td)); break;
+					case ORDER: q.orders(e.oderVarargs(td)); break; //not sure
 					case JOIN: q.joins(e.evalJoin(td)); break;
 					case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
 					case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
@@ -140,7 +138,7 @@ final class RequestEntryChain {
 				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
 			}
 			catch (Exception ex) {
-				throw badEntrySyntaxException(QUERY, e.toString(), ex);
+				throw new EntrySyntaxException("incorrect query syntax: " + e);
 			}
 		}
 		return empty();
@@ -169,9 +167,11 @@ final class RequestEntryChain {
 		var e = this;
 		do {
 			switch (e.value) {
-			case PARTITION: addAll(cols, toColumnArgs(td)); break;
-			case ORDER: addAll(ords, e.toOderArgs(td)); break;
-			default: throw badEntrySyntaxException(join("|", PARTITION, ORDER), e.value);
+			case PARTITION: addAll(cols, columnVarargs(td)); break;
+			case ORDER: addAll(ords, e.oderVarargs(td)); break;
+			default: throw e==this
+				? cannotParseEntryException(PARTITION, e) //first entry
+				: badEntrySyntaxException(join("|", PARTITION, ORDER), e.value);
 			}
 			e = e.next;
 		} while(nonNull(e));
@@ -192,7 +192,7 @@ final class RequestEntryChain {
 		if(!requireTag || r.col instanceof TaggableColumn) {
 			return r.col;
 		}
-		throw expectedEntryTagException();
+		throw expectedEntryTagException(r.entry);
 	}
 	
 	//[view.]column[.operator]*[.order]
@@ -359,23 +359,23 @@ final class RequestEntryChain {
 		});
 	}
 
-	private TaggableColumn[] toTaggableArgs(ViewDecorator td) {
-		return (TaggableColumn[]) toArgs(td, JQueryType.NAMED_COLUMN);
+	private TaggableColumn[] taggableVarargs(ViewDecorator td) {
+		return (TaggableColumn[]) typeVarargs(td, JQueryType.NAMED_COLUMN);
 	}
 
-	private DBColumn[] toColumnArgs(ViewDecorator td) {
-		return (DBColumn[]) toArgs(td, JQueryType.COLUMN);
+	private DBColumn[] columnVarargs(ViewDecorator td) {
+		return (DBColumn[]) typeVarargs(td, JQueryType.COLUMN);
 	}
 	
-	private DBOrder[] toOderArgs(ViewDecorator td) {
-		return (DBOrder[]) toArgs(td, JQueryType.ORDER);
+	private DBOrder[] oderVarargs(ViewDecorator td) {
+		return (DBOrder[]) typeVarargs(td, JQueryType.ORDER);
 	}
 	
-	private DBFilter[] toFilterArgs(ViewDecorator td) {
-		return (DBFilter[]) toArgs(td, JQueryType.FILTER);
+	private DBFilter[] filterVarargs(ViewDecorator td) {
+		return (DBFilter[]) typeVarargs(td, JQueryType.FILTER);
 	}
 
-	private Object[] toArgs(ViewDecorator td, JavaType type) {
+	private Object[] typeVarargs(ViewDecorator td, JavaType type) {
 		var c = type.typeClass();
 		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
 			var ps = ofParameters(required(type), varargs(type));
@@ -425,18 +425,14 @@ final class RequestEntryChain {
 		if(isNull(args)) {
 			return this;
 		}
-		throw new EntrySyntaxException(format("unexpected entry args : %s[(%s)]", value,  join(", ", args.toArray())));
+		throw new EntrySyntaxException(format("unexpected entry args : %s[(%s)]", value, join(", ", args.toArray())));
 	}
 
 	RequestEntryChain requireNoNext() {
 		if(isLast()) {
 			return this;
 		}
-		throw expectedEntryTagException();
-	}
-	
-	EntrySyntaxException expectedEntryTagException() {
-		throw new EntrySyntaxException(format("unexpected entry : %s[.%s]", value, next));
+		throw expectedEntryTagException(this);
 	}
 	
 	public boolean isLast() {
@@ -494,6 +490,13 @@ final class RequestEntryChain {
 				.collect(joining("|"));
 	}
 	
+	static EntrySyntaxException badEntrySyntaxException(String type, String value) {
+		return new EntrySyntaxException(format("incorrect syntax expected: %s, bat was: %s", type, value));
+	}
+	
+	static EntrySyntaxException expectedEntryTagException(RequestEntryChain e) {
+		throw new EntrySyntaxException(format("unexpected entry : %s[.%s]", e.value, e.next));
+	}
 
 	@AllArgsConstructor
 	static final class ViewResource {
