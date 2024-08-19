@@ -115,8 +115,8 @@ final class RequestEntryChain {
 				.map(QueryView::asColumn)
 				.orElseThrow(()-> cannotParseEntryException(QUERY, this));
 	}
-	
-	 //TODO level isolation : window function
+
+	//TODO level isolation : window function
 	public ViewDecorator evalQuery(ViewDecorator td) {
 		return evalQuery(td, false).orElseThrow(()-> cannotParseEntryException(QUERY, this));
 	}
@@ -369,19 +369,24 @@ final class RequestEntryChain {
 		return (DBColumn[]) toArgs(td, JQueryType.COLUMN);
 	}
 	
-	private DBFilter[] toFilterArgs(ViewDecorator td) {
-		return (DBFilter[]) toArgs(td, JQueryType.FILTER);
-	}
-	
 	private DBOrder[] toOderArgs(ViewDecorator td) {
 		return (DBOrder[]) toArgs(td, JQueryType.ORDER);
+	}
+	
+	private DBFilter[] toFilterArgs(ViewDecorator td) {
+		return (DBFilter[]) toArgs(td, JQueryType.FILTER);
 	}
 
 	private Object[] toArgs(ViewDecorator td, JavaType type) {
 		var c = type.typeClass();
 		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
 			var ps = ofParameters(required(type), varargs(type));
-			return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
+			try {
+				return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
+			}
+			catch (Exception e) {
+				throw badEntryArgsException(this, e);
+			}
 		}
 		throw new UnsupportedOperationException("cannot instantiate type " + c);
 	}
@@ -394,15 +399,22 @@ final class RequestEntryChain {
 		if(ps.getNReqArgs() == 2) {
 			var first = ps.getParameters()[0];
 			try {
-				return toArgs(td, col, ofParameters(first, required(JQueryType.QUERY_COLUMN, JQueryType.COLUMN)));
+				return toArgs(td, col, ofParameters(first, required(JQueryType.QUERY_COLUMN, JQueryType.COLUMN)), Object[]::new);
 			}
-			catch (EntryParseException e) {} //TODO explicit exception
+			catch (EntryParseException | NoSuchResourceException e) {
+				//do not throw exception
+			}
 		}
 		return toArgs(td, col, ps);
 	}
 	
 	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps) {
-		return toArgs(td, col, ps, Object[]::new);
+		try {
+			return toArgs(td, col, ps, Object[]::new);
+		}
+		catch (Exception e) {
+			throw badEntryArgsException(this, e);
+		}
 	}
 	
 	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
@@ -411,20 +423,15 @@ final class RequestEntryChain {
 		if(nonNull(col)) {
 			arr[0] = col;
 		}
-		try {
-			ps.forEach(arr.length, (p,i)-> {
-				if(i>=inc) { //arg0 already parsed
-					var e = args.get(i-inc);
-					arr[i] = isNull(e.value) || e.text 
-							? e.requireNoArgs().value 
-							: parse(e, td, p.types(arr));
-				}
-			});
-			return arr;
-		}
-		catch (BadArgumentException e) {
-			throw badEntryArgsException(this, e);
-		}
+		ps.forEach(arr.length, (p,i)-> {
+			if(i>=inc) { //arg0 already parsed
+				var e = args.get(i-inc);
+				arr[i] = isNull(e.value) || e.text 
+						? e.requireNoArgs().value 
+						: parse(e, td, p.types(arr));
+			}
+		});
+		return arr;
 	}
 
 	RequestEntryChain requireNoNext() {

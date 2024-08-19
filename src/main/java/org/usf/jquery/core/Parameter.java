@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Utils.join;
 
 import java.util.stream.Stream;
 
@@ -40,9 +41,7 @@ public final class Parameter {
 	@Override
 	public String toString() {
 		if(isNull(typeRef)) {
-			return isEmpty(types) 
-					? "ANY" 
-					: Stream.of(types).map(Object::toString).collect(joining("|"));
+			return isEmpty(types) ? "ANY" : join("|", types);
 		}
 		return typeRef.toString();
 	}
