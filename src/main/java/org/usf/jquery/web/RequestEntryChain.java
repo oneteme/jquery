@@ -1,6 +1,8 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.format;
 import static java.lang.reflect.Array.newInstance;
+import static java.util.Arrays.asList;
 import static java.util.Collections.addAll;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
@@ -35,10 +37,7 @@ import static org.usf.jquery.web.Constants.SELECT;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
-import static org.usf.jquery.web.EntrySyntaxException.badEntryArgsException;
 import static org.usf.jquery.web.EntrySyntaxException.badEntrySyntaxException;
-import static org.usf.jquery.web.EntrySyntaxException.expectedEntryTagException;
-import static org.usf.jquery.web.EntrySyntaxException.unexpectedEntryArgsException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 
 import java.util.ArrayList;
@@ -49,7 +48,6 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.AggregateFunction;
-import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
@@ -66,6 +64,7 @@ import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
+import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.core.WindowFunction;
@@ -86,7 +85,6 @@ import lombok.Setter;
 @AllArgsConstructor
 @RequiredArgsConstructor
 final class RequestEntryChain {
-	
 
 	private static final String ORDER_PATTERN = enumPattern(Order.class); 
 	private static final String LOGIC_PATTERN = enumPattern(LogicalOperator.class); 
@@ -194,7 +192,7 @@ final class RequestEntryChain {
 		if(!requireTag || r.col instanceof TaggableColumn) {
 			return r.col;
 		}
-		throw expectedEntryTagException(r.entry);
+		throw expectedEntryTagException();
 	}
 	
 	//[view.]column[.operator]*[.order]
@@ -376,10 +374,6 @@ final class RequestEntryChain {
 	private DBFilter[] toFilterArgs(ViewDecorator td) {
 		return (DBFilter[]) toArgs(td, JQueryType.FILTER);
 	}
-	
-	private Object toOneArg(ViewDecorator td, JavaType type) {
-		return toArgs(td, null, ofParameters(required(type)))[0];
-	}
 
 	private Object[] toArgs(ViewDecorator td, JavaType type) {
 		var c = type.typeClass();
@@ -388,6 +382,10 @@ final class RequestEntryChain {
 			return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
 		}
 		throw new UnsupportedOperationException("cannot instantiate type " + c);
+	}
+	
+	private Object toOneArg(ViewDecorator td, JavaType type) {
+		return toArgs(td, null, ofParameters(required(type)))[0];
 	}
 	
 	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps) {
@@ -411,30 +409,34 @@ final class RequestEntryChain {
 			});
 		}
 		catch (Exception e) {
-			throw badEntryArgsException(this, e);
+			throw new EntrySyntaxException(format("bad entry arguments : %s[(%s)]", value, isNull(args) ? "" : join(", ", args.toArray())), e);
 		}
 		return arr;
-	}
-
-	RequestEntryChain requireNoNext() {
-		if(isLast()) {
-			return this;
-		}
-		throw new EntrySyntaxException("unexpected entry : " + value + "[." + next + "]");
-	}
-
-	RequestEntryChain requireNoArgs() {
-		if(isNull(args)) {
-			return this;
-		}
-		throw unexpectedEntryArgsException(this);
 	}
 	
 	String requireTag() {
 		if(nonNull(tag)) {
 			return tag;
 		}
-		throw new EntrySyntaxException("expected tag : " + this + "[:tag]");
+		throw new EntrySyntaxException(format("expected tag : %s[:tag]", this));
+	}
+
+	RequestEntryChain requireNoArgs() {
+		if(isNull(args)) {
+			return this;
+		}
+		throw new EntrySyntaxException(format("unexpected entry args : %s[(%s)]", value,  join(", ", args.toArray())));
+	}
+
+	RequestEntryChain requireNoNext() {
+		if(isLast()) {
+			return this;
+		}
+		throw expectedEntryTagException();
+	}
+	
+	EntrySyntaxException expectedEntryTagException() {
+		throw new EntrySyntaxException(format("unexpected entry : %s[.%s]", value, next));
 	}
 	
 	public boolean isLast() {
