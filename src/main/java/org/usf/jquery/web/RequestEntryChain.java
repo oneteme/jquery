@@ -227,7 +227,7 @@ final class RequestEntryChain {
 		if(rc.entry.isLast()) { //no comparator, no criteria
 			var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
 			var e = new RequestEntryChain(null, false, null, values, null); 
-			return fn.filter(e.toFilterArgs(vd, rc.col, fn.getParameterSet())); //no chain
+			return fn.filter(e.toArgs(vd, rc.col, fn.getParameterSet())); //no chain
 		}
 		return rc.entry.next.columnCriteria(vd, rc.cd, rc.col, values);
 	}
@@ -260,7 +260,7 @@ final class RequestEntryChain {
 		if(cmp.isPresent()) {
 			var fn = cmp.get();
 			var cp = new RequestEntryChain(value, false, null, assertOuterParameters(values), null);
-			return chainComparator(vc, fn.filter(cp.toFilterArgs(vc, col, fn.getParameterSet())));
+			return chainComparator(vc, fn.filter(cp.toArgs(vc, col, fn.getParameterSet())));
 		}
 		if(nonNull(cd)) { // no operation
 			var c = cd.criteria(value);
@@ -376,45 +376,22 @@ final class RequestEntryChain {
 	private DBFilter[] toFilterArgs(ViewDecorator td) {
 		return (DBFilter[]) toArgs(td, JQueryType.FILTER);
 	}
-
-	private Object[] toArgs(ViewDecorator td, JavaType type) {
-		var c = type.typeClass();
-		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
-			var ps = ofParameters(required(type), varargs(type));
-			try {
-				return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
-			}
-			catch (Exception e) {
-				throw badEntryArgsException(this, e);
-			}
-		}
-		throw new UnsupportedOperationException("cannot instantiate type " + c);
-	}
 	
 	private Object toOneArg(ViewDecorator td, JavaType type) {
 		return toArgs(td, null, ofParameters(required(type)))[0];
 	}
 
-	private Object[] toFilterArgs(ViewDecorator td, DBObject col, ParameterSet ps) {
-		if(ps.getNReqArgs() == 2) {
-			var first = ps.getParameters()[0];
-			try {
-				return toArgs(td, col, ofParameters(first, required(JQueryType.QUERY_COLUMN, JQueryType.COLUMN)), Object[]::new);
-			}
-			catch (EntryParseException | NoSuchResourceException e) {
-				//do not throw exception
-			}
+	private Object[] toArgs(ViewDecorator td, JavaType type) {
+		var c = type.typeClass();
+		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
+			var ps = ofParameters(required(type), varargs(type));
+			return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
 		}
-		return toArgs(td, col, ps);
+		throw new UnsupportedOperationException("cannot instantiate type " + c);
 	}
 	
 	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps) {
-		try {
-			return toArgs(td, col, ps, Object[]::new);
-		}
-		catch (Exception e) {
-			throw badEntryArgsException(this, e);
-		}
+		return toArgs(td, col, ps, Object[]::new);
 	}
 	
 	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
@@ -423,14 +400,19 @@ final class RequestEntryChain {
 		if(nonNull(col)) {
 			arr[0] = col;
 		}
-		ps.forEach(arr.length, (p,i)-> {
-			if(i>=inc) { //arg0 already parsed
-				var e = args.get(i-inc);
-				arr[i] = isNull(e.value) || e.text 
-						? e.requireNoArgs().value 
-						: parse(e, td, p.types(arr));
-			}
-		});
+		try {
+			ps.forEach(arr.length, (p,i)-> {
+				if(i>=inc) { //arg0 already parsed
+					var e = args.get(i-inc);
+					arr[i] = isNull(e.value) || e.text
+							? e.requireNoArgs().value 
+							: parse(e, td, p.types(arr));
+				}
+			});
+		}
+		catch (Exception e) {
+			throw badEntryArgsException(this, e);
+		}
 		return arr;
 	}
 

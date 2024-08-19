@@ -1,5 +1,6 @@
 package org.usf.jquery.web;
 
+import static java.util.Collections.addAll;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -7,6 +8,8 @@ import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
+import static org.usf.jquery.core.JQueryType.COLUMN;
+import static org.usf.jquery.core.JQueryType.QUERY;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.join;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
@@ -19,6 +22,9 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Stream;
 
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JQueryType;
@@ -43,17 +49,20 @@ public class ArgumentParsers {
 			TIME, TIMESTAMP_WITH_TIMEZONE };
 
 	public static Object parse(RequestEntryChain entry, ViewDecorator td, JavaType... types) {
-		if(isEmpty(types)) {
-			types = STD_TYPES;
+		List<JavaType> list = new ArrayList<>();
+		if(isEmpty(types) || Stream.of(types).anyMatch(JDBCType.class::isInstance)) {
+			list.add(COLUMN);
+			list.add(QUERY);
+			addAll(list, isEmpty(types) ? STD_TYPES : types);
 		}
 		Exception e = null;
-		for(var type : types) {
+		for(var type : list) {
 			try {
 				if(type instanceof JDBCType jt) {
 					return jdbcArgParser(jt).parseEntry(entry, td);
 				}
-				if(type instanceof JQueryType jt) {
-					return jqueryArgParser(jt).parseEntry(entry, td);
+				if(type instanceof JQueryType t) {
+					return jqueryArgParser(t).parseEntry(entry, td);
 				}
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
