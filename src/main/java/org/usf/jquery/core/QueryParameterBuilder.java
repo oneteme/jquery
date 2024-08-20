@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -10,10 +11,12 @@ import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -72,13 +75,18 @@ public final class QueryParameterBuilder {
 	}
 
 	String appendArray(Object[] arr, int from, Function<Object, String> fn) {
-		if(from < requireNonNull(arr).length) {
+		if(isEmpty(arr)) {
+			if(from == 0) {
+				return EMPTY;
+			}
+		}
+		else if(from < arr.length) {
 			return Stream.of(arr)
 					.skip(from)
 					.map(fn)
 					.collect(joining(SCOMA));
 		}
-		throw new IllegalStateException(from + ">=" + arr.length);
+		throw new IndexOutOfBoundsException(from + ">=" + requireNonNull(arr, "arr is null").length);
 	}
 
 	public String appendParameter(Object o) {

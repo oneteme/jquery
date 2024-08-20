@@ -58,8 +58,8 @@ public class ArgumentParsers {
 		Exception e = null;
 		for(var type : list) {
 			try {
-				if(type instanceof JDBCType jt) {
-					return jdbcArgParser(jt).parseEntry(entry, td);
+				if(type instanceof JDBCType t) {
+					return jdbcArgParser(t).parseEntry(entry, td);
 				}
 				if(type instanceof JQueryType t) {
 					return jqueryArgParser(t).parseEntry(entry, td);
@@ -77,21 +77,15 @@ public class ArgumentParsers {
 	
 	public static JDBCArgumentParser jdbcArgParser(@NonNull JDBCType type) {
 		switch (type) {
-		case BOOLEAN: 					return Boolean::parseBoolean;
-		case BIT: 						return Boolean::parseBoolean;
+		case BOOLEAN, BIT: 				return Boolean::parseBoolean;
 		case TINYINT: 					return Byte::parseByte;
 		case SMALLINT:					return Short::parseShort;
 		case INTEGER: 					return Integer::parseInt;
 		case BIGINT: 					return Long::parseLong;
 		case REAL: 						return Float::parseFloat;
-		case FLOAT: 					return Double::parseDouble;
-		case DOUBLE: 					return Double::parseDouble;
-		case NUMERIC: 					return BigDecimal::new;
-		case DECIMAL: 					return BigDecimal::new;
-		case CHAR: 						return v-> v;
-		case VARCHAR: 					return v-> v;
-		case NVARCHAR: 					return v-> v;
-		case LONGNVARCHAR: 				return v-> v;
+		case FLOAT, DOUBLE:				return Double::parseDouble;
+		case NUMERIC, DECIMAL: 			return BigDecimal::new;
+		case CHAR, VARCHAR, NVARCHAR, LONGNVARCHAR: return v-> v;
 		case DATE: 						return v-> Date.valueOf(LocalDate.parse(v));
 		case TIME: 						return v-> Time.valueOf(LocalTime.parse(v));
 		case TIMESTAMP: 				return v-> Timestamp.from(Instant.parse(v));
@@ -103,8 +97,8 @@ public class ArgumentParsers {
 
 	public static JavaArgumentParser jqueryArgParser(@NonNull JQueryType type) {
 		switch (type) {
-		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, true, false);
 		case QUERY_COLUMN:	return RequestEntryChain::evalQueryColumn;
+		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, true, false);
 		case COLUMN:		return (e,v)-> e.evalColumn(v, false, false);
 		case FILTER: 		return RequestEntryChain::evalFilter;
 		case ORDER: 		return RequestEntryChain::evalOrder;

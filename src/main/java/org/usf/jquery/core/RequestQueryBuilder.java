@@ -169,7 +169,7 @@ public class RequestQueryBuilder {
         	var expr = columns.stream()
         			.filter(not(DBColumn::isAggregation))
         			.flatMap(DBColumn::groupKeys)
-        			.map(c-> columns.contains(c) ? ((TaggableColumn)c).tagname() : c.sql(pb)) //add alias 
+        			.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((TaggableColumn)c).tagname() : c.sql(pb)) //add alias 
         			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {
         		sb.append(" GROUP BY ").append(expr);
