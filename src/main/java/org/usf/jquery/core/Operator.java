@@ -206,6 +206,10 @@ public interface Operator extends DBProcessor<OperationColumn> {
 		return new TypedOperator(DATE, cast("DATE"), required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
+	static TypedOperator timestamp() {
+		return new TypedOperator(TIMESTAMP, cast("TIMESTAMP"), required(VARCHAR, DATE)); 
+	}
+	
 	static TypedOperator integer() {
 		return new TypedOperator(INTEGER, cast("INTEGER"), required(VARCHAR, DOUBLE));
 	}
