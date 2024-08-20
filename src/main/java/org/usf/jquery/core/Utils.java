@@ -44,15 +44,24 @@ public final class Utils {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public static <T> String join(String delemiter, T... args) {
-		return joinAndDelemit(delemiter, "", "", args);
+	public static <T> String joinArray(String delemiter, T... args) {
+		return joinAndDelemitArray(delemiter, "", "", args);
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> String joinAndDelemit(String delemiter, String before, String after, T... args) {
+	public static <T> String joinAndDelemitArray(String delemiter, String before, String after, T... args) {
 		return isNull(args) 
 				? null 
-				: Stream.of(args).map(Object::toString).collect(joining(delemiter, before, after));
+				: joinAndDelemit(delemiter, before, after, Stream.of(args));
+	}
+
+	
+	public static <T> String join(String delemiter, Stream<T> args) {
+		return joinAndDelemit(delemiter, "", "", args);
+	}
+	
+	public static <T> String joinAndDelemit(String delemiter, String before, String after, Stream<T> args) {
+		return args.map(Object::toString).collect(joining(delemiter, before, after));
 	}
 
 	@Deprecated

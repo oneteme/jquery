@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Utils.join;
+import static org.usf.jquery.core.Utils.joinArray;
 
 /**
  * 
@@ -20,7 +20,7 @@ public final class BadArgumentException extends JQueryException {
 
 	public static BadArgumentException badArgumentTypeException(JavaType[] types, Object actual) {
 		String type = actual instanceof DBColumn c ? ":"+ c.getType() : "";
-		return new BadArgumentException(formatMessage("bad argument type", join("|", types), actual + type));
+		return new BadArgumentException(formatMessage("bad argument type", joinArray("|", types), actual + type));
 	}
 
 	public static BadArgumentException badArgumentCountException(int count, int actual) {

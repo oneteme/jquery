@@ -199,7 +199,7 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	//cast functions
 
 	static TypedOperator varchar() {
-		return new TypedOperator(VARCHAR, cast("VARCHAR"), required(), required(INTEGER)); //any
+		return new TypedOperator(VARCHAR, cast("VARCHAR"), required(), optional(INTEGER)); //any
 	}
 	
 	static TypedOperator date() {

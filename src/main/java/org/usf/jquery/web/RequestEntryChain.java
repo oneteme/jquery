@@ -21,7 +21,7 @@ import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Utils.join;
+import static org.usf.jquery.core.Utils.joinArray;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.DISTINCT;
@@ -132,7 +132,7 @@ final class RequestEntryChain {
 					case JOIN: q.joins(e.evalJoin(td)); break;
 					case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
 					case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
-					default: throw badEntrySyntaxException(join("|", DISTINCT, FILTER, ORDER, JOIN, OFFSET, FETCH), e.value);
+					default: throw badEntrySyntaxException(joinArray("|", DISTINCT, FILTER, ORDER, JOIN, OFFSET, FETCH), e.value);
 					}
 				}
 				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
@@ -171,7 +171,7 @@ final class RequestEntryChain {
 			case ORDER: addAll(ords, e.oderVarargs(td)); break;
 			default: throw e==this
 				? cannotParseEntryException(PARTITION, e) //first entry
-				: badEntrySyntaxException(join("|", PARTITION, ORDER), e.value);
+				: badEntrySyntaxException(joinArray("|", PARTITION, ORDER), e.value);
 			}
 			e = e.next;
 		} while(nonNull(e));
@@ -409,7 +409,7 @@ final class RequestEntryChain {
 			});
 		}
 		catch (Exception e) {
-			throw new EntrySyntaxException(format("bad entry arguments : %s[(%s)]", value, isNull(args) ? "" : join(", ", args.toArray())), e);
+			throw new EntrySyntaxException(format("bad entry arguments : %s[(%s)]", value, isNull(args) ? "" : joinArray(", ", args.toArray())), e);
 		}
 		return arr;
 	}
@@ -418,21 +418,21 @@ final class RequestEntryChain {
 		if(nonNull(tag)) {
 			return tag;
 		}
-		throw new EntrySyntaxException(format("expected tag : %s[:tag]", this));
+		throw expectedEntryTagException(this);
 	}
 
 	RequestEntryChain requireNoArgs() {
 		if(isNull(args)) {
 			return this;
 		}
-		throw new EntrySyntaxException(format("unexpected entry args : %s[(%s)]", value, join(", ", args.toArray())));
+		throw new EntrySyntaxException(format("unexpected entry args : %s[(%s)]", value, joinArray(", ", args.toArray())));
 	}
 
 	RequestEntryChain requireNoNext() {
 		if(isLast()) {
 			return this;
 		}
-		throw expectedEntryTagException(this);
+		throw new EntrySyntaxException(format("unexpected entry : %s[.%s]", value, next));
 	}
 	
 	public boolean isLast() {
@@ -495,7 +495,7 @@ final class RequestEntryChain {
 	}
 	
 	static EntrySyntaxException expectedEntryTagException(RequestEntryChain e) {
-		throw new EntrySyntaxException(format("unexpected entry : %s[.%s]", e.value, e.next));
+		throw new EntrySyntaxException(format("expected tag : %s[:tag]", e));
 	}
 
 	@AllArgsConstructor

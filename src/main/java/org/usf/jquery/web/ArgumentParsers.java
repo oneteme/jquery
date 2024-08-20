@@ -67,12 +67,12 @@ public class ArgumentParsers {
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
 				}
-			} catch (NoSuchResourceException | EntryParseException ex) { /*do not throw exception*/
-				log.trace("parse {} : '{}' => {}", type, entry, ex.getMessage());
+			} catch (NoSuchResourceException | EntryParseException ex) { //do not throw exception
+				log.trace("parse '{}' as {} => {}", entry, type, ex.getMessage());
 				e = ex;
 			}
 		}
-		throw cannotParseEntryException(join("|", types), entry, types.length == 1 ? e : null);
+		throw cannotParseEntryException(join("|", list.stream()), entry, list.size() > 1 ? e : null);
 	}
 	
 	public static JDBCArgumentParser jdbcArgParser(@NonNull JDBCType type) {

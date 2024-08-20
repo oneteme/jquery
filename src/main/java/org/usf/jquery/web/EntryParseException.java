@@ -24,6 +24,6 @@ public final class EntryParseException extends WebException {
 	}
 
 	static EntryParseException cannotParseEntryException(String type, RequestEntryChain entry, Throwable cause) {
-		return new EntryParseException(format("cannot parse %s : '%s'", type, entry), cause);
+		return new EntryParseException(format("cannot parse %s : '%s'", entry, type), cause);
 	}
 }

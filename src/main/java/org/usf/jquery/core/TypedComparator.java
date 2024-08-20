@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.Utils.joinAndDelemit;
+import static org.usf.jquery.core.Utils.joinAndDelemitArray;
 
 import lombok.Getter;
 
@@ -27,7 +27,7 @@ public final class TypedComparator {
 		try {
 			return comparator.expression(parameterSet.assertArgumentsFrom(1, right)); //no left 
 		} catch (BadArgumentException e) {
-			throw badArgumentsException(toString(), comparator.id() + joinAndDelemit(SCOMA, "(", ")", right), e);
+			throw badArgumentsException(toString(), comparator.id() + joinAndDelemitArray(SCOMA, "(", ")", right), e);
 		}
 	}
 	
@@ -35,7 +35,7 @@ public final class TypedComparator {
 		try {
 			return comparator.args(parameterSet.assertArguments(args));
 		} catch (BadArgumentException e) { //TODO message
-			throw badArgumentsException(toString(), comparator.id() + joinAndDelemit(SCOMA, "(", ")", args), e);
+			throw badArgumentsException(toString(), comparator.id() + joinAndDelemitArray(SCOMA, "(", ")", args), e);
 		}
 	}
 
