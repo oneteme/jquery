@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Predicate;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -130,7 +129,7 @@ public class RequestQueryBuilder {
     	having(sub, pb);
     	orderBy(sub, pb);
     	fetch(sub);
-		select(sb, pb);
+    	select(sb, pb);
 		from(sb, pb); //enumerate all view before from clause
 		sb.append(sub.toString()); //TODO optim
 	}
