@@ -7,11 +7,12 @@ import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Database.TERADATA;
+import static org.usf.jquery.core.Database.currentDatabase;
+import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.Utils.currentDatabase;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
 import java.util.ArrayList;
@@ -32,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 public class RequestQueryBuilder {
-
+	
 	private final List<TaggableColumn> columns = new ArrayList<>();
 	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING
 	private final List<DBOrder> orders = new ArrayList<>();
@@ -42,6 +43,14 @@ public class RequestQueryBuilder {
 	private boolean distinct;
 	private Integer fetch;
 	private Integer offset;
+	
+	public RequestQueryBuilder() {
+		this(null);
+	}
+	
+	public RequestQueryBuilder(Database target) {
+		setCurrentDatabase(target);
+	}
 	
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
 		addAll(this.columns, columns);

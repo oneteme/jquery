@@ -18,9 +18,7 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Utils {
-	//move this
-	static ThreadLocal<Database> context = new ThreadLocal<>(); // change it
-	
+
 	public static final int UNLIMITED = -1;
 	
 	public static <T> boolean isEmpty(T[] a) {
@@ -39,10 +37,6 @@ public final class Utils {
 		return isNull(s) || s.isBlank();
 	}
 	
-	public static Database currentDatabase() {
-		return context.get();
-	}
-	
 	@SuppressWarnings("unchecked")
 	public static <T> String joinArray(String delemiter, T... args) {
 		return joinAndDelemitArray(delemiter, "", "", args);
@@ -54,7 +48,6 @@ public final class Utils {
 				? null 
 				: joinAndDelemit(delemiter, before, after, Stream.of(args));
 	}
-
 	
 	public static <T> String join(String delemiter, Stream<T> args) {
 		return joinAndDelemit(delemiter, "", "", args);
@@ -62,11 +55,6 @@ public final class Utils {
 	
 	public static <T> String joinAndDelemit(String delemiter, String before, String after, Stream<T> args) {
 		return args.map(Object::toString).collect(joining(delemiter, before, after));
-	}
-
-	@Deprecated
-	public static void currentDatabase(Database db) {
-		context.set(db);
 	}
 	
 	public static <T> T[] arrayJoin(T[] arr, T o) {

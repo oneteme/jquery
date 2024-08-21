@@ -35,6 +35,7 @@ import static org.usf.jquery.web.Constants.QUERY;
 import static org.usf.jquery.web.Constants.SELECT;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
+import static org.usf.jquery.web.ContextManager.setCurrentContext;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 
@@ -62,7 +63,6 @@ import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedOperator;
-import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.core.WindowFunction;
@@ -121,6 +121,8 @@ final class RequestEntryChain {
 	Optional<QueryDecorator> evalQuery(ViewDecorator td, boolean requireTag) { //sub context
 		if(SELECT.equals(value)) {
 			var e =	this;
+			var ctx = currentContext();
+			setCurrentContext(new ContextEnvironment(ctx)); //sub context : inherits only declared views 
 			try {
 				var q = new RequestQueryBuilder().columns(taggableVarargs(td));
 				while(e.hasNext()) {
@@ -135,10 +137,14 @@ final class RequestEntryChain {
 					default: throw badEntrySyntaxException(joinArray("|", DISTINCT, FILTER, ORDER, JOIN, OFFSET, FETCH), e.value);
 					}
 				}
+				q.overViews(currentContext().getOverView());
 				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
 			}
 			catch (Exception ex) {
 				throw new EntrySyntaxException("incorrect query syntax: " + e, ex);
+			}
+			finally {
+				setCurrentContext(ctx);
 			}
 		}
 		return empty();

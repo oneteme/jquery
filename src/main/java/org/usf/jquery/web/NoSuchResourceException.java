@@ -9,7 +9,7 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
  *
  */
 @SuppressWarnings("serial")
-final class NoSuchResourceException extends WebException {
+public final class NoSuchResourceException extends WebException {
 
 	public NoSuchResourceException(String s) {
 		super(s);

@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import java.time.YearMonth;
-import java.util.Set;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -14,6 +13,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Constants {
 
+	public static final String DATABASE = "database";
 	public static final String QUERY = "query";
 	public static final String VIEW = "view";
 	public static final String SELECT = "select";
@@ -26,15 +26,6 @@ public final class Constants {
 	public static final String OFFSET = "offset";
 	public static final String JOIN = "join";
 	public static final String PARTITION = "partition";
-	@Deprecated
-	public static final String REVISION = "revision"; //not standard
-	@Deprecated
-	public static final String REVISION_MODE = "revision.mode"; //not standard
-	
-	static final Set<String> RESERVED_WORDS = 
-			Set.of(VIEW, COLUMN, COLUMN_DISTINCT, FILTER, ORDER, OFFSET, FETCH, 
-					PARTITION, REVISION, REVISION_MODE); //metadata ?
 	
 	static final YearMonth[] EMPTY_REVISION = new YearMonth[0]; //not standard
-	
 }

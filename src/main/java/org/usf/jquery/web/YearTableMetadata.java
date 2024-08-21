@@ -66,7 +66,7 @@ public final class YearTableMetadata extends ViewMetadata {
 	}
 		
 	@Override
-	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException  {
+	void fetchView(DatabaseMetaData metadata, TableView view, String schema) throws SQLException  {
 		tablenames.clear();
 		var dbMap = getColumns().values().stream().collect(toMap(cm-> cm.getName(), ColumnMetadata::reset)); //important! reset columns
 		Set<String> dirtyColumns = new LinkedHashSet<>();

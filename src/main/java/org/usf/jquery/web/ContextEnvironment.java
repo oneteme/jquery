@@ -56,7 +56,7 @@ public final class ContextEnvironment {
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private final Map<String, TaggableColumn> declaredColumns = new HashMap<>();
 	
-	public ContextEnvironment(ContextEnvironment ctx) {
+	ContextEnvironment(ContextEnvironment ctx) {
 		this.database = ctx.database;
 		this.views = new HashMap<>(ctx.views); //modifiable
 		this.columns = new HashMap<>(ctx.columns); //modifiable
@@ -115,7 +115,7 @@ public final class ContextEnvironment {
 						meta.fetch(cnx.getMetaData(), schema);
 					}
 					catch(SQLException | JQueryException e) {
-						log.error("error while scanning database metadata", e);
+						log.error("error while scanning '{}' metadata", v.identity(), e);
 					}
 				}
 			}
@@ -137,7 +137,7 @@ public final class ContextEnvironment {
 			Collection<ViewDecorator> views, Collection<ColumnDecorator> columns, DataSource ds, String schema) {
 		requireLegalVariable(requireNonNull(database, "configuration.database").identity());
 		return new ContextEnvironment(database,
-				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), 
+				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), //preserve views order
 				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"),
 				ds, schema, new DatabaseMetadata());
 	}

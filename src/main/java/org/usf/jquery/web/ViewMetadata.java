@@ -55,7 +55,7 @@ public class ViewMetadata {
 			var time = currentTimeMillis();
 			log.info("scanning view '{}' metadata...", view);
 			if(view instanceof TableView tab) {
-				fetch(metadata, tab, schema);
+				fetchView(metadata, tab, schema);
 			}
 			else {
 				fetch(metadata, view, schema);
@@ -70,7 +70,7 @@ public class ViewMetadata {
 		return this;
 	}
 	
-	void fetch(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
+	void fetchView(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
 		try(var rs = metadata.getColumns(null, view.getSchemaOrElse(schema), view.getName(), null)){
 			if(rs.next()) {
 				var db = reverseMapKeys(); //reverse key

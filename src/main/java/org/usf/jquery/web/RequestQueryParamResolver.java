@@ -41,6 +41,7 @@ public final class RequestQueryParamResolver {//spring connection bridge
 				parameterMap.remove(k);
 			}
 		}
+		releaseContext(); //safe++
 		var ctx = ant.database().isEmpty() 
 				? currentContext()
 				: context(ant.database());

@@ -6,7 +6,7 @@ package org.usf.jquery.web;
  *
  */
 @SuppressWarnings("serial")
-public class ResourceAccessException extends WebException { //read & write access
+public final class ResourceAccessException extends WebException { //read & write access
 
 	public ResourceAccessException(String message) {
 		super(message);

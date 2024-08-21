@@ -2,9 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
@@ -16,7 +14,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -80,13 +77,13 @@ public final class QueryParameterBuilder {
 				return EMPTY;
 			}
 		}
-		else if(from < arr.length) {
+		else if(from >= 0 && from < arr.length) {
 			return Stream.of(arr)
 					.skip(from)
 					.map(fn)
 					.collect(joining(SCOMA));
 		}
-		throw new IndexOutOfBoundsException(from + ">=" + requireNonNull(arr, "arr is null").length);
+		throw new IndexOutOfBoundsException(from);
 	}
 
 	public String appendParameter(Object o) {

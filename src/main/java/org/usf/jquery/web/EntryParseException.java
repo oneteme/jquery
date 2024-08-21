@@ -18,7 +18,6 @@ public final class EntryParseException extends WebException {
 		super(message, cause);
 	}
 
-
 	static EntryParseException cannotParseEntryException(String type, RequestEntryChain entry) {
 		return cannotParseEntryException(type, entry, null);
 	}

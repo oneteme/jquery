@@ -164,11 +164,6 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 			}
 			
 			@Override
-			public boolean isAggregation() {
-				return false;
-			}
-			
-			@Override
 			public Stream<DBColumn> groupKeys() {
 				return Stream.empty();
 			}

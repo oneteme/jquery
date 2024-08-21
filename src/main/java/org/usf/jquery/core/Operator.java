@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
 import static org.usf.jquery.core.Database.TERADATA;
+import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -15,7 +16,6 @@ import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.Utils.currentDatabase;
 
 import java.util.Optional;
 

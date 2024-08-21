@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
+import static java.lang.String.format;
 import static java.util.Map.entry;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -18,7 +19,6 @@ import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
-import static org.usf.jquery.web.MissingParameterException.missingParameterException;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
@@ -99,7 +99,7 @@ public interface ViewDecorator {
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
-		var query = new RequestQueryBuilder();
+		var query = new RequestQueryBuilder(currentContext().getMetadata().getType());
 		parseViews(query, parameterMap); //variable isolation !?
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
@@ -138,7 +138,7 @@ public interface ViewDecorator {
 			.forEach(query::columns);
 		}
 		else {
-			throw missingParameterException(COLUMN, COLUMN_DISTINCT);
+			throw new IllegalArgumentException(format("requrie %s or %s parameter", COLUMN, COLUMN_DISTINCT));
 		}
 	}
 

@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.joinArray;
-import static org.usf.jquery.core.Utils.joinAndDelemitArray;
 
 import java.util.stream.Stream;
 

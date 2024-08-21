@@ -2,8 +2,8 @@ package org.usf.jquery.web;
 
 import static org.usf.jquery.core.Utils.isEmpty;
 
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 
@@ -34,11 +34,11 @@ public final class ModelIterator<T> implements Iterator<T> {
 		currentRev.set(rev);
 		return rev;
 	}
-
-	public static <T> ModelIterator<T> iterator(T[] model){
+	
+	public static <T> ModelIterator<T> iterator(Collection<T> model){
 		if(!isEmpty(model)) {
-			return new ModelIterator<>(Stream.of(model).iterator());
+			return new ModelIterator<>(model.iterator());
 		}
-		throw new IllegalArgumentException("no revision");
+		throw new IllegalArgumentException("empty array");
 	}
 }

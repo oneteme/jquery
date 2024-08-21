@@ -2,14 +2,13 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.web.Constants.DATABASE;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-
-import org.usf.jquery.core.Utils;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -30,7 +29,7 @@ public final class ContextManager {
 			if(isNull(dm)) {
 				return config;
 			}
-			throw resourceAlreadyExistsException("context", id);
+			throw resourceAlreadyExistsException(DATABASE, id);
 		});
 		config.bind(); // outer bind
 	}
@@ -41,7 +40,8 @@ public final class ContextManager {
 			return ctx;
 		}
 		if(CONTEXTS.size() == 1) { //default database
-			return setCurrentContext(CONTEXTS.values().iterator().next());
+			ctx = CONTEXTS.values().iterator().next();
+			return setCurrentContext(new ContextEnvironment(ctx));
 		}
 		throw CONTEXTS.isEmpty()
 			? new NoSuchElementException("no database configured")
@@ -51,20 +51,17 @@ public final class ContextManager {
 	static ContextEnvironment context(String database){
 		var ctx = CONTEXTS.get(database);
 		if(nonNull(ctx)) {
-			return setCurrentContext(ctx);
+			return setCurrentContext(new ContextEnvironment(ctx));
 		}
-		throw noSuchResourceException("database", database);
+		throw noSuchResourceException(DATABASE, database);
 	}
 
 	static ContextEnvironment setCurrentContext(ContextEnvironment ctx) {
-		ctx = new ContextEnvironment(ctx); //copy
 		CURRENT.set(ctx);
-		Utils.currentDatabase(ctx.getMetadata().getType()); //table database
 		return ctx;
 	}
 
 	static void releaseContext() {
 		CURRENT.remove();
-		Utils.currentDatabase(null); //table database
 	}
 }

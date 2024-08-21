@@ -61,7 +61,10 @@ public final class ColumnMetadata {
 	
 	public String toSqlType(){
 		var s = type.name();
-		if(!overConfigured) {
+		if(overConfigured) {
+			s+="!";
+		}
+		else {
 			if(type.typeClass() == String.class && dataSize < MAX_VALUE) {
 				s+= "(" + dataSize + ")";
 			}
@@ -71,9 +74,6 @@ public final class ColumnMetadata {
 			if(type == REAL || type == NUMERIC || type == DECIMAL || type == FLOAT || type == DOUBLE) {
 				s+= "(" + dataSize + "," + precision + ")";
 			}
-		}
-		else {
-			s+="!";
 		}
 		return s;
 	}
