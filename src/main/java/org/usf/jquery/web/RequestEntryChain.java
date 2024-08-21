@@ -7,6 +7,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.Objects.requireNonNullElse;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
@@ -112,7 +113,6 @@ final class RequestEntryChain {
 				.orElseThrow(()-> cannotParseEntryException(QUERY, this));
 	}
 
-	//TODO level isolation : window function
 	public ViewDecorator evalQuery(ViewDecorator td) {
 		return evalQuery(td, false).orElseThrow(()-> cannotParseEntryException(QUERY, this));
 	}
@@ -140,7 +140,7 @@ final class RequestEntryChain {
 				q.overViews(currentContext().getOverView());
 				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
 			}
-			catch (Exception ex) {
+			catch (EntryParseException | NoSuchResourceException ex) {
 				throw new EntrySyntaxException("incorrect query syntax: " + e, ex);
 			}
 			finally {
@@ -415,7 +415,8 @@ final class RequestEntryChain {
 			});
 		}
 		catch (Exception e) {
-			throw new EntrySyntaxException(format("bad entry arguments : %s[(%s)]", value, isNull(args) ? "" : joinArray(", ", args.toArray())), e);
+			throw new EntrySyntaxException(format("bad entry arguments : %s[(%s)]", 
+					requireNonNullElse(value, ""), isNull(args) ? "" : joinArray(", ", args.toArray())), e);
 		}
 		return arr;
 	}

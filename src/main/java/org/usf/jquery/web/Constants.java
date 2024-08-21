@@ -27,5 +27,6 @@ public final class Constants {
 	public static final String JOIN = "join";
 	public static final String PARTITION = "partition";
 	
+	@Deprecated
 	static final YearMonth[] EMPTY_REVISION = new YearMonth[0]; //not standard
 }

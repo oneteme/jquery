@@ -100,7 +100,7 @@ public interface ViewDecorator {
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
 		var query = new RequestQueryBuilder(currentContext().getMetadata().getType());
-		parseViews(query, parameterMap); //variable isolation !?
+		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
 		parseJoin(query, parameterMap);

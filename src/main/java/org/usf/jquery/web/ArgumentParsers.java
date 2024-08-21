@@ -8,10 +8,10 @@ import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
+import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.QUERY_COLUMN;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Utils.join;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 
 import java.math.BigDecimal;
@@ -46,7 +46,7 @@ public class ArgumentParsers {
 	
 	private static final JDBCType[] STD_TYPES = {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
-			TIME, TIMESTAMP_WITH_TIMEZONE };
+			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR }; //varchar !?
 
 	public static Object parse(RequestEntryChain entry, ViewDecorator td, JavaType... types) {
 		List<JavaType> list = new ArrayList<>();
@@ -55,7 +55,7 @@ public class ArgumentParsers {
 			list.add(QUERY_COLUMN);
 		}
 		addAll(list, isEmpty(types) ? STD_TYPES : types);
-		Exception e = null;
+		var exList = new ArrayList<Exception>();
 		for(var type : list) {
 			try {
 				if(type instanceof JDBCType t) {
@@ -67,12 +67,16 @@ public class ArgumentParsers {
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
 				}
-			} catch (NoSuchResourceException | EntryParseException ex) { //do not throw exception
-				log.trace("parse '{}' as {} => {}", entry, type, ex.getMessage());
-				e = ex;
+			} catch (NoSuchResourceException | EntryParseException e) { //do not throw exception
+				exList.add(e);
 			}
 		}
-		throw cannotParseEntryException(join("|", list.stream()), entry, list.size() > 1 ? e : null);
+		if(exList.size() > 1) {
+			for(int i=0; i<exList.size(); i++) {
+				log.warn("parsing '{}' as {} => {}", entry, list.get(i), exList.get(i).getMessage());
+			}
+		}
+		throw cannotParseEntryException("entry", entry, exList.size() == 1 ? exList.get(0) : null);
 	}
 	
 	public static JDBCArgumentParser jdbcArgParser(@NonNull JDBCType type) {
