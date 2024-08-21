@@ -27,7 +27,7 @@ import java.util.Optional;
  */
 public interface Operator extends DBProcessor {
 	
-	String id();
+	String id(); //nullable
 
 	default OperationColumn args(Object... args) {
 		return args(null, args); // no type
@@ -204,14 +204,17 @@ public interface Operator extends DBProcessor {
 	static TypedOperator epoch() {
 		return new TypedOperator(BIGINT, extract("EPOCH"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
+	
+	//combined functions
+	
 	static TypedOperator yearMonth() {
-		var op = new CombinedOperator("year", (t, args)->{
+		CombinedOperator op = (t, args)-> {
 			var col = requireNArgs(1, args, ()-> "yearMonth")[0];
 			return concat().operation(
 					lpad().operation(year().operation(col), 4, "0"), "-", 
 					lpad().operation(month().operation(col), 2, "0"));
-		});
-		return new TypedOperator(BIGINT, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
+		};
+		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
 	
 	//cast functions
