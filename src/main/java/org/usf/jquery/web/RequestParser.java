@@ -136,8 +136,8 @@ public final class RequestParser {
 		return new EntryParseException("something expected after '" + s.charAt(size-1) + "'");
 	}
 	
-	private static boolean legalTxtChar(char c) {
-		return c != '"' && c != '\'' && c != '&' && c != '?' && c != '=';  //avoid SQL injection & HTTP reserved symbol
+	private static boolean legalTxtChar(char c) { //avoid SQL injection & HTTP reserved symbol
+		return c != '"' && c != '\'' && c != '&' && c != '?' && c != '=';
 	}
 	
 	private static boolean legalValChar(char c) {

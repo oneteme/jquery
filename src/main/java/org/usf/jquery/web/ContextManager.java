@@ -25,11 +25,11 @@ public final class ContextManager {
 	private static final ThreadLocal<ContextEnvironment> CURRENT  = new ThreadLocal<>();
 
 	public static void register(ContextEnvironment config) {
-		CONTEXTS.compute(config.getDatabase().identity(), (id,dm)-> {
-			if(isNull(dm)) {
+		CONTEXTS.compute(config.getDatabase().identity(), (k,v)-> {
+			if(isNull(v)) {
 				return config;
 			}
-			throw resourceAlreadyExistsException(DATABASE, id);
+			throw resourceAlreadyExistsException(k, v);
 		});
 		config.bind(); // outer bind
 	}

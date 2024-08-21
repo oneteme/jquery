@@ -130,7 +130,7 @@ final class RequestEntryChain {
 					switch(e.value) {//column not allowed 
 					case DISTINCT: e.requireNoArgs(); q.distinct(); break;
 					case FILTER: q.filters(e.filterVarargs(td)); break;
-					case ORDER: q.orders(e.oderVarargs(td)); break; //not sure
+					case ORDER: q.orders(e.oderVarargs(td)); break;
 					case JOIN: q.joins(e.evalJoin(td)); break;
 					case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
 					case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
@@ -485,7 +485,7 @@ final class RequestEntryChain {
 	
 	static NoSuchResourceException noSuchViewColumnException(RequestEntryChain e) {
 		return noSuchResourceException(COLUMN, e.hasNext() 
-				&& currentContext().lookupRegisteredColumn(e.value).isPresent() 
+				&& currentContext().lookupRegisteredView(e.value).isPresent() 
 						? e.value + "." + e.next.value
 						: e.value);
 	}

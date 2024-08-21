@@ -9,7 +9,6 @@ import static org.usf.jquery.web.ContextManager.context;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.ContextManager.releaseContext;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.ResourceAccessException.accessDeniedException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,7 +53,7 @@ public final class RequestQueryParamResolver {//spring connection bridge
 			if(!ant.aggregationOnly() || req.isAggregation()) {
 				return req;
 			}
-			throw accessDeniedException("non-aggregate query");
+			throw new ResourceAccessException("non-aggregate query");
 		}
 		catch (Exception e) {
 			e.printStackTrace();

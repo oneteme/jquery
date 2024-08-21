@@ -31,11 +31,11 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 		return assertArgumentsFrom(0, args);
 	}
 	
-	public Object[] assertArgumentsFrom(int idx, Object... args) {
+	public Object[] assertArgumentsFrom(int idx, Object... args) { //partial assert
 		var arr = isNull(args) ? new Object[0] : args;
-		forEach(arr.length, (p,i)-> {
-			if(i>=idx && !p.accept(i, arr)) {
-				throw badArgumentTypeException(p.types(arr), arr[i]);
+		forEach(arr.length+idx, (p,i)-> {
+			if(i>=idx && !p.accept(i-idx, arr)) {
+				throw badArgumentTypeException(p.types(arr), arr[i-idx]);
 			}
 		});
 		return arr;

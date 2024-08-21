@@ -19,10 +19,10 @@ import static org.usf.jquery.web.Constants.OFFSET;
 import static org.usf.jquery.web.Constants.ORDER;
 import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
-import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
+import static org.usf.jquery.web.ResourceAccessException.undeclaredResouceException;
 
 import java.util.Map;
 import java.util.Map.Entry;

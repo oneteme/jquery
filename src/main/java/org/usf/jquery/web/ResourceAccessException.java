@@ -1,5 +1,7 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.core.SqlStringBuilder.quote;
+
 /**
  * 
  * @author u$f
@@ -12,11 +14,11 @@ public final class ResourceAccessException extends WebException { //read & write
 		super(message);
 	}
 
-	public static ResourceAccessException resourceAlreadyExistsException(String name, String value) {
-		return new ResourceAccessException(name + " already exists : " + value);
+	public static ResourceAccessException resourceAlreadyExistsException(String name, Object value) {
+		return new ResourceAccessException(quote(name) + " is already exists : " + value);
 	}
 
-	public static ResourceAccessException accessDeniedException(String reason) {
-		return new ResourceAccessException("access denied : " + reason);
+	public static ResourceAccessException undeclaredResouceException(String child, String parent) {
+		return new ResourceAccessException(quote(child) + " is not member of " + quote(parent));
 	}
 }
