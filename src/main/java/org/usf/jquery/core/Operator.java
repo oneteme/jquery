@@ -208,7 +208,7 @@ public interface Operator extends DBProcessor {
 	//combined functions
 	
 	static TypedOperator yearMonth() {
-		CombinedOperator op = (t, args)-> {
+		CombinedOperator op = args-> {
 			var col = requireNArgs(1, args, ()-> "yearMonth")[0];
 			return concat().operation(
 					lpad().operation(year().operation(col), 4, "0"), "-", 

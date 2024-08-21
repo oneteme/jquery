@@ -8,7 +8,7 @@ package org.usf.jquery.core;
 public interface CombinedOperator extends Operator {
 	
 	@Override
-	OperationColumn args(JDBCType type, Object... args);
+	OperationColumn args(Object... args);
 
 	@Override
 	default String id() {
