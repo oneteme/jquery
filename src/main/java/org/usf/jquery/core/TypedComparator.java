@@ -33,7 +33,7 @@ public final class TypedComparator {
 	
 	public DBFilter filter(Object... args) {
 		try {
-			return comparator.args(parameterSet.assertArguments(args));
+			return comparator.filter(parameterSet.assertArguments(args));
 		} catch (BadArgumentException e) { //TODO message
 			throw badArgumentsException(toString(), comparator.id() + joinAndDelemitArray(SCOMA, "(", ")", args), e);
 		}

@@ -11,9 +11,7 @@ import java.util.Optional;
  * @author u$f
  *
  */
-public interface DBProcessor<T> extends DBObject {
-	
-	T args(Object... args);
+public interface DBProcessor extends DBObject {
 	
 	static <T,U> Optional<U> lookup(Class<T> clazz, Class<U> ext, String op) {
 		try {

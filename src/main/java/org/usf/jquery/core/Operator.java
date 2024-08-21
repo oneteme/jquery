@@ -16,6 +16,7 @@ import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
+import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Optional;
 
@@ -24,7 +25,7 @@ import java.util.Optional;
  * @author u$f
  *
  */
-public interface Operator extends DBProcessor<OperationColumn> {
+public interface Operator extends DBProcessor {
 	
 	String id();
 
@@ -150,6 +151,14 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	static TypedOperator concat() {
 		return new TypedOperator(VARCHAR, function("CONCAT"), required(VARCHAR), required(VARCHAR), varargs(VARCHAR));
 	}
+	
+	static TypedOperator lpad() {
+		return new TypedOperator(VARCHAR, function("LPAD"), required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
+	}
+	
+	static TypedOperator rpad() {
+		return new TypedOperator(VARCHAR, function("RPAD"), required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
+	}
 
 	//temporal functions
 	
@@ -195,7 +204,16 @@ public interface Operator extends DBProcessor<OperationColumn> {
 	static TypedOperator epoch() {
 		return new TypedOperator(BIGINT, extract("EPOCH"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
-
+	static TypedOperator yearMonth() {
+		var op = new CombinedOperator("year", (t, args)->{
+			var col = requireNArgs(1, args, ()-> "yearMonth")[0];
+			return concat().operation(
+					lpad().operation(year().operation(col), 4, "0"), "-", 
+					lpad().operation(month().operation(col), 2, "0"));
+		});
+		return new TypedOperator(BIGINT, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
+	}
+	
 	//cast functions
 
 	static TypedOperator varchar() {

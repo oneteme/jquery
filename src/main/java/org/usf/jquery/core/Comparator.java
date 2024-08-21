@@ -15,19 +15,18 @@ import java.util.function.UnaryOperator;
  * @author u$f
  *
  */
-public interface Comparator extends DBProcessor<DBFilter> {
+public interface Comparator extends DBProcessor {
 	
 	String id();
 
-	@Override
-	default DBFilter args(Object... args) {
+	default ColumnSingleFilter filter(Object... args) {
 		return new ColumnSingleFilter(args[0], 
 				expression(copyOfRange(args, 1, args.length))); // no type
 	}
 
 	//basic comparator
 
-	default ComparisonExpression expression(Object... right) {
+	default ComparisonSingleExpression expression(Object... right) {
 		return new ComparisonSingleExpression(this, right);
 	}
 	
