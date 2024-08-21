@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -151,7 +152,8 @@ public class RequestQueryBuilder {
 	}
 	
 	void from(SqlStringBuilder sb, QueryParameterBuilder pb) {
-		var views = pb.views();
+		var excludes = joins.stream().map(ViewJoin::getView).toList();
+		var views = pb.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
 			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(pb));
 		}

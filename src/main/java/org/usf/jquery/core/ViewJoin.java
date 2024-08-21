@@ -10,6 +10,7 @@ import static org.usf.jquery.core.ViewJoin.JoinType.RIGHT;
 
 import java.util.stream.Stream;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -17,6 +18,7 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
+@Getter
 @RequiredArgsConstructor
 public class ViewJoin implements DBObject {
 	
@@ -32,7 +34,7 @@ public class ViewJoin implements DBObject {
 	}
 
 	public String sql(QueryParameterBuilder builder) {
-		return joinType + " JOIN " + view.sql(builder) + " ON " +
+		return joinType + " JOIN " + view.sqlWithTag(builder) + " ON " +
 				Stream.of(filters).map(f-> f.sql(builder)).collect(joining(AND.sql()));
 	}
 	
