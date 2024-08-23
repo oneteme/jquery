@@ -1,25 +1,7 @@
 package org.usf.jquery.web;
 
-import static java.util.Objects.isNull;
-import static org.usf.jquery.core.DBColumn.count;
-import static org.usf.jquery.core.DBComparator.equal;
-import static org.usf.jquery.core.DBComparator.greaterOrEqual;
-import static org.usf.jquery.core.DBComparator.greaterThan;
-import static org.usf.jquery.core.DBComparator.iLike;
-import static org.usf.jquery.core.DBComparator.in;
-import static org.usf.jquery.core.DBComparator.lessOrEqual;
-import static org.usf.jquery.core.DBComparator.lessThan;
-import static org.usf.jquery.core.DBComparator.like;
-import static org.usf.jquery.core.DBComparator.notEqual;
-import static org.usf.jquery.core.DBComparator.notIn;
-import static org.usf.jquery.core.DBComparator.notLike;
-import static org.usf.jquery.core.JDBCType.AUTO_TYPE;
-import static org.usf.jquery.web.ParsableJDBCType.typeOf;
-
-import org.usf.jquery.core.DBComparator;
-import org.usf.jquery.core.DBFunction;
-import org.usf.jquery.core.SQLType;
-import org.usf.jquery.core.StringComparator;
+import org.usf.jquery.core.ComparisonExpression;
+import org.usf.jquery.core.JDBCType;
 
 /**
  * 
@@ -27,88 +9,40 @@ import org.usf.jquery.core.StringComparator;
  * 
  *
  */
+@FunctionalInterface
 public interface ColumnDecorator {
 	
-	String identity();  //URL
+	String identity();  //URL unique
 	
-	String reference(); //JSON
-	
-	default SQLType dataType() {
-		return AUTO_TYPE;
+	default String reference(ViewDecorator vd) { //JSON
+		return identity();
 	}
 	
-	default String pattern() {
+	default JDBCType type(ViewDecorator vd) {
+		return null; // auto type
+	}
+	
+	default JDBCArgumentParser parser(ViewDecorator vd){ // override parser | format | local | validation
+		return null; // auto parser
+	}
+	
+	default ColumnBuilder builder(ViewDecorator vd) { //set type if null
+		return null; // no builder by default
+	}
+	
+	default CriteriaBuilder<ComparisonExpression> criteria(String name) {
+		return null; // no criteria by default
+	}
+	
+	default String pattern(ViewDecorator td) {
 		throw new UnsupportedOperationException(); //improve API security and performance
 	}
 
-	default boolean canSelect() {
+	default boolean canSelect(ViewDecorator td) {
 		throw new UnsupportedOperationException(); //authorization inject
 	}
 
-	default boolean canFilter() {
+	default boolean canFilter(ViewDecorator td) {
 		throw new UnsupportedOperationException(); //authorization inject
-	}
-	
-	default ColumnBuilder builder() {
-		return null; // physical column by default
-	}
-	
-	default CriteriaBuilder<String> criteria(String name) {
-		return null; // no criteria by default
-	}
-
-	default DBComparator comparator(String comparator, int nArg) {
-		if(isNull(comparator)) {
-			return nArg == 1 ? equal() : in();
-		}
-		switch(comparator) {
-		case "gt"		: return greaterThan();
-		case "ge"  		: return greaterOrEqual();
-		case "lt"  		: return lessThan();
-		case "le"  		: return lessOrEqual();
-		case "not" 		: return nArg == 1 ? notEqual() : notIn();
-		case "like"		: return containsArgPartten(like());
-		case "ilike"	: return containsArgPartten(iLike());
-		case "unlike"	: return containsArgPartten(notLike());
-		default			: return null;
-		//isnull
-		}
-	}
-	
-	/**
-	 * override parser | format | local
-	 */
-	default ArgumentParser parser(SQLType type){
-		return type instanceof ParsableSQLType 
-				? (ParsableSQLType) type //improve parser search 
-				: typeOf(type);
-	}
-	
-	private static DBComparator containsArgPartten(StringComparator fn) {
-		return (b, args)-> {
-			args[1] = "%" + args[1] + "%";
-			return fn.sql(b, args);
-		};
-	}
-	
-	static ColumnDecorator countColumn() {
-		return ofColumn(DBFunction.count().name(), t-> count());
-	}
-
-	static ColumnDecorator ofColumn(String ref, ColumnBuilder cb) {
-		return new ColumnDecorator() {
-			@Override
-			public String identity() {
-				return null; //unused
-			}
-			@Override
-			public String reference() {
-				return ref;
-			}
-			@Override
-			public ColumnBuilder builder() {
-				return cb;
-			}
-		};
 	}
 }

@@ -1,41 +1,66 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.Utils.isPresent;
+import static java.lang.System.currentTimeMillis;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Constants.COLUMN;
 import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
-import static org.usf.jquery.web.JQueryContext.context;
+import static org.usf.jquery.web.Constants.VIEW;
+import static org.usf.jquery.web.ContextManager.context;
+import static org.usf.jquery.web.ContextManager.currentContext;
+import static org.usf.jquery.web.ContextManager.releaseContext;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.usf.jquery.core.RequestQueryBuilder;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
+@Slf4j
 @RequiredArgsConstructor
-public final class RequestQueryParamResolver {
+public final class RequestQueryParamResolver {//spring connection bridge
 	
 	public RequestQueryBuilder requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
-		parameterMap = new LinkedHashMap<>(parameterMap); //unmodifiable map
-		if(!parameterMap.containsKey(COLUMN) && !parameterMap.containsKey(COLUMN_DISTINCT)) {
-			parameterMap.put(COLUMN, ant.defaultColumns());
+		var t = currentTimeMillis();
+		log.trace("parsing request...");
+		parameterMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
+		if(!parameterMap.containsKey(COLUMN_DISTINCT)) {
+			parameterMap.computeIfAbsent(COLUMN, k-> ant.defaultColumns());
 		}
-		if(isPresent(ant.ignoreParameters())) {
-			Stream.of(ant.ignoreParameters()).forEach(parameterMap::remove);
+		if(!isEmpty(ant.ignoreParameters())) {
+			for(var k : ant.ignoreParameters()) {
+				parameterMap.remove(k);
+			}
 		}
-		var req = context()
-				.getTable(ant.name())
-				.query(parameterMap); //may edit map
-		if(ant.aggregationOnly() && !req.isAggregation()) {
-			throw new IllegalDataAccessException("non aggregation query");
+		releaseContext(); //safe++
+		var ctx = ant.database().isEmpty() 
+				? currentContext()
+				: context(ant.database());
+		try {
+			var req = ctx
+					.lookupRegisteredView(ant.view())
+					.orElseThrow(()-> noSuchResourceException(VIEW, ant.view()))
+					.query(parameterMap); //may edit map
+			log.trace("request parsed in {} ms", currentTimeMillis() - t);
+			if(!ant.aggregationOnly() || req.isAggregation()) {
+				return req;
+			}
+			throw new ResourceAccessException("non-aggregate query");
 		}
-		return req;
+		catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
+		finally {
+			releaseContext();
+		}
 	}
 }

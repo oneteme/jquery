@@ -1,7 +1,8 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Validation.requireAtMostNArgs;
+import static java.util.Objects.isNull;
+import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.Validation.requireNoArgs;
 
 /**
  * 
@@ -13,10 +14,15 @@ public interface DBView extends DBObject {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireAtMostNArgs(1, args, DBView.class::getSimpleName);
-		return sql(builder, isEmpty(args) ? null : args[0].toString());
+		requireNoArgs(args, DBView.class::getSimpleName);
+		return sql(builder);
 	}
 
-	String sql(QueryParameterBuilder builder, String schema);
+	String sql(QueryParameterBuilder builder);
 	
+	default String sqlWithTag(QueryParameterBuilder builder) {
+		var tag = builder.view(this);
+		var sql = sql(builder);
+		return isNull(tag) ? sql : sql + SPACE + tag;
+	}
 }

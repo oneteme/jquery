@@ -9,17 +9,11 @@ import static org.usf.jquery.core.Validation.requireNArgs;
  *
  */
 @FunctionalInterface
-public interface NullComparator extends DBComparator {
+public interface NullComparator extends Comparator {
 
-	String name();
-	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireNArgs(1, args, NullComparator.class::getSimpleName);
-		return builder.appendParameter(args[0]) + SPACE + name();
-	}
-
-	static NullComparator nullComparator(final String name) {
-		return ()-> name;
+		return builder.appendParameter(args[0]) + SPACE + id();
 	}
 }

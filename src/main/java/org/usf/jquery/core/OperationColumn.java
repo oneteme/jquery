@@ -5,7 +5,6 @@ import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -14,30 +13,49 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public class OperationColumn implements DBColumn {
+public final class OperationColumn implements DBColumn {
 
-	@NonNull
-	private final DBOperation operation;
-	private final Object[] args; //
+	private final Operator operator;
+	private final Object[] args;
+	private final JDBCType type;
 
+	public OperationColumn(Operator operation, Object[] args) {
+		this(operation, args, null);
+	}
+	
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		return operation.sql(builder, args);
+		return operator.sql(builder, args);
 	}
-
+	
+	@Override
+	public JDBCType getType() {
+		return type;
+	}
+	
 	@Override
 	public boolean isAggregation() {
-		return operation.isAggregation() 
-				|| Stream.of(args).anyMatch(NestedSql::aggregation);
+		return operator instanceof AggregateFunction || 
+				(!isOverFunction() && Stream.of(args).anyMatch(Nested::aggregation)); //can do better
 	}
-
+	
 	@Override
-	public boolean isConstant() {
-		return Stream.of(args).allMatch(DBColumn::isColumnConstant);
+	public Stream<DBColumn> groupKeys() {
+		if(isOverFunction()) {
+			return ((Partition)args[1]).groupKeys();
+		}
+		return operator instanceof AggregateFunction || operator instanceof ConstantOperator
+				? Stream.empty() 
+				: DBColumn.super.groupKeys();
+	}
+	
+	boolean isOverFunction() {
+		return "OVER".equals(operator.id());
 	}
 
 	@Override
 	public String toString() {
 		return sql(addWithValue());
 	}
+	
 }

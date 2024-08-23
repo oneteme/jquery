@@ -1,11 +1,15 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.Objects;
 import java.util.function.Supplier;
+import java.util.stream.Stream;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
+import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.NonNull;
 
@@ -15,7 +19,7 @@ import lombok.NonNull;
  *
  */
 @FunctionalInterface
-public interface DBColumn extends DBObject, NestedSql {
+public interface DBColumn extends DBObject, Typed, Groupable {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
@@ -29,47 +33,51 @@ public interface DBColumn extends DBObject, NestedSql {
 	default boolean isAggregation() {
 		return false;
 	}
-
-	default boolean isConstant() {
-		return false;
+	
+	@Override
+	default Stream<DBColumn> groupKeys() {
+		return Stream.of(this);
 	}
-
+	
+	default JDBCType getType() {
+		return null;
+	}
+	
 	default NamedColumn as(String name) {
-		return new NamedColumn(this, requireLegalVariable(name));
+		return new NamedColumn(this, Objects.isNull(name) ? null : requireLegalVariable(name));
 	}
 	
 	default DBOrder order() {
-		return order(null);
+		return new DBOrder(this);
 	}
 	
-	@Deprecated(forRemoval = false) //unsafe value
-	default DBOrder order(String order) {
+	default DBOrder order(Order order) {
 		return new DBOrder(this, order);
 	}
 
 	// filters
-	default ColumnSingleFilter equal(Object value) {
-		return filter(ComparisonExpression.equal(value));
+	default ColumnSingleFilter eq(Object value) {
+		return filter(ComparisonExpression.eq(value));
 	}
 
-	default ColumnSingleFilter notEqual(Object value) {
-		return filter(ComparisonExpression.notEqual(value));
+	default ColumnSingleFilter ne(Object value) {
+		return filter(ComparisonExpression.ne(value));
 	}
 
-	default ColumnSingleFilter greaterThan(Object value) {
-		return filter(ComparisonExpression.greaterThan(value));
+	default ColumnSingleFilter gt(Object value) {
+		return filter(ComparisonExpression.gt(value));
 	}
 
-	default ColumnSingleFilter greaterOrEqual(Object value) {
-		return filter(ComparisonExpression.greaterOrEqual(value));
+	default ColumnSingleFilter ge(Object value) {
+		return filter(ComparisonExpression.ge(value));
 	}
 
-	default ColumnSingleFilter lessThan(Object value) {
-		return filter(ComparisonExpression.lessThan(value));
+	default ColumnSingleFilter lt(Object value) {
+		return filter(ComparisonExpression.lt(value));
 	}
 
-	default ColumnSingleFilter lessOrEqual(Object value) {
-		return filter(ComparisonExpression.lessOrEqual(value));
+	default ColumnSingleFilter le(Object value) {
+		return filter(ComparisonExpression.le(value));
 	}
 
 	default ColumnSingleFilter like(Object value) {
@@ -113,37 +121,36 @@ public interface DBColumn extends DBObject, NestedSql {
 	// operations
 	
 	default OperationColumn plus(Object o) {
-		return DBArithmetic.plus().args(this, o);
+		return Operator.plus().operation(this, o);
 	}
 
 	default OperationColumn minus(Object o) {
-		return DBArithmetic.minus().args(this, o);
+		return Operator.minus().operation(this, o);
 	}
 
 	default OperationColumn multiply(Object o) {
-		return DBArithmetic.multiply().args(this, o);
+		return Operator.multiply().operation(this, o);
 	}
 
-	default OperationColumn divise(Object o) {
-		return DBArithmetic.divise().args(this, o);
+	default OperationColumn divide(Object o) {
+		return Operator.divide().operation(this, o);
 	}
 	
-	default OperationColumn mode(Object o) {
-		return DBArithmetic.mode().args(this, o);
-	}
-
-	default OperationColumn pow(Object o) {
-		return DBArithmetic.pow().args(this, o);
-	}
-
 	default WhenFilterBridge when(ComparisonExpression ex) {
 		return new CaseSingleColumnBuilder(this).when(ex);
 	}
 	
 	static DBColumn column(@NonNull String value) {
-		return p-> value;
+		return b-> value;
 	}
 
+	static TaggableColumn allColumns(@NonNull DBView view) {
+		 return ((DBColumn) b-> {
+			b.view(view);
+			return "*"; //avoid view.* as ""
+		}).as(null);
+	}
+	
 	static DBColumn constant(Object value) {
 		return constant(()-> value);
 	}
@@ -153,85 +160,80 @@ public interface DBColumn extends DBObject, NestedSql {
 			
 			@Override
 			public String sql(QueryParameterBuilder arg) {
-				return arg.formatValue(value.get());
+				return formatValue(value.get()); //lazy 
 			}
 			
 			@Override
-			public boolean isConstant() {
-				return true;
+			public Stream<DBColumn> groupKeys() {
+				return Stream.empty();
 			}
 		};
 	}
-	
-	static boolean isColumnConstant(Object o) {
-		return !(o instanceof DBColumn) || ((DBColumn)o).isConstant();
-	}
-	
 
 	static OperationColumn count() {
 		return count(column("*"));
 	}
 
 	static OperationColumn count(Object arg) {
-		return DBFunction.count().args(arg);
+		return Operator.count().operation(arg);
 	}
 
 	static OperationColumn min(Object arg) {
-		return DBFunction.min().args(arg);
+		return Operator.min().operation(arg);
 	}
 
 	static OperationColumn max(Object arg) {
-		return DBFunction.max().args(arg);
+		return Operator.max().operation(arg);
 	}
 
 	static OperationColumn sum(Object arg) {
-		return DBFunction.sum().args(arg);
+		return Operator.sum().operation(arg);
 	}
 	
 	static OperationColumn avg(Object arg) {
-		return DBFunction.avg().args(arg);
+		return Operator.avg().operation(arg);
 	}
 	
 	//numeric
 	
 	static OperationColumn abs(Object arg) {
-		return DBFunction.abs().args(arg);
+		return Operator.abs().operation(arg);
 	}
 	
 	static OperationColumn sqrt(Object arg) {
-		return DBFunction.sqrt().args(arg);
+		return Operator.sqrt().operation(arg);
 	}
 
 	static OperationColumn trunc(Object arg) {
-		return DBFunction.trunc().args(arg);
+		return Operator.trunc().operation(arg);
 	}
 
 	static OperationColumn ceil(Object arg) {
-		return DBFunction.ceil().args(arg);
+		return Operator.ceil().operation(arg);
 	}
 
 	static OperationColumn floor(Object arg) {
-		return DBFunction.floor().args(arg);
+		return Operator.floor().operation(arg);
 	}
 	
 	//string
 	static OperationColumn trim(Object arg) {
-		return DBFunction.trim().args(arg);
+		return Operator.trim().operation(arg);
 	}
 
 	static OperationColumn length(Object arg) {
-		return DBFunction.length().args(arg);
+		return Operator.length().operation(arg);
 	}
 
 	static OperationColumn upper(Object arg) {
-		return DBFunction.upper().args(arg);
+		return Operator.upper().operation(arg);
 	}
 
 	static OperationColumn lower(Object arg) {
-		return DBFunction.lower().args(arg);
+		return Operator.lower().operation(arg);
 	}
 	
 	static OperationColumn substring(Object arg, int start, int length) {
-		return DBFunction.substring().args(arg, start, length);
+		return Operator.substring().operation(arg, start, length);
 	}
 }

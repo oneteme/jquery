@@ -1,8 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Validation.requireNArgs;
-
-import java.util.function.IntFunction;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 /**
  * 
@@ -10,28 +8,26 @@ import java.util.function.IntFunction;
  *
  */
 @FunctionalInterface
-public interface CastFunction extends DBFunction {
+public interface CastFunction extends FunctionOperator {
 
 	String asType();
 	
 	@Override
-	default String name() {
+	default String id() {
 		return "CAST";
 	}
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args, IntFunction<SQLType> indexedType) {
-		var n = "VARCHAR".equals(asType()) ? 2 : 1; //require length
-		requireNArgs(n, args, ()-> name() + "." + asType());
-		return new SqlStringBuilder(name())
-		.append("(").append(builder.appendLitteral(args[0], indexedType.apply(0))).append(" AS ").append(asType())
-		.appendIf(n == 2, ()-> "(" + builder.appendLitteral(args[1], indexedType.apply(1))+ ")")
-		.append(")")
-		.toString();
+	default String sql(QueryParameterBuilder builder, Object[] args) {
+		requireAtLeastNArgs(1, args, ()-> id() + "_AS_" + asType());
+		var sb = new SqlStringBuilder(id())
+				.append("(")
+				.append(builder.appendLiteral(args[0])).append(" AS ").append(asType());
+		if(args.length > 1) {
+			sb.append("(")
+			.append(builder.appendLiteralArray(args, 1))
+			.append(")");
+		}
+		return sb.append(")").toString();
 	}
-
-	static CastFunction castFunction(String type) {
-		return ()-> type;
-	}
-	
 }

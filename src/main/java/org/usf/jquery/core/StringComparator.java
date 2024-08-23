@@ -9,18 +9,15 @@ import static org.usf.jquery.core.Validation.requireNArgs;
  *
  */
 @FunctionalInterface
-public interface StringComparator extends DBComparator {
+public interface StringComparator extends Comparator {
 	
-	String name();
-
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNArgs(2, args, String.class::getSimpleName);
-		return builder.appendString(args[0]) + space(name()) + builder.appendString(args[1]);
-	}
-
-	static StringComparator stringComparator(final String name) {
-		return ()-> name;
+		requireNArgs(2, args, StringComparator.class::getSimpleName);
+		return builder.appendParameter(args[0]) + space(id()) + builder.appendParameter(wildcardArg(args[1]));
 	}
 	
+	default Object wildcardArg(Object o) {
+		return o;
+	}
 }

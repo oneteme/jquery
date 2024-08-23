@@ -6,10 +6,6 @@ package org.usf.jquery.core;
  *
  */
 @FunctionalInterface
-public interface WindowFunction extends DBFunction {
-	
-	static WindowFunction windowFunction(String name) {
-		return ()-> name;
-	}
+public interface WindowFunction extends FunctionOperator {
 	
 }

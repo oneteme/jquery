@@ -1,21 +1,25 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
+import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import static org.usf.jquery.core.Database.TERADATA;
+import static org.usf.jquery.core.Database.currentDatabase;
+import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
-import java.util.stream.Stream;
+import java.util.Map;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -29,47 +33,42 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 public class RequestQueryBuilder {
-
-	private final List<TaggableColumn> columns = new LinkedList<>();
-	private final List<TaggableView> tables = new LinkedList<>();
-	private final List<DBFilter> filters = new LinkedList<>();  //WERE & HAVING
-	private final List<DBOrder> orders = new LinkedList<>();
+	
+	private final List<TaggableColumn> columns = new ArrayList<>();
+	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING
+	private final List<DBOrder> orders = new ArrayList<>();
+	private final List<ViewJoin> joins = new ArrayList<>(); 
+	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private Iterator<?> it;
 	private boolean distinct;
+	private Integer fetch;
+	private Integer offset;
 	
-	public RequestQueryBuilder select(TaggableView table, TaggableColumn... columns) {
-		return tables(table).columns(columns);
+	public RequestQueryBuilder() {
+		this(null);
 	}
 	
-	public RequestQueryBuilder distinct() {
-		distinct = true;
-		return this;
-	}
-
-	public RequestQueryBuilder tables(@NonNull TaggableView... tables) {
-		Stream.of(tables).forEach(this.tables::add);
-		return this;
-	}
-	
-	public RequestQueryBuilder tablesIfAbsent(@NonNull TaggableView... tables) {
-		Stream.of(tables)
-		.filter(v-> this.tables.stream().noneMatch(t-> t.tagname().equals(v.tagname())))
-		.forEach(this.tables::add);
-		return this;
+	public RequestQueryBuilder(Database target) {
+		setCurrentDatabase(target);
 	}
 	
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
-		Stream.of(columns).forEach(this.columns::add);
+		addAll(this.columns, columns);
 		return this;
 	}
 
 	public RequestQueryBuilder filters(@NonNull DBFilter... filters){
-		Stream.of(filters).forEach(this.filters::add);
+		addAll(this.filters, filters);
 		return this;
 	}
 	
 	public RequestQueryBuilder orders(@NonNull DBOrder... orders) {
-		Stream.of(orders).forEach(this.orders::add);
+		addAll(this.orders, orders);
+		return this;
+	}
+
+	public RequestQueryBuilder joins(@NonNull ViewJoin... joins) {
+		addAll(this.joins, joins);
 		return this;
 	}
 	
@@ -77,43 +76,92 @@ public class RequestQueryBuilder {
 		this.it = it;
 		return this;
 	}
+	
+	public RequestQueryBuilder fetch(int fetch) {
+		this.fetch = fetch;
+		return this;
+	}
+	
+	public RequestQueryBuilder offset(int offset) {
+		this.offset = offset;
+		return this;
+	}
+	
+	public RequestQueryBuilder distinct() {
+		distinct = true;
+		return this;
+	}
+	
+	public RequestQueryBuilder overViews(Map<DBView, QueryView> overs) {
+		overView.putAll(overs);
+		return this;
+	}
+	
+	public QueryView asView() {
+		return new QueryView(this);
+	}
 
 	public RequestQuery build(){
 		return build(null);
 	}
 
 	public RequestQuery build(String schema) {
-		log.debug("building query...");
-		requireNonEmpty(tables);
-    	requireNonEmpty(columns);
+		log.trace("building query...");
+    	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
-		var pb = parametrized();
+		var pb = parametrized(schema, overView); //over clause
 		var sb = new SqlStringBuilder(1000); //avg
-		pb.tables(tables.stream().map(TaggableView::tagname).toArray(String[]::new));
 		if(isNull(it)) {
-			build(sb, pb, schema);
+			build(sb, pb);
 		}
 		else {
-			sb.forEach(it, " UNION ALL ", o-> build(sb, pb, schema));
+			sb.forEach(it, " UNION ALL ", o-> build(sb, pb));
 		}
-		log.debug("query built in {} ms", currentTimeMillis() - bg);
-		return new RequestQuery(sb.toString(), pb.args());
+		log.trace("query built in {} ms", currentTimeMillis() - bg);
+		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
 	}
 
-	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb, String schema){
-    	select(sb, pb, schema);
-    	where(sb, pb);
-    	groupBy(sb);
-    	having(sb, pb);
-    	orderBy(sb, pb);
+	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
+		var sub = new SqlStringBuilder(100);
+		join(sub, pb);
+    	where(sub, pb);
+    	groupBy(sub, pb);
+    	having(sub, pb);
+    	orderBy(sub, pb);
+    	fetch(sub);
+    	select(sb, pb);
+		from(sb, pb); //enumerate all view before from clause
+		sb.append(sub.toString()); //TODO optim
 	}
 
-	void select(SqlStringBuilder sb, QueryParameterBuilder pb, String schema){
-		sb.append("SELECT ")
-    	.appendIf(distinct, ()-> "DISTINCT ")
-    	.appendEach(columns, SCOMA, o-> o.sql(pb) + " AS " + doubleQuote(o.tagname()))
-    	.append(" FROM ")
-    	.appendEach(tables, SCOMA, o-> o.sql(pb, schema) + SPACE + pb.tableAlias(o.tagname()));
+	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
+		if(currentDatabase() == TERADATA) {
+			if(nonNull(offset)) {
+				throw new UnsupportedOperationException("");
+			}
+			if(distinct && nonNull(fetch)) {
+				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
+			}
+		}
+		sb.append("SELECT")
+    	.appendIf(distinct, " DISTINCT")
+    	.appendIf(nonNull(fetch) && currentDatabase() == TERADATA, ()-> " TOP " + fetch) //???????
+    	.append(SPACE)
+    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb));
+	}
+	
+	void from(SqlStringBuilder sb, QueryParameterBuilder pb) {
+		var excludes = joins.stream().map(ViewJoin::getView).toList();
+		var views = pb.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
+		if(!views.isEmpty()) {
+			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(pb));
+		}
+	}
+	
+	void join(SqlStringBuilder sb, QueryParameterBuilder pb) {
+		if(!joins.isEmpty()) {
+			sb.append(SPACE).appendEach(joins, SPACE, v-> v.sql(pb));
+		}
 	}
 
 	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
@@ -126,18 +174,15 @@ public class RequestQueryBuilder {
     	}
 	}
 	
-	void groupBy(SqlStringBuilder sb){
-        if(isAggregation()) {
+	void groupBy(SqlStringBuilder sb, QueryParameterBuilder pb){
+        if(isAggregation()) { // also check filter
         	var expr = columns.stream()
-        			.filter(RequestQueryBuilder::groupable)
-        			.map(TaggableColumn::tagname) //add alias 
-        			.map(SqlStringBuilder::doubleQuote) //sql ??
+        			.filter(not(DBColumn::isAggregation))
+        			.flatMap(DBColumn::groupKeys)
+        			.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((TaggableColumn)c).tagname() : c.sql(pb)) //add alias 
         			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {
         		sb.append(" GROUP BY ").append(expr);
-        	}
-        	else if(columns.size() > 1) {
-        		//throw new RuntimeException("require groupBy columns"); CONST !?
         	}
         }
 	}
@@ -145,7 +190,7 @@ public class RequestQueryBuilder {
 	void having(SqlStringBuilder sb, QueryParameterBuilder pb){
 		var having = filters.stream()
 				.filter(DBFilter::isAggregation)
-				.collect(toList());
+				.toList();
     	if(!having.isEmpty()) {
     		sb.append(" HAVING ")
     		.appendEach(having, AND.sql(), f-> f.sql(pb));
@@ -159,12 +204,24 @@ public class RequestQueryBuilder {
     	}
 	}
 	
+	void fetch(SqlStringBuilder sb) {
+		if(currentDatabase() != TERADATA) { // TOP n
+			if(nonNull(offset)) {
+				sb.append(" OFFSET ").append(offset.toString()).append(" ROWS");
+			}
+			if(nonNull(fetch)) {
+				sb.append(" FETCH NEXT ").append(fetch.toString()).append(" ROWS ONLY");
+			}
+		}
+	}
+	
 	public boolean isAggregation() {
-		return columns.stream().anyMatch(DBColumn::isAggregation) ||
-				filters.stream().anyMatch(DBFilter::isAggregation);
+		return columns.stream().anyMatch(Nested::isAggregation) ||
+				filters.stream().anyMatch(Nested::isAggregation);
 	}
 
-	private static boolean groupable(DBColumn column) {
-		return !column.isAggregation() && !column.isConstant();
+	@Override
+	public String toString() {
+		return this.build().getQuery();
 	}
 }

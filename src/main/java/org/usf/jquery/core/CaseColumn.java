@@ -4,8 +4,9 @@ import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedList;
+import java.util.Objects;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -16,21 +17,25 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class CaseColumn implements DBColumn {
+public final class CaseColumn implements DBColumn { // TD override isAggregation
 
-	private final Collection<WhenExpression> expressions = new LinkedList<>();
+	private final Collection<WhenExpression> expressions = new ArrayList<>();
 	
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		builder.forceValue(true); //add filters as value
-		try {
-			return expressions.stream()
-			.map(o-> o.sql(builder))
-			.collect(joining(SPACE, "CASE ", " END"));
-		}
-		finally {
-			builder.forceValue(false);
-		}
+		var b = builder.withValue(); //force literal parameter
+		return expressions.stream() //empty !? 
+		.map(o-> o.sql(b))
+		.collect(joining(SPACE, "CASE ", " END"));
+	}
+	
+	@Override
+	public JDBCType getType() {
+		return expressions.stream()
+				.map(WhenExpression::getType)
+				.filter(Objects::nonNull) // should have same type
+				.findAny()
+				.orElse(null);
 	}
 		
 	public CaseColumn append(WhenExpression we) {

@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
 import static java.util.function.Function.identity;
 
 import java.util.Collection;
@@ -23,7 +24,7 @@ public final class SqlStringBuilder {
 	static final String SCOMA  = COMA + SPACE;
 	
 	private final StringBuilder sb;
-
+	
 	public SqlStringBuilder(int capacity) {
 		this.sb = new StringBuilder(capacity);
 	}
@@ -43,6 +44,10 @@ public final class SqlStringBuilder {
 	public SqlStringBuilder appendIf(boolean condition, Supplier<String> sup, Supplier<String> orSup) {
 		return append(condition ? sup.get() : orSup.get());
 	}
+	
+	public SqlStringBuilder appendIf(boolean condition, String sup, String orElse) {
+		return append(condition ? sup : orElse);
+	}
 
 	public SqlStringBuilder appendEach(Collection<String> list, String separator) {
 		return appendEach(list, separator, EMPTY, identity());
@@ -55,10 +60,10 @@ public final class SqlStringBuilder {
 	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, String prefix, Function<T, String> fn) {
 		if(!list.isEmpty()) {
 			var it = list.iterator();
-			this.sb.append(prefix).append(fn.apply(it.next()));
+			append(prefix).append(fn.apply(it.next()));
 			var before = separator + prefix;
 			while(it.hasNext()) {
-				this.sb.append(before).append(fn.apply(it.next()));
+				append(before).append(fn.apply(it.next()));
 			}
 		}
 		return this;
@@ -68,7 +73,7 @@ public final class SqlStringBuilder {
 		if(it.hasNext()) {
 			cons.accept(it.next());
 			while(it.hasNext()) {
-				this.sb.append(separator);
+				append(separator);
 				cons.accept(it.next());
 			}
 		} 
@@ -78,6 +83,10 @@ public final class SqlStringBuilder {
 	public SqlStringBuilder append(String s) {
 		sb.append(s);
 		return this;
+	}
+	
+	public int length(){
+		return sb.length();
 	}
 	
 	@Override
@@ -102,6 +111,6 @@ public final class SqlStringBuilder {
 	}
 
 	public static String member(String parent, String child) { 
-		return parent + "." + child;
+		return isNull(parent) ? child : parent + "." + child;
 	}
 }

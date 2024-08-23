@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 
 import java.util.Collection;
 import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -16,15 +17,19 @@ import lombok.NoArgsConstructor;
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Validation {
-	
-	public static final String VARIABLE_PATTERN = "[a-zA-Z]\\w*";
-    
-    public static String requireLegalVariable(String s) {
-    	illegalArgumentIf(isNull(s) || !s.matches(VARIABLE_PATTERN), ()-> "illegal variable name : " + s);
+
+	public static final String VAR_PATTERN = "[a-zA-Z]\\w*";
+
+	public static String requireLegalVariable(String s) {
+		return requireLegalVariable(s, v-> "illegal variable name : " + v);
+	}
+
+	public static String requireLegalVariable(String s, UnaryOperator<String> msg) {
+		illegalArgumentIf(isNull(s) || !s.matches(VAR_PATTERN), ()-> msg.apply(s));
 		return s;
 	}
-	
-    public static String requireNonBlank(String s) {
+
+	public static String requireNonBlank(String s) {
 		illegalArgumentIf(isNull(s) || s.isBlank(), "empty string");
 		return s;
 	}
@@ -33,9 +38,9 @@ public final class Validation {
 		illegalArgumentIf(isNull(arr) || arr.length == 0, "empty array");
 		return arr;
 	}
-	
-	public static <T> Collection<T> requireNonEmpty(Collection<T> c){
-		illegalArgumentIf(isNull(c) || c.isEmpty(), "empty collection");
+
+	public static <T> Collection<T> requireNonEmpty(Collection<T> c, String name){
+		illegalArgumentIf(isNull(c) || c.isEmpty(), name + " is empty");
 		return c;
 	}
 
@@ -53,7 +58,7 @@ public final class Validation {
 		illegalArgumentIf(isNull(args) || args.length < n, ()-> name.get() + " takes at least " + n + " parameters");
 		return args;
 	}
-	
+
 	public static <T> T[] requireAtMostNArgs(int n, T[] args, Supplier<String> name) {
 		illegalArgumentIf(nonNull(args) && args.length > n, ()-> name.get() + " takes at most" + n + " parameters");
 		return args;

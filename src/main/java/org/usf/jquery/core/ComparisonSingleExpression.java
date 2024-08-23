@@ -1,12 +1,11 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.DBColumn.column;
-import static org.usf.jquery.core.NestedSql.aggregation;
+import static java.util.Collections.addAll;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.QueryParameterBuilder.streamArray;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,27 +18,22 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ComparisonSingleExpression implements ComparisonExpression {
 
-	private final DBComparator comparator;
-	private final Object right; //null|array|any
+	private final Comparator comparator;
+	private final Object[] right; //nullable
 	
 	@Override
 	public String sql(QueryParameterBuilder builder, Object left) {
-		var param = new LinkedList<>();
+		var param = new ArrayList<>();
 		param.add(left);
-		if(right != null) {
-			if(right.getClass().isArray()) {
-				streamArray(right).forEach(param::add);
-			}
-			else {
-				param.add(right);
-			}
+		if(nonNull(right)) {
+			addAll(param, right);
 		}
 		return comparator.sql(builder, param.toArray());
 	}
 	
 	@Override
 	public boolean isAggregation() {
-		return aggregation(right);
+		return nonNull(right) && Stream.of(right).anyMatch(Nested::aggregation);
 	}
 	
 	@Override
@@ -49,6 +43,6 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	@Override
 	public String toString() {
-		return sql(addWithValue(), column("<left>"));
-	}
+		return sql(addWithValue(), "<left>");
+	}	
 }
