@@ -1,12 +1,12 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.JoinType.FULL;
+import static org.usf.jquery.core.JoinType.INNER;
+import static org.usf.jquery.core.JoinType.LEFT;
+import static org.usf.jquery.core.JoinType.RIGHT;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.Validation.requireNoArgs;
-import static org.usf.jquery.core.ViewJoin.JoinType.FULL;
-import static org.usf.jquery.core.ViewJoin.JoinType.INNER;
-import static org.usf.jquery.core.ViewJoin.JoinType.LEFT;
-import static org.usf.jquery.core.ViewJoin.JoinType.RIGHT;
 
 import java.util.stream.Stream;
 
@@ -56,10 +56,5 @@ public class ViewJoin implements DBObject {
 	
 	public static ViewJoin join(JoinType jt, DBView view, DBFilter... filters) {
 		return new ViewJoin(jt, view, filters);
-	}
-	
-	public enum JoinType {
-
-		INNER, LEFT, RIGHT, FULL;
 	}
 }

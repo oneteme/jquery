@@ -12,7 +12,7 @@ interface ArithmeticOperator extends Operator {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireNArgs(2, args, ArithmeticOperator.class::getSimpleName);
+		requireNArgs(2, args, ArithmeticException.class::getSimpleName);
 		return "(" + builder.appendLiteral(args[0]) + id() + builder.appendLiteral(args[1]) + ")";
 	}
 }

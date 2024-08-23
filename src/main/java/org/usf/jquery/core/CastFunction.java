@@ -19,7 +19,7 @@ public interface CastFunction extends FunctionOperator {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireAtLeastNArgs(1, args, ()-> id() + "_AS_" + asType());
+		requireAtLeastNArgs(1, args, CastFunction.class::getSimpleName);
 		var sb = new SqlStringBuilder(id())
 				.append("(")
 				.append(builder.appendLiteral(args[0])).append(" AS ").append(asType());
