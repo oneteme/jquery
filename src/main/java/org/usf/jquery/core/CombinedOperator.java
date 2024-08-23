@@ -13,10 +13,10 @@ public interface CombinedOperator extends Operator {
 	@Override
 	default OperationColumn args(JDBCType type, Object... args) {
 		var c = args(args);
-		if(c.getType() == type) {
+		if(type == c.getType()) {
 			return c;
 		}
-		throw new IllegalStateException("mismatch type : " + type);
+		throw new IllegalStateException("type mismatch : " + type);
 	}
 
 	@Override
