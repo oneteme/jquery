@@ -36,7 +36,6 @@ public final class ColumnMetadata {
 	private int precision;
 	private final boolean overConfigured;
 	
-	@Deprecated
 	ColumnMetadata reset() {
 		if(!overConfigured) {
 			this.type = null;

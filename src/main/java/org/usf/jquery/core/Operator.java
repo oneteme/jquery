@@ -29,10 +29,6 @@ public interface Operator extends DBProcessor {
 	
 	String id(); //nullable
 
-	default OperationColumn args(Object... args) {
-		return args(null, args); // no type
-	}
-
 	default OperationColumn args(JDBCType type, Object... args) {
 		return new OperationColumn(this, args, type);
 	}

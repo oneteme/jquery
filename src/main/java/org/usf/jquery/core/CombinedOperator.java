@@ -7,8 +7,16 @@ package org.usf.jquery.core;
  */
 public interface CombinedOperator extends Operator {
 	
-	@Override
 	OperationColumn args(Object... args);
+	
+	@Override
+	default OperationColumn args(JDBCType type, Object... args) {
+		var c = args(args);
+		if(c.getType() == type) {
+			return c;
+		}
+		throw new IllegalStateException("mismatch type : " + type);
+	}
 
 	@Override
 	default String id() {

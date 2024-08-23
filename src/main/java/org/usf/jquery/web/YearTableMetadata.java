@@ -13,8 +13,6 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.core.JDBCType.OTHER;
-import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.YearViewDecorator.EMPTY_REVISION;
 
@@ -143,14 +141,14 @@ public final class YearTableMetadata extends ViewMetadata {
 				this.revisions = EMPTY_REVISION; 
 			}
 		}
+		logRevisions();
 	}
 	
-	@Deprecated
-	static void logRevisions(YearMonth[] revs) {
-		if(!isEmpty(revs)) {
+	void logRevisions() {
+		if(!isEmpty(revisions)) {
 			var pattern = "|%-5s|%-40s|";
 			var bar = format(pattern, "", "").replace("|", "+").replace(" ", "-");
-			var map = Stream.of(revs).collect(groupingBy(YearMonth::getYear));
+			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
 			log.info(bar);
 			log.info(format(pattern, "YEAR", "MONTHS"));
 			log.info(bar);
