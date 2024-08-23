@@ -5,8 +5,9 @@ import static java.util.Objects.isNull;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Validation.VAR_PATTERN;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Supplier;
 
 /**
  * 
@@ -27,74 +28,86 @@ public final class RequestParser {
 	}
 
 	public static RequestEntryChain parseEntry(String s) {
-		return new RequestParser(s).parseEntry(false, false);
+		return new RequestParser(s).parseEntry();
 	}
 	
 	public static List<RequestEntryChain> parseEntries(String s) {
-		return new RequestParser(s).parseEntries(true, false);
+		return new RequestParser(s).parseEntries(false);
 	}
 	
 	public static List<RequestEntryChain> parseArgs(String s) {
-		return new RequestParser(s).parseEntries(true, true);
+		return new RequestParser(s).parseEntries(false);
 	}
 	
-	private List<RequestEntryChain> parseEntries(boolean multiple, boolean argument) {
-		var entries = new LinkedList<RequestEntryChain>();
-		entries.add(parseEntry(multiple, argument));
+	private List<RequestEntryChain> parseEntries(boolean inner) {
+		var entries = new ArrayList<RequestEntryChain>();
+		entries.add(parseEntry(true));
 		while(c == ',') {
-			nextChar(!argument);
-			entries.add(parseEntry(multiple, argument));
-		}
-		return entries.size() == 1 && isNull(entries.get(0).getValue()) //avoid () => (null)
-				? emptyList()
-				: entries;
-	}
-
-	private RequestEntryChain parseEntry(boolean multiple, boolean argument) {
-		var entry = argument 
-				? nextEntry() 
-				: new RequestEntryChain(requireLegalVariable(nextVar()));
-		if(c == '(') { //operator
 			nextChar(true);
-			entry.setArgs(parseEntries(true, true)); // no args | null
-			requireChar(')'); //nextChar
-			nextChar(false);
+			entries.add(parseEntry(true));
 		}
-		if(c == '.') {
-			nextChar(true);
-			entry.setNext(parseEntry(multiple, argument));
-		}
-		if(c == ':' && !argument) {
-			nextChar(true);
-			entry.setTag(requireLegalVariable(nextVar()));
-		}
-		if((idx == size && c == 0) || (c == ',' && multiple) || (c == ')' && argument)) {
-			return entry;
+		if((idx == size && c == 0) || (inner && c == ')')) {
+			return entries.size() == 1 && isNull(entries.get(0).getValue()) //avoid () => (null)
+					? emptyList()
+					: entries;
 		}
 		throw unexpectedCharException();
 	}
 
-	private RequestEntryChain nextEntry() {
-		var from = idx;
-		if(c == '"') {
-			nextChar(true);
-			nextWhile(RequestParser::legalTxtChar); //accept any
-			requireChar('"'); //nextChar
-			nextChar(false);
-			return new RequestEntryChain(s.substring(from+1, idx-1), true);
+	private RequestEntryChain parseEntry() {
+		var e = parseEntry(true);
+		if(idx == size && c == 0) {
+			return e;
 		}
-		var v = nextVar(); //to optim
-		if((idx == size || s.charAt(idx) == '.' || !legalValChar(c)) && v.matches(VAR_PATTERN)) {
-			return new RequestEntryChain(v);
+		throw unexpectedCharException();
+	}
+
+	private RequestEntryChain parseEntry(boolean txt) {
+		RequestEntryChain entry = null;
+		if(c == '"') {
+			if(txt) {
+				nextChar(true);
+				var from = idx;
+				nextWhile(RequestParser::legalTxtChar); //accept any
+				requireChar('"'); //nextChar
+				entry = new RequestEntryChain(s.substring(from, idx), true); //no next, no args, no tag
+				nextChar(false);
+			}
+		}
+		else {
+			entry = new RequestEntryChain(nextVal());
+			if(c == '(') { //operator
+				nextChar(true);
+				entry.setArgs(parseEntries(true)); // no args | null
+				requireChar(')'); //nextChar
+				nextChar(false);
+			}
+			if(c == '.') {
+				nextChar(true);
+				entry.setNext(parseEntry(false));
+			}
+			if(c == ':') {
+				nextChar(true);
+				entry.setTag(requireLegalVariable(nextVar().get()));
+			}
+		}
+		return entry;
+	}
+
+	private String nextVal() {
+		var from = idx;
+		var v = nextVar();
+		if((idx == size || c == '.') && legalLetter(s.charAt(from))) { //^[a-zA-Z]
+			return v.get();
 		}
 		nextWhile(RequestParser::legalValChar);
-		return new RequestEntryChain(from == idx ? null : s.substring(from, idx)); // empty => null
+		return from == idx ? null : s.substring(from, idx); // empty => null
 	}
 	
-	private String nextVar() {
+	private Supplier<String> nextVar() {
 		var from = idx;
 		nextWhile(RequestParser::legalVarChar);
-		return s.substring(from, idx); 
+		return ()-> s.substring(from, idx); 
 	}
 
 	private void nextWhile(CharPredicate cp) {
@@ -125,7 +138,7 @@ public final class RequestParser {
 		}
 		throw s.isEmpty() && idx < size 
 			? unexpectedCharException() 
-			: new EntryParseException("illegal variable name : " + quote(s));
+			: new EntryParseException("illegal identifier : " + quote(s));
 	}
 	
 	private EntryParseException unexpectedCharException() {
@@ -145,7 +158,11 @@ public final class RequestParser {
 	}
 
 	private static boolean legalVarChar(char c) {
-		return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z' ) || (c >= '0' && c <= '9') || c == '_';
+		return legalLetter(c) || (c >= '0' && c <= '9') || c == '_';
+	}
+	
+	private static boolean legalLetter(char c){
+		return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z' );
 	}
 	
 	@FunctionalInterface
