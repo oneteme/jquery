@@ -36,14 +36,12 @@ import org.usf.jquery.core.TaggableColumn;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
-@Slf4j
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ContextEnvironment {
@@ -115,16 +113,18 @@ public final class ContextEnvironment {
 	
 	ContextEnvironment bind() {
 		if(nonNull(dataSource)) {
-			for(var v : views.values()) {
-				var meta = requireNonNull(v.metadata(), v.identity() + ".metadata");
-				synchronized(meta) {
-					try(var cnx = dataSource.getConnection()) {
-						meta.fetch(cnx.getMetaData(), schema);
-					}
-					catch(SQLException | JQueryException e) {
-						log.error("error while scanning '{}' metadata", v.identity(), e);
+			try(var cnx = dataSource.getConnection()) {
+				var cm = cnx.getMetaData();
+				metadata.fetch(cm);
+				for(var v : views.values()) {
+					var meta = requireNonNull(v.metadata(), v.identity() + ".metadata");
+					synchronized(meta) {
+						meta.fetch(cm, schema);
 					}
 				}
+			}
+			catch (SQLException e) {
+				throw new JQueryException(e);
 			}
 		}
 		return this;

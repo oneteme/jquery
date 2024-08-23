@@ -52,17 +52,22 @@ public class ViewMetadata {
 	
 	final ViewMetadata fetch(DatabaseMetaData metadata, String schema) throws SQLException {
 		if(!isEmpty(columns)) {
-			var time = currentTimeMillis();
-			log.info("scanning view '{}' metadata...", view);
-			if(view instanceof TableView tab) {
-				fetchView(metadata, tab, schema);
+			try {
+				var time = currentTimeMillis();
+				log.info("scanning view '{}' metadata...", view);
+				if(view instanceof TableView tab) {
+					fetchView(metadata, tab, schema);
+				}
+				else {
+					fetch(metadata, view, schema);
+				}
+				lastUpdate = now();
+				log.trace("'{}' metadata scanned in {} ms", view, currentTimeMillis() - time);
+				printViewColumnMap();
 			}
-			else {
-				fetch(metadata, view, schema);
+			catch(Exception e) {
+				log.error("error while scanning '{}' metadata", identity(), e);
 			}
-			lastUpdate = now();
-			log.trace("'{}' metadata scanned in {} ms", view, currentTimeMillis() - time);
-			printViewColumnMap();
 		}
 		else {
 			log.warn("'{}' has no declared columns", view);

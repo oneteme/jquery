@@ -64,11 +64,11 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 	
 	@Override
-	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
-		var query = ViewDecorator.super.query(parameterMap);
+	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameterMap) {
 		ofNullable(monthRevision()).map(this::column)
 		.ifPresent(c-> query.filters(monthFilter(c)));
-		return query.repeat(iterator(parseRevisions(parameterMap)));
+		query.repeat(iterator(parseRevisions(parameterMap)));
+		ViewDecorator.super.parseFilters(query, parameterMap);
 	}
 
 	default YearMonth[] parseRevisions(Map<String, String[]> parameterMap) {
@@ -170,11 +170,10 @@ public interface YearViewDecorator extends ViewDecorator {
 
     @Override
     default YearTableMetadata metadata() {
-		return (YearTableMetadata) currentContext().computeTableMetadata(this, cols->{
-			return new YearTableMetadata(view(), 
-					ofNullable(monthRevision()).map(this::columnName).orElse(null), 
-					declaredColumns(this, cols));
-		}); //safe cast
+		return (YearTableMetadata) currentContext().computeTableMetadata(this, cols-> new YearTableMetadata(view(), 
+						ofNullable(monthRevision())
+						.map(this::columnName).orElse(null), 
+						declaredColumns(this, cols))); //safe cast
     }
     
     default String defaultRevisionMode() {

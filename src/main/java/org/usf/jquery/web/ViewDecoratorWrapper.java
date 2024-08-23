@@ -40,5 +40,4 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	public JoinBuilder joiner(String name) {
 		return view.joiner(name);
 	}
-	
 }
