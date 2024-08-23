@@ -5,6 +5,7 @@ package org.usf.jquery.core;
  * @author u$f
  *
  */
+@FunctionalInterface
 public interface CombinedOperator extends Operator {
 	
 	OperationColumn args(Object... args);
