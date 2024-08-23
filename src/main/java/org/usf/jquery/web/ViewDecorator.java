@@ -24,6 +24,7 @@ import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
 import static org.usf.jquery.web.ResourceAccessException.undeclaredResouceException;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
@@ -91,11 +92,15 @@ public interface ViewDecorator {
 
 	default ViewMetadata metadata() {
 		var view = requireNonNull(builder(), identity() + ".builder").build();
-		return currentContext().computeTableMetadata(this, cols-> new ViewMetadata(view, 
-				cols.stream().<Entry<String,ColumnMetadata>>mapMulti((cd, acc)-> ofNullable(columnName(cd))
-						.map(cn-> entry(cd.identity(), columnMetadata(cn, cd.type(this))))
+		return currentContext().computeTableMetadata(this, cols-> 
+			new ViewMetadata(view, declaredColumns(this, cols)));
+	}
+	
+	static Map<String, ColumnMetadata> declaredColumns(ViewDecorator vd, Collection<ColumnDecorator> cols){
+		return cols.stream().<Entry<String,ColumnMetadata>>mapMulti((cd, acc)-> ofNullable(vd.columnName(cd))
+						.map(cn-> entry(cd.identity(), columnMetadata(cn, cd.type(vd))))
 						.ifPresent(acc)) //view column only
-				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue))));
+				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue));
 	}
 	
 	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {

@@ -97,8 +97,7 @@ public enum JDBCType implements JavaType {
 	
 	public static Optional<JDBCType> typeOf(Object o) {
 		if(o instanceof Typed to) {
-			var type = to.getType();
-			return type instanceof JDBCType jType ? Optional.of(jType) : empty();
+			return Optional.of(to.getType());
 		}
 		return Optional.of(o).flatMap(v-> findType(e-> e.typeClass().isInstance(o)));
 	}

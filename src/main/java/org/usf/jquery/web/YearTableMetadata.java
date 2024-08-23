@@ -16,7 +16,7 @@ import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.JDBCType.OTHER;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.Constants.EMPTY_REVISION;
+import static org.usf.jquery.web.YearViewDecorator.EMPTY_REVISION;
 
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
@@ -33,7 +33,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.DBQuery;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.TableView;
 
@@ -55,7 +54,7 @@ public final class YearTableMetadata extends ViewMetadata {
 	@Getter
 	private YearMonth[] revisions;
 	
-	private YearTableMetadata(DBView view, String revisionColumn, Map<String, ColumnMetadata> columns) {
+	YearTableMetadata(DBView view, String revisionColumn, Map<String, ColumnMetadata> columns) {
 		super(view, columns);
 		this.revisionColumn = revisionColumn;
 		this.revisions = EMPTY_REVISION;  //by default avoid NullPointerException
@@ -81,14 +80,16 @@ public final class YearTableMetadata extends ViewMetadata {
 				if(nonNull(cm) && tn.matches(view.getName() + "_20\\d{2}")) {// untyped SQL pattern
 					tablenames.add(tn);
 					columnTables.computeIfAbsent(cm.getName(), k-> new LinkedHashSet<>()).add(tn);
-					var type = rs.getInt("DATA_TYPE");
-					var size = rs.getInt("COLUMN_SIZE");
-					if(isNull(cm.getType())) { //first time
-						cm.setDataType(typeOf(type).orElse(OTHER));
-						cm.setDataSize(size);
-					}
-					else if(cm.getType().getValue() != type || cm.getDataSize() != size) {
-						dirtyColumns.add(cm.getName());
+					if(!cm.isOverConfigured()) {
+						var type = rs.getInt("DATA_TYPE");
+						var size = rs.getInt("COLUMN_SIZE");
+						var digt = rs.getInt("DECIMAL_DIGITS");
+						if(isNull(cm.getType())) { //first time
+							cm.update(type, size, digt);
+						}
+						else if(cm.getType().getValue() != type || cm.getDataSize() != size || cm.getPrecision() != digt) {
+							dirtyColumns.add(cm.getName());
+						}
 					}
 				}//else undeclared column
 			} while(rs.next());
@@ -107,7 +108,7 @@ public final class YearTableMetadata extends ViewMetadata {
 	}
 	
 	@Override
-	void fetch(DatabaseMetaData metadata, DBQuery qr) throws SQLException {
+	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
 		throw new UnsupportedOperationException("query");
 	}
 	
@@ -142,12 +143,6 @@ public final class YearTableMetadata extends ViewMetadata {
 				this.revisions = EMPTY_REVISION; 
 			}
 		}
-	}
-
-	static YearTableMetadata yearTableMetadata(YearViewDecorator table) {
-		return new YearTableMetadata(table.viewName(), 
-				table.monthRevision().map(table::columnName).orElse(null), 
-				table.declaredColumns());
 	}
 	
 	@Deprecated

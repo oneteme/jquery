@@ -15,6 +15,7 @@ import static org.usf.jquery.web.RevisionIterator.iterator;
 import static org.usf.jquery.web.RevisionIterator.monthFilter;
 import static org.usf.jquery.web.RevisionIterator.yearColumn;
 import static org.usf.jquery.web.RevisionIterator.yearTable;
+import static org.usf.jquery.web.ViewDecorator.declaredColumns;
 import static org.usf.jquery.web.ViewDecorator.flatParameters;
 
 import java.time.Year;
@@ -169,7 +170,11 @@ public interface YearViewDecorator extends ViewDecorator {
 
     @Override
     default YearTableMetadata metadata() {
-		return (YearTableMetadata) currentContext().computeTableMetadata(this, null); //safe cast
+		return (YearTableMetadata) currentContext().computeTableMetadata(this, cols->{
+			return new YearTableMetadata(view(), 
+					ofNullable(monthRevision()).map(this::columnName).orElse(null), 
+					declaredColumns(this, cols));
+		}); //safe cast
     }
     
     default String defaultRevisionMode() {
