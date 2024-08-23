@@ -9,7 +9,7 @@ import lombok.NoArgsConstructor;
  * 
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class Constants {
+public final class Parameters {
 
 	public static final String DATABASE = "database";
 	public static final String QUERY = "query";

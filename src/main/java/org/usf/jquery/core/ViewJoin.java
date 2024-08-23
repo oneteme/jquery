@@ -61,12 +61,5 @@ public class ViewJoin implements DBObject {
 	public enum JoinType {
 
 		INNER, LEFT, RIGHT, FULL;
-		
-		public static String pattern() {
-			return Stream.of(values())
-					.map(JoinType::name)
-					.map(String::toLowerCase)
-					.collect(joining("|"));
-		}
 	}
 }
