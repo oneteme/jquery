@@ -46,8 +46,8 @@ public final class RequestParser {
 			nextChar(true);
 			entries.add(parseEntry(true));
 		}
-		if((idx == size && c == 0) || (inner && c == ')')) {
-			return entries.size() == 1 && isNull(entries.get(0).getValue()) //avoid () => (null)
+		if(idx == size || (inner && c == ')')) {
+			return entries.size() == 1 && isNull(entries.get(0).getValue()) //check this
 					? emptyList()
 					: entries;
 		}
@@ -56,7 +56,7 @@ public final class RequestParser {
 
 	private RequestEntryChain parseEntry() {
 		var e = parseEntry(true);
-		if(idx == size && c == 0) {
+		if(idx == size) {
 			return e;
 		}
 		throw unexpectedCharException();
@@ -97,7 +97,7 @@ public final class RequestParser {
 	private String nextVal() {
 		var from = idx;
 		var v = nextVar();
-		if((idx == size || c == '.') && from > idx && legalLetter(s.charAt(from))) { //^[a-zA-Z]
+		if((idx == size || c == '.' || c == ':') && from<idx && legalLetter(s.charAt(from))) { //^[a-zA-Z]
 			return v.get();
 		} //!variable
 		nextWhile(RequestParser::legalValChar);
@@ -160,7 +160,7 @@ public final class RequestParser {
 	}
 	
 	private static boolean legalValChar(char c) {
-		return legalVarChar(c) || c == '.' || c == '-' || c == ':' || c == '+' || c == ' '; //double, instant
+		return legalVarChar(c) || c == '.' || c == '-' || c == ':' || c == '+' || c == ' '; //double, timestamp, 
 	}
 
 	private static boolean legalVarChar(char c) {
