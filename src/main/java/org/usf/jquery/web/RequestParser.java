@@ -147,12 +147,12 @@ public final class RequestParser {
 			: new EntryParseException("illegal identifier : " + quote(s));
 	}
 	
-	private EntryParseException unexpectedCharException() {
-		return new EntryParseException("unexpected character '" + c + "' at index=" + idx); //end
+	private EntrySyntaxException unexpectedCharException() {
+		return new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
 	}
 	
-	private EntryParseException somethingExpectedException() {
-		return new EntryParseException("something expected after '" + s.charAt(size-1) + "'");
+	private EntrySyntaxException somethingExpectedException() {
+		return new EntrySyntaxException("something expected after '" + s.charAt(size-1) + "'");
 	}
 	
 	private static boolean legalTxtChar(char c) { //avoid SQL injection & HTTP reserved symbol
