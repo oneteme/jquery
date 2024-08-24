@@ -17,7 +17,7 @@ import java.util.function.Supplier;
 public final class RequestParser {
 
 	private final String s;
-	private int size;
+	private final int size;
 	private int idx;
 	private char c;
 	
@@ -117,7 +117,7 @@ public final class RequestParser {
 		if(++idx < size) {
 			c = s.charAt(idx);
 		}
-		else if(idx == size) { //break condition
+		else if(idx == size) {
 			c = 0;
 			if(require) {
 				throw somethingExpectedException();
@@ -140,7 +140,7 @@ public final class RequestParser {
 		}
 		throw s.isEmpty() && idx < size 
 			? unexpectedCharException() 
-			: new EntryParseException("illegal identifier : " + quote(s));
+			: new EntrySyntaxException("illegal identifier : " + quote(s));
 	}
 	
 	private EntrySyntaxException unexpectedCharException() {
@@ -164,7 +164,7 @@ public final class RequestParser {
 	}
 	
 	private static boolean legalLetter(char c){
-		return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z' );
+		return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
 	}
 	
 	@FunctionalInterface
