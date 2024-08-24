@@ -97,9 +97,9 @@ public final class RequestParser {
 	private String nextVal() {
 		var from = idx;
 		var v = nextVar();
-		if((idx == size || c == '.') && legalLetter(s.charAt(from))) { //^[a-zA-Z]
+		if((idx == size || c == '.') && from > idx && legalLetter(s.charAt(from))) { //^[a-zA-Z]
 			return v.get();
-		}
+		} //!variable
 		nextWhile(RequestParser::legalValChar);
 		return from == idx ? null : s.substring(from, idx); // empty => null
 	}
@@ -111,18 +111,24 @@ public final class RequestParser {
 	}
 
 	private void nextWhile(CharPredicate cp) {
-		while(idx<size && cp.test(c=s.charAt(idx))) idx++;
-		c = idx == size ? 0 : s.charAt(idx);
+		while(idx<size && cp.test(c=s.charAt(idx))) ++idx;
+		if(idx == size) {
+			c = 0;
+		}
 	}
+	
 	private void nextChar(boolean require) {
 		if(++idx < size) {
 			c = s.charAt(idx);
 		}
-		else if(!require) { //break condition
+		else if(idx == size) { //break condition
 			c = 0;
+			if(require) {
+				throw somethingExpectedException();
+			}
 		}
 		else {
-			throw somethingExpectedException();
+			throw new IllegalStateException("idx>size");
 		}
 	}
 	
