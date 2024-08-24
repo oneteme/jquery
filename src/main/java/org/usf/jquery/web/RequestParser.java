@@ -35,10 +35,6 @@ public final class RequestParser {
 		return new RequestParser(s).parseEntries(false);
 	}
 	
-	public static List<RequestEntryChain> parseArgs(String s) {
-		return new RequestParser(s).parseEntries(false);
-	}
-	
 	private List<RequestEntryChain> parseEntries(boolean inner) {
 		var entries = new ArrayList<RequestEntryChain>();
 		entries.add(parseEntry(true));
@@ -100,7 +96,7 @@ public final class RequestParser {
 		if((idx == size || c == '.' || c == ':') && from<idx && legalLetter(s.charAt(from))) { //^[a-zA-Z]
 			return v.get();
 		} //!variable
-		nextWhile(RequestParser::legalValChar);
+		nextWhile(RequestParser::legalValChar); //continue as value
 		return from == idx ? null : s.substring(from, idx); // empty => null
 	}
 	

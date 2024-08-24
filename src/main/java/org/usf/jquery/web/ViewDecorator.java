@@ -19,7 +19,6 @@ import static org.usf.jquery.web.Parameters.JOIN;
 import static org.usf.jquery.web.Parameters.OFFSET;
 import static org.usf.jquery.web.Parameters.ORDER;
 import static org.usf.jquery.web.Parameters.VIEW;
-import static org.usf.jquery.web.RequestParser.parseArgs;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
 import static org.usf.jquery.web.ResourceAccessException.undeclaredResouceException;
@@ -172,10 +171,9 @@ public interface ViewDecorator {
 	
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
-//    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());
-    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseArgs(v)));
+    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseEntries(v)));
     	})
     	.forEach(query::filters);
 	}
