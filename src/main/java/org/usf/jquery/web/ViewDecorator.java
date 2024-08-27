@@ -11,15 +11,14 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
-import static org.usf.jquery.web.Constants.COLUMN;
-import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
-import static org.usf.jquery.web.Constants.FETCH;
-import static org.usf.jquery.web.Constants.JOIN;
-import static org.usf.jquery.web.Constants.OFFSET;
-import static org.usf.jquery.web.Constants.ORDER;
-import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.currentContext;
-import static org.usf.jquery.web.RequestParser.parseArgs;
+import static org.usf.jquery.web.Parameters.COLUMN;
+import static org.usf.jquery.web.Parameters.COLUMN_DISTINCT;
+import static org.usf.jquery.web.Parameters.FETCH;
+import static org.usf.jquery.web.Parameters.JOIN;
+import static org.usf.jquery.web.Parameters.OFFSET;
+import static org.usf.jquery.web.Parameters.ORDER;
+import static org.usf.jquery.web.Parameters.VIEW;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
 import static org.usf.jquery.web.ResourceAccessException.undeclaredResouceException;
@@ -48,7 +47,7 @@ public interface ViewDecorator {
 	
 	String identity(); //URL
 	
-	String columnName(ColumnDecorator cd);
+	String columnName(ColumnDecorator cd); 
 	
 	default ViewBuilder builder() {
 		return this::buildView;
@@ -58,10 +57,14 @@ public interface ViewDecorator {
 		return null; //no criteria by default
 	}
 	
-	default JoinBuilder joiner(String name) {
-		return null; //no builder by default
+	default JoinBuilder join(String name) {
+		return null; //no join by default
 	}
-
+	
+	default PartitionBuilder partition(String name) {
+		return null; //no partition by default
+	}
+	
 	default DBView view() {
 		return metadata().getView();
 	}
@@ -91,9 +94,8 @@ public interface ViewDecorator {
 	}
 
 	default ViewMetadata metadata() {
-		var view = requireNonNull(builder(), identity() + ".builder").build();
 		return currentContext().computeTableMetadata(this, cols-> 
-			new ViewMetadata(view, declaredColumns(this, cols)));
+			new ViewMetadata(requireNonNull(builder(), identity() + ".builder").build(), declaredColumns(this, cols)));
 	}
 	
 	static Map<String, ColumnMetadata> declaredColumns(ViewDecorator vd, Collection<ColumnDecorator> cols){
@@ -172,10 +174,9 @@ public interface ViewDecorator {
 	
 	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
-//    	.filter(e-> !RESERVED_WORDS.contains(e.getKey()))
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());
-    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseArgs(v)));
+    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseEntries(v)));
     	})
     	.forEach(query::filters);
 	}

@@ -36,6 +36,14 @@ public final class ColumnMetadata {
 	private int precision;
 	private final boolean overConfigured;
 	
+	public void update(int type, int size, int precision) {
+		if(!overConfigured) {
+			this.type = fromDataType(type).orElse(OTHER);
+			this.dataSize = size;
+			this.precision = precision;
+		}
+	}
+	
 	ColumnMetadata reset() {
 		if(!overConfigured) {
 			this.type = null;
@@ -43,14 +51,6 @@ public final class ColumnMetadata {
 			this.precision = UNLIMITED;
 		}
 		return this;
-	}
-	
-	public void update(int type, int size, int precision) {
-		if(!overConfigured) {
-			this.type = fromDataType(type).orElse(OTHER);
-			this.dataSize = size;
-			this.precision = precision;
-		}
 	}
 	
 	public String toJavaType(){

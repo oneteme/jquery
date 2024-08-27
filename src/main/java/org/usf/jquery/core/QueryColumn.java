@@ -7,8 +7,13 @@ import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public class QueryColumn implements DBColumn {
+public final class QueryColumn implements DBColumn {
 	
 	private final QueryView query;
 	@Getter
@@ -16,7 +21,7 @@ public class QueryColumn implements DBColumn {
 
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		requireNArgs(1, query.getBuilder().getColumns().toArray(), ()-> ""); //TODO
+		requireNArgs(1, query.getBuilder().getColumns().toArray(), ()-> "require only one column: " + query);
 		return query.sql(builder);
 	}
 	

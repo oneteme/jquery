@@ -37,8 +37,7 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	}
 	
 	@Override
-	public JoinBuilder joiner(String name) {
-		return view.joiner(name);
+	public JoinBuilder join(String name) {
+		return view.join(name);
 	}
-	
 }

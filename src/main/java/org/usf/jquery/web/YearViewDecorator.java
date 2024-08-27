@@ -1,6 +1,5 @@
 package org.usf.jquery.web;
 
-import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.time.YearMonth.now;
 import static java.util.Objects.nonNull;
@@ -64,17 +63,17 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 	
 	@Override
-	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
-		var query = ViewDecorator.super.query(parameterMap);
+	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameterMap) {
 		ofNullable(monthRevision()).map(this::column)
 		.ifPresent(c-> query.filters(monthFilter(c)));
-		return query.repeat(iterator(parseRevisions(parameterMap)));
+		query.repeat(iterator(parseRevisions(parameterMap)));
+		ViewDecorator.super.parseFilters(query, parameterMap);
 	}
 
 	default YearMonth[] parseRevisions(Map<String, String[]> parameterMap) {
 		var arr = parameterMap.remove(REVISION_MODE);
 		if(nonNull(arr) && arr.length > 1) {
-			throw new IllegalArgumentException("too many " + REVISION_MODE + " " + join(", ", arr)); //multiple values
+			throw new IllegalArgumentException("too many " + REVISION_MODE + " " + String.join(", ", arr)); //multiple values
 		}
 		var mod = revisionMode(isEmpty(arr) || isBlank(arr[0]) ? defaultRevisionMode() : arr[0]);
 		var values = parameterMap.containsKey(REVISION) 
@@ -170,11 +169,10 @@ public interface YearViewDecorator extends ViewDecorator {
 
     @Override
     default YearTableMetadata metadata() {
-		return (YearTableMetadata) currentContext().computeTableMetadata(this, cols->{
-			return new YearTableMetadata(view(), 
-					ofNullable(monthRevision()).map(this::columnName).orElse(null), 
-					declaredColumns(this, cols));
-		}); //safe cast
+		return (YearTableMetadata) currentContext().computeTableMetadata(this, cols-> new YearTableMetadata(view(), 
+						ofNullable(monthRevision())
+						.map(this::columnName).orElse(null), 
+						declaredColumns(this, cols))); //safe cast
     }
     
     default String defaultRevisionMode() {

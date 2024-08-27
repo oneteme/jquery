@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
+import static org.usf.jquery.core.DBProcessor.lookup;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.JDBCType.BIGINT;
@@ -334,6 +335,6 @@ public interface Operator extends DBProcessor {
 	}
 
 	static Optional<TypedOperator> lookupOperator(String op) {
-		return DBProcessor.lookup(Operator.class, TypedOperator.class, op);
+		return lookup(Operator.class, TypedOperator.class, op);
 	}
 }

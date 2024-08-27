@@ -2,8 +2,8 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.Constants.DATABASE;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
+import static org.usf.jquery.web.Parameters.DATABASE;
 import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
 import java.util.HashMap;

@@ -2,13 +2,13 @@ package org.usf.jquery.web;
 
 import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.Constants.COLUMN;
-import static org.usf.jquery.web.Constants.COLUMN_DISTINCT;
-import static org.usf.jquery.web.Constants.VIEW;
 import static org.usf.jquery.web.ContextManager.context;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.ContextManager.releaseContext;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
+import static org.usf.jquery.web.Parameters.COLUMN;
+import static org.usf.jquery.web.Parameters.COLUMN_DISTINCT;
+import static org.usf.jquery.web.Parameters.VIEW;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

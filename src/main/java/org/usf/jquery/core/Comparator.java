@@ -5,6 +5,7 @@ import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
+import static org.usf.jquery.core.DBProcessor.lookup;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -164,6 +165,6 @@ public interface Comparator extends DBProcessor {
 	}
 	
 	static Optional<TypedComparator> lookupComparator(String op) {
-		return DBProcessor.lookup(Comparator.class, TypedComparator.class, op);
+		return lookup(Comparator.class, TypedComparator.class, op);
 	}
 }
