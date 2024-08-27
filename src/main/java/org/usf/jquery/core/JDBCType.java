@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 
 /**
  * 
@@ -72,8 +73,8 @@ public enum JDBCType implements JavaType {
 	
 	@Override
 	public boolean accept(Object o) {
-		if(o instanceof Typed) {
-			var t = ((Typed) o).getType();
+		if(o instanceof Typed v) {
+			var t = v.getType();
 			return t == this || isNull(t) || superType.isAssignableFrom(t.typeClass());
 		}
 		return isNull(o) || matcher.test(o);
@@ -99,7 +100,7 @@ public enum JDBCType implements JavaType {
 		if(o instanceof Typed to) {
 			return Optional.of(to.getType());
 		}
-		return Optional.of(o).flatMap(v-> findType(e-> e.typeClass().isInstance(o)));
+		return ofNullable(o).flatMap(v-> findType(e-> e.typeClass().isInstance(o)));
 	}
 	
 	public static Optional<JDBCType> fromDataType(int value) {

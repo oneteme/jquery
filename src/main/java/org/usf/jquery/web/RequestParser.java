@@ -21,7 +21,7 @@ public final class RequestParser {
 	private char c;
 	
 	private RequestParser(String s) {
-		this.s = requireNonNull(s, "value is null");
+		this.s = s;
 		this.size = s.length();
 		this.c = size == 0 ? 0 : s.charAt(idx);
 	}
@@ -31,7 +31,9 @@ public final class RequestParser {
 	}
 	
 	public static List<RequestEntryChain> parseEntries(String s) {
-		return s.isEmpty() ? emptyList() : new RequestParser(s).parseEntries(true, c-> false);
+		return requireNonNull(s, "value is null").isEmpty() 
+				? emptyList() 
+				: new RequestParser(s).parseEntries(true, c-> false);
 	}
 	
 	private List<RequestEntryChain> parseEntries(boolean multiple, CharPredicate until) {
@@ -39,7 +41,7 @@ public final class RequestParser {
 		entries.add(parseEntry());
 		if(multiple) {
 			while(c == ',') {
-				nextChar(true);
+				nextChar(false); //null parameter
 				entries.add(parseEntry());
 			}
 		}
@@ -77,7 +79,7 @@ public final class RequestParser {
 			nextChar(false);
 			return new RequestEntryChain(txt, true);  //no next, no args, no tag
 		}
-		return new RequestEntryChain(legalNumber(c) || c == '-'  ? nextWhile(RequestParser::legalValChar) : null); // decimal negative?  & instant format
+		return new RequestEntryChain(legalNumber(c) || c == '-'  ? nextWhile(RequestParser::legalValChar) : null); // decimal negative? | instant format
 	}
 	
 	private String nextWhile(CharPredicate cp) {
