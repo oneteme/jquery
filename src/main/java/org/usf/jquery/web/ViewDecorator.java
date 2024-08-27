@@ -47,7 +47,7 @@ public interface ViewDecorator {
 	
 	String identity(); //URL
 	
-	String columnName(ColumnDecorator cd);
+	String columnName(ColumnDecorator cd); 
 	
 	default ViewBuilder builder() {
 		return this::buildView;
@@ -57,10 +57,14 @@ public interface ViewDecorator {
 		return null; //no criteria by default
 	}
 	
-	default JoinBuilder joiner(String name) {
-		return null; //no builder by default
+	default JoinBuilder join(String name) {
+		return null; //no join by default
 	}
-
+	
+	default PartitionBuilder partition(String name) {
+		return null; //no partition by default
+	}
+	
 	default DBView view() {
 		return metadata().getView();
 	}
@@ -90,9 +94,8 @@ public interface ViewDecorator {
 	}
 
 	default ViewMetadata metadata() {
-		var view = requireNonNull(builder(), identity() + ".builder").build();
 		return currentContext().computeTableMetadata(this, cols-> 
-			new ViewMetadata(view, declaredColumns(this, cols)));
+			new ViewMetadata(requireNonNull(builder(), identity() + ".builder").build(), declaredColumns(this, cols)));
 	}
 	
 	static Map<String, ColumnMetadata> declaredColumns(ViewDecorator vd, Collection<ColumnDecorator> cols){

@@ -158,32 +158,57 @@ final class RequestEntryChain {
 					.orElseThrow(()-> noSuchResourceException(VIEW, value));
 			e = requireNoArgs().next; //check args only if view exists
 		}
-		var join = vd.joiner(e.value);
+		var join = vd.join(e.value);
 		if(nonNull(join)) {
 			e.requireNoArgs().requireNoNext(); //check args & next only if joiner exists
-			return requireNonNull(join.build(), "view.joiner: " + e);
+			return requireNonNull(join.build(), vd.identity() + ".join: " + e);
 		}
-		throw noSuchResourceException(vd.identity() + ".joiner", e.value);
+		throw noSuchResourceException(vd.identity() + ".join", e.value);
 	}
 	
 	//[partition.order]*
-	public Partition evalPartition(ViewDecorator td) {
+	public Partition evalPartition(ViewDecorator vd) {
+		var e = this;
+		if(hasNext()) {
+			var res = currentContext().lookupRegisteredView(value);
+			if(res.isPresent()) {
+				vd = res.get();
+				e = requireNoArgs().next; //check args only if view exists
+			}
+		}
+		var par = vd.partition(e.value);
+		if(nonNull(par)) {
+			e.requireNoArgs().requireNoNext();
+			return requireNonNull(par.build(), vd.identity() + ".partition: " + e);
+		}
+		if(e == this) { // not view
+			var res = evalPartition2(vd);
+			if(res.isPresent()) {
+				return res.get();
+			}
+		}
+		throw noSuchResourceException(vd.identity() + ".partition", e.value);
+	}
+	
+	private Optional<Partition> evalPartition2(ViewDecorator vd) {
 		List<DBColumn> cols = new ArrayList<>();
 		List<DBOrder> ords = new ArrayList<>();
 		var e = this;
 		do {
 			switch (e.value) {
-			case PARTITION: addAll(cols, columnVarargs(td)); break;
-			case ORDER: addAll(ords, e.oderVarargs(td)); break;
-			default: throw e==this
-				? cannotParseEntryException(PARTITION, e) //first entry
-				: badEntrySyntaxException(joinArray("|", PARTITION, ORDER), e.value);
+			case PARTITION: addAll(cols, columnVarargs(vd)); break;
+			case ORDER: addAll(ords, e.oderVarargs(vd)); break;
+			default: 
+				if(e == this) {
+					return empty(); //cannotParseEntryException(PARTITION, e) //first entry
+				}
+				throw badEntrySyntaxException(joinArray("|", PARTITION, ORDER), e.value);
 			}
 			e = e.next;
 		} while(nonNull(e));
-		return new Partition(
+		return Optional.of(new Partition(
 				cols.toArray(DBColumn[]::new), 
-				ords.toArray(DBOrder[]::new));
+				ords.toArray(DBOrder[]::new)));
 	}
 	
 	//[view.]column[.operator]*

@@ -1,6 +1,5 @@
 package org.usf.jquery.web;
 
-import static java.lang.String.join;
 import static java.time.Month.DECEMBER;
 import static java.time.YearMonth.now;
 import static java.util.Objects.nonNull;
@@ -74,7 +73,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	default YearMonth[] parseRevisions(Map<String, String[]> parameterMap) {
 		var arr = parameterMap.remove(REVISION_MODE);
 		if(nonNull(arr) && arr.length > 1) {
-			throw new IllegalArgumentException("too many " + REVISION_MODE + " " + join(", ", arr)); //multiple values
+			throw new IllegalArgumentException("too many " + REVISION_MODE + " " + String.join(", ", arr)); //multiple values
 		}
 		var mod = revisionMode(isEmpty(arr) || isBlank(arr[0]) ? defaultRevisionMode() : arr[0]);
 		var values = parameterMap.containsKey(REVISION) 
