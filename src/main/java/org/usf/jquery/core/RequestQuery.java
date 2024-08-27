@@ -4,6 +4,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
@@ -33,32 +34,36 @@ public final class RequestQuery {
 	public List<DynamicModel> execute(DataSource ds) throws SQLException {
 		return execute(ds, new KeyValueMapper());
 	}
-	
+
 	public <T> T execute(DataSource ds, ResultSetMapper<T> mapper) throws SQLException { // overload with sql types
 		try(var cn = ds.getConnection()){
-			log.debug("preparing statement : {}", query);
-			try(var ps = cn.prepareStatement(query)){
-		        log.debug("with parameters : {}", Arrays.toString(args));
-				if(!isEmpty(args)) {
-					for(var i=0; i<args.length; i++) {
-						if(isNull(args[i])) {
-							ps.setNull(i+1, argTypes[i]);
-						}
-						else {
-							ps.setObject(i+1, args[i], argTypes[i]);
-						}
-					}						
-				}
-		        log.trace("executing SQL query...");
-		        var bg = currentTimeMillis();
-				try(var rs = ps.executeQuery()){
-			        log.trace("query executed in {} ms", currentTimeMillis() - bg);
-			        try {
-			        	return mapper.map(rs);
-			        }
-					catch(SQLException e) { // re-throw SQLException
-						throw new MappingException("error while mapping results", e);
+			return execute(cn, mapper);
+		}
+	}
+	
+	public <T> T execute(Connection cn, ResultSetMapper<T> mapper) throws SQLException {
+		log.debug("preparing statement : {}", query);
+		try(var ps = cn.prepareStatement(query)){
+	        log.debug("with parameters : {}", Arrays.toString(args));
+			if(!isEmpty(args)) {
+				for(var i=0; i<args.length; i++) {
+					if(isNull(args[i])) {
+						ps.setNull(i+1, argTypes[i]);
 					}
+					else {
+						ps.setObject(i+1, args[i], argTypes[i]);
+					}
+				}						
+			}
+	        log.trace("executing SQL query...");
+	        var bg = currentTimeMillis();
+			try(var rs = ps.executeQuery()){
+		        log.trace("query executed in {} ms", currentTimeMillis() - bg);
+		        try {
+		        	return mapper.map(rs);
+		        }
+				catch(SQLException e) { // re-throw SQLException
+					throw new MappingException("error while mapping results", e);
 				}
 			}
 		}

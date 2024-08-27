@@ -4,11 +4,11 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.lang.System.currentTimeMillis;
 import static java.time.Instant.now;
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
+import static org.usf.jquery.core.DBColumn.allColumns;
+import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -20,6 +20,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TableView;
 
 import lombok.AccessLevel;
@@ -99,8 +100,8 @@ public class ViewMetadata {
 	}
 
 	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
-		try(var ps = metadata.getConnection().createStatement();
-			var rs = ps.executeQuery("SELECT * FROM " + qr.sql(parametrized(schema, emptyMap())) + " AS v0 WHERE 1=0")){
+		var query = new RequestQueryBuilder().columns(allColumns(qr)).filters(constant(1).eq(constant(0))); //no data
+		query.build(schema).execute(metadata.getConnection(), rs->{
 			var db = reverseMapKeys();
 			var meta = rs.getMetaData();
 			for(var i=1; i<=meta.getColumnCount(); i++) {
@@ -112,7 +113,8 @@ public class ViewMetadata {
 			if(!db.isEmpty()) { //no such columns
 				throw columnsNotFoundException(db.keySet());
 			}
-		}
+			return null;
+		});
 	}
 	
 	private Map<String, ColumnMetadata> reverseMapKeys(){ //key=columnName
