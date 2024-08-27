@@ -371,13 +371,12 @@ final class RequestEntryChain {
 	}
 	
 	private Optional<ViewResource> lookupViewResource(ViewDecorator td, Predicate<TypedOperator> pre) {
-		if(td instanceof QueryDecorator qd) { //query column
-			return ofNullable(qd.column(value))
-					.map(c-> new ViewResource(td, null, requireNoArgs(), c)); //no column decorator
-		}
-		return currentContext().lookupRegisteredColumn(value)
-				.map(cd-> new ViewResource(td, cd, requireNoArgs(), td.column(cd)))
-				.or(()-> lookupOperation(td, null, pre).map(col-> new ViewResource(td, null, this, col)));  //no column decorator
+		var res = td instanceof QueryDecorator qd 
+				? ofNullable(qd.column(value))
+					.map(c-> new ViewResource(td, null, requireNoArgs(), c))
+				: currentContext().lookupRegisteredColumn(value)
+					.map(cd-> new ViewResource(td, cd, requireNoArgs(), td.column(cd)));
+		return res.or(()-> lookupOperation(td, null, pre).map(col-> new ViewResource(td, null, this, col)));
 	}
 	
 	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, DBColumn col, Predicate<TypedOperator> opr) {
