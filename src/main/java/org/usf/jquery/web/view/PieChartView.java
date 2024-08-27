@@ -45,7 +45,7 @@ public final class PieChartView implements WebViewMapper {
 		var bg = currentTimeMillis();
         var rw = 0;
     	var cols = TableColumn.columns(rs.getMetaData());
-    	var numb = Stream.of(cols).filter(c-> c.getType() == NUMBER).collect(toList());
+    	var numb = Stream.of(cols).filter(c-> c.getType() == NUMBER).toList();
     	if(numb.isEmpty()) {
     		throw new IllegalArgumentException("require number column");
     	}

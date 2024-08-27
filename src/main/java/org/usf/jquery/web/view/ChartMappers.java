@@ -20,19 +20,19 @@ import lombok.NoArgsConstructor;
 public final class ChartMappers {
 	
 	public static WebViewMapper webChart(String view, Writer w) {
-		switch (view) {
-		case "table"	: return new TableView(w);
-		case "pie"		: return new PieChartView(w);
-		case "column"	: return columnChart(w);
-		case "bar"		: return barChart(w);
-		case "area"		: return areaChart(w);
-		case "combo"	: return comboChart(w);
-		case "line"		: return lineChart(w);
-		case "timeline"	: return new TimelineChartView(w);
-		case "calendar"	: return new CalendarView(w);
-		case "sankey"	: return new SankeyView(w);
+		return switch (view) {
+		case "table"	: yield new TableView(w);
+		case "pie"		: yield new PieChartView(w);
+		case "column"	: yield columnChart(w);
+		case "bar"		: yield barChart(w);
+		case "area"		: yield areaChart(w);
+		case "combo"	: yield comboChart(w);
+		case "line"		: yield lineChart(w);
+		case "timeline"	: yield new TimelineChartView(w);
+		case "calendar"	: yield new CalendarView(w);
+		case "sankey"	: yield new SankeyView(w);
 		default			: throw new IllegalArgumentException(view);
-		}
+		};
 	}
 
 }

@@ -87,23 +87,14 @@ public interface WebViewMapper extends ResultSetMapper<Void>  {
 		}
 		
 		static WebType typeOf(int type) {
-			switch (type) {
-			case Types.BOOLEAN: return BOOLEAN;
-			case Types.BIT:
-			case Types.TINYINT:
-			case Types.SMALLINT:
-			case Types.INTEGER:
-			case Types.BIGINT:
-			case Types.REAL:
-			case Types.FLOAT:
-			case Types.DOUBLE:
-			case Types.NUMERIC:
-			case Types.DECIMAL: return NUMBER;
-			case Types.DATE: return DATE;
-			case Types.TIMESTAMP: return DATETIME;
+			return switch (type) {
+			case Types.BOOLEAN: yield BOOLEAN;
+			case Types.BIT, Types.TINYINT, Types.SMALLINT, Types.INTEGER, Types.BIGINT, Types.REAL, Types.FLOAT, Types.DOUBLE, Types.NUMERIC, Types.DECIMAL: yield NUMBER;
+			case Types.DATE: yield DATE;
+			case Types.TIMESTAMP: yield DATETIME;
 			//case Types.TIME: //need explicit cast format !?
-			default: return STRING;
-			}
+			default: yield STRING;
+			};
 		}
 	}
 	

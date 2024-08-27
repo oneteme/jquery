@@ -45,15 +45,15 @@ public final class TimelineChartView implements WebViewMapper {
 		var bg = currentTimeMillis();
         var rw = 0;
         var cols = columns(rs.getMetaData());
-        var numb = Stream.of(cols).filter(c-> c.getType() == NUMBER).collect(toList());
+        var numb = Stream.of(cols).filter(c-> c.getType() == NUMBER).toList();
         if(numb.isEmpty()) {
-            numb = Stream.of(cols).filter(c-> c.getType().isDate()).collect(toList());
+            numb = Stream.of(cols).filter(c-> c.getType().isDate()).toList();
         }
         if(numb.isEmpty() || numb.size() != 2) {
         	throw new IllegalArgumentException("require NUMBER or DATE columns");
         }
         var yAxis = numb;
-        var xAxis = Stream.of(cols).filter(c-> yAxis.stream().noneMatch(v-> v.getName().equals(c.getName()))).collect(toList());
+        var xAxis = Stream.of(cols).filter(c-> yAxis.stream().noneMatch(v-> v.getName().equals(c.getName()))).toList();
         if(xAxis.isEmpty()) {
         	
         }

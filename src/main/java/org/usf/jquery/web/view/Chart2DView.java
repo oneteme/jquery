@@ -4,7 +4,6 @@ import static java.lang.System.currentTimeMillis;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.readString;
 import static java.util.Map.ofEntries;
-import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.web.view.WebViewMapper.DataTable.fromMetaData;
 import static org.usf.jquery.web.view.WebViewMapper.WebType.NUMBER;
@@ -54,7 +53,7 @@ public final class Chart2DView implements WebViewMapper {
 		var sb1 = new StringBuilder();
 		var xAxis = dt.getXAxis();
 		sb1.append("[").append(doubleQuote(xAxis.getType().typeName())).append(",").append(doubleQuote(xAxis.getName())).append("]");
-		var cols = dt.getRows().stream().flatMap(c-> c.stream().skip(1)).map(Entry::getKey).distinct().sorted().collect(toList());
+		var cols = dt.getRows().stream().flatMap(c-> c.stream().skip(1)).map(Entry::getKey).distinct().sorted().toList();
 		if(cols.isEmpty()) { //no data
 			for(var c : dt.getYAxis()) {
 				sb1.append(",[").append(doubleQuote(NUMBER.typeName())).append(",").append(doubleQuote(c.getName())).append("]");
