@@ -130,7 +130,7 @@ public final class RequestParser {
 	
 	private void requireChar(char rc) {
 		if(c != rc) {
-			throw new EntryParseException("'" + rc + "' expected at index=" + idx); // before ends
+			throw new EntrySyntaxException("'" + rc + "' expected at index=" + idx); // before ends
 		}
 	}
 	
