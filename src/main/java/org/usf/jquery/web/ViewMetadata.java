@@ -99,7 +99,7 @@ public class ViewMetadata {
 	}
 
 	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
-		var query = "SELECT * FROM " + qr.sql(parametrized(schema, emptyMap())) + " WHERE 1=0"; // rows=0
+		var query = "SELECT * FROM " + qr.sql(parametrized(schema, emptyMap())) + " AS v0 WHERE 1=0"; // rows=0
 		try(var ps = metadata.getConnection().prepareStatement(query);
 			var rs = ps.executeQuery()){
 			var db = reverseMapKeys();
