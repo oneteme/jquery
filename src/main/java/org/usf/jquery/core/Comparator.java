@@ -2,10 +2,10 @@ package org.usf.jquery.core;
 
 import static java.util.Arrays.copyOfRange;
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
+import static org.usf.jquery.core.DBProcessor.lookup;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.DBProcessor.lookup;
 
 import java.util.Objects;
 import java.util.Optional;
@@ -53,6 +53,10 @@ public interface Comparator extends DBProcessor {
 
 	static TypedComparator ge() {
 		return new TypedComparator(basicComparator(">="), required(), required(firstArgJdbcType()));
+	}
+	
+	static TypedComparator between() {
+		return new TypedComparator(rangeComparator("BETWEEN"), required(), required(firstArgJdbcType()), required(firstArgJdbcType()));
 	}
 	
 	//string comparator
@@ -160,7 +164,11 @@ public interface Comparator extends DBProcessor {
 		return ()-> name;
 	}
 	
-	static InCompartor inComparator(final String name) {
+	static InComparator inComparator(final String name) {
+		return ()-> name;
+	}
+
+	static RangeComparator rangeComparator(final String name) {
 		return ()-> name;
 	}
 	

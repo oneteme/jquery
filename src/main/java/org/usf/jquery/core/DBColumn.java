@@ -76,6 +76,10 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return Comparator.ge().filter(this, value);
 	}
 
+	default ColumnSingleFilter between(Object min, Object max) {
+		return Comparator.between().filter(this, min, max);
+	}
+	
 	default ColumnSingleFilter like(Object value) {
 		return Comparator.like().filter(this, value);
 	}

@@ -3,7 +3,6 @@ package org.usf.jquery.web.view;
 import static java.lang.System.currentTimeMillis;
 import static java.lang.System.lineSeparator;
 import static java.nio.file.Files.readString;
-import static java.util.stream.Collectors.toList;
 import static org.usf.jquery.web.view.WebViewMapper.TableColumn.columns;
 import static org.usf.jquery.web.view.WebViewMapper.WebType.NUMBER;
 import static org.usf.jquery.web.view.WebViewMapper.WebType.STRING;
