@@ -31,7 +31,7 @@ public final class TypedComparator {
 		}
 	}
 	
-	public DBFilter filter(Object... args) {
+	public ColumnSingleFilter filter(Object... args) {
 		try {
 			return comparator.filter(parameterSet.assertArguments(args));
 		} catch (BadArgumentException e) { //TODO message

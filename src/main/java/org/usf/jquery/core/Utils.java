@@ -58,8 +58,12 @@ public final class Utils {
 	}
 	
 	public static <T> T[] arrayJoin(T[] arr, T o) {
+		return arrayJoin(arr, o, arr.length);
+	}
+
+	public static <T> T[] arrayJoin(T[] arr, T o, int idx) {
 		var res = copyOf(arr, arr.length+1);
-		res[arr.length] = o;
+		res[idx] = o;
 		return res;
 	}
 }

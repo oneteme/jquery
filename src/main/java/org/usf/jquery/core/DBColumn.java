@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
+import static org.usf.jquery.core.Utils.arrayJoin;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -47,78 +48,95 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return new NamedColumn(this, Objects.isNull(name) ? null : requireLegalVariable(name));
 	}
 	
-	default DBOrder order() {
-		return new DBOrder(this);
-	}
-	
-	default DBOrder order(Order order) {
-		return new DBOrder(this, order);
-	}
-
 	// filters
+	
 	default ColumnSingleFilter eq(Object value) {
-		return filter(ComparisonExpression.eq(value));
+		return Comparator.eq().filter(this, value);
 	}
 
 	default ColumnSingleFilter ne(Object value) {
-		return filter(ComparisonExpression.ne(value));
-	}
-
-	default ColumnSingleFilter gt(Object value) {
-		return filter(ComparisonExpression.gt(value));
-	}
-
-	default ColumnSingleFilter ge(Object value) {
-		return filter(ComparisonExpression.ge(value));
+		return Comparator.ne().filter(this, value);
 	}
 
 	default ColumnSingleFilter lt(Object value) {
-		return filter(ComparisonExpression.lt(value));
+		return Comparator.lt().filter(this, value);
 	}
 
 	default ColumnSingleFilter le(Object value) {
-		return filter(ComparisonExpression.le(value));
+		return Comparator.le().filter(this, value);
+	}
+
+	default ColumnSingleFilter gt(Object value) {
+		return Comparator.gt().filter(this, value);
+	}
+
+	default ColumnSingleFilter ge(Object value) {
+		return Comparator.ge().filter(this, value);
 	}
 
 	default ColumnSingleFilter like(Object value) {
-		return filter(ComparisonExpression.like(value));
+		return Comparator.like().filter(this, value);
+	}
+	
+	default ColumnSingleFilter startsLike(Object value) {
+		return Comparator.startsLike().filter(this, value);
+	}
+
+	default ColumnSingleFilter endsLike(Object value) {
+		return Comparator.endsLike().filter(this, value);
+	}
+
+	default ColumnSingleFilter contentLike(Object value) {
+		return Comparator.contentLike().filter(this, value);
+	}
+	
+	default ColumnSingleFilter startsNotLike(Object value) {
+		return Comparator.startsNotLike().filter(this, value);
+	}
+
+	default ColumnSingleFilter endsNotLike(Object value) {
+		return Comparator.endsNotLike().filter(this, value);
+	}
+
+	default ColumnSingleFilter contentNotLike(Object value) {
+		return Comparator.contentNotLike().filter(this, value);
 	}
 
 	default ColumnSingleFilter notLike(Object value) {
-		return filter(ComparisonExpression.notLike(value));
+		return Comparator.notLike().filter(this, value);
 	}
 
 	default ColumnSingleFilter ilike(Object value) {
-		return filter(ComparisonExpression.iLike(value));
+		return Comparator.iLike().filter(this, value);
 	}
 
 	default ColumnSingleFilter notILike(Object value) {
-		return filter(ComparisonExpression.notILike(value));
-	}
-
-	@SuppressWarnings("unchecked")
-	default <T> ColumnSingleFilter in(T... values) {
-		return filter(ComparisonExpression.in(values));
-	}
-
-	@SuppressWarnings("unchecked")
-	default <T> ColumnSingleFilter notIn(T... values) {
-		return filter(ComparisonExpression.notIn(values));
+		return Comparator.notILike().filter(this, value);
 	}
 
 	default ColumnSingleFilter isNull() {
-		return filter(ComparisonExpression.isNull());
+		return Comparator.isNull().filter(this);
 	}
 
-	default ColumnSingleFilter isNotNull() {
-		return filter(ComparisonExpression.isNotNull());
+	default ColumnSingleFilter notNull() {
+		return Comparator.notNull().filter(this);
 	}
 
+	@SuppressWarnings("unchecked")
+	default <T> ColumnSingleFilter in(T... arr) {
+		return Comparator.in().filter(arrayJoin(arr, this, 0)); 
+	}
+
+	@SuppressWarnings("unchecked")
+	default <T> ColumnSingleFilter notIn(T... arr) {
+		return Comparator.notIn().filter(arrayJoin(arr, this, 0));
+	}
+	
 	default ColumnSingleFilter filter(ComparisonExpression exp) {
 		return new ColumnSingleFilter(this, exp);
 	}
 
-	// operations
+	// arithmetic operations
 	
 	default OperationColumn plus(Object o) {
 		return Operator.plus().operation(this, o);
@@ -136,8 +154,271 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return Operator.divide().operation(this, o);
 	}
 	
+	//numeric functions
+	
+	default OperationColumn sqrt(Object o) {
+		return Operator.sqrt().operation(this, o);
+	}
+	
+	default OperationColumn exp(Object o) {
+		return Operator.exp().operation(this, o);
+	}
+	
+	default OperationColumn log(Object o) {
+		return Operator.log().operation(this, o);
+	}
+	
+	default OperationColumn abs(Object o) {
+		return Operator.abs().operation(this, o);
+	}
+
+	default OperationColumn ceil(Object o) {
+		return Operator.ceil().operation(this, o);
+	}
+
+	default OperationColumn floor(Object o) {
+		return Operator.floor().operation(this, o);
+	}
+
+	default OperationColumn trunc(Object o) {
+		return Operator.trunc().operation(this, o);
+	}
+	
+	default OperationColumn round(Object o) {
+		return Operator.round().operation(this, o);
+	}
+	
+	default OperationColumn mod(Object o) {
+		return Operator.mod().operation(this, o);
+	}
+	
+	default OperationColumn pow(Object o) {
+		return Operator.pow().operation(this, o);
+	}
+	
+	//string functions
+
+	default OperationColumn length() {
+		return Operator.length().operation(this);
+	}
+	
+	default OperationColumn trim() {
+		return Operator.trim().operation(this);
+	}
+
+	default OperationColumn ltrim() {
+		return Operator.ltrim().operation(this);
+	}
+
+	default OperationColumn rtrim() {
+		return Operator.rtrim().operation(this);
+	}
+	
+	default OperationColumn upper() {
+		return Operator.upper().operation(this);
+	}
+
+	default OperationColumn lower() {
+		return Operator.lower().operation(this);
+	}
+	
+	default OperationColumn initcap() {
+		return Operator.initcap().operation(this);
+	}
+	
+	default OperationColumn reverse() {
+		return Operator.reverse().operation(this);
+	}
+	
+	default OperationColumn left(int n) {
+		return Operator.left().operation(this, n);
+	}
+	
+	default OperationColumn right(int n) {
+		return Operator.pow().operation(this, n);
+	}
+	
+	default OperationColumn replace(String oldValue, String newValue) {
+		return Operator.replace().operation(this, oldValue, newValue);
+	}
+	
+	default OperationColumn substring(int start, int end) {
+		return Operator.substring().operation(this, start, end);
+	}
+	
+	default OperationColumn concat(String... str) {
+		return Operator.concat().operation(arrayJoin(str, this, 0));
+	}
+	
+	default OperationColumn pow(int n, String value) {
+		return Operator.pow().operation(this, n, value);
+	}
+	
+	default OperationColumn rpad(int n, String value) {
+		return Operator.rpad().operation(this, n, value);
+	}
+
+	//temporal functions
+	
+	default OperationColumn year() {
+		return Operator.year().operation(this);
+	}
+	
+	default OperationColumn month() {
+		return Operator.month().operation(this);
+	}
+
+	default OperationColumn week() {
+		return Operator.week().operation(this);
+	}
+	
+	default OperationColumn day() {
+		return Operator.day().operation(this);
+	}
+	
+	default OperationColumn dow() {
+		return Operator.dow().operation(this);
+	}
+	
+	default OperationColumn doy() {
+		return Operator.doy().operation(this);
+	}
+
+	default OperationColumn hour() {
+		return Operator.hour().operation(this);
+	}
+
+	default OperationColumn minute() {
+		return Operator.minute().operation(this);
+	}
+	
+	default OperationColumn second() {
+		return Operator.second().operation(this);
+	}
+	
+	default OperationColumn epoch() {
+		return Operator.epoch().operation(this);
+	}
+	
+	default OperationColumn yearMonth() {
+		return Operator.yearMonth().operation(this);
+	}
+	
+	//cast functions
+
+	default OperationColumn varchar() {
+		return Operator.varchar().operation(this);
+	}
+	
+	default OperationColumn varchar(int size) {
+		return Operator.varchar().operation(this, size);
+	}
+	
+	default OperationColumn date() {
+		return Operator.date().operation(this);
+	}
+	
+	default OperationColumn timestamp() {
+		return Operator.timestamp().operation(this);
+	}
+	
+	default OperationColumn integer() {
+		return Operator.integer().operation(this);
+	}
+	
+	default OperationColumn bigint() {
+		return Operator.bigint().operation(this);
+	}
+	
+	default OperationColumn decimal() {
+		return Operator.decimal().operation(this);
+	}
+	
+	default OperationColumn decimal(int digit, int precision) {
+		return Operator.decimal().operation(this, digit, precision);
+	}
+
+	//aggregate functions
+	
+	default OperationColumn coalesce(Object o) {
+		return Operator.coalesce().operation(this, o);
+	}
+
+	default OperationColumn count() {
+		return Operator.count().operation(this);
+	}
+
+	default OperationColumn min() {
+		return Operator.min().operation(this);
+	}
+
+	default OperationColumn max() {
+		return Operator.max().operation(this);
+	}
+
+	default OperationColumn sum() {
+		return Operator.sum().operation(this);
+	}
+	
+	default OperationColumn avg() {
+		return Operator.avg().operation(this);
+	}
+	
+	
+	//window functions
+	
+	default OperationColumn rank() {
+		return Operator.rank().operation(this);
+	}
+	
+	default OperationColumn rowNumber() {
+		return Operator.rowNumber().operation(this);
+	}
+	
+	default OperationColumn denseRank() {
+		return Operator.denseRank().operation(this);
+	}
+
+	//pipe functions
+	
+	default OperationColumn over(Partition part) {
+		return Operator.over().operation(this, part);
+	}
+
+	//orders
+
+	default DBOrder order() {
+		return new DBOrder(this);
+	}
+	
+	default DBOrder asc() {
+		return new DBOrder(this, Order.ASC);
+	}
+	
+	default DBOrder desc() {
+		return new DBOrder(this, Order.ASC);
+	}
+	
 	default WhenFilterBridge when(ComparisonExpression ex) {
 		return new CaseSingleColumnBuilder(this).when(ex);
+	}
+	
+	// constants
+	
+	static OperationColumn cdate() {
+		return Operator.cdate().operation();
+	}
+	
+	static OperationColumn ctime() {
+		return Operator.ctime().operation();
+	}
+	
+	static OperationColumn ctimestamp() {
+		return Operator.ctimestamp().operation();
+	}
+
+	static OperationColumn countAll() {
+		return Operator.count().operation(column("*"));
 	}
 	
 	static DBColumn column(@NonNull String value) {
@@ -168,72 +449,5 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 				return Stream.empty();
 			}
 		};
-	}
-
-	static OperationColumn count() {
-		return count(column("*"));
-	}
-
-	static OperationColumn count(Object arg) {
-		return Operator.count().operation(arg);
-	}
-
-	static OperationColumn min(Object arg) {
-		return Operator.min().operation(arg);
-	}
-
-	static OperationColumn max(Object arg) {
-		return Operator.max().operation(arg);
-	}
-
-	static OperationColumn sum(Object arg) {
-		return Operator.sum().operation(arg);
-	}
-	
-	static OperationColumn avg(Object arg) {
-		return Operator.avg().operation(arg);
-	}
-	
-	//numeric
-	
-	static OperationColumn abs(Object arg) {
-		return Operator.abs().operation(arg);
-	}
-	
-	static OperationColumn sqrt(Object arg) {
-		return Operator.sqrt().operation(arg);
-	}
-
-	static OperationColumn trunc(Object arg) {
-		return Operator.trunc().operation(arg);
-	}
-
-	static OperationColumn ceil(Object arg) {
-		return Operator.ceil().operation(arg);
-	}
-
-	static OperationColumn floor(Object arg) {
-		return Operator.floor().operation(arg);
-	}
-	
-	//string
-	static OperationColumn trim(Object arg) {
-		return Operator.trim().operation(arg);
-	}
-
-	static OperationColumn length(Object arg) {
-		return Operator.length().operation(arg);
-	}
-
-	static OperationColumn upper(Object arg) {
-		return Operator.upper().operation(arg);
-	}
-
-	static OperationColumn lower(Object arg) {
-		return Operator.lower().operation(arg);
-	}
-	
-	static OperationColumn substring(Object arg, int start, int length) {
-		return Operator.substring().operation(arg, start, length);
 	}
 }
