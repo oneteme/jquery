@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.Order.ASC;
+import static org.usf.jquery.core.Order.DESC;
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
 import static org.usf.jquery.core.Utils.arrayJoin;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
@@ -379,11 +381,15 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 	
 	default DBOrder asc() {
-		return new DBOrder(this, Order.ASC);
+		return order(ASC);
 	}
 	
 	default DBOrder desc() {
-		return new DBOrder(this, Order.ASC);
+		return order(DESC);
+	}
+	
+	default DBOrder order(Order order) {
+		return new DBOrder(this, order);
 	}
 	
 	default WhenFilterBridge when(ComparisonExpression ex) {
