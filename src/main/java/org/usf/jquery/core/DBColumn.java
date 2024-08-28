@@ -365,21 +365,6 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	default OperationColumn avg() {
 		return Operator.avg().operation(this);
 	}
-	
-	
-	//window functions
-	
-	default OperationColumn rank() {
-		return Operator.rank().operation(this);
-	}
-	
-	default OperationColumn rowNumber() {
-		return Operator.rowNumber().operation(this);
-	}
-	
-	default OperationColumn denseRank() {
-		return Operator.denseRank().operation(this);
-	}
 
 	//pipe functions
 	
@@ -421,6 +406,20 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 
 	static OperationColumn countAll() {
 		return Operator.count().operation(column("*"));
+	}
+	
+	//window functions
+	
+	static OperationColumn rank() {
+		return Operator.rank().operation();
+	}
+	
+	static OperationColumn rowNumber() {
+		return Operator.rowNumber().operation();
+	}
+	
+	static OperationColumn denseRank() {
+		return Operator.denseRank().operation();
 	}
 	
 	static DBColumn column(@NonNull String value) {
