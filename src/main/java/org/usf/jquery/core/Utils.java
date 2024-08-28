@@ -60,7 +60,7 @@ public final class Utils {
 	
 	public static <T> T[] arrayJoin(T[] arr, T o) {
 		var res = copyOf(arr, arr.length+1);
-		res[arr.length+1] = o;
+		res[arr.length] = o;
 		return res;
 	}
 
