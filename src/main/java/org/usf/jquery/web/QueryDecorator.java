@@ -32,9 +32,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 
 	public TaggableColumn column(String id) {
-		return query.getBuilder().getColumns().stream()
-		.filter(c-> c.tagname().equals(id)) //tagname nullable !
-		.findAny()
+		return query.getBuilder().declaredColumn(id)
 		.map(c-> new ViewColumn(query, c.tagname(), c.tagname(), c.getType()))
 		.orElse(null);
 	}
