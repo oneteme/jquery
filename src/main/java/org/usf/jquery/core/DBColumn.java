@@ -246,7 +246,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return Operator.substring().operation(this, start, end);
 	}
 	
-	default OperationColumn concat(String... str) {
+	default OperationColumn concat(Object... str) {
 		return Operator.concat().operation(arrayJoin(str, this, 0));
 	}
 	
@@ -338,11 +338,13 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return Operator.decimal().operation(this, digit, precision);
 	}
 
-	//aggregate functions
+	//other functions
 	
 	default OperationColumn coalesce(Object o) {
 		return Operator.coalesce().operation(this, o);
 	}
+	
+	//aggregate functions
 
 	default OperationColumn count() {
 		return Operator.count().operation(this);
