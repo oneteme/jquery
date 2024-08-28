@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.function.Supplier;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -32,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class RequestQueryBuilder {
+public class RequestQueryBuilder implements RequestContext {
 	
 	private final List<TaggableColumn> columns = new ArrayList<>();
 	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING
@@ -50,6 +52,16 @@ public class RequestQueryBuilder {
 	
 	public RequestQueryBuilder(Database target) {
 		setCurrentDatabase(target);
+	}
+	
+	@Override
+	public Optional<TaggableColumn> lookupDeclaredColumn(String name) {
+		return columns.stream().filter(c-> name.equals(c.tagname())).findAny();
+	}
+	
+	@Override
+	public QueryView overView(DBView view, Supplier<QueryView> supp) {
+		return overView.computeIfAbsent(view, k-> supp.get());
 	}
 	
 	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
@@ -92,6 +104,7 @@ public class RequestQueryBuilder {
 		return this;
 	}
 	
+	@Deprecated
 	public RequestQueryBuilder overViews(Map<DBView, QueryView> overs) {
 		overView.putAll(overs);
 		return this;

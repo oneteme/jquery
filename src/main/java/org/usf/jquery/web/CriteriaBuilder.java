@@ -1,9 +1,8 @@
 package org.usf.jquery.web;
 
-import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.LogicalOperator.OR;
-import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
+import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.stream.Stream;
 
@@ -18,17 +17,19 @@ import org.usf.jquery.core.LogicalOperator;
 @FunctionalInterface
 public interface CriteriaBuilder<T extends Chainable<T>> {
 	
-	T criteria(String arg);
+	T build(String... arg);
 	
-	default T build(String... args) {
-		return Stream.of(requireAtLeastNArgs(1, args, CriteriaBuilder.class::getSimpleName))
-				.map(v-> ofNullable(criteria(v))
-						.orElseThrow(()-> noSuchResourceException("criteria value", v)))
-				.reduce((e1, e2)-> e1.append(combiner(), e2))
-				.orElseThrow();
+	static <T extends Chainable<T>> CriteriaBuilder<T> singleArg(ChainableCriteria<T> cr){
+		return args-> cr.criteria(isEmpty(args) ? null : requireNArgs(1, args, ()-> "single arg criteria")[0]);
 	}
-	
-	default LogicalOperator combiner() {
-		return OR;
+
+	static <T extends Chainable<T>> CriteriaBuilder<T> multiArgs(ChainableCriteria<T> cr){
+		return multiArgs(OR, cr);
+	}
+
+	static <T extends Chainable<T>> CriteriaBuilder<T> multiArgs(LogicalOperator op, ChainableCriteria<T> cr){
+		return args-> isEmpty(args) 
+				? cr.criteria(null)
+				: Stream.of(args).map(cr::criteria).reduce(op::combine).orElseThrow();
 	}
 }
