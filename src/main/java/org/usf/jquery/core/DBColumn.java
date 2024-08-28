@@ -377,7 +377,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	//orders
 
 	default DBOrder order() {
-		return new DBOrder(this);
+		return order(null); //default
 	}
 	
 	default DBOrder asc() {
