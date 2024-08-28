@@ -1,9 +1,11 @@
 package org.usf.jquery.core;
 
+import static java.lang.System.arraycopy;
 import static java.util.Arrays.copyOf;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
 
+import java.lang.reflect.Array;
 import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Stream;
@@ -58,12 +60,15 @@ public final class Utils {
 	}
 	
 	public static <T> T[] arrayJoin(T[] arr, T o) {
-		return arrayJoin(arr, o, arr.length);
+		var res = copyOf(arr, arr.length+1);
+		res[arr.length+1] = o;
+		return res;
 	}
 
-	public static <T> T[] arrayJoin(T[] arr, T o, int idx) {
+	public static <T> T[] arrayJoinFirst(T[] arr, T o) {
 		var res = copyOf(arr, arr.length+1);
-		res[idx] = o;
+		arraycopy(arr, 0, res, 1, arr.length);
+		res[0] = o;
 		return res;
 	}
 }

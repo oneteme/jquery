@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.Order.ASC;
 import static org.usf.jquery.core.Order.DESC;
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
-import static org.usf.jquery.core.Utils.arrayJoin;
+import static org.usf.jquery.core.Utils.arrayJoinFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -126,12 +126,12 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter in(T... arr) {
-		return Comparator.in().filter(arrayJoin(arr, this, 0)); 
+		return Comparator.in().filter(arrayJoinFirst(arr, this)); 
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter notIn(T... arr) {
-		return Comparator.notIn().filter(arrayJoin(arr, this, 0));
+		return Comparator.notIn().filter(arrayJoinFirst(arr, this));
 	}
 	
 	default ColumnSingleFilter filter(ComparisonExpression exp) {
@@ -249,11 +249,11 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 	
 	default OperationColumn concat(Object... str) {
-		return Operator.concat().operation(arrayJoin(str, this, 0));
+		return Operator.concat().operation(arrayJoinFirst(str, this));
 	}
 	
-	default OperationColumn pow(int n, String value) {
-		return Operator.pow().operation(this, n, value);
+	default OperationColumn lpad(int n, String value) {
+		return Operator.lpad().operation(this, n, value);
 	}
 	
 	default OperationColumn rpad(int n, String value) {

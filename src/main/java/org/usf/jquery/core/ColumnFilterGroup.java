@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.Utils.arrayJoin;
+import static org.usf.jquery.core.Utils.arrayJoinFirst;
 
 import java.util.stream.Stream;
 
