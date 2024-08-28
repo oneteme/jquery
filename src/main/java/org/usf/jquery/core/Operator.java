@@ -208,8 +208,8 @@ public interface Operator extends DBProcessor {
 		CombinedOperator op = args-> {
 			var col = requireNArgs(1, args, ()-> "yearMonth")[0];
 			return concat().operation(
-					lpad().operation(year().operation(col), 4, "0"), "-", 
-					lpad().operation(month().operation(col), 2, "0"));
+					lpad().operation(varchar().operation(year().operation(col)), 4, "0"), "-", //varchar => postgres
+					lpad().operation(varchar().operation(month().operation(col)), 2, "0"));
 		};
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
