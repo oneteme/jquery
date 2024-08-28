@@ -21,6 +21,7 @@ import java.util.Set;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.ResultSetConsumer;
 import org.usf.jquery.core.TableView;
 
 import lombok.AccessLevel;
@@ -101,7 +102,7 @@ public class ViewMetadata {
 
 	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
 		var query = new RequestQueryBuilder().columns(allColumns(qr)).filters(constant(1).eq(constant(0))); //no data
-		query.build(schema).execute(metadata.getConnection(), rs->{
+		query.build(schema).execute(metadata.getConnection(), (ResultSetConsumer) rs->{
 			var db = reverseMapKeys();
 			var meta = rs.getMetaData();
 			for(var i=1; i<=meta.getColumnCount(); i++) {
@@ -113,7 +114,6 @@ public class ViewMetadata {
 			if(!db.isEmpty()) { //no such columns
 				throw columnsNotFoundException(db.keySet());
 			}
-			return null;
 		});
 	}
 	

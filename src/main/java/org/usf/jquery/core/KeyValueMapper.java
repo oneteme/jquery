@@ -20,17 +20,17 @@ public final class KeyValueMapper implements ResultSetMapper<List<DynamicModel>>
     @Override
     public List<DynamicModel> map(ResultSet rs) throws SQLException {
 		log.trace("mapping results...");
-		var bg = currentTimeMillis();
-		var results = new LinkedList<DynamicModel>();
-    	var columnNames = declaredColumns(rs);
+		var t = currentTimeMillis();
+		var res = new LinkedList<DynamicModel>();
+    	var cols = declaredColumns(rs);
         while(rs.next()) {
-            var model = new DynamicModel();
-            for(var i=0; i<columnNames.length; i++) {
-                model.put(columnNames[i], rs.getObject(i+1));
+            var m = new DynamicModel();
+            for(var i=0; i<cols.length; i++) {
+                m.put(cols[i], rs.getObject(i+1));
             }
-            results.add(model);
+            res.add(m);
         }
-		log.trace("{} rows mapped in {} ms", results.size(), currentTimeMillis() - bg);
-        return results;
+		log.trace("{} rows mapped in {} ms", res.size(), currentTimeMillis()-t);
+        return res;
     }
 }

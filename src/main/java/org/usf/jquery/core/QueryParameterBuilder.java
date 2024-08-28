@@ -141,8 +141,8 @@ public final class QueryParameterBuilder {
 		return new QueryParameterBuilder(schema, vPrefix, null, null, views, overView);
 	}
 	
-	public QueryParameterBuilder subQuery() {
-		return new QueryParameterBuilder(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), emptyMap());
+	public QueryParameterBuilder subQuery(Map<DBView, ? extends DBView> overView) {
+		return new QueryParameterBuilder(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), unmodifiableMap(overView));
 	}
 
 	public static QueryParameterBuilder addWithValue() {

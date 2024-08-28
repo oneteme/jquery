@@ -20,7 +20,7 @@ public final class QueryView implements DBView {
 	@Override
 	public String sql(QueryParameterBuilder param) {
 		var s = new SqlStringBuilder(100).append("(");
-		builder.build(s, param.subQuery());
+		builder.build(s, param.subQuery(builder.getOverView()));
 		return s.append(")").toString();
 	}
 	

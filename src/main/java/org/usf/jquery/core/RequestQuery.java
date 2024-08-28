@@ -34,7 +34,7 @@ public final class RequestQuery {
 	public List<DynamicModel> execute(DataSource ds) throws SQLException {
 		return execute(ds, new KeyValueMapper());
 	}
-
+	
 	public <T> T execute(DataSource ds, ResultSetMapper<T> mapper) throws SQLException { // overload with sql types
 		try(var cn = ds.getConnection()){
 			return execute(cn, mapper);
@@ -43,8 +43,8 @@ public final class RequestQuery {
 	
 	public <T> T execute(Connection cn, ResultSetMapper<T> mapper) throws SQLException {
 		log.debug("preparing statement : {}", query);
+		log.debug("using arguments : {}", Arrays.toString(args)); //before prepare
 		try(var ps = cn.prepareStatement(query)){
-	        log.debug("with parameters : {}", Arrays.toString(args));
 			if(!isEmpty(args)) {
 				for(var i=0; i<args.length; i++) {
 					if(isNull(args[i])) {
