@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.Utils.arrayJoin;
+import static org.usf.jquery.core.Utils.appendLast;
 
 import java.util.stream.Stream;
 
@@ -37,7 +37,7 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	@Override
 	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
 		return operator == op 
-				? new ComparisonExpressionGroup(op, arrayJoin(expressions, exp))
+				? new ComparisonExpressionGroup(op, appendLast(expressions, exp))
 		        : new ComparisonExpressionGroup(op, this, exp);
 	}
 	

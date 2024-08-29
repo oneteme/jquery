@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.Order.ASC;
 import static org.usf.jquery.core.Order.DESC;
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
-import static org.usf.jquery.core.Utils.arrayJoinFirst;
+import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -130,12 +130,12 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter in(T... arr) {
-		return Comparator.in().filter(arrayJoinFirst(arr, this)); 
+		return Comparator.in().filter(appendFirst(arr, this)); 
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> ColumnSingleFilter notIn(T... arr) {
-		return Comparator.notIn().filter(arrayJoinFirst(arr, this));
+		return Comparator.notIn().filter(appendFirst(arr, this));
 	}
 	
 	default ColumnSingleFilter filter(ComparisonExpression exp) {
@@ -253,7 +253,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 	
 	default OperationColumn concat(Object... str) {
-		return Operator.concat().operation(arrayJoinFirst(str, this));
+		return Operator.concat().operation(appendFirst(str, this));
 	}
 	
 	default OperationColumn lpad(int n, String value) {

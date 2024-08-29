@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.Utils.arrayJoin;
+import static org.usf.jquery.core.Utils.appendLast;
 
 import java.util.stream.Stream;
 
@@ -38,7 +38,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	@Override
 	public DBFilter append(LogicalOperator op, DBFilter filter) {
 		return operator == op 
-				? new ColumnFilterGroup(op, arrayJoin(filters, filter))
+				? new ColumnFilterGroup(op, appendLast(filters, filter))
 		        : new ColumnFilterGroup(op, this, filter);
 	}
 	

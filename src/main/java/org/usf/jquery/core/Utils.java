@@ -58,13 +58,13 @@ public final class Utils {
 		return args.map(Object::toString).collect(joining(delemiter, before, after));
 	}
 	
-	public static <T> T[] arrayJoin(T[] arr, T o) {
+	public static <T> T[] appendLast(T[] arr, T o) {
 		var res = copyOf(arr, arr.length+1);
 		res[arr.length] = o;
 		return res;
 	}
 
-	public static Object[] arrayJoinFirst(Object[] arr, Object o) {
+	public static Object[] appendFirst(Object[] arr, Object o) {
 		var res = new Object[arr.length+1];
 		arraycopy(arr, 0, res, 1, arr.length);
 		res[0] = o;
