@@ -40,4 +40,9 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	public JoinBuilder join(String name) {
 		return view.join(name);
 	}
+	
+	@Override
+	public PartitionBuilder partition(String name) {
+		return view.partition(name);
+	}
 }

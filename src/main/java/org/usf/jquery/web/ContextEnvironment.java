@@ -22,16 +22,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JQueryException;
-import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.TaggableColumn;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -57,14 +53,11 @@ public final class ContextEnvironment {
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
-	//runtime scope
-	private final Map<DBView, QueryView> overView = new HashMap<>();
-	private final Map<String, TaggableColumn> declaredColumns = new HashMap<>();
 	
 	ContextEnvironment(ContextEnvironment ctx) {
 		this.database = ctx.database;
 		this.views = new HashMap<>(ctx.views); //modifiable
-		this.columns = new HashMap<>(ctx.columns); //modifiable
+		this.columns = ctx.columns;
 		this.dataSource = ctx.dataSource;
 		this.schema = ctx.schema;
 		this.metadata = ctx.metadata;
@@ -77,11 +70,7 @@ public final class ContextEnvironment {
 	public Optional<ColumnDecorator> lookupRegisteredColumn(String name) {
 		return ofNullable(columns.get(name));
 	}
-	
-	Optional<TaggableColumn> lookupDeclaredColumn(String name) {
-		return ofNullable(declaredColumns.get(name));
-	}
-	
+
 	void declareView(ViewDecorator view) { //additional request views
 		views.compute(view.identity(), (k,v)-> {
 			if(isNull(v)){
@@ -89,22 +78,6 @@ public final class ContextEnvironment {
 			}
 			throw resourceAlreadyExistsException(k, v);
 		});
-	}
-	
-	TaggableColumn declareColumn(TaggableColumn col) {
-		views.computeIfPresent(col.tagname(), (k,v)-> { //cannot overwrite registered views
-			throw resourceAlreadyExistsException(k, v);
-		}); //but can overwrite registered columns
-		return declaredColumns.compute(col.tagname(), (k,v)-> {
-			if(isNull(v)){
-				return col;
-			}
-			throw resourceAlreadyExistsException(k, v);
-		});
-	}
-	
-	QueryView overView(DBView view, Supplier<QueryView> supp) {
-		return overView.computeIfAbsent(view, k-> supp.get());
 	}
 	
 	ViewMetadata computeTableMetadata(ViewDecorator vd, Function<Collection<ColumnDecorator>, ViewMetadata> fn) {

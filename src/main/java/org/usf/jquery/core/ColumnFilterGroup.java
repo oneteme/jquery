@@ -25,9 +25,9 @@ public final class ColumnFilterGroup implements DBFilter {
 
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		return "(" + Stream.of(filters)
+		return Stream.of(filters)
 		.map(o-> o.sql(builder))
-		.collect(joining(operator.sql())) + ")";
+		.collect(joining(operator.sql(), "(", ")"));
 	}
 	
 	@Override

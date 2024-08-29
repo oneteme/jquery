@@ -64,8 +64,8 @@ public final class Utils {
 		return res;
 	}
 
-	public static <T> T[] arrayJoinFirst(T[] arr, T o) {
-		var res = copyOf(arr, arr.length+1);
+	public static Object[] arrayJoinFirst(Object[] arr, Object o) {
+		var res = new Object[arr.length+1];
 		arraycopy(arr, 0, res, 1, arr.length);
 		res[0] = o;
 		return res;

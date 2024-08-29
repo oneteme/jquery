@@ -103,13 +103,7 @@ public class RequestQueryBuilder implements QueryContext {
 		distinct = true;
 		return this;
 	}
-	
-	@Deprecated
-	public RequestQueryBuilder overViews(Map<DBView, QueryView> overs) {
-		overView.putAll(overs);
-		return this;
-	}
-	
+
 	public QueryView asView() {
 		return new QueryView(this);
 	}

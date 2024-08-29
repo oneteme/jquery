@@ -24,13 +24,13 @@ import lombok.NonNull;
 @FunctionalInterface
 public interface DBColumn extends DBObject, Typed, Groupable {
 	
+	String sql(QueryParameterBuilder builder);
+	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
 		requireNoArgs(args, DBColumn.class::getSimpleName);
 		return sql(builder);
 	}
-	
-	String sql(QueryParameterBuilder builder);
 
 	@Override
 	default boolean isAggregation() {

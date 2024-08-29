@@ -29,6 +29,7 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
+import org.usf.jquery.core.QueryContext;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -48,7 +49,7 @@ public class ArgumentParsers {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR }; //varchar !?
 
-	public static Object parse(RequestEntryChain entry, ViewDecorator td, JavaType... types) {
+	public static Object parse(RequestEntryChain entry, ViewDecorator td, QueryContext ctx, JavaType... types) {
 		List<JavaType> list = new ArrayList<>();
 		if(isEmpty(types) || Stream.of(types).anyMatch(JDBCType.class::isInstance)) {
 			list.add(COLUMN);
@@ -62,7 +63,7 @@ public class ArgumentParsers {
 					return jdbcArgParser(t).parseEntry(entry, td);
 				}
 				if(type instanceof JQueryType t) {
-					return jqueryArgParser(t).parseEntry(entry, td);
+					return jqueryArgParser(t, ctx).parseEntry(entry, td);
 				}
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
@@ -99,16 +100,16 @@ public class ArgumentParsers {
 		}
 	}
 
-	public static JavaArgumentParser jqueryArgParser(@NonNull JQueryType type) {
+	public static JavaArgumentParser jqueryArgParser(@NonNull JQueryType type, QueryContext ctx) {
 		switch (type) {
-		case QUERY_COLUMN:	return RequestEntryChain::evalQueryColumn;
-		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, true, true); //separate query context 
-		case COLUMN:		return (e,v)-> e.evalColumn(v, false, false);
-		case FILTER: 		return RequestEntryChain::evalFilter;
-		case ORDER: 		return RequestEntryChain::evalOrder;
-		case QUERY: 		return RequestEntryChain::evalQuery;
+		case QUERY_COLUMN:	return (e,v)-> e.evalQueryColumn(v, ctx);
+		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, ctx, true); //separate query context 
+		case COLUMN:		return (e,v)-> e.evalColumn(v, ctx, false);
+		case FILTER: 		return (e,v)-> e.evalFilter(v, ctx);
+		case ORDER: 		return (e,v)-> e.evalOrder(v, ctx);
+		case QUERY: 		return (e,v)-> e.evalQuery(v, ctx);
 		case JOIN:			return RequestEntryChain::evalJoin;
-		case PARTITION:		return RequestEntryChain::evalPartition;
+		case PARTITION:		return (e,v)-> e.evalPartition(v, ctx);
 		default:			throw unsupportedTypeException(type);
 		}
 	}

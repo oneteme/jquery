@@ -114,7 +114,6 @@ public interface ViewDecorator {
 		parseFetch(query, parameterMap);
 		parseOffset(query, parameterMap);
 		parseFilters(query, parameterMap); //remove all entries before parse filters
-		query.overViews(currentContext().getOverView()); //over clause: after filters 
 		return query;
 	}
 	
@@ -122,7 +121,7 @@ public interface ViewDecorator {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.remove(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> currentContext().declareView(e.evalView(this)));
+			.forEach(e-> currentContext().declareView(e.evalView(this, query)));
 		}
 	}
 	
@@ -141,7 +140,7 @@ public interface ViewDecorator {
 		if(!isEmpty(cols)) {
 			Stream.of(cols)
 			.flatMap(v-> parseEntries(v).stream())
-			.map(e-> (TaggableColumn) e.evalColumn(this, true, true))
+			.map(e-> (TaggableColumn) e.evalColumn(this, query, true))
 			.forEach(query::columns);
 		}
 		else {
@@ -153,7 +152,7 @@ public interface ViewDecorator {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.remove(ORDER))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> query.orders(e.evalOrder(this)));
+			.forEach(e-> query.orders(e.evalOrder(this, query)));
 		}
 	}
 	default void parseJoin(RequestQueryBuilder query, Map<String, String[]> parameters) {
@@ -176,7 +175,7 @@ public interface ViewDecorator {
     	parameters.entrySet().stream()
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());
-    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseEntries(v)));
+    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, query, parseEntries(v)));
     	})
     	.forEach(query::filters);
 	}

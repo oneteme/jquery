@@ -25,7 +25,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.joinArray;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ContextManager.currentContext;
-import static org.usf.jquery.web.ContextManager.setCurrentContext;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.COLUMN;
@@ -60,6 +59,7 @@ import org.usf.jquery.core.Order;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.QueryColumn;
+import org.usf.jquery.core.QueryContext;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
@@ -99,52 +99,46 @@ final class RequestEntryChain {
 	}
 	
 	// [view|query]:tag
-	public ViewDecorator evalView(ViewDecorator vd) {
+	public ViewDecorator evalView(ViewDecorator vd, QueryContext ctx) {
 		return currentContext().lookupRegisteredView(value) //check args & next only if view exists
 				.<ViewDecorator>map(v-> new ViewDecoratorWrapper(v, requireNoArgs().requireNoNext().requireTag()))
-				.or(()-> evalQuery(vd, true))
+				.or(()-> evalQuery(vd, ctx, true))
 				.orElseThrow(()-> noSuchResourceException(VIEW, value));
 	}
 	
-	public QueryColumn evalQueryColumn(ViewDecorator td) {
-		return evalQuery(td, false)
+	public QueryColumn evalQueryColumn(ViewDecorator td, QueryContext ctx) {
+		return evalQuery(td, ctx, false)
 				.map(QueryDecorator::getQuery)
 				.map(QueryView::asColumn)
 				.orElseThrow(()-> cannotParseEntryException(QUERY, this));
 	}
 
-	public ViewDecorator evalQuery(ViewDecorator td) {
-		return evalQuery(td, false).orElseThrow(()-> cannotParseEntryException(QUERY, this));
+	public ViewDecorator evalQuery(ViewDecorator td, QueryContext ctx) {
+		return evalQuery(td, ctx, false).orElseThrow(()-> cannotParseEntryException(QUERY, this));
 	}
 	
 	//select[.distinct|filter|order|offset|fetch]*
-	Optional<QueryDecorator> evalQuery(ViewDecorator td, boolean requireTag) { //sub context
+	Optional<QueryDecorator> evalQuery(ViewDecorator td, QueryContext ctx, boolean requireTag) { //sub context
 		if(SELECT.equals(value)) {
 			var e =	this;
-			var ctx = currentContext();
-			setCurrentContext(new ContextEnvironment(ctx)); //sub context : inherits only declared views 
 			try {
-				var q = new RequestQueryBuilder().columns(taggableVarargs(td));
+				var q = new RequestQueryBuilder().columns(taggableVarargs(td, ctx));
 				while(e.hasNext()) {
 					e = e.next;
 					switch(e.value) {//column not allowed 
 					case DISTINCT: e.requireNoArgs(); q.distinct(); break;
-					case FILTER: q.filters(e.filterVarargs(td)); break;
-					case ORDER: q.orders(e.oderVarargs(td)); break;
+					case FILTER: q.filters(e.filterVarargs(td, ctx)); break;
+					case ORDER: q.orders(e.oderVarargs(td, ctx)); break;
 					case JOIN: q.joins(e.evalJoin(td)); break;
-					case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
-					case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
+					case OFFSET: q.offset((int)e.toOneArg(td, ctx, INTEGER)); break;
+					case FETCH: q.fetch((int)e.toOneArg(td, ctx, INTEGER)); break;
 					default: throw badEntrySyntaxException(joinArray("|", DISTINCT, FILTER, ORDER, JOIN, OFFSET, FETCH), e.value);
 					}
 				}
-				q.overViews(currentContext().getOverView());
 				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
 			}
 			catch (EntryParseException | NoSuchResourceException ex) {
 				throw new EntrySyntaxException("incorrect query syntax: " + e, ex);
-			}
-			finally {
-				setCurrentContext(ctx);
 			}
 		}
 		return empty();
@@ -167,7 +161,7 @@ final class RequestEntryChain {
 	}
 	
 	//[partition.order]*
-	public Partition evalPartition(ViewDecorator vd) {
+	public Partition evalPartition(ViewDecorator vd, QueryContext ctx) {
 		var e = this;
 		if(hasNext()) {
 			var res = currentContext().lookupRegisteredView(value);
@@ -182,7 +176,7 @@ final class RequestEntryChain {
 			return requireNonNull(par.build(), vd.identity() + ".partition: " + e);
 		}
 		if(e == this) { // not view
-			var res = evalPartition2(vd);
+			var res = evalPartition2(vd, ctx);
 			if(res.isPresent()) {
 				return res.get();
 			}
@@ -190,14 +184,14 @@ final class RequestEntryChain {
 		throw noSuchResourceException(vd.identity() + ".partition", e.value);
 	}
 	
-	private Optional<Partition> evalPartition2(ViewDecorator vd) {
+	private Optional<Partition> evalPartition2(ViewDecorator vd, QueryContext ctx) {
 		List<DBColumn> cols = new ArrayList<>();
 		List<DBOrder> ords = new ArrayList<>();
 		var e = this;
 		do {
 			switch (e.value) {
-			case PARTITION: addAll(cols, columnVarargs(vd)); break;
-			case ORDER: addAll(ords, e.oderVarargs(vd)); break;
+			case PARTITION: addAll(cols, columnVarargs(vd, ctx)); break;
+			case ORDER: addAll(ords, e.oderVarargs(vd, ctx)); break;
 			default: 
 				if(e == this) {
 					return empty(); //cannotParseEntryException(PARTITION, e) //first entry
@@ -212,13 +206,12 @@ final class RequestEntryChain {
 	}
 	
 	//[view.]column[.operator]*
-	public DBColumn evalColumn(ViewDecorator td, boolean requireTag, boolean declare) {
-		var r = chainColumnOperations(td, false)
+	public DBColumn evalColumn(ViewDecorator td, QueryContext ctx, boolean requireTag) {
+		var r = chainColumnOperations(td, ctx, false)
 				.orElseThrow(()-> noSuchViewColumnException(this));
 		r.entry.requireNoNext(); //check next only if column exists
 		if(nonNull(r.entry.tag)) {
-			var c = r.col.as(r.entry.tag);
-			return declare ? currentContext().declareColumn(c) : c;
+			return r.col.as(r.entry.tag);
 		}
 		if(!requireTag || r.col instanceof TaggableColumn) {
 			return r.col;
@@ -227,8 +220,8 @@ final class RequestEntryChain {
 	}
 	
 	//[view.]column[.operator]*[.order]
-	public DBOrder evalOrder(ViewDecorator td) {
-		var r = chainColumnOperations(td, false)
+	public DBOrder evalOrder(ViewDecorator td, QueryContext ctx) {
+		var r = chainColumnOperations(td, ctx, false)
 				.orElseThrow(()-> noSuchViewColumnException(this));
 		if(r.entry.isLast()) { // default order
 			return r.col.order();
@@ -241,28 +234,28 @@ final class RequestEntryChain {
 		throw badEntrySyntaxException(ORDER_PATTERN, ord.value);
 	}
 
-	public DBFilter evalFilter(ViewDecorator td) {
-		return evalFilter(td, emptyList());
+	public DBFilter evalFilter(ViewDecorator td, QueryContext ctx) {
+		return evalFilter(td, ctx, emptyList());
 	}
 
 	//[view.]criteria | [view.]column.criteria |  [view.]column[.operator]*[.comparator]
-	public DBFilter evalFilter(ViewDecorator vd, List<RequestEntryChain> values) { //supply values
-		var res = chainColumnOperations(vd, true);
+	public DBFilter evalFilter(ViewDecorator vd, QueryContext ctx, List<RequestEntryChain> values) { //supply values
+		var res = chainColumnOperations(vd, ctx, true);
 		if(res.isEmpty()) { //not a column
-			return viewCriteria(vd, values)
+			return viewCriteria(vd, ctx, values)
 					.orElseThrow(()-> noSuchViewColumnException(this)); 
 		}
 		var rc = res.get();
 		if(rc.entry.isLast()) { //no comparator, no criteria
 			var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
 			var e = new RequestEntryChain(null, false, null, values, null); 
-			return fn.filter(e.toArgs(vd, rc.col, fn.getParameterSet())); //no chain
+			return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
 		}
-		return rc.entry.next.columnCriteria(vd, rc.cd, rc.col, values);
+		return rc.entry.next.columnCriteria(vd, ctx, rc.cd, rc.col, values);
 	}
 
 	//[view.]criteria
-	Optional<DBFilter> viewCriteria(ViewDecorator td, List<RequestEntryChain> values) {
+	Optional<DBFilter> viewCriteria(ViewDecorator td, QueryContext ctx, List<RequestEntryChain> values) {
 		CriteriaBuilder<DBFilter> b = null;
 		RequestEntryChain e = null;
 		if(hasNext()) { //view.id == column.id
@@ -279,24 +272,24 @@ final class RequestEntryChain {
 		if(nonNull(b)) {
 			var strArgs = toStringArray(e.assertOuterParameters(values));
 			var f = requireNonNull(b.build(strArgs), "view.criteria: " + e);
-			return Optional.of(e.chainComparator(td, f));
+			return Optional.of(e.chainComparator(td, ctx, f));
 		}
 		return Optional.empty();
 	}
 	
-	DBFilter columnCriteria(ViewDecorator vc, ColumnDecorator cd, DBColumn col, List<RequestEntryChain> values) {
+	DBFilter columnCriteria(ViewDecorator vc, QueryContext ctx, ColumnDecorator cd, DBColumn col, List<RequestEntryChain> values) {
 		var cmp = lookupComparator(value);
 		if(cmp.isPresent()) {
 			var fn = cmp.get();
 			var cp = new RequestEntryChain(value, false, null, assertOuterParameters(values), null);
-			return chainComparator(vc, fn.filter(cp.toArgs(vc, col, fn.getParameterSet())));
+			return chainComparator(vc, ctx, fn.filter(cp.toArgs(vc, ctx, col, fn.getParameterSet())));
 		}
 		if(nonNull(cd)) { // no operation
 			var c = cd.criteria(value);
 			if(nonNull(c)) {
 				var strArgs = toStringArray(assertOuterParameters(values));
 				var ex = requireNonNull(c.build(strArgs), "column.criteria: " + this);
-				return chainComparator(vc, col.filter(ex));
+				return chainComparator(vc, ctx, col.filter(ex));
 			}
 			throw noSuchResourceException("comparator|criteria", value);
 		}
@@ -313,12 +306,12 @@ final class RequestEntryChain {
 		throw new IllegalStateException(this + "=" + values); //denied
 	}
 
-	DBFilter chainComparator(ViewDecorator td, DBFilter f) {
+	DBFilter chainComparator(ViewDecorator td, QueryContext ctx, DBFilter f) {
 		var e = next;
 		while(nonNull(e)) {
 			if(e.value.matches(LOGIC_PATTERN)) {
 				var op = LogicalOperator.valueOf(e.value.toUpperCase());
-				f = f.append(op, (DBFilter) e.toOneArg(td, JQueryType.FILTER));
+				f = f.append(op, (DBFilter) e.toOneArg(td, ctx, JQueryType.FILTER));
 				e = e.next;
 			}
 			else {
@@ -328,18 +321,18 @@ final class RequestEntryChain {
 		return f;
 	}
 	
-	private Optional<ViewResource> chainColumnOperations(ViewDecorator td, boolean filter) {
-		return lookupResource(td).map(r-> {
+	private Optional<ViewResource> chainColumnOperations(ViewDecorator td, QueryContext ctx, boolean filter) {
+		return lookupResource(td, ctx).map(r-> {
 			var e = r.entry.next;
 			while(nonNull(e)) { //chain until !operator
-				var o = e.lookupOperation(td, r.col, fn-> true); //accept all
+				var o = e.lookupOperation(td, ctx, r.col, fn-> true); //accept all
 				if(o.isEmpty()) {
 					break;
 				}
 				r.cd = null;
 				r.entry = e;
 				r.col = filter && "over".equals(e.value)
-						? windowColumn(r.vd, o.get())
+						? windowColumn(r.vd, ctx, o.get())
 						: o.get(); 
 				e = e.next;
 			}
@@ -347,82 +340,80 @@ final class RequestEntryChain {
 		});
 	}
 	
-	private static DBColumn windowColumn(ViewDecorator vd, DBColumn col) {
-		var v = requireNonNull(vd, "column view").view(); //Declared column
+	private static DBColumn windowColumn(ViewDecorator vd, QueryContext ctx, DBColumn col) {
+		var v = vd.view();
 		var tag = "over_" + vd.identity() + "_" + col.hashCode();  //over_view_hash
-		currentContext().overView(v, ()-> new RequestQueryBuilder()
-				.columns(allColumns(v)).asView())
-		.getBuilder().columns(col.as(tag)); //append over column
+		ctx.overView(v).getBuilder().columns(col.as(tag)); //append over colum
 		return new ViewColumn(v, doubleQuote(tag), null, col.getType());
 	}
 	
-	private Optional<ViewResource> lookupResource(ViewDecorator td) { //do not change priority
+	private Optional<ViewResource> lookupResource(ViewDecorator td, QueryContext ctx) { //do not change priority
 		if(hasNext()) { //view.id == column.id
 			var rc = currentContext().lookupRegisteredView(value)
-					.flatMap(v-> next.lookupViewResource(v, RequestEntryChain::isWindowFunction));
+					.flatMap(v-> next.lookupViewResource(v, ctx, RequestEntryChain::isWindowFunction));
 			if(rc.isPresent()) {
 				requireNoArgs(); //view takes no args
 				return rc;
 			}
 		}
-		return currentContext().lookupDeclaredColumn(value)  //declared column first
+		return ctx.declaredColumn(value)  //declared column first
 				.map(c-> new ViewResource(null, null, requireNoArgs(), c)) 
-				.or(()-> lookupViewResource(td, fn-> true)); //registered column
+				.or(()-> lookupViewResource(td, ctx, fn-> true)); //registered column
 	}
 	
-	private Optional<ViewResource> lookupViewResource(ViewDecorator td, Predicate<TypedOperator> pre) {
+	private Optional<ViewResource> lookupViewResource(ViewDecorator td, QueryContext ctx, Predicate<TypedOperator> pre) {
 		var res = td instanceof QueryDecorator qd 
 				? ofNullable(qd.column(value))
 					.map(c-> new ViewResource(td, null, requireNoArgs(), c))
 				: currentContext().lookupRegisteredColumn(value)
 					.map(cd-> new ViewResource(td, cd, requireNoArgs(), td.column(cd)));
-		return res.or(()-> lookupOperation(td, null, pre).map(col-> new ViewResource(td, null, this, col)));
+		return res.or(()-> lookupOperation(td, ctx, null, pre).map(col-> new ViewResource(td, null, this, col)));
 	}
 	
-	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, DBColumn col, Predicate<TypedOperator> opr) {
+	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, QueryContext ctx, DBColumn col, Predicate<TypedOperator> opr) {
 		return lookupOperator(value).filter(opr).map(fn-> {
 			var c = col;
 			if(isNull(c) && isEmpty(args) && isCountFunction(fn)) {
 				c = allColumns(vd.view());
 			}
-			return fn.operation(toArgs(vd, c, fn.getParameterSet()));
+			return fn.operation(toArgs(vd, ctx, c, fn.getParameterSet()));
 		});
 	}
 
-	private TaggableColumn[] taggableVarargs(ViewDecorator td) {
-		return (TaggableColumn[]) typeVarargs(td, JQueryType.NAMED_COLUMN);
+	private TaggableColumn[] taggableVarargs(ViewDecorator td, QueryContext ctx) {
+		return (TaggableColumn[]) typeVarargs(td, ctx, JQueryType.NAMED_COLUMN);
 	}
 
-	private DBColumn[] columnVarargs(ViewDecorator td) {
-		return (DBColumn[]) typeVarargs(td, JQueryType.COLUMN);
+	private DBColumn[] columnVarargs(ViewDecorator td, QueryContext ctx) {
+		return (DBColumn[]) typeVarargs(td, ctx, JQueryType.COLUMN);
 	}
 	
-	private DBOrder[] oderVarargs(ViewDecorator td) {
-		return (DBOrder[]) typeVarargs(td, JQueryType.ORDER);
+	private DBOrder[] oderVarargs(ViewDecorator td, QueryContext ctx) {
+		return (DBOrder[]) typeVarargs(td, ctx, JQueryType.ORDER);
 	}
 	
-	private DBFilter[] filterVarargs(ViewDecorator td) {
-		return (DBFilter[]) typeVarargs(td, JQueryType.FILTER);
+	private DBFilter[] filterVarargs(ViewDecorator td, QueryContext ctx) {
+		return (DBFilter[]) typeVarargs(td, ctx, JQueryType.FILTER);
 	}
 
-	private Object[] typeVarargs(ViewDecorator td, JavaType type) {
+	private Object[] typeVarargs(ViewDecorator td, QueryContext ctx, JavaType type) {
 		var c = type.typeClass();
 		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
 			var ps = ofParameters(required(type), varargs(type));
-			return toArgs(td, null, ps, s-> (Object[]) newInstance(c, s));
+			return toArgs(td, ctx, null, ps, s-> (Object[]) newInstance(c, s));
 		}
 		throw new UnsupportedOperationException("cannot instantiate type " + c);
 	}
 	
-	private Object toOneArg(ViewDecorator td, JavaType type) {
-		return toArgs(td, null, ofParameters(required(type)))[0];
+	private Object toOneArg(ViewDecorator td, QueryContext ctx, JavaType type) {
+		return toArgs(td, ctx, null, ofParameters(required(type)))[0];
 	}
 	
-	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps) {
-		return toArgs(td, col, ps, Object[]::new);
+	private Object[] toArgs(ViewDecorator td, QueryContext ctx, DBObject col, ParameterSet ps) {
+		return toArgs(td, ctx, col, ps, Object[]::new);
 	}
 	
-	private Object[] toArgs(ViewDecorator td, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
+	private Object[] toArgs(ViewDecorator td, QueryContext ctx, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
 		int inc = isNull(col) ? 0 : 1;
 		var arr = arrFn.apply(isNull(args) ? inc : args.size() + inc);
 		if(nonNull(col)) {
@@ -434,7 +425,7 @@ final class RequestEntryChain {
 					var e = args.get(i-inc);
 					arr[i] = isNull(e.value) || e.text
 							? e.requireNoArgs().value 
-							: parse(e, td, p.types(arr));
+							: parse(e, td, ctx, p.types(arr));
 				}
 			});
 		}
