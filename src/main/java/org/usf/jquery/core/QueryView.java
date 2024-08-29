@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class QueryView implements DBView {
 
-	@Getter // remove this
+	@Getter
 	private final RequestQueryBuilder builder;
 	
 	@Override

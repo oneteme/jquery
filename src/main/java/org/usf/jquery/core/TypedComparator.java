@@ -34,7 +34,7 @@ public final class TypedComparator {
 	public ColumnSingleFilter filter(Object... args) {
 		try {
 			return comparator.filter(parameterSet.assertArguments(args));
-		} catch (BadArgumentException e) { //TODO message
+		} catch (BadArgumentException e) {
 			throw badArgumentsException(toString(), comparator.id() + joinAndDelemitArray(SCOMA, "(", ")", args), e);
 		}
 	}
