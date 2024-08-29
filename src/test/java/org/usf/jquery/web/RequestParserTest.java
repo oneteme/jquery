@@ -51,6 +51,7 @@ class RequestParserTest {
 //		"1name",
 		"_column",
 		"column.\"val\"",
+		"column.:tag",
 		"column.a-b",
 		"_.column",
 		"(column",

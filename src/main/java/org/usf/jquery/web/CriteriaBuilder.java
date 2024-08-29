@@ -18,7 +18,7 @@ import org.usf.jquery.core.LogicalOperator;
 public interface CriteriaBuilder<T extends Chainable<T>> {
 	
 	T build(String... arg);
-	
+
 	static <T extends Chainable<T>> CriteriaBuilder<T> singleArg(ChainableCriteria<T> cr){
 		return args-> cr.criteria(isEmpty(args) ? null : requireNArgs(1, args, ()-> "single arg criteria")[0]);
 	}

@@ -65,6 +65,9 @@ public final class RequestParser {
 				if(legalLetter(c)) { //require identifier after '.'
 					entry.setNext(parseEntry());
 				}
+				else { //avoid .:tag or .(
+					throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
+				}
 			}
 			if(c == ':') {
 				nextChar(true);
@@ -72,7 +75,7 @@ public final class RequestParser {
 			}
 			return entry;
 		}
-		if(legalNumber(c)) {
+		if(legalNumber(c) || c == '-') { //negative
 			return new RequestEntryChain(nextWhile(RequestParser::legalValChar));
 		}
 		if(c == '"') {
