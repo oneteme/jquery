@@ -72,6 +72,9 @@ public final class RequestParser {
 			}
 			return entry;
 		}
+		if(legalNumber(c)) {
+			return new RequestEntryChain(nextWhile(RequestParser::legalValChar));
+		}
 		if(c == '"') {
 			nextChar(true);
 			var txt = nextWhile(RequestParser::legalTxtChar);
@@ -79,7 +82,7 @@ public final class RequestParser {
 			nextChar(false);
 			return new RequestEntryChain(txt, true);  //no next, no args, no tag
 		}
-		return new RequestEntryChain(legalNumber(c) || c == '-'  ? nextWhile(RequestParser::legalValChar) : null); // decimal negative? | instant format
+		return new RequestEntryChain(null); 
 	}
 	
 	private String nextWhile(CharPredicate cp) {
