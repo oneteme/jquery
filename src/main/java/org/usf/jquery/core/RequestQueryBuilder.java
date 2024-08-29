@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class RequestQueryBuilder implements RequestContext {
+public class RequestQueryBuilder implements QueryContext {
 	
 	private final List<TaggableColumn> columns = new ArrayList<>();
 	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING

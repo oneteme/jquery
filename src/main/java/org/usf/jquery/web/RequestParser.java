@@ -75,7 +75,7 @@ public final class RequestParser {
 			}
 			return entry;
 		}
-		if(legalNumber(c) || c == '-') { //negative
+		if(legalNumber(c) || c == '-') { //negative number
 			return new RequestEntryChain(nextWhile(RequestParser::legalValChar));
 		}
 		if(c == '"') {
