@@ -26,12 +26,12 @@ import lombok.Getter;
  * @author u$f
  *
  */
+@Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
 	private static final String P_ARG = "?";
 	
-	@Getter
 	private final String schema;
 	private final String vPrefix;
 	private final List<Object> args; //dynamic flag

@@ -24,9 +24,9 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 
 	@Override
 	public String sql(QueryParameterBuilder builder, Object operand) {
-		return "(" + Stream.of(expressions)
+		return Stream.of(expressions)
 		.map(o-> o.sql(builder, operand))
-		.collect(joining(operator.sql())) + ")";
+		.collect(joining(operator.sql(), "(", ")"));
 	}
 	
 	@Override

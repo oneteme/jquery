@@ -20,7 +20,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public class ViewJoin implements DBObject {
+public final class ViewJoin implements DBObject {
 	
 	private final JoinType joinType;
 	private final DBView view;
@@ -39,22 +39,18 @@ public class ViewJoin implements DBObject {
 	}
 	
 	public static ViewJoin innerJoin(DBView view, DBFilter... filters) {
-		return join(INNER, view, filters);
+		return new ViewJoin(INNER, view, filters);
 	}
 	
 	public static ViewJoin leftJoin(DBView view, DBFilter... filters) {
-		return join(LEFT, view, filters);
+		return new ViewJoin(LEFT, view, filters);
 	}
 	
 	public static ViewJoin rightJoin(DBView view, DBFilter... filters) {
-		return join(RIGHT, view, filters);
+		return new ViewJoin(RIGHT, view, filters);
 	}
 
 	public static ViewJoin fullJoin(DBView view, DBFilter... filters) {
-		return join(FULL, view, filters);
-	}
-	
-	public static ViewJoin join(JoinType jt, DBView view, DBFilter... filters) {
-		return new ViewJoin(jt, view, filters);
+		return new ViewJoin(FULL, view, filters);
 	}
 }

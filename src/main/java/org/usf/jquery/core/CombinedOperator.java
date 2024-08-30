@@ -26,6 +26,6 @@ public interface CombinedOperator extends Operator {
 	
 	@Override
 	default String sql(QueryParameterBuilder builder, Object[] args) {
-		throw new UnsupportedOperationException("sql");
+		throw new UnsupportedOperationException("CombinedOperator::sql");
 	}
 }
