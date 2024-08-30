@@ -271,7 +271,7 @@ final class RequestEntryChain {
 		}
 		if(nonNull(b)) {
 			var strArgs = toStringArray(e.assertOuterParameters(values));
-			var f = requireNonNull(b.build(strArgs), "view.criteria: " + e);
+			var f = requireNonNull(b.build(ctx, strArgs), "view.criteria: " + e);
 			return Optional.of(e.chainComparator(td, ctx, f));
 		}
 		return Optional.empty();
@@ -288,7 +288,7 @@ final class RequestEntryChain {
 			var c = cd.criteria(value);
 			if(nonNull(c)) {
 				var strArgs = toStringArray(assertOuterParameters(values));
-				var ex = requireNonNull(c.build(strArgs), "column.criteria: " + this);
+				var ex = requireNonNull(c.build(ctx, strArgs), "column.criteria: " + this);
 				return chainComparator(vc, ctx, col.filter(ex));
 			}
 			throw noSuchResourceException("comparator|criteria", value);
