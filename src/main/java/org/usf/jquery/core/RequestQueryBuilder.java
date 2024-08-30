@@ -158,7 +158,7 @@ public class RequestQueryBuilder implements QueryContext {
 	}
 	
 	void from(SqlStringBuilder sb, QueryParameterBuilder pb) {
-		var excludes = joins.stream().map(ViewJoin::getView).map(v-> pb.getOverView().getOrDefault(v, v)).toList();
+		var excludes = joins.stream().map(ViewJoin::getView).map(pb::viewOverload).toList();
 		var views = pb.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
 			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(pb));

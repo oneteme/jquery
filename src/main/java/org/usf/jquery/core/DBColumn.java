@@ -438,7 +438,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 
 	static TaggableColumn allColumns(@NonNull DBView view) {
 		 return ((DBColumn) b-> {
-			b.view(view);
+			b.viewAlias(view);
 			return "*"; //avoid view.* as ""
 		}).as(null);
 	}

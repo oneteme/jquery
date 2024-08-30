@@ -21,8 +21,8 @@ public interface DBView extends DBObject {
 	}
 	
 	default String sqlWithTag(QueryParameterBuilder builder) {
-		var tag = builder.view(this);
-		var sql = builder.getOverView().getOrDefault(this, this).sql(builder); //!important
+		var tag = builder.viewAlias(this);
+		var sql = builder.viewOverload(this).sql(builder); //!important
 		return isNull(tag) ? sql : sql + SPACE + tag;
 	}
 }

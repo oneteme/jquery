@@ -26,12 +26,12 @@ import lombok.Getter;
  * @author u$f
  *
  */
-@Getter
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryParameterBuilder {
 	
 	private static final String P_ARG = "?";
 	
+	@Getter
 	private final String schema;
 	private final String vPrefix;
 	private final List<Object> args; //dynamic flag
@@ -39,7 +39,7 @@ public final class QueryParameterBuilder {
 	private final List<DBView> views; //indexed view
 	private final Map<DBView, DBView> overView;
 		
-	public String view(DBView view) {
+	public String viewAlias(DBView view) {
 		view = overView.getOrDefault(view, view);
 		var idx = views.indexOf(view);
 		if(idx < 0) {
@@ -47,6 +47,10 @@ public final class QueryParameterBuilder {
 			views.add(view);
 		}
 		return vPrefix + (idx+1);
+	}
+	
+	public DBView viewOverload(DBView view) {
+		return overView.getOrDefault(view, view);
 	}
 	
 	public List<DBView> views(){

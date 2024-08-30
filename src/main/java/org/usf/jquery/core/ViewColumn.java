@@ -16,10 +16,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class ViewColumn implements TaggableColumn {
 
-	private final DBView view;
+	private final DBView view; //optional
 	private final String name;
-	private final String tag;
-	private final JDBCType type;
+	private final String tag;  //optional
+	private final JDBCType type; //optional
 	
 	public ViewColumn(String name, String tag) {
 		this(null, name, tag, null);
@@ -31,7 +31,7 @@ public final class ViewColumn implements TaggableColumn {
 
 	@Override
 	public String sql(QueryParameterBuilder arg) {
-		return nonNull(view) ? member(arg.view(view), name) : name;
+		return nonNull(view) ? member(arg.viewAlias(view), name) : name;
 	}
 	
 	@Override
