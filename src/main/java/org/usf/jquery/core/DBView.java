@@ -22,7 +22,7 @@ public interface DBView extends DBObject {
 	
 	default String sqlWithTag(QueryParameterBuilder builder) {
 		var tag = builder.view(this);
-		var sql = sql(builder);
+		var sql = builder.getOverView().getOrDefault(this, this).sql(builder); //!important
 		return isNull(tag) ? sql : sql + SPACE + tag;
 	}
 }
