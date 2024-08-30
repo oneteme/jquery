@@ -33,7 +33,6 @@ import org.usf.jquery.core.QueryContext;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -80,7 +79,7 @@ public class ArgumentParsers {
 		throw cannotParseEntryException("entry", entry, exList.size() == 1 ? exList.get(0) : null);
 	}
 	
-	public static JDBCArgumentParser jdbcArgParser(@NonNull JDBCType type) {
+	public static JDBCArgumentParser jdbcArgParser(JDBCType type) {
 		switch (type) {
 		case BOOLEAN, BIT: 				return Boolean::parseBoolean;
 		case TINYINT: 					return Byte::parseByte;
@@ -100,7 +99,7 @@ public class ArgumentParsers {
 		}
 	}
 
-	public static JavaArgumentParser jqueryArgParser(@NonNull JQueryType type, QueryContext ctx) {
+	public static JavaArgumentParser jqueryArgParser(JQueryType type, QueryContext ctx) {
 		switch (type) {
 		case QUERY_COLUMN:	return (e,v)-> e.evalQueryColumn(v, ctx);
 		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, ctx, true); //separate query context 
@@ -108,7 +107,7 @@ public class ArgumentParsers {
 		case FILTER: 		return (e,v)-> e.evalFilter(v, ctx);
 		case ORDER: 		return (e,v)-> e.evalOrder(v, ctx);
 		case QUERY: 		return (e,v)-> e.evalQuery(v, ctx);
-		case JOIN:			return RequestEntryChain::evalJoin;
+		case JOIN:			return (e,v)-> e.evalJoin(v, ctx);
 		case PARTITION:		return (e,v)-> e.evalPartition(v, ctx);
 		default:			throw unsupportedTypeException(type);
 		}

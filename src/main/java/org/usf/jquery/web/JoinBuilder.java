@@ -1,5 +1,6 @@
 package org.usf.jquery.web;
 
+import org.usf.jquery.core.QueryContext;
 import org.usf.jquery.core.ViewJoin;
 
 /**
@@ -10,6 +11,6 @@ import org.usf.jquery.core.ViewJoin;
 @FunctionalInterface
 public interface JoinBuilder {
 
-	ViewJoin[] build();
+	ViewJoin[] build(QueryContext qc);
 	
 }

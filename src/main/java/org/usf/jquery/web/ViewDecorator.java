@@ -159,7 +159,7 @@ public interface ViewDecorator {
 		if(parameters.containsKey(JOIN)) {
 			Stream.of(parameters.remove(JOIN))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> query.joins(e.evalJoin(this)));
+			.forEach(e-> query.joins(e.evalJoin(this, query)));
 		}
 	}
 

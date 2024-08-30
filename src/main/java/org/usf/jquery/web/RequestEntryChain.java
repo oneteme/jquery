@@ -129,7 +129,7 @@ final class RequestEntryChain {
 					case DISTINCT: e.requireNoArgs(); q.distinct(); break;
 					case FILTER: q.filters(e.filterVarargs(td, ctx)); break;
 					case ORDER: q.orders(e.oderVarargs(td, ctx)); break;
-					case JOIN: q.joins(e.evalJoin(td)); break;
+					case JOIN: q.joins(e.evalJoin(td, ctx)); break;
 					case OFFSET: q.offset((int)e.toOneArg(td, ctx, INTEGER)); break;
 					case FETCH: q.fetch((int)e.toOneArg(td, ctx, INTEGER)); break;
 					default: throw badEntrySyntaxException(joinArray("|", DISTINCT, FILTER, ORDER, JOIN, OFFSET, FETCH), e.value);
@@ -145,7 +145,7 @@ final class RequestEntryChain {
 	}
 
 	//[view.]joiner
-	public ViewJoin[] evalJoin(ViewDecorator vd) { 
+	public ViewJoin[] evalJoin(ViewDecorator vd, QueryContext ctx) { 
 		var e = this;
 		if(hasNext()) { 
 			vd = currentContext().lookupRegisteredView(value)
@@ -155,7 +155,7 @@ final class RequestEntryChain {
 		var join = vd.join(e.value);
 		if(nonNull(join)) {
 			e.requireNoArgs().requireNoNext(); //check args & next only if joiner exists
-			return requireNonNull(join.build(), vd.identity() + ".join: " + e);
+			return requireNonNull(join.build(ctx), vd.identity() + ".join: " + e);
 		}
 		throw noSuchResourceException(vd.identity() + ".join", e.value);
 	}
@@ -173,7 +173,7 @@ final class RequestEntryChain {
 		var par = vd.partition(e.value);
 		if(nonNull(par)) {
 			e.requireNoArgs().requireNoNext();
-			return requireNonNull(par.build(), vd.identity() + ".partition: " + e);
+			return requireNonNull(par.build(ctx), vd.identity() + ".partition: " + e);
 		}
 		if(e == this) { // not view
 			var res = evalPartition2(vd, ctx);
@@ -349,25 +349,32 @@ final class RequestEntryChain {
 	
 	private Optional<ViewResource> lookupResource(ViewDecorator td, QueryContext ctx) { //do not change priority
 		if(hasNext()) { //view.id == column.id
-			var rc = currentContext().lookupRegisteredView(value)
-					.flatMap(v-> next.lookupViewResource(v, ctx, RequestEntryChain::isWindowFunction));
+			var rc = currentContext().lookupRegisteredView(value);
 			if(rc.isPresent()) {
-				requireNoArgs(); //view takes no args
-				return rc;
+				var v = rc.get();
+				var res = next.lookupQueryResource(v) //declared query first
+						.or(()-> next.lookupViewResource(td, ctx, RequestEntryChain::isWindowFunction));
+				if(res.isPresent()) {
+					requireNoArgs();
+					return res;
+				}
 			}
 		}
-		return ctx.declaredColumn(value)  //declared column first
-				.map(c-> new ViewResource(null, null, requireNoArgs(), c)) 
+		return ctx.declaredColumn(value)
+				.map(c-> new ViewResource(null, null, requireNoArgs(), c))  //declared column first
 				.or(()-> lookupViewResource(td, ctx, fn-> true)); //registered column
+	}
+
+	private Optional<ViewResource> lookupQueryResource(ViewDecorator vd) {
+		return vd instanceof QueryDecorator qd 
+				? Optional.of(new ViewResource(qd, null, requireNoArgs(), qd.column(value)))
+				: empty();
 	}
 	
 	private Optional<ViewResource> lookupViewResource(ViewDecorator td, QueryContext ctx, Predicate<TypedOperator> pre) {
-		var res = td instanceof QueryDecorator qd 
-				? ofNullable(qd.column(value))
-					.map(c-> new ViewResource(td, null, requireNoArgs(), c))
-				: currentContext().lookupRegisteredColumn(value)
-					.map(cd-> new ViewResource(td, cd, requireNoArgs(), td.column(cd)));
-		return res.or(()-> lookupOperation(td, ctx, null, pre).map(col-> new ViewResource(td, null, this, col)));
+		return currentContext().lookupRegisteredColumn(value)
+				.flatMap(cd-> declaredColumn(td, cd).map(c-> new ViewResource(td, cd, requireNoArgs(), c)))
+				.or(()-> lookupOperation(td, ctx, null, pre).map(col-> new ViewResource(td, null, this, col)));
 	}
 	
 	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, QueryContext ctx, DBColumn col, Predicate<TypedOperator> opr) {
@@ -378,6 +385,15 @@ final class RequestEntryChain {
 			}
 			return fn.operation(toArgs(vd, ctx, c, fn.getParameterSet()));
 		});
+	}
+	
+	static Optional<TaggableColumn> declaredColumn(ViewDecorator td, ColumnDecorator cd) {
+		try {
+			return Optional.of(td.column(cd));
+		}
+		catch(Exception e) {
+			return Optional.empty();
+		}
 	}
 
 	private TaggableColumn[] taggableVarargs(ViewDecorator td, QueryContext ctx) {

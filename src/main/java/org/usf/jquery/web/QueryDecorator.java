@@ -1,5 +1,7 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.web.ResourceAccessException.undeclaredResouceException;
+
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.TaggableColumn;
@@ -34,7 +36,7 @@ final class QueryDecorator implements ViewDecorator {
 	public TaggableColumn column(String id) {
 		return query.getBuilder().declaredColumn(id)
 		.map(c-> new ViewColumn(query, c.tagname(), c.tagname(), c.getType()))
-		.orElse(null);
+		.orElseThrow(()-> undeclaredResouceException(id, identity()));
 	}
 	
 	@Override
@@ -58,6 +60,6 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	private UnsupportedOperationException unsupportedOperationException(String method) {
-		return new UnsupportedOperationException(identity() + "." + method);
+		return new UnsupportedOperationException(identity() + "::" + method);
 	}
 }
