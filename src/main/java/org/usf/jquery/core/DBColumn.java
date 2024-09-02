@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.Order.ASC;
 import static org.usf.jquery.core.Order.DESC;
 import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
+import static org.usf.jquery.core.SqlStringBuilder.member;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -437,10 +438,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 
 	static TaggableColumn allColumns(@NonNull DBView view) {
-		 return ((DBColumn) b-> {
-			b.viewAlias(view);
-			return "*"; //avoid view.* as ""
-		}).as(null);
+		 return ((DBColumn) b-> member(b.viewAlias(view), "*")).as(null);
 	}
 	
 	static DBColumn constant(Object value) {

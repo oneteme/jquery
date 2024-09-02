@@ -9,7 +9,6 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Optional.empty;
-import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
@@ -325,7 +324,7 @@ final class RequestEntryChain {
 		return lookupResource(td, ctx).map(r-> {
 			var e = r.entry.next;
 			while(nonNull(e)) { //chain until !operator
-				var o = e.lookupOperation(td, ctx, r.col, fn-> true); //accept all
+				var o = e.lookupOperation(td, ctx, r.col, null, fn-> true); //accept all
 				if(o.isEmpty()) {
 					break;
 				}
@@ -347,13 +346,12 @@ final class RequestEntryChain {
 		return new ViewColumn(v, doubleQuote(tag), null, col.getType());
 	}
 	
-	private Optional<ViewResource> lookupResource(ViewDecorator td, QueryContext ctx) { //do not change priority
+	private Optional<ViewResource> lookupResource(ViewDecorator vd, QueryContext ctx) { //do not change priority
 		if(hasNext()) { //view.id == column.id
 			var rc = currentContext().lookupRegisteredView(value);
 			if(rc.isPresent()) {
-				var v = rc.get();
-				var res = next.lookupQueryResource(v) //declared query first
-						.or(()-> next.lookupViewResource(td, ctx, RequestEntryChain::isWindowFunction));
+				var res = next.lookupQueryResource(rc.get()) //declared query first
+						.or(()-> next.lookupViewResource(vd, ctx, rc.get(), RequestEntryChain::isWindowFunction));
 				if(res.isPresent()) {
 					requireNoArgs();
 					return res;
@@ -362,26 +360,29 @@ final class RequestEntryChain {
 		}
 		return ctx.declaredColumn(value)
 				.map(c-> new ViewResource(null, null, requireNoArgs(), c))  //declared column first
-				.or(()-> lookupViewResource(td, ctx, fn-> true)); //registered column
+				.or(()-> lookupViewResource(vd, ctx, null, fn-> true)); //registered column
 	}
 
 	private Optional<ViewResource> lookupQueryResource(ViewDecorator vd) {
-		return vd instanceof QueryDecorator qd 
-				? Optional.of(new ViewResource(qd, null, requireNoArgs(), qd.column(value)))
-				: empty();
+		if(vd instanceof QueryDecorator qd) {
+			try {
+				return Optional.of(new ViewResource(qd, null, requireNoArgs(), qd.column(value)));
+			} catch (Exception e) {/*do not throw exception*/}
+		}
+		return empty();
 	}
 	
-	private Optional<ViewResource> lookupViewResource(ViewDecorator td, QueryContext ctx, Predicate<TypedOperator> pre) {
+	private Optional<ViewResource> lookupViewResource(ViewDecorator td, QueryContext ctx, ViewDecorator current, Predicate<TypedOperator> pre) {
 		return currentContext().lookupRegisteredColumn(value)
 				.flatMap(cd-> declaredColumn(td, cd).map(c-> new ViewResource(td, cd, requireNoArgs(), c)))
-				.or(()-> lookupOperation(td, ctx, null, pre).map(col-> new ViewResource(td, null, this, col)));
+				.or(()-> lookupOperation(td, ctx, null, current, pre).map(col-> new ViewResource(td, null, this, col)));
 	}
 	
-	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, QueryContext ctx, DBColumn col, Predicate<TypedOperator> opr) {
+	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, QueryContext ctx, DBColumn col, ViewDecorator current, Predicate<TypedOperator> opr) {
 		return lookupOperator(value).filter(opr).map(fn-> {
 			var c = col;
 			if(isNull(c) && isEmpty(args) && isCountFunction(fn)) {
-				c = allColumns(vd.view());
+				c = allColumns(requireNonNullElse(current, vd).view());
 			}
 			return fn.operation(toArgs(vd, ctx, c, fn.getParameterSet()));
 		});
@@ -392,7 +393,7 @@ final class RequestEntryChain {
 			return Optional.of(td.column(cd));
 		}
 		catch(Exception e) {
-			return Optional.empty();
+			return empty();
 		}
 	}
 
