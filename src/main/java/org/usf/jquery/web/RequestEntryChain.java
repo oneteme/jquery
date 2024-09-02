@@ -373,8 +373,9 @@ final class RequestEntryChain {
 	}
 	
 	private Optional<ViewResource> lookupViewResource(ViewDecorator td, QueryContext ctx, ViewDecorator current, Predicate<TypedOperator> pre) {
+		var cur = requireNonNullElse(current, td);
 		return currentContext().lookupRegisteredColumn(value)
-				.flatMap(cd-> declaredColumn(td, cd).map(c-> new ViewResource(td, cd, requireNoArgs(), c)))
+				.flatMap(cd-> declaredColumn(cur, cd).map(c-> new ViewResource(cur, cd, requireNoArgs(), c)))
 				.or(()-> lookupOperation(td, ctx, null, current, pre).map(col-> new ViewResource(td, null, this, col)));
 	}
 	
