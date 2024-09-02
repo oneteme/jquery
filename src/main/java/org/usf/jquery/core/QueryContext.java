@@ -20,9 +20,5 @@ public interface QueryContext {
 		return overView(view, ()-> new RequestQueryBuilder().columns(allColumns(view)).asView());
 	}
 	
-	default ViewColumn overView(DBView view, TaggableColumn column) {
-		overView(view).getBuilder().columns(column);
-		return new ViewColumn(view, column.tagname(), null, column.getType());
-	}
 	//sub query filters, orders, ...
 }
