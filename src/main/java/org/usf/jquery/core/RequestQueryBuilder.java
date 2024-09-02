@@ -55,8 +55,11 @@ public class RequestQueryBuilder implements QueryContext {
 	}
 	
 	@Override
-	public Optional<TaggableColumn> declaredColumn(String name) {
-		return columns.stream().filter(c-> name.equals(c.tagname())).findAny();
+	public Optional<TaggableColumn> lookupDeclaredColumn(String name) {
+		return columns.stream()
+				.filter(NamedColumn.class::isInstance)
+				.filter(c-> name.equals(c.tagname()))
+				.findAny();
 	}
 	
 	@Override

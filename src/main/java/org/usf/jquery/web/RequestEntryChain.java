@@ -9,6 +9,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
@@ -46,6 +47,7 @@ import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.AggregateFunction;
+import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
@@ -322,19 +324,22 @@ final class RequestEntryChain {
 	
 	private Optional<ViewResource> chainColumnOperations(ViewDecorator td, QueryContext ctx, boolean filter) {
 		return lookupResource(td, ctx).map(r-> {
-			var e = r.entry.next;
-			while(nonNull(e)) { //chain until !operator
-				var o = e.lookupOperation(td, ctx, r.col, null, fn-> true); //accept all
-				if(o.isEmpty()) {
-					break;
+			if(nonNull(r.col)) {
+				var e = r.entry.next;
+				while(nonNull(e)) { //chain until !operator
+					var o = e.lookupOperation(td, ctx, r.col, null, fn-> true); //accept all
+					if(o.isEmpty()) {
+						break;
+					}
+					r.cd = null;
+					r.entry = e;
+					r.col = filter && "over".equals(e.value)
+							? windowColumn(r.vd, ctx, o.get())
+							: o.get(); 
+					e = e.next;
 				}
-				r.cd = null;
-				r.entry = e;
-				r.col = filter && "over".equals(e.value)
-						? windowColumn(r.vd, ctx, o.get())
-						: o.get(); 
-				e = e.next;
-			}
+				
+			} //else view criteria
 			return r;
 		});
 	}
@@ -358,15 +363,15 @@ final class RequestEntryChain {
 				}
 			}
 		}
-		return ctx.declaredColumn(value)
-				.map(c-> new ViewResource(null, null, requireNoArgs(), c))  //declared column first
+		return ctx.lookupDeclaredColumn(value).map(c-> new ViewResource(requireNoArgs(), null, null, c)) //declared column first
 				.or(()-> lookupViewResource(vd, ctx, null, fn-> true)); //registered column
 	}
 
 	private Optional<ViewResource> lookupQueryResource(ViewDecorator vd) {
 		if(vd instanceof QueryDecorator qd) {
 			try {
-				return Optional.of(new ViewResource(qd, null, requireNoArgs(), qd.column(value)));
+				var col = qd.column(value);
+				return Optional.of(new ViewResource(requireNoArgs(), qd, null, col));
 			} catch (Exception e) {/*do not throw exception*/}
 		}
 		return empty();
@@ -374,9 +379,11 @@ final class RequestEntryChain {
 	
 	private Optional<ViewResource> lookupViewResource(ViewDecorator td, QueryContext ctx, ViewDecorator current, Predicate<TypedOperator> pre) {
 		var cur = requireNonNullElse(current, td);
-		return currentContext().lookupRegisteredColumn(value)
-				.flatMap(cd-> declaredColumn(cur, cd).map(c-> new ViewResource(cur, cd, requireNoArgs(), c)))
-				.or(()-> lookupOperation(td, ctx, null, current, pre).map(col-> new ViewResource(cur, null, this, col)));
+		return lookupOperation(td, ctx, null, current, pre)
+				.map(col-> new ViewResource(this, cur, null, col))
+				.or(()-> currentContext().lookupRegisteredColumn(value)
+						.flatMap(cd-> declaredColumn(cur, cd).map(c-> new ViewResource(requireNoArgs(), cur, cd, c))))
+				.or(()-> ofNullable(cur.criteria(value)).map(crt-> new ViewResource(this, cur, crt)));
 	}
 	
 	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, QueryContext ctx, DBColumn col, ViewDecorator current, Predicate<TypedOperator> opr) {
@@ -541,16 +548,23 @@ final class RequestEntryChain {
 	@AllArgsConstructor
 	static final class ViewResource {
 		
+		private RequestEntryChain entry;
 		private ViewDecorator vd; //optional
 		private ColumnDecorator cd; //optional
-		private RequestEntryChain entry;
 		private DBColumn col;
-		//chained !?
+		private CriteriaBuilder<DBFilter> viewCrt;
 
+		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col) {
+			this(entry, vd, cd, col, null);
+		}
+
+		public ViewResource(RequestEntryChain entry, ViewDecorator vd, CriteriaBuilder<DBFilter> viewCrt) {
+			this(entry, vd, null, null, viewCrt);
+		}
+		
 		@Override
 		public String toString() {
 			return vd + "." + cd + " => " + entry.toString();
 		}
 	}
-	
 }

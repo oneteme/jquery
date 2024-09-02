@@ -34,7 +34,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 
 	public TaggableColumn column(String id) {
-		return query.getBuilder().declaredColumn(id)
+		return query.getBuilder().lookupDeclaredColumn(id)
 		.map(c-> new ViewColumn(query, c.tagname(), c.tagname(), c.getType()))
 		.orElseThrow(()-> undeclaredResouceException(id, identity()));
 	}
