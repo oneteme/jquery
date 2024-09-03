@@ -255,11 +255,12 @@ final class RequestEntryChain {
 				var e = new RequestEntryChain(null, false, null, values, null); 
 				return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
 			}
-			var cmp = lookupComparator(next.value);
+			var e = rc.entry.next;
+			var cmp = lookupComparator(e.value);
 			if(cmp.isPresent()) {
 				var fn = cmp.get();
-				var cp = new RequestEntryChain(value, false, null, assertOuterParameters(values), null);
-				return next.chainComparator(vd, ctx, fn.filter(cp.toArgs(vd, ctx, rc.col, fn.getParameterSet())));
+				var cp = new RequestEntryChain(e.value, false, null, e.assertOuterParameters(values), null);
+				return e.chainComparator(vd, ctx, fn.filter(cp.toArgs(vd, ctx, rc.col, fn.getParameterSet())));
 			}
 			throw noSuchResourceException("comparator|criteria", value);
 		}
@@ -388,7 +389,7 @@ final class RequestEntryChain {
 						return Optional.of(new ViewResource(next, td, cd, col, crt));
 					}
 				}
-				return Optional.of(new ViewResource(next, td, cd, col));
+				return Optional.of(new ViewResource(this, td, cd, col));
 			}
 		}
 		catch(Exception e) {/*do not throw exception*/}
