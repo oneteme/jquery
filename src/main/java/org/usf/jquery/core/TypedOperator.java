@@ -37,11 +37,15 @@ public class TypedOperator {
 			throw badArgumentsException(toString(), operator.id() + joinAndDelemitArray(SCOMA, "(", ")", args), e);
 		}
 	}
-	
-	public Operator unwrap() {
-		return operator;
-	}
 
+	public boolean isCountFunction() {
+		return "COUNT".equals(operator.id());
+	}
+	
+	public boolean isWindowFunction() {
+		return operator instanceof WindowFunction;
+	}
+	
 	@Override
 	public String toString() {
 		return operator.id() + parameterSet.toString();
