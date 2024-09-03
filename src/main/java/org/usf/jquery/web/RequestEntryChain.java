@@ -10,6 +10,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
@@ -209,6 +210,7 @@ final class RequestEntryChain {
 	//[view.]column[.operator]*
 	public DBColumn evalColumn(ViewDecorator td, QueryContext ctx, boolean requireTag) {
 		var r = chainColumnOperations(td, ctx, false)
+				.filter(not(ViewResource::isCriteria)) //!criteria
 				.orElseThrow(()-> noSuchViewColumnException(this));
 		r.entry.requireNoNext(); //check next only if column exists
 		if(nonNull(r.entry.tag)) {
@@ -223,6 +225,7 @@ final class RequestEntryChain {
 	//[view.]column[.operator]*[.order]
 	public DBOrder evalOrder(ViewDecorator td, QueryContext ctx) {
 		var r = chainColumnOperations(td, ctx, false)
+				.filter(not(ViewResource::isCriteria)) //!criteria
 				.orElseThrow(()-> noSuchViewColumnException(this));
 		if(r.entry.isLast()) { // default order
 			return r.col.order();
@@ -243,60 +246,36 @@ final class RequestEntryChain {
 	public DBFilter evalFilter(ViewDecorator vd, QueryContext ctx, List<RequestEntryChain> values) { //supply values
 		var res = chainColumnOperations(vd, ctx, true);
 		if(res.isEmpty()) { //not a column
-			return viewCriteria(vd, ctx, values)
-					.orElseThrow(()-> noSuchViewColumnException(this)); 
+			throw noSuchViewColumnException(this); 
 		}
 		var rc = res.get();
-		if(rc.entry.isLast()) { //no comparator, no criteria
-			var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
-			var e = new RequestEntryChain(null, false, null, values, null); 
-			return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
-		}
-		return rc.entry.next.columnCriteria(vd, ctx, rc.cd, rc.col, values);
-	}
-
-	//[view.]criteria
-	Optional<DBFilter> viewCriteria(ViewDecorator td, QueryContext ctx, List<RequestEntryChain> values) {
-		CriteriaBuilder<DBFilter> b = null;
-		RequestEntryChain e = null;
-		if(hasNext()) { //view.id == column.id
-			var res = currentContext().lookupRegisteredView(value).map(v-> v.criteria(next.value));
-			if(res.isPresent()){
-				b = res.get();
-				e = next;
+		if(!rc.isCriteria() && nonNull(rc.col)) {
+			if(rc.entry.isLast()) { // no comparator, no criteria
+				var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
+				var e = new RequestEntryChain(null, false, null, values, null); 
+				return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
 			}
-		}
-		if(isNull(b)) {
-			b = td.criteria(value);
-			e = this;
-		}
-		if(nonNull(b)) {
-			var strArgs = toStringArray(e.assertOuterParameters(values));
-			var f = requireNonNull(b.build(ctx, strArgs), "view.criteria: " + e);
-			return Optional.of(e.chainComparator(td, ctx, f));
-		}
-		return Optional.empty();
-	}
-	
-	DBFilter columnCriteria(ViewDecorator vc, QueryContext ctx, ColumnDecorator cd, DBColumn col, List<RequestEntryChain> values) {
-		var cmp = lookupComparator(value);
-		if(cmp.isPresent()) {
-			var fn = cmp.get();
-			var cp = new RequestEntryChain(value, false, null, assertOuterParameters(values), null);
-			return chainComparator(vc, ctx, fn.filter(cp.toArgs(vc, ctx, col, fn.getParameterSet())));
-		}
-		if(nonNull(cd)) { // no operation
-			var c = cd.criteria(value);
-			if(nonNull(c)) {
-				var strArgs = toStringArray(assertOuterParameters(values));
-				var ex = requireNonNull(c.build(ctx, strArgs), "column.criteria: " + this);
-				return chainComparator(vc, ctx, col.filter(ex));
+			var cmp = lookupComparator(next.value);
+			if(cmp.isPresent()) {
+				var fn = cmp.get();
+				var cp = new RequestEntryChain(value, false, null, assertOuterParameters(values), null);
+				return next.chainComparator(vd, ctx, fn.filter(cp.toArgs(vd, ctx, rc.col, fn.getParameterSet())));
 			}
 			throw noSuchResourceException("comparator|criteria", value);
 		}
-		throw noSuchResourceException("comparator", value);
+		if(nonNull(rc.viewCrt)) { //view criteria
+			var strArgs = toStringArray(rc.entry.assertOuterParameters(values));
+			var f = requireNonNull(rc.viewCrt.build(ctx, strArgs), "view.criteria: " + rc.entry);
+			return rc.entry.chainComparator(vd, ctx, f);
+		}
+		if(nonNull(rc.colCrt) && nonNull(rc.col)) { //column criteria
+			var strArgs = toStringArray(rc.entry.assertOuterParameters(values));
+			var ex = requireNonNull(rc.colCrt.build(ctx, strArgs), "column.criteria: " + rc.entry);
+			return rc.entry.chainComparator(vd, ctx, rc.col.filter(ex));
+		}
+		throw new IllegalStateException("illegal ViewResource: " + rc);
 	}
-	
+
 	private List<RequestEntryChain> assertOuterParameters(List<RequestEntryChain> values) {
 		if(isEmpty(values)) {
 			return args;
@@ -363,7 +342,8 @@ final class RequestEntryChain {
 				}
 			}
 		}
-		return ctx.lookupDeclaredColumn(value).map(c-> new ViewResource(requireNoArgs(), null, null, c)) //declared column first
+		return ctx.lookupDeclaredColumn(value)
+				.map(c-> new ViewResource(requireNoArgs(), null, null, c)) //declared column first
 				.or(()-> lookupViewResource(vd, ctx, null, fn-> true)); //registered column
 	}
 
@@ -377,12 +357,12 @@ final class RequestEntryChain {
 		return empty();
 	}
 	
-	private Optional<ViewResource> lookupViewResource(ViewDecorator td, QueryContext ctx, ViewDecorator current, Predicate<TypedOperator> pre) {
-		var cur = requireNonNullElse(current, td);
-		return lookupOperation(td, ctx, null, current, pre)
-				.map(col-> new ViewResource(this, cur, null, col))
-				.or(()-> currentContext().lookupRegisteredColumn(value)
-						.flatMap(cd-> declaredColumn(cur, cd).map(c-> new ViewResource(requireNoArgs(), cur, cd, c))))
+	//view[.operator|column|criteria]
+	private Optional<ViewResource> lookupViewResource(ViewDecorator vd, QueryContext ctx, ViewDecorator current, Predicate<TypedOperator> pre) {
+		var cur = requireNonNullElse(current, vd);
+		return lookupOperation(vd, ctx, null, current, pre) 
+				.map(col-> new ViewResource(this, cur, null, col)) 
+				.or(()-> lookupColumnResource(cur))
 				.or(()-> ofNullable(cur.criteria(value)).map(crt-> new ViewResource(this, cur, crt)));
 	}
 	
@@ -396,13 +376,23 @@ final class RequestEntryChain {
 		});
 	}
 	
-	static Optional<TaggableColumn> declaredColumn(ViewDecorator td, ColumnDecorator cd) {
+	Optional<ViewResource> lookupColumnResource(ViewDecorator td) {
 		try {
-			return Optional.of(td.column(cd));
+			var res = currentContext().lookupRegisteredColumn(value);
+			if(res.isPresent()) {
+				var cd = res.get();
+				var col = td.column(cd); //throw exception
+				if(hasNext()) {
+					var crt = res.get().criteria(next.value);
+					if(nonNull(crt)) {
+						return Optional.of(new ViewResource(next, td, cd, col, crt));
+					}
+				}
+				return Optional.of(new ViewResource(next, td, cd, col));
+			}
 		}
-		catch(Exception e) {
-			return empty();
-		}
+		catch(Exception e) {/*do not throw exception*/}
+		return empty();
 	}
 
 	private TaggableColumn[] taggableVarargs(ViewDecorator td, QueryContext ctx) {
@@ -553,14 +543,23 @@ final class RequestEntryChain {
 		private ColumnDecorator cd; //optional
 		private DBColumn col;
 		private CriteriaBuilder<DBFilter> viewCrt;
+		private CriteriaBuilder<ComparisonExpression> colCrt;
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col) {
-			this(entry, vd, cd, col, null);
+			this(entry, vd, cd, col, null, null);
+		}
+
+		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col, CriteriaBuilder<ComparisonExpression> colCrt) {
+			this(entry, vd, cd, col, null, colCrt);
 		}
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, CriteriaBuilder<DBFilter> viewCrt) {
-			this(entry, vd, null, null, viewCrt);
+			this(entry, vd, null, null, viewCrt, null);
 		}
+		
+		private boolean isCriteria() {
+			return nonNull(viewCrt) || nonNull(colCrt);
+ 		}
 		
 		@Override
 		public String toString() {
