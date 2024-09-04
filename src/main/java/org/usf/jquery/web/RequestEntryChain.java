@@ -303,7 +303,7 @@ final class RequestEntryChain {
 						break;
 					}
 					var fn = res.get();
-					var o = fn.operation(toArgs(vd, ctx, r.col, fn.getParameterSet()));
+					var o = fn.operation(r.entry.toArgs(vd, ctx, r.col, fn.getParameterSet()));
 					r.cd = null;
 					r.entry = e;
 					r.col = filter && "over".equals(e.value) ? windowColumn(r.vd, ctx, o) : o; 
