@@ -22,9 +22,9 @@ public interface ColumnDecorator {
 		return null; // auto type
 	}
 	
-	default JDBCArgumentParser parser(ViewDecorator vd){ // override parser | format | local | validation
-		return null; // auto parser
-	}
+//	default JDBCArgumentParser parser(ViewDecorator vd){ // override parser | format | local | validation
+//		return null; // auto parser
+//	}
 	
 	default ColumnBuilder builder(ViewDecorator vd) { //set type if null
 		return null; // no builder by default
