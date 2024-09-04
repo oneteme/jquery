@@ -298,7 +298,7 @@ final class RequestEntryChain {
 			if(!r.isFilter()) { // !criteria & !comparator
 				var e = r.entry.next;
 				while(nonNull(e)) { //chain until !operator
-					var res = lookupOperator(value);
+					var res = lookupOperator(e.value);
 					if(res.isEmpty()) {
 						break;
 					}
