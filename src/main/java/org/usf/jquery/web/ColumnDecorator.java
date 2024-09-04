@@ -22,10 +22,6 @@ public interface ColumnDecorator {
 		return null; // auto type
 	}
 	
-//	default JDBCArgumentParser parser(ViewDecorator vd){ // override parser | format | local | validation
-//		return null; // auto parser
-//	}
-	
 	default ColumnBuilder builder(ViewDecorator vd) { //set type if null
 		return null; // no builder by default
 	}
@@ -33,6 +29,8 @@ public interface ColumnDecorator {
 	default CriteriaBuilder<ComparisonExpression> criteria(String name) {
 		return null; // no criteria by default
 	}
+
+//	default JDBCArgumentParser parser(ViewDecorator vd) // override parser | format | local | validation
 	
 	default String pattern(ViewDecorator td) {
 		throw new UnsupportedOperationException(); //improve API security and performance

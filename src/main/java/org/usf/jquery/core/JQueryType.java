@@ -12,7 +12,7 @@ public enum JQueryType implements JavaType {
 
 	VIEW(DBView.class),
 	COLUMN(DBColumn.class),
-	NAMED_COLUMN(TaggableColumn.class),
+	NAMED_COLUMN(NamedColumn.class),
 	QUERY_COLUMN(QueryColumn.class),
 	FILTER(DBFilter.class),
 	ORDER(DBOrder.class),
@@ -21,9 +21,9 @@ public enum JQueryType implements JavaType {
 	PARTITION(Partition.class);
 	
 	private final Class<?> type;
-
+	
 	@Override
-	public Class<?> typeClass() {
+	public Class<?> getCorrespondingClass() {
 		return type;
 	}
 }

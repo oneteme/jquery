@@ -36,7 +36,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class RequestQueryBuilder implements QueryContext {
 	
-	private final List<TaggableColumn> columns = new ArrayList<>();
+	private final List<NamedColumn> columns = new ArrayList<>();
 	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING
 	private final List<DBOrder> orders = new ArrayList<>();
 	private final List<ViewJoin> joins = new ArrayList<>(); 
@@ -55,10 +55,10 @@ public class RequestQueryBuilder implements QueryContext {
 	}
 	
 	@Override
-	public Optional<TaggableColumn> lookupDeclaredColumn(String name) {
+	public Optional<NamedColumn> lookupDeclaredColumn(String name) {
 		return columns.stream()
-				.filter(NamedColumn.class::isInstance)
-				.filter(c-> name.equals(c.tagname()))
+				.filter(ColumnProxy.class::isInstance)
+				.filter(c-> name.equals(c.getTag()))
 				.findAny();
 	}
 	
@@ -67,7 +67,7 @@ public class RequestQueryBuilder implements QueryContext {
 		return overView.computeIfAbsent(view, k-> supp.get());
 	}
 	
-	public RequestQueryBuilder columns(@NonNull TaggableColumn... columns) {
+	public RequestQueryBuilder columns(@NonNull NamedColumn... columns) {
 		addAll(this.columns, columns);
 		return this;
 	}
@@ -189,7 +189,7 @@ public class RequestQueryBuilder implements QueryContext {
         	var expr = columns.stream()
         			.filter(not(DBColumn::isAggregation))
         			.flatMap(DBColumn::groupKeys)
-        			.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((TaggableColumn)c).tagname() : c.sql(pb)) //add alias 
+        			.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((NamedColumn)c).getTag() : c.sql(pb)) //add alias 
         			.collect(joining(SCOMA));
         	if(!expr.isEmpty()) {
         		sb.append(" GROUP BY ").append(expr);

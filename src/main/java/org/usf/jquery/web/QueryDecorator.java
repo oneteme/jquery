@@ -4,7 +4,7 @@ import static org.usf.jquery.web.ResourceAccessException.undeclaredResouceExcept
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.ViewColumn;
 
 import lombok.Getter;
@@ -33,9 +33,9 @@ final class QueryDecorator implements ViewDecorator {
 		return query;
 	}
 
-	public TaggableColumn column(String id) {
+	public NamedColumn column(String id) {
 		return query.getBuilder().lookupDeclaredColumn(id)
-		.map(c-> new ViewColumn(query, c.tagname(), c.tagname(), c.getType()))
+		.map(c-> new ViewColumn(c.getTag(), query, c.getType(), null))
 		.orElseThrow(()-> undeclaredResouceException(id, identity()));
 	}
 	
@@ -45,7 +45,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public TaggableColumn column(@NonNull ColumnDecorator cd) {
+	public NamedColumn column(@NonNull ColumnDecorator cd) {
 		throw unsupportedOperationException("column");
 	}
 	

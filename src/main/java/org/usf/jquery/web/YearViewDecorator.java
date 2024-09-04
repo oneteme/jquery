@@ -28,7 +28,7 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TableView;
-import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.NamedColumn;
 
 /**
  * 
@@ -55,7 +55,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 
 	@Override
-	default TaggableColumn column(ColumnDecorator column) {
+	default NamedColumn column(ColumnDecorator column) {
 		var cd = yearRevision();
 		return cd.equals(column)
 				? yearColumn().as(cd.reference(this)) 

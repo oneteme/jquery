@@ -21,7 +21,7 @@ public final class QueryColumn implements DBColumn {
 
 	@Override
 	public String sql(QueryParameterBuilder builder) {
-		requireNArgs(1, query.getBuilder().getColumns().toArray(), ()-> "require only one column: " + query);
+		requireNArgs(1, query.getBuilder().getColumns().toArray(), QueryColumn.class::getSimpleName);
 		return query.sql(builder);
 	}
 	

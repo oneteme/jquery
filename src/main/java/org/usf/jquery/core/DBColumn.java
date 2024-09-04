@@ -31,6 +31,11 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		requireNoArgs(args, DBColumn.class::getSimpleName);
 		return sql(builder);
 	}
+	
+	@Override
+	default JDBCType getType() {
+		return null;
+	}
 
 	@Override
 	default boolean isAggregation() {
@@ -42,12 +47,12 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return Stream.of(this);
 	}
 	
-	default JDBCType getType() {
-		return null;
+	default ColumnProxy as(String name) {
+		return as(name, null);
 	}
 	
-	default NamedColumn as(String name) {
-		return new NamedColumn(this, Objects.isNull(name) ? null : requireLegalVariable(name));
+	default ColumnProxy as(String name, JDBCType type) {
+		return new ColumnProxy(this, type, Objects.isNull(name) ? null : requireLegalVariable(name));
 	}
 	
 	// filters
@@ -76,7 +81,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return Comparator.ge().filter(this, value);
 	}
 
-	default ColumnSingleFilter between(Object min, Object max) {
+	default ColumnSingleFilter between(Object min, Object max) { //included
 		return Comparator.between().filter(this, min, max);
 	}
 	
@@ -436,8 +441,8 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return b-> value;
 	}
 
-	static TaggableColumn allColumns(@NonNull DBView view) {
-		 return new ViewColumn(view, "*", null) ; //TODO check this
+	static NamedColumn allColumns(@NonNull DBView view) {
+		 return new ViewColumn("*", view, null, null) ; //TODO check this
 	}
 	
 	static DBColumn constant(Object value) {

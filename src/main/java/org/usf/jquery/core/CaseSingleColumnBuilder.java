@@ -49,13 +49,12 @@ public final class CaseSingleColumnBuilder {
 		return caseColumn;
 	}
 	
-
 	private CaseColumn orElseExp(Object elseValue) {
 		caseColumn.append(WhenExpression.orElse(elseValue));
 		return caseColumn;
 	}
 	
-	public NamedColumn as(String tagname) {
+	public ColumnProxy as(String tagname) {
 		return caseColumn.as(tagname);
 	}
 	

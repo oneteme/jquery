@@ -54,7 +54,7 @@ public final class ColumnMetadata {
 	}
 	
 	public String toJavaType(){
-		var t = type.typeClass().getSimpleName();
+		var t = type.getCorrespondingClass().getSimpleName();
 		return overConfigured ? t+"!" : t;
 	}
 	
@@ -64,10 +64,10 @@ public final class ColumnMetadata {
 			s+="!";
 		}
 		else {
-			if(type.typeClass() == String.class && dataSize < MAX_VALUE) {
+			if(type.getCorrespondingClass() == String.class && dataSize < MAX_VALUE) {
 				s+= "(" + dataSize + ")";
 			}
-			if(type.typeClass() == Timestamp.class) {
+			if(type.getCorrespondingClass() == Timestamp.class) {
 				s+= "(" + precision + ")";
 			}
 			if(type == REAL || type == NUMERIC || type == DECIMAL || type == FLOAT || type == DOUBLE) {

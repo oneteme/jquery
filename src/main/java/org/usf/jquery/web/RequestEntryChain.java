@@ -60,7 +60,7 @@ import org.usf.jquery.core.QueryColumn;
 import org.usf.jquery.core.QueryContext;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.RequestQueryBuilder;
-import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
@@ -209,7 +209,7 @@ final class RequestEntryChain {
 		if(nonNull(r.entry.tag)) {
 			return r.col.as(r.entry.tag);
 		}
-		if(!requireTag || r.col instanceof TaggableColumn) {
+		if(!requireTag || r.col instanceof NamedColumn) {
 			return r.col;
 		}
 		throw expectedEntryTagException(r.entry);
@@ -293,15 +293,17 @@ final class RequestEntryChain {
 			var e = r.entry.next;
 			while(nonNull(e)) { //chain until !operator
 				var res = lookupOperator(e.value);
-				if(res.isEmpty()) {
+				if(res.isPresent()) {
+					var fn = res.get();
+					var o = fn.operation(e.toArgs(vd, ctx, r.col, fn.getParameterSet()));
+					r.cd = null;
+					r.entry = e;
+					r.col = filter && "over".equals(e.value) ? windowColumn(r.vd, ctx, o) : o; 
+					e = e.next;
+				}
+				else {
 					break;
 				}
-				var fn = res.get();
-				var o = fn.operation(e.toArgs(vd, ctx, r.col, fn.getParameterSet()));
-				r.cd = null;
-				r.entry = e;
-				r.col = filter && "over".equals(e.value) ? windowColumn(r.vd, ctx, o) : o; 
-				e = e.next;
 			}
 		} //else filter
 		return r;
@@ -311,7 +313,7 @@ final class RequestEntryChain {
 		var v = vd.view();
 		var tag = "over_" + vd.identity() + "_" + col.hashCode();  //over_view_hash
 		ctx.overView(v).getBuilder().columns(col.as(tag)); //append over colum
-		return new ViewColumn(v, doubleQuote(tag), null, col.getType());
+		return new ViewColumn(doubleQuote(tag), v, col.getType(), null);
 	}
 	
 	//view.resource | resource
@@ -386,8 +388,8 @@ final class RequestEntryChain {
 		return empty();
 	}
 
-	private TaggableColumn[] taggableVarargs(ViewDecorator td, QueryContext ctx) {
-		return (TaggableColumn[]) typeVarargs(td, ctx, JQueryType.NAMED_COLUMN);
+	private NamedColumn[] taggableVarargs(ViewDecorator td, QueryContext ctx) {
+		return (NamedColumn[]) typeVarargs(td, ctx, JQueryType.NAMED_COLUMN);
 	}
 
 	private DBColumn[] columnVarargs(ViewDecorator td, QueryContext ctx) {
@@ -403,7 +405,7 @@ final class RequestEntryChain {
 	}
 
 	private Object[] typeVarargs(ViewDecorator td, QueryContext ctx, JavaType type) {
-		var c = type.typeClass();
+		var c = type.getCorrespondingClass();
 		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
 			var ps = ofParameters(required(type), varargs(type));
 			return toArgs(td, ctx, null, ps, s-> (Object[]) newInstance(c, s));

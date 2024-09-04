@@ -57,5 +57,4 @@ public final class OperationColumn implements DBColumn {
 	public String toString() {
 		return sql(addWithValue());
 	}
-	
 }

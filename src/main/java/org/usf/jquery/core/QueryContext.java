@@ -12,7 +12,7 @@ import java.util.function.Supplier;
  */
 public interface QueryContext {
 
-	Optional<TaggableColumn> lookupDeclaredColumn(String name);
+	Optional<NamedColumn> lookupDeclaredColumn(String name);
 
 	QueryView overView(DBView view, Supplier<QueryView> supp);
 	

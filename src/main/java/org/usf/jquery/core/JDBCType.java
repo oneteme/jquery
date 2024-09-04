@@ -1,14 +1,8 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
-import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
-/**
- * 
- * @author u$f
- *
- */
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
@@ -16,8 +10,8 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Optional;
 import java.util.function.Predicate;
+import java.util.stream.Stream;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -27,30 +21,29 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  * 
  */
-@Getter
 @RequiredArgsConstructor
 public enum JDBCType implements JavaType {
 
 	BOOLEAN(Types.BOOLEAN, Boolean.class, JDBCType::isBoolean),
 	BIT(Types.BIT, Boolean.class, JDBCType::isBoolean),
-	TINYINT(Types.TINYINT, Byte.class, Number.class, Number.class::isInstance),
-	SMALLINT(Types.SMALLINT, Short.class, Number.class, Number.class::isInstance),
-	INTEGER(Types.INTEGER, Integer.class, Number.class, Number.class::isInstance),
-	BIGINT(Types.BIGINT, Long.class, Number.class, Number.class::isInstance),
-	REAL(Types.REAL, Float.class, Number.class, Number.class::isInstance),
-	FLOAT(Types.FLOAT, Double.class, Number.class, Number.class::isInstance),
-	DOUBLE(Types.DOUBLE, Double.class, Number.class, Number.class::isInstance),
-	NUMERIC(Types.NUMERIC, BigDecimal.class, Number.class, Number.class::isInstance),
-	DECIMAL(Types.DECIMAL, BigDecimal.class, Number.class, Number.class::isInstance),
+	TINYINT(Types.TINYINT, Byte.class, Number.class),
+	SMALLINT(Types.SMALLINT, Short.class, Number.class),
+	INTEGER(Types.INTEGER, Integer.class, Number.class),
+	BIGINT(Types.BIGINT, Long.class, Number.class),
+	REAL(Types.REAL, Float.class, Number.class),
+	FLOAT(Types.FLOAT, Double.class, Number.class),
+	DOUBLE(Types.DOUBLE, Double.class, Number.class),
+	NUMERIC(Types.NUMERIC, BigDecimal.class, Number.class),
+	DECIMAL(Types.DECIMAL, BigDecimal.class, Number.class),
 	CHAR(Types.CHAR, Character.class, JDBCType::isChar), //teradata !char
 	VARCHAR(Types.VARCHAR, String.class, JDBCType::isString),
 	NVARCHAR(Types.NVARCHAR, String.class, JDBCType::isString),
 	LONGNVARCHAR(Types.LONGNVARCHAR, String.class, JDBCType::isString),
-	DATE(Types.DATE, Date.class, Date.class::isInstance),
-	TIME(Types.TIME, Time.class, Time.class::isInstance),
-	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, Timestamp.class::isInstance),
-	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, Timestamp.class::isInstance),
-	OTHER(Types.OTHER, Object.class, null) { //readonly
+	DATE(Types.DATE, Date.class),
+	TIME(Types.TIME, Time.class),
+	TIMESTAMP(Types.TIMESTAMP, Timestamp.class),
+	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class),
+	OTHER(Types.OTHER, Object.class) { //readonly
 		@Override
 		public boolean accept(Object o) {
 			return false;
@@ -59,26 +52,38 @@ public enum JDBCType implements JavaType {
 
 	private final int value;
 	private final Class<?> type;
-	private final Class<?> superType;
-	private final Predicate<Object> matcher;
-	
-	private JDBCType(int value, Class<?> type, Predicate<Object> matcher) {
-		this(value, type, type, matcher);
+	private final Predicate<Class<?>> typeMatcher;
+	private final Predicate<Object> valueMatcher;
+
+	private <T> JDBCType(int value, Class<T> type) {
+		this(value, type, type);
 	}
 	
-	@Override
-	public Class<?> typeClass() {
+	private <T> JDBCType(int value, Class<T> type, Class<? super T> supr) { //same parent
+		this(value, type, supr::isAssignableFrom, supr::isInstance);
+	}
+	
+	private JDBCType(int value, Class<?> type, Predicate<Object> valueMatcher) {
+		this(value, type, type::isAssignableFrom, valueMatcher);
+	}
+	
+	public Class<?> getCorrespondingClass() {
 		return type;
+	}
+	
+	public int getValue() {
+		return value;
 	}
 	
 	@Override
 	public boolean accept(Object o) {
 		if(o instanceof Typed v) {
 			var t = v.getType();
-			return t == this || isNull(t) || superType.isAssignableFrom(t.typeClass());
+			return t == this || isNull(t) || typeMatcher.test(t.getCorrespondingClass());
 		}
-		return isNull(o) || matcher.test(o);
+		return isNull(o) || valueMatcher.test(o);
 	}
+	
 	
 	private static boolean isBoolean(Object o) {
 		return o.getClass() == Boolean.class 
@@ -97,22 +102,16 @@ public enum JDBCType implements JavaType {
 	}
 	
 	public static Optional<JDBCType> typeOf(Object o) {
-		if(o instanceof Typed to) {
-			return ofNullable(to.getType());
-		}
-		return ofNullable(o).flatMap(v-> findType(e-> e.typeClass().isInstance(o)));
+		return o instanceof Typed t 
+				? ofNullable(t.getType())
+				: ofNullable(o).flatMap(v-> findType(e-> e.getCorrespondingClass().isInstance(o)));
 	}
 	
 	public static Optional<JDBCType> fromDataType(int value) {
 		return findType(t-> t.value == value);
 	}
 	
-	public static Optional<JDBCType> findType(Predicate<JDBCType> predicate) {
-		for(var t : values()) {
-			if(predicate.test(t)) {
-				return Optional.of(t);
-			}
-		}
-		return empty();
+	public static Optional<JDBCType> findType(Predicate<JDBCType> pre) {
+		return Stream.of(values()).filter(pre).findAny();
 	}
 }

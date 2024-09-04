@@ -33,7 +33,7 @@ import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TableView;
-import org.usf.jquery.core.TaggableColumn;
+import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.ViewColumn;
 
 import lombok.NonNull;
@@ -69,14 +69,14 @@ public interface ViewDecorator {
 		return metadata().getView();
 	}
 	
-	default TaggableColumn column(@NonNull ColumnDecorator cd) {//final
+	default NamedColumn column(@NonNull ColumnDecorator cd) {//final
 		var meta = metadata().columnMetadata(cd);
 		if(nonNull(meta)) {
-			return new ViewColumn(view(), meta.getName(), cd.reference(this), meta.getType());
+			return new ViewColumn(meta.getName(), view(), meta.getType(), cd.reference(this));
 		}
 		var b = cd.builder(this);
 		if(nonNull(b)) {
-			return b.build(this).as(cd.reference(this)); //set type
+			return b.build(this).as(cd.reference(this), cd.type(this));
 		}
 		throw undeclaredResouceException(cd.identity(), identity());
 	}
@@ -140,7 +140,7 @@ public interface ViewDecorator {
 		if(!isEmpty(cols)) {
 			Stream.of(cols)
 			.flatMap(v-> parseEntries(v).stream())
-			.map(e-> (TaggableColumn) e.evalColumn(this, query, true))
+			.map(e-> (NamedColumn) e.evalColumn(this, query, true))
 			.forEach(query::columns);
 		}
 		else {

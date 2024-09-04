@@ -10,10 +10,10 @@ import static java.util.Objects.isNull;
 @FunctionalInterface
 public interface JavaType {
 	
-	Class<?> typeClass();
+	Class<?> getCorrespondingClass();
 	
 	default boolean accept(Object o) {
-		return isNull(o) || typeClass().isInstance(o);
+		return isNull(o) || getCorrespondingClass().isInstance(o);
 	}
 	
 	public interface Typed {
