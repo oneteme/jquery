@@ -10,7 +10,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Objects.requireNonNullElse;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
-import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
@@ -28,7 +27,6 @@ import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.Parameters.COLUMN;
 import static org.usf.jquery.web.Parameters.DISTINCT;
 import static org.usf.jquery.web.Parameters.FETCH;
 import static org.usf.jquery.web.Parameters.FILTER;
@@ -46,7 +44,6 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -65,7 +62,6 @@ import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.RequestQueryBuilder;
 import org.usf.jquery.core.TaggableColumn;
 import org.usf.jquery.core.TypedComparator;
-import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 
@@ -262,7 +258,7 @@ final class RequestEntryChain {
 				var cp = new RequestEntryChain(rc.entry.value, false, null, rc.entry.assertOuterParameters(values), null);
 				return rc.entry.chainComparator(vd, ctx, rc.cmp.filter(cp.toArgs(vd, ctx, rc.col, rc.cmp.getParameterSet())));
 			}
-			if(rc.entry.isLast()) { // no comparator, no criteria
+			if(rc.entry.isLast()) { // no criteria, no comparator
 				var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
 				var e = new RequestEntryChain(null, false, null, values, null); 
 				return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
@@ -297,23 +293,23 @@ final class RequestEntryChain {
 		return f;
 	}
 	
-	private Optional<ViewResource> chainColumnOperations(ViewDecorator td, QueryContext ctx, boolean filter) {
-		return lookupResource(td, ctx, filter).map(r-> {
-			if(r.isColumn()) { // !criteria & !comparator
+	private Optional<ViewResource> chainColumnOperations(ViewDecorator vd, QueryContext ctx, boolean filter) {
+		return lookupResource(vd, ctx, filter).map(r-> {
+			if(!r.isFilter()) { // !criteria & !comparator
 				var e = r.entry.next;
 				while(nonNull(e)) { //chain until !operator
-					var o = e.lookupOperation(td, ctx, r.col, null); //accept all
-					if(o.isEmpty()) {
+					var res = lookupOperator(value);
+					if(res.isEmpty()) {
 						break;
 					}
+					var fn = res.get();
+					var o = fn.operation(toArgs(vd, ctx, r.col, fn.getParameterSet()));
 					r.cd = null;
 					r.entry = e;
-					r.col = filter && "over".equals(e.value)
-							? windowColumn(r.vd, ctx, o.get())
-							: o.get(); 
+					r.col = filter && "over".equals(e.value) ? windowColumn(r.vd, ctx, o) : o; 
 					e = e.next;
 				}
-			} //else view criteria
+			} //else filter
 			return r;
 		});
 	}
@@ -558,13 +554,13 @@ final class RequestEntryChain {
 			this(entry, vd, null, null, viewCrt, null, null);
 		}
 		
+		boolean isFilter() {
+			return nonNull(cmp) || isCriteria();
+		}
+		
 		boolean isCriteria() {
 			return nonNull(viewCrt) || nonNull(colCrt);
  		}
-		
-		boolean isColumn() {
-			return nonNull(col) && isNull(colCrt) && isNull(cmp);
-		}
 		
 		@Override
 		public String toString() {
