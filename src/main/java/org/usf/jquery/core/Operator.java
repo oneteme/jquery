@@ -20,6 +20,7 @@ import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Optional;
+import java.util.function.Predicate;
 
 /**
  * 
@@ -335,6 +336,10 @@ public interface Operator extends DBProcessor {
 	}
 
 	static Optional<TypedOperator> lookupOperator(String op) {
-		return lookup(Operator.class, TypedOperator.class, op);
+		return lookup(Operator.class, TypedOperator.class, op, null);
+	}
+
+	static Optional<TypedOperator> lookupOperator(String op, Predicate<TypedOperator> pre) {
+		return lookup(Operator.class, TypedOperator.class, op, pre);
 	}
 }

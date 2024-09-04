@@ -204,8 +204,7 @@ final class RequestEntryChain {
 	
 	//[view.]column[.operator]*
 	public DBColumn evalColumn(ViewDecorator td, QueryContext ctx, boolean requireTag) {
-		var r = chainColumnOperations(td, ctx, false)
-				.orElseThrow(()-> noSuchViewColumnException(this));
+		var r = chainColumnOperations(td, ctx, false);
 		r.entry.requireNoNext(); //check next only if column exists
 		if(nonNull(r.entry.tag)) {
 			return r.col.as(r.entry.tag);
@@ -218,8 +217,7 @@ final class RequestEntryChain {
 	
 	//[view.]column[.operator]*[.order]
 	public DBOrder evalOrder(ViewDecorator td, QueryContext ctx) {
-		var r = chainColumnOperations(td, ctx, false)
-				.orElseThrow(()-> noSuchViewColumnException(this));
+		var r = chainColumnOperations(td, ctx, false);
 		if(r.entry.isLast()) { // default order
 			return r.col.order();
 		}
@@ -237,11 +235,7 @@ final class RequestEntryChain {
 
 	//[view.]criteria | [view.]column.criteria |  [view.]column[.operator]*[.comparator][.and|or(comparator)]*
 	public DBFilter evalFilter(ViewDecorator vd, QueryContext ctx, List<RequestEntryChain> values) { //use CD.parser
-		var res = chainColumnOperations(vd, ctx, true);
-		if(res.isEmpty()) {
-			throw noSuchViewColumnException(this); 
-		}
-		var rc = res.get();
+		var rc = chainColumnOperations(vd, ctx, true);
 		if(rc.isCriteria()) {
 			var strArgs = toStringArray(rc.entry.assertOuterParameters(values));
 			if(nonNull(rc.viewCrt)) { //view criteria
@@ -293,25 +287,24 @@ final class RequestEntryChain {
 		return f;
 	}
 	
-	private Optional<ViewResource> chainColumnOperations(ViewDecorator vd, QueryContext ctx, boolean filter) {
-		return lookupResource(vd, ctx, filter).map(r-> {
-			if(!r.isFilter()) { // !criteria & !comparator
-				var e = r.entry.next;
-				while(nonNull(e)) { //chain until !operator
-					var res = lookupOperator(e.value);
-					if(res.isEmpty()) {
-						break;
-					}
-					var fn = res.get();
-					var o = fn.operation(e.toArgs(vd, ctx, r.col, fn.getParameterSet()));
-					r.cd = null;
-					r.entry = e;
-					r.col = filter && "over".equals(e.value) ? windowColumn(r.vd, ctx, o) : o; 
-					e = e.next;
+	private ViewResource chainColumnOperations(ViewDecorator vd, QueryContext ctx, boolean filter) {
+		var r = lookupResource(vd, ctx, filter);
+		if(!r.isFilter()) { // !criteria & !comparator
+			var e = r.entry.next;
+			while(nonNull(e)) { //chain until !operator
+				var res = lookupOperator(e.value);
+				if(res.isEmpty()) {
+					break;
 				}
-			} //else filter
-			return r;
-		});
+				var fn = res.get();
+				var o = fn.operation(e.toArgs(vd, ctx, r.col, fn.getParameterSet()));
+				r.cd = null;
+				r.entry = e;
+				r.col = filter && "over".equals(e.value) ? windowColumn(r.vd, ctx, o) : o; 
+				e = e.next;
+			}
+		} //else filter
+		return r;
 	}
 	
 	private static DBColumn windowColumn(ViewDecorator vd, QueryContext ctx, DBColumn col) {
@@ -322,7 +315,7 @@ final class RequestEntryChain {
 	}
 	
 	//view.resource | resource
-	private Optional<ViewResource> lookupResource(ViewDecorator vd, QueryContext ctx, boolean filter) { //do not change priority
+	private ViewResource lookupResource(ViewDecorator vd, QueryContext ctx, boolean filter) { //do not change priority
 		if(hasNext()) {
 			var rc = currentContext().lookupRegisteredView(value);
 			if(rc.isPresent()) {
@@ -330,13 +323,14 @@ final class RequestEntryChain {
 						.or(()-> next.lookupViewResource(vd, ctx, rc.get(), filter));
 				if(res.isPresent()) {
 					requireNoArgs();
-					return res;
+					return res.get();
 				}
 			}
 		} //view.id == column.id
 		return ctx.lookupDeclaredColumn(value)
 				.map(c-> new ViewResource(requireNoArgs(), null, null, c)) //declared column first
-				.or(()-> lookupViewResource(vd, ctx, null, filter)); //registered column
+				.or(()-> lookupViewResource(vd, ctx, null, filter)) //registered column
+				.orElseThrow(()-> noSuchViewColumnException(this)); //no such resource
 	}
 
 	//query.column
@@ -353,23 +347,19 @@ final class RequestEntryChain {
 	//view[.operator|column[.criteria]|criteria]
 	private Optional<ViewResource> lookupViewResource(ViewDecorator vd, QueryContext ctx, ViewDecorator current, boolean filter) {
 		var cur = requireNonNullElse(current, vd);
-		var res = lookupOperation(vd, ctx, null, current) 
+		var res = lookupViewOperation(vd, ctx, current) 
 				.map(col-> new ViewResource(this, cur, null, col)) 
 				.or(()-> lookupColumnResource(cur, filter));
 		return filter ? res.or(()-> ofNullable(cur.criteria(value)).map(crt-> new ViewResource(this, cur, crt))) : res;
 	}
 	
-	private Optional<OperationColumn> lookupOperation(ViewDecorator vd, QueryContext ctx, DBColumn col, ViewDecorator current) {
-		var res = lookupOperator(value);
-		if(isNull(col) && nonNull(current)) { //view.[count|rank|rowNumber|danseRank]
-			res = res.filter(op-> op.isCountFunction() || op.isWindowFunction());
-		}
-		return res.map(fn-> {
-			var c = col;
-			if(isNull(c) && isEmpty(args) && fn.isCountFunction()) {
-				c = allColumns(requireNonNullElse(current, vd).view());
-			}
-			return fn.operation(toArgs(vd, ctx, c, fn.getParameterSet()));
+	private Optional<OperationColumn> lookupViewOperation(ViewDecorator vd, QueryContext ctx, ViewDecorator current) {
+		 //view.[count|rank|rowNumber|danseRank] only
+		return lookupOperator(value, isNull(current) ? null : op-> op.isCountFunction() || op.isWindowFunction()).map(fn-> {
+			var col = isEmpty(args) && fn.isCountFunction() 
+					? allColumns(requireNonNullElse(current, vd).view()) 
+					: null;
+			return fn.operation(toArgs(vd, ctx, col, fn.getParameterSet()));
 		});
 	}
 	
@@ -384,7 +374,7 @@ final class RequestEntryChain {
 					if(cmp.isPresent()) {
 						return Optional.of(new ViewResource(requireNoArgs().next, td, cd, col, cmp.get()));
 					}
-					var crt = cd.criteria(next.value);
+					var crt = cd.criteria(next.value); //TD !operator
 					if(nonNull(crt)) {
 						return Optional.of(new ViewResource(requireNoArgs().next, td, cd, col, crt));
 					}
@@ -539,19 +529,19 @@ final class RequestEntryChain {
 		private TypedComparator cmp;
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col) {
-			this(entry, vd, cd, col, null, null, null);
+			this(entry, vd, cd, col, null, null, null); //[view.]column
 		}
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col, CriteriaBuilder<ComparisonExpression> colCrt) {
-			this(entry, vd, cd, col, null, colCrt, null);
+			this(entry, vd, cd, col, null, colCrt, null); //[view.]colum.criteria
 		}
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col, TypedComparator cmp) {
-			this(entry, vd, cd, col, null, null, cmp);
+			this(entry, vd, cd, col, null, null, cmp); //[view.]colum.comparator
 		}
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, CriteriaBuilder<DBFilter> viewCrt) {
-			this(entry, vd, null, null, viewCrt, null, null);
+			this(entry, vd, null, null, viewCrt, null, null); //[view.]criteria
 		}
 		
 		boolean isFilter() {
