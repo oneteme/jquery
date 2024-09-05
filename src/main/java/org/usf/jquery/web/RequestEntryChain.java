@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.lang.String.format;
+import static java.lang.String.join;
 import static java.lang.reflect.Array.newInstance;
 import static java.util.Collections.addAll;
 import static java.util.Collections.emptyList;
@@ -41,6 +42,8 @@ import static org.usf.jquery.web.Parameters.VIEW;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
@@ -84,6 +87,7 @@ final class RequestEntryChain {
 
 	private static final String ORDER_PATTERN = enumPattern(Order.class); 
 	private static final String LOGIC_PATTERN = enumPattern(LogicalOperator.class); 
+	private static final String PARTITION_PATTERN = join("|", PARTITION, ORDER);
 	
 	private final String value;
 	private final boolean text; //"string"
@@ -125,7 +129,7 @@ final class RequestEntryChain {
 					switch(e.value) {//column not allowed 
 					case DISTINCT: e.requireNoArgs(); q.distinct(); break;
 					case FILTER: q.filters(e.filterVarargs(td, ctx)); break;
-					case ORDER: q.orders(e.oderVarargs(td, ctx)); break;
+					case ORDER: q.orders(e.orderVarargs(td, ctx)); break;
 					case JOIN: q.joins(e.evalJoin(td, ctx)); break;
 					case OFFSET: q.offset((int)e.toOneArg(td, ctx, INTEGER)); break;
 					case FETCH: q.fetch((int)e.toOneArg(td, ctx, INTEGER)); break;
@@ -145,19 +149,21 @@ final class RequestEntryChain {
 	public ViewJoin[] evalJoin(ViewDecorator vd, QueryContext ctx) { 
 		var e = this;
 		if(hasNext()) { 
-			vd = currentContext().lookupRegisteredView(value)
-					.orElseThrow(()-> noSuchResourceException(VIEW, value));
-			e = requireNoArgs().next; //check args only if view exists
+			var res = currentContext().lookupRegisteredView(value);
+			if(res.isPresent()) {
+				vd = res.get();
+				e = requireNoArgs().next; //check args only if view exists
+			}
 		}
 		var join = vd.join(e.value);
 		if(nonNull(join)) {
 			e.requireNoArgs().requireNoNext(); //check args & next only if joiner exists
-			return requireNonNull(join.build(ctx), vd.identity() + ".join: " + e);
+			return requireNonNull(join.build(ctx), vd.identity() + "." + e.value);
 		}
 		throw noSuchResourceException(vd.identity() + ".join", e.value);
 	}
 	
-	//[partition.order]*
+	//[view.]partition | [partition.order]*
 	public Partition evalPartition(ViewDecorator vd, QueryContext ctx) {
 		var e = this;
 		if(hasNext()) {
@@ -170,36 +176,33 @@ final class RequestEntryChain {
 		var par = vd.partition(e.value);
 		if(nonNull(par)) {
 			e.requireNoArgs().requireNoNext();
-			return requireNonNull(par.build(ctx), vd.identity() + ".partition: " + e);
+			return requireNonNull(par.build(ctx), vd.identity() + "." + e.value);
 		}
-		if(e == this) { // not view
-			var res = evalPartition2(vd, ctx);
-			if(res.isPresent()) {
-				return res.get();
-			}
+		var res = evalPartition2(vd, ctx);
+		if(res.isPresent()) {
+			return res.get();
 		}
 		throw noSuchResourceException(vd.identity() + ".partition", e.value);
 	}
 	
 	private Optional<Partition> evalPartition2(ViewDecorator vd, QueryContext ctx) {
-		List<DBColumn> cols = new ArrayList<>();
-		List<DBOrder> ords = new ArrayList<>();
-		var e = this;
-		do {
-			switch (e.value) {
-			case PARTITION: addAll(cols, columnVarargs(vd, ctx)); break;
-			case ORDER: addAll(ords, e.oderVarargs(vd, ctx)); break;
-			default: 
-				if(e == this) {
-					return empty(); //cannotParseEntryException(PARTITION, e) //first entry
+		if(value.matches(PARTITION_PATTERN)) {
+			List<DBColumn> cols = new ArrayList<>();
+			List<DBOrder> ords = new ArrayList<>();
+			var e = this;
+			do {
+				switch (e.value) {
+				case PARTITION: addAll(cols, columnVarargs(vd, ctx)); break;
+				case ORDER: addAll(ords, e.orderVarargs(vd, ctx)); break;
+				default: throw badEntrySyntaxException(PARTITION_PATTERN, e.value);
 				}
-				throw badEntrySyntaxException(joinArray("|", PARTITION, ORDER), e.value);
-			}
-			e = e.next;
-		} while(nonNull(e));
-		return Optional.of(new Partition(
-				cols.toArray(DBColumn[]::new), 
-				ords.toArray(DBOrder[]::new)));
+				e = e.next;
+			} while(nonNull(e));
+			return Optional.of(new Partition(
+					cols.toArray(DBColumn[]::new), 
+					ords.toArray(DBOrder[]::new)));
+		}
+		return empty();
 	}
 	
 	//[view.]column[.operator]*
@@ -257,7 +260,7 @@ final class RequestEntryChain {
 				var e = new RequestEntryChain(null, false, null, values, null); 
 				return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
 			}
-			throw noSuchResourceException("comparator|criteria", rc.entry.next.value);
+			throw noSuchResourceException(isNull(rc.cd) ? "comparator" : "comparator|criteria", rc.entry.next.value);
 		}
 		throw new IllegalStateException("illegal ViewResource: " + rc);
 	}
@@ -383,7 +386,7 @@ final class RequestEntryChain {
 				}
 				return Optional.of(new ViewResource(requireNoArgs(), td, cd, col));
 			}
-			catch(Exception e) {/*do not throw exception*/} //TD specific exception
+			catch(NoSuchResourceException e) {/*do not throw exception*/}
 		}
 		return empty();
 	}
@@ -396,7 +399,7 @@ final class RequestEntryChain {
 		return (DBColumn[]) typeVarargs(td, ctx, JQueryType.COLUMN);
 	}
 	
-	private DBOrder[] oderVarargs(ViewDecorator td, QueryContext ctx) {
+	private DBOrder[] orderVarargs(ViewDecorator td, QueryContext ctx) {
 		return (DBOrder[]) typeVarargs(td, ctx, JQueryType.ORDER);
 	}
 	

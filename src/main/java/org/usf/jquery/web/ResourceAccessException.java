@@ -17,8 +17,4 @@ public final class ResourceAccessException extends WebException { //read & write
 	public static ResourceAccessException resourceAlreadyExistsException(String name, Object value) {
 		return new ResourceAccessException(quote(name) + " is already exists : " + value);
 	}
-
-	public static ResourceAccessException undeclaredResouceException(String child, String parent) {
-		return new ResourceAccessException(quote(child) + " is not member of " + quote(parent));
-	}
 }

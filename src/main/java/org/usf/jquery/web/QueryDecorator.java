@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.web.ResourceAccessException.undeclaredResouceException;
+import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryView;

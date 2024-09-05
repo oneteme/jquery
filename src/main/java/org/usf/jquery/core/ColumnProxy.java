@@ -8,6 +8,7 @@ import java.util.Objects;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.experimental.Delegate;
 
 /**
  * 
@@ -18,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ColumnProxy implements NamedColumn {
 
+	@Delegate
 	private final DBColumn column;
 	private final JDBCType type; //optional
 	private final String tag; //optional
@@ -25,11 +27,6 @@ public final class ColumnProxy implements NamedColumn {
 	@Override
 	public JDBCType getType() {
 		return nonNull(type) ? type : column.getType();
-	}
-
-	@Override
-	public String sql(QueryVariables builder) {
-		return column.sql(builder);
 	}
 	
 	@Override

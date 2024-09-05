@@ -12,6 +12,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
 import static org.usf.jquery.web.ContextManager.currentContext;
+import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.Parameters.COLUMN;
 import static org.usf.jquery.web.Parameters.COLUMN_DISTINCT;
 import static org.usf.jquery.web.Parameters.FETCH;
@@ -21,7 +22,6 @@ import static org.usf.jquery.web.Parameters.ORDER;
 import static org.usf.jquery.web.Parameters.VIEW;
 import static org.usf.jquery.web.RequestParser.parseEntries;
 import static org.usf.jquery.web.RequestParser.parseEntry;
-import static org.usf.jquery.web.ResourceAccessException.undeclaredResouceException;
 
 import java.util.Collection;
 import java.util.Map;

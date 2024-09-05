@@ -17,4 +17,8 @@ public final class NoSuchResourceException extends WebException {
 	static NoSuchResourceException noSuchResourceException(String type, String resource) {
 		return new NoSuchResourceException(format("no such %s: '%s'", type, resource));
 	}
+
+	static NoSuchResourceException undeclaredResouceException(String child, String parent) {
+		return new NoSuchResourceException(format("'%s' is not member of '%s'", child, parent));
+	}
 }
