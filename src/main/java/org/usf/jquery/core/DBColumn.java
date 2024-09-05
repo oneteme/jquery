@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Order.ASC;
 import static org.usf.jquery.core.Order.DESC;
-import static org.usf.jquery.core.QueryParameterBuilder.formatValue;
+import static org.usf.jquery.core.QueryVariables.formatValue;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -24,10 +24,10 @@ import lombok.NonNull;
 @FunctionalInterface
 public interface DBColumn extends DBObject, Typed, Groupable {
 	
-	String sql(QueryParameterBuilder builder);
+	String sql(QueryVariables builder);
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {
+	default String sql(QueryVariables builder, Object[] args) {
 		requireNoArgs(args, DBColumn.class::getSimpleName);
 		return sql(builder);
 	}
@@ -453,7 +453,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return new DBColumn() {
 			
 			@Override
-			public String sql(QueryParameterBuilder arg) {
+			public String sql(QueryVariables arg) {
 				return formatValue(value.get()); //lazy 
 			}
 			

@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import lombok.AccessLevel;
@@ -20,7 +20,7 @@ public final class QueryColumn implements DBColumn {
 	private final JDBCType type;
 
 	@Override
-	public String sql(QueryParameterBuilder builder) {
+	public String sql(QueryVariables builder) {
 		requireNArgs(1, query.getBuilder().getColumns().toArray(), QueryColumn.class::getSimpleName);
 		return query.sql(builder);
 	}

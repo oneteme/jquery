@@ -12,7 +12,7 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.QueryParameterBuilder;
+import org.usf.jquery.core.QueryVariables;
 import org.usf.jquery.core.TableView;
 
 import lombok.RequiredArgsConstructor;
@@ -56,7 +56,7 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	static TableView yearTable(TableView view) {
 		return new TableView(view.getSchema(), view.getName()) {
 			@Override
-			public String sql(QueryParameterBuilder builder) {
+			public String sql(QueryVariables builder) {
 				return super.sql(builder) + "_" + currentRev.get().getKey();
 			}
 		};

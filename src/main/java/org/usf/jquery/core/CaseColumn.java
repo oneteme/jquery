@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 
 import java.util.ArrayList;
@@ -22,7 +22,7 @@ public final class CaseColumn implements DBColumn { // TD override isAggregation
 	private final Collection<WhenExpression> expressions = new ArrayList<>();
 	
 	@Override
-	public String sql(QueryParameterBuilder builder) {
+	public String sql(QueryVariables builder) {
 		var b = builder.withValue(); //force literal parameter
 		return expressions.stream() //empty !? 
 		.map(o-> o.sql(b))

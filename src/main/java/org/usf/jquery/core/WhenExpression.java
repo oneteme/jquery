@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import org.usf.jquery.core.JavaType.Typed;
@@ -21,19 +21,19 @@ final class WhenExpression implements DBExpression, Typed {
 	private final Object value;
 
 	@Override
-	public String sql(QueryParameterBuilder builder, Object[] args) {
+	public String sql(QueryVariables qv, Object[] args) {
 		requireNoArgs(args, WhenExpression.class::getSimpleName);
-		return sql(builder);
+		return sql(qv);
 	}
 	
-	public String sql(QueryParameterBuilder arg) {
+	public String sql(QueryVariables qv) {
 		var sb = new StringBuilder(50);
 		sb = isNull(filter)
 				? sb.append("ELSE ")
 				: sb.append("WHEN ")
-				.append(filter.sql(arg))
+				.append(filter.sql(qv))
 				.append(" THEN ");
-		return sb.append(arg.appendLiteral(value)).toString();
+		return sb.append(qv.appendLiteral(value)).toString();
 	}
 	
 	@Override

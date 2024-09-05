@@ -12,7 +12,7 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 public interface NullComparator extends Comparator {
 
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {
+	default String sql(QueryVariables builder, Object[] args) {
 		requireNArgs(1, args, NullComparator.class::getSimpleName);
 		return builder.appendParameter(args[0]) + SPACE + id();
 	}

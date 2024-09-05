@@ -12,7 +12,7 @@ public interface NamedColumn extends DBColumn {
 
 	String getTag();
 	
-	default String sqlWithTag(QueryParameterBuilder builder) {
+	default String sqlWithTag(QueryVariables builder) {
 		var s = sql(builder);
 		if(nonNull(getTag())) {
 			s += " AS " + doubleQuote(getTag());

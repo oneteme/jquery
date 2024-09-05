@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
 
 import java.util.stream.Stream;
@@ -23,7 +23,7 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 
 	@Override
-	public String sql(QueryParameterBuilder builder, Object operand) {
+	public String sql(QueryVariables builder, Object operand) {
 		return Stream.of(expressions)
 		.map(o-> o.sql(builder, operand))
 		.collect(joining(operator.sql(), "(", ")"));

@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 
 import java.util.Objects;
 
@@ -28,7 +28,7 @@ public final class ColumnProxy implements NamedColumn {
 	}
 
 	@Override
-	public String sql(QueryParameterBuilder builder) {
+	public String sql(QueryVariables builder) {
 		return column.sql(builder);
 	}
 	

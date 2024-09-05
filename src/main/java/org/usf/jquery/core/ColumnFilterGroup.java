@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
 
 import java.util.stream.Stream;
@@ -24,7 +24,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public String sql(QueryParameterBuilder builder) {
+	public String sql(QueryVariables builder) {
 		return Stream.of(filters)
 		.map(o-> o.sql(builder))
 		.collect(joining(operator.sql(), "(", ")"));

@@ -12,15 +12,15 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 @FunctionalInterface
 public interface DBView extends DBObject {
 
-	String sql(QueryParameterBuilder builder);
+	String sql(QueryVariables builder);
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {
+	default String sql(QueryVariables builder, Object[] args) {
 		requireNoArgs(args, DBView.class::getSimpleName);
 		return sql(builder);
 	}
 	
-	default String sqlWithTag(QueryParameterBuilder builder) {
+	default String sqlWithTag(QueryVariables builder) {
 		var tag = builder.viewAlias(this);
 		var sql = builder.viewOverload(this).sql(builder); //!important
 		return isNull(tag) ? sql : sql + SPACE + tag;

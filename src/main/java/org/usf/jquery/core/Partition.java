@@ -21,12 +21,12 @@ public final class Partition implements DBObject, Groupable {
 	private final  DBOrder[] orders;
 	
 	@Override
-	public String sql(QueryParameterBuilder builder, Object[] args) {
+	public String sql(QueryVariables builder, Object[] args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
 		return sql(builder);
 	}
 	
-	String sql(QueryParameterBuilder builder) {
+	String sql(QueryVariables builder) {
 		var sb = new SqlStringBuilder(100);
 		if(!isEmpty(columns)) {
 			sb.append("PARTITION BY ").append(builder.appendLiteralArray(columns));

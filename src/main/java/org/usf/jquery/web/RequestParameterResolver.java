@@ -13,7 +13,7 @@ import static org.usf.jquery.web.Parameters.VIEW;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.QueryBuilder;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +26,9 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class RequestQueryParamResolver {//spring connection bridge
+public final class RequestParameterResolver {//spring connection bridge
 	
-	public RequestQueryBuilder requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
+	public QueryBuilder requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
 		var t = currentTimeMillis();
 		log.trace("parsing request...");
 		parameterMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order

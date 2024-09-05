@@ -27,20 +27,20 @@ import lombok.Getter;
  *
  */
 @AllArgsConstructor(access = AccessLevel.PRIVATE)
-public final class QueryParameterBuilder {
+public final class QueryVariables {
 	
 	private static final String P_ARG = "?";
 	
 	@Getter
 	private final String schema;
 	private final String vPrefix;
-	private final List<Object> args; //dynamic flag
+	private final List<Object> args; //parameterized flag
 	private final List<JDBCType> argTypes;
 	private final List<DBView> views; //indexed view
 	private final Map<DBView, DBView> overView;
 		
 	public String viewAlias(DBView view) {
-		view = overView.getOrDefault(view, view);
+		view = viewOverload(view);
 		var idx = views.indexOf(view);
 		if(idx < 0) {
 			idx = views.size();
@@ -141,23 +141,23 @@ public final class QueryParameterBuilder {
 		return nonNull(o) ? quote(o.toString()) : "null";
 	}
 	
-	public QueryParameterBuilder withValue() {
-		return new QueryParameterBuilder(schema, vPrefix, null, null, views, overView);
+	public QueryVariables withValue() {
+		return new QueryVariables(schema, vPrefix, null, null, views, overView);
 	}
 	
-	public QueryParameterBuilder subQuery(Map<DBView, ? extends DBView> overView) {
-		return new QueryParameterBuilder(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), unmodifiableMap(overView));
+	public QueryVariables subQuery(Map<DBView, ? extends DBView> overView) {
+		return new QueryVariables(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), unmodifiableMap(overView));
 	}
 
-	public static QueryParameterBuilder addWithValue() {
+	public static QueryVariables addWithValue() {
 		return addWithValue(null, emptyMap()); //no args
 	}
 
-	public static QueryParameterBuilder addWithValue(String schema, Map<DBView, ? extends DBView> overView) {
-		return new QueryParameterBuilder(schema, "v", null, null, new ArrayList<>(), unmodifiableMap(overView)); //no args
+	public static QueryVariables addWithValue(String schema, Map<DBView, ? extends DBView> overView) {
+		return new QueryVariables(schema, "v", null, null, new ArrayList<>(), unmodifiableMap(overView)); //no args
 	}
 
-	public static QueryParameterBuilder parametrized(String schema, Map<DBView, ? extends DBView> overView) {
-		return new QueryParameterBuilder(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), unmodifiableMap(overView));
+	public static QueryVariables parameterized(String schema, Map<DBView, ? extends DBView> overView) {
+		return new QueryVariables(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), unmodifiableMap(overView));
 	}
 }

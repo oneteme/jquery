@@ -10,7 +10,7 @@ import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryParameterBuilder.parametrized;
+import static org.usf.jquery.core.QueryVariables.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
@@ -34,23 +34,23 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class RequestQueryBuilder implements QueryContext {
+public class QueryBuilder implements QueryContext {
 	
 	private final List<NamedColumn> columns = new ArrayList<>();
 	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING
 	private final List<DBOrder> orders = new ArrayList<>();
 	private final List<ViewJoin> joins = new ArrayList<>(); 
 	private final Map<DBView, QueryView> overView = new HashMap<>();
-	private Iterator<?> it;
 	private boolean distinct;
 	private Integer fetch;
 	private Integer offset;
+	private Iterator<?> it;
 	
-	public RequestQueryBuilder() {
+	public QueryBuilder() {
 		this(null);
 	}
 	
-	public RequestQueryBuilder(Database target) {
+	public QueryBuilder(Database target) {
 		setCurrentDatabase(target);
 	}
 	
@@ -67,43 +67,43 @@ public class RequestQueryBuilder implements QueryContext {
 		return overView.computeIfAbsent(view, k-> supp.get());
 	}
 	
-	public RequestQueryBuilder columns(@NonNull NamedColumn... columns) {
-		addAll(this.columns, columns);
+	public QueryBuilder columns(@NonNull NamedColumn... columns) {
+		addAll(this.columns, columns); //add only if !exits
 		return this;
 	}
 
-	public RequestQueryBuilder filters(@NonNull DBFilter... filters){
+	public QueryBuilder filters(@NonNull DBFilter... filters){
 		addAll(this.filters, filters);
 		return this;
 	}
 	
-	public RequestQueryBuilder orders(@NonNull DBOrder... orders) {
+	public QueryBuilder orders(@NonNull DBOrder... orders) {
 		addAll(this.orders, orders);
 		return this;
 	}
 
-	public RequestQueryBuilder joins(@NonNull ViewJoin... joins) {
+	public QueryBuilder joins(@NonNull ViewJoin... joins) {
 		addAll(this.joins, joins);
 		return this;
 	}
 	
-	public RequestQueryBuilder repeat(@NonNull Iterator<?> it) {
-		this.it = it;
-		return this;
-	}
-	
-	public RequestQueryBuilder fetch(int fetch) {
+	public QueryBuilder fetch(int fetch) {
 		this.fetch = fetch;
 		return this;
 	}
 	
-	public RequestQueryBuilder offset(int offset) {
+	public QueryBuilder offset(int offset) {
 		this.offset = offset;
 		return this;
 	}
 	
-	public RequestQueryBuilder distinct() {
+	public QueryBuilder distinct() {
 		distinct = true;
+		return this;
+	}
+	
+	public QueryBuilder repeat(@NonNull Iterator<?> it) {
+		this.it = it;
 		return this;
 	}
 
@@ -119,7 +119,7 @@ public class RequestQueryBuilder implements QueryContext {
 		log.trace("building query...");
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
-		var pb = parametrized(schema, overView); //over clause
+		var pb = parameterized(schema, overView); //over clause
 		var sb = new SqlStringBuilder(1000); //avg
 		if(isNull(it)) {
 			build(sb, pb);
@@ -131,7 +131,7 @@ public class RequestQueryBuilder implements QueryContext {
 		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
 	}
 
-	public final void build(SqlStringBuilder sb, QueryParameterBuilder pb){
+	public final void build(SqlStringBuilder sb, QueryVariables pb){
 		var sub = new SqlStringBuilder(100);
 		join(sub, pb);
     	where(sub, pb);
@@ -140,11 +140,11 @@ public class RequestQueryBuilder implements QueryContext {
     	orderBy(sub, pb);
     	fetch(sub);
     	select(sb, pb);
-		from(sb, pb); //enumerate all view before from clause
+		from(sb, pb); //enumerate all views before from clause
 		sb.append(sub.toString()); //TODO optim
 	}
 
-	void select(SqlStringBuilder sb, QueryParameterBuilder pb){
+	void select(SqlStringBuilder sb, QueryVariables pb){
 		if(currentDatabase() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
@@ -160,7 +160,7 @@ public class RequestQueryBuilder implements QueryContext {
     	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb));
 	}
 	
-	void from(SqlStringBuilder sb, QueryParameterBuilder pb) {
+	void from(SqlStringBuilder sb, QueryVariables pb) {
 		var excludes = joins.stream().map(ViewJoin::getView).map(pb::viewOverload).toList();
 		var views = pb.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
@@ -168,13 +168,13 @@ public class RequestQueryBuilder implements QueryContext {
 		}
 	}
 	
-	void join(SqlStringBuilder sb, QueryParameterBuilder pb) {
+	void join(SqlStringBuilder sb, QueryVariables pb) {
 		if(!joins.isEmpty()) {
 			sb.append(SPACE).appendEach(joins, SPACE, v-> v.sql(pb));
 		}
 	}
 
-	void where(SqlStringBuilder sb, QueryParameterBuilder pb){
+	void where(SqlStringBuilder sb, QueryVariables pb){
 		var expr = filters.stream()
 				.filter(not(DBFilter::isAggregation))
 				.map(f-> f.sql(pb))
@@ -184,7 +184,7 @@ public class RequestQueryBuilder implements QueryContext {
     	}
 	}
 	
-	void groupBy(SqlStringBuilder sb, QueryParameterBuilder pb){
+	void groupBy(SqlStringBuilder sb, QueryVariables pb){
         if(isAggregation()) { // also check filter
         	var expr = columns.stream()
         			.filter(not(DBColumn::isAggregation))
@@ -197,7 +197,7 @@ public class RequestQueryBuilder implements QueryContext {
         }
 	}
 	
-	void having(SqlStringBuilder sb, QueryParameterBuilder pb){
+	void having(SqlStringBuilder sb, QueryVariables pb){
 		var having = filters.stream()
 				.filter(DBFilter::isAggregation)
 				.toList();
@@ -207,7 +207,7 @@ public class RequestQueryBuilder implements QueryContext {
     	}
 	}
 	
-	void orderBy(SqlStringBuilder sb, QueryParameterBuilder pb) {
+	void orderBy(SqlStringBuilder sb, QueryVariables pb) {
     	if(!orders.isEmpty()) {
     		sb.append(" ORDER BY ")
     		.appendEach(orders, SCOMA, o-> o.sql(pb));

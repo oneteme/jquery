@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
-import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.QueryBuilder;
 import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.ViewColumn;
@@ -105,8 +105,8 @@ public interface ViewDecorator {
 				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue));
 	}
 	
-	default RequestQueryBuilder query(Map<String, String[]> parameterMap) {
-		var query = new RequestQueryBuilder(currentContext().getMetadata().getType());
+	default QueryBuilder query(Map<String, String[]> parameterMap) {
+		var query = new QueryBuilder(currentContext().getMetadata().getType());
 		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
@@ -117,7 +117,7 @@ public interface ViewDecorator {
 		return query;
 	}
 	
-	default void parseViews(RequestQueryBuilder query, Map<String, String[]> parameters) {
+	default void parseViews(QueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.remove(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
@@ -125,7 +125,7 @@ public interface ViewDecorator {
 		}
 	}
 	
-	default void parseColumns(RequestQueryBuilder query, Map<String, String[]> parameters) {
+	default void parseColumns(QueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(COLUMN) && parameters.containsKey(COLUMN_DISTINCT)) {
 			throw new IllegalStateException("both parameters are present " + quote(COLUMN_DISTINCT) + " and " + quote(COLUMN));
 		}
@@ -148,14 +148,14 @@ public interface ViewDecorator {
 		}
 	}
 
-	default void parseOrders(RequestQueryBuilder query, Map<String, String[]> parameters) {
+	default void parseOrders(QueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.remove(ORDER))
 			.flatMap(c-> parseEntries(c).stream())
 			.forEach(e-> query.orders(e.evalOrder(this, query)));
 		}
 	}
-	default void parseJoin(RequestQueryBuilder query, Map<String, String[]> parameters) {
+	default void parseJoin(QueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(JOIN)) {
 			Stream.of(parameters.remove(JOIN))
 			.flatMap(c-> parseEntries(c).stream())
@@ -163,15 +163,15 @@ public interface ViewDecorator {
 		}
 	}
 
-	default void parseFetch(RequestQueryBuilder query, Map<String, String[]> parameters) {
+	default void parseFetch(QueryBuilder query, Map<String, String[]> parameters) {
 		requirePositiveInt(FETCH, parameters).ifPresent(query::fetch);
 	}
 	
-	default void parseOffset(RequestQueryBuilder query, Map<String, String[]> parameters) {
+	default void parseOffset(QueryBuilder query, Map<String, String[]> parameters) {
 		requirePositiveInt(OFFSET, parameters).ifPresent(query::offset);
 	}
 	
-	default void parseFilters(RequestQueryBuilder query, Map<String, String[]> parameters) {
+	default void parseFilters(QueryBuilder query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());

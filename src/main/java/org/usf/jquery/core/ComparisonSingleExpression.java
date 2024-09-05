@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.addAll;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 
 import java.util.ArrayList;
 import java.util.stream.Stream;
@@ -22,7 +22,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	private final Object[] right; //nullable
 	
 	@Override
-	public String sql(QueryParameterBuilder builder, Object left) {
+	public String sql(QueryVariables builder, Object left) {
 		var param = new ArrayList<>();
 		param.add(left);
 		if(nonNull(right)) {

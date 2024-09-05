@@ -11,7 +11,7 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 public interface ConstantOperator extends Operator {
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {
+	default String sql(QueryVariables builder, Object[] args) {
 		requireNoArgs(args, ConstantOperator.class::getSimpleName);
 		return id(); //use parentheses !?
 	}

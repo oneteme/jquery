@@ -28,14 +28,14 @@ public final class ViewJoin implements DBObject {
 	//join results !?
 
 	@Override
-	public String sql(QueryParameterBuilder builder, Object[] args) {
+	public String sql(QueryVariables qv, Object[] args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
-		return sql(builder);
+		return sql(qv);
 	}
 
-	public String sql(QueryParameterBuilder builder) {
-		return joinType + " JOIN " + view.sqlWithTag(builder) + " ON " +
-				Stream.of(filters).map(f-> f.sql(builder)).collect(joining(AND.sql()));
+	public String sql(QueryVariables qv) {
+		return joinType + " JOIN " + view.sqlWithTag(qv) + " ON " +
+				Stream.of(filters).map(f-> f.sql(qv)).collect(joining(AND.sql()));
 	}
 	
 	public static ViewJoin innerJoin(DBView view, DBFilter... filters) {

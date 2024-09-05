@@ -59,7 +59,7 @@ import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.QueryColumn;
 import org.usf.jquery.core.QueryContext;
 import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.RequestQueryBuilder;
+import org.usf.jquery.core.QueryBuilder;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.ViewColumn;
@@ -119,7 +119,7 @@ final class RequestEntryChain {
 		if(SELECT.equals(value)) {
 			var e =	this;
 			try {
-				var q = new RequestQueryBuilder().columns(taggableVarargs(td, ctx));
+				var q = new QueryBuilder().columns(taggableVarargs(td, ctx));
 				while(e.hasNext()) {
 					e = e.next;
 					switch(e.value) {//column not allowed 

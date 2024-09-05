@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Nested.aggregation;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -18,7 +18,7 @@ public final class ColumnSingleFilter implements DBFilter {
 	private final ComparisonExpression expression;
 
 	@Override
-	public String sql(QueryParameterBuilder ph) {
+	public String sql(QueryVariables ph) {
 		return expression.sql(ph, left);
 	}
 	

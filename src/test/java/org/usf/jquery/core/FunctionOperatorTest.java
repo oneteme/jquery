@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 
 import org.junit.jupiter.api.Test;
 

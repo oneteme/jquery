@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.QueryVariables.addWithValue;
 
 import java.util.stream.Stream;
 
@@ -24,7 +24,7 @@ public final class OperationColumn implements DBColumn {
 	}
 	
 	@Override
-	public String sql(QueryParameterBuilder builder) {
+	public String sql(QueryVariables builder) {
 		return operator.sql(builder, args);
 	}
 	

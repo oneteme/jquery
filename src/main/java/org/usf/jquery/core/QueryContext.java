@@ -17,8 +17,6 @@ public interface QueryContext {
 	QueryView overView(DBView view, Supplier<QueryView> supp);
 	
 	default QueryView overView(DBView view) {
-		return overView(view, ()-> new RequestQueryBuilder().columns(allColumns(view)).asView());
+		return overView(view, ()-> new QueryBuilder().columns(allColumns(view)).asView());
 	}
-	
-	//sub query filters, orders, ...
 }
