@@ -42,8 +42,6 @@ import static org.usf.jquery.web.Parameters.VIEW;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
@@ -55,16 +53,15 @@ import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.LogicalOperator;
+import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.QueryBuilder;
 import org.usf.jquery.core.QueryColumn;
 import org.usf.jquery.core.QueryContext;
 import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.QueryBuilder;
-import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 
@@ -251,14 +248,17 @@ final class RequestEntryChain {
 			}
 		}
 		else if(nonNull(rc.col)) {
-			if(nonNull(rc.cmp)) { //column comparator
-				var cp = new RequestEntryChain(rc.entry.value, false, null, rc.entry.assertOuterParameters(values), null);
-				return rc.entry.chainComparator(vd, ctx, rc.cmp.filter(cp.toArgs(vd, ctx, rc.col, rc.cmp.getParameterSet())));
-			}
 			if(rc.entry.isLast()) { // no criteria, no comparator
 				var fn = requireNonNull(values).size() == 1 ? eq() : in(); //non empty
 				var e = new RequestEntryChain(null, false, null, values, null); 
 				return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
+			}
+			var e = rc.entry.next;
+			var res = lookupComparator(e.value);
+			if(res.isPresent()) { //column comparator
+				var cmp = res.get();
+				var cp = new RequestEntryChain(e.value, false, null, e.assertOuterParameters(values), null);
+				return e.chainComparator(vd, ctx, cmp.filter(cp.toArgs(vd, ctx, rc.col, cmp.getParameterSet())));
 			}
 			throw noSuchResourceException(isNull(rc.cd) ? "comparator" : "comparator|criteria", rc.entry.next.value);
 		}
@@ -292,7 +292,7 @@ final class RequestEntryChain {
 	
 	private ViewResource chainColumnOperations(ViewDecorator vd, QueryContext ctx, boolean filter) {
 		var r = lookupResource(vd, ctx, filter);
-		if(!r.isFilter()) { // !criteria & !comparator
+		if(!r.isCriteria()) { // !criteria & !comparator
 			var e = r.entry.next;
 			while(nonNull(e)) { //chain until !operator
 				var res = lookupOperator(e.value);
@@ -374,12 +374,8 @@ final class RequestEntryChain {
 			var cd = res.get();
 			try {
 				var col = td.column(cd); //throw exception
-				if(filter && hasNext()) {
-					var cmp = lookupComparator(next.value);
-					if(cmp.isPresent()) {
-						return Optional.of(new ViewResource(requireNoArgs().next, td, cd, col, cmp.get()));
-					}
-					var crt = cd.criteria(next.value); //TD !operator
+				if(filter && hasNext() && lookupComparator(next.value).isEmpty() && lookupOperator(next.value).isEmpty()) {
+					var crt = cd.criteria(next.value); //!operator & !comparator
 					if(nonNull(crt)) {
 						return Optional.of(new ViewResource(requireNoArgs().next, td, cd, col, crt));
 					}
@@ -531,26 +527,17 @@ final class RequestEntryChain {
 		private DBColumn col;
 		private CriteriaBuilder<DBFilter> viewCrt;
 		private CriteriaBuilder<ComparisonExpression> colCrt;
-		private TypedComparator cmp;
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col) {
-			this(entry, vd, cd, col, null, null, null); //[view.]column
+			this(entry, vd, cd, col, null, null); //[view.]column
 		}
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col, CriteriaBuilder<ComparisonExpression> colCrt) {
-			this(entry, vd, cd, col, null, colCrt, null); //[view.]colum.criteria
-		}
-
-		public ViewResource(RequestEntryChain entry, ViewDecorator vd, ColumnDecorator cd, DBColumn col, TypedComparator cmp) {
-			this(entry, vd, cd, col, null, null, cmp); //[view.]colum.comparator
+			this(entry, vd, cd, col, null, colCrt); //[view.]colum.criteria
 		}
 
 		public ViewResource(RequestEntryChain entry, ViewDecorator vd, CriteriaBuilder<DBFilter> viewCrt) {
-			this(entry, vd, null, null, viewCrt, null, null); //[view.]criteria
-		}
-		
-		boolean isFilter() {
-			return nonNull(cmp) || isCriteria();
+			this(entry, vd, null, null, viewCrt, null); //[view.]criteria
 		}
 		
 		boolean isCriteria() {
