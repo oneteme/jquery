@@ -34,7 +34,9 @@ final class QueryDecorator implements ViewDecorator { //non public
 	}
 
 	public NamedColumn column(String id) {
-		return query.getBuilder().lookupDeclaredColumn(id)
+		return query.getBuilder().getColumns().stream() //do not use declaredColumn
+		.filter(c-> id.equals(c.getTag()))
+		.findAny()
 		.map(c-> new ViewColumn(c.getTag(), query, c.getType(), null))
 		.orElseThrow(()-> undeclaredResouceException(id, identity()));
 	}

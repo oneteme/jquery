@@ -45,7 +45,6 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -339,16 +338,14 @@ final class RequestEntryChain {
 		return ctx.lookupDeclaredColumn(value)
 				.map(c-> new ViewResource(requireNoArgs(), null, null, c)) //declared column first
 				.or(()-> lookupViewResource(vd, ctx, null, filter)) //registered column
-				.orElseThrow(()-> noSuchViewColumnException(this)); //no such resource
+				.orElseThrow(()-> noSuchViewResourceException(this)); //no such resource
 	}
 
 	//query.column
 	private Optional<ViewResource> lookupQueryResource(ViewDecorator vd) {
 		if(vd instanceof QueryDecorator qd) {
-			try {
-				var col = qd.column(value);
-				return Optional.of(new ViewResource(requireNoArgs(), qd, null, col));
-			} catch (Exception e) {/*do not throw exception*/}
+			var col = qd.column(value); //do not catch exception
+			return Optional.of(new ViewResource(requireNoArgs(), qd, null, col));
 		}
 		return empty();
 	}
@@ -500,7 +497,7 @@ final class RequestEntryChain {
 		return new String[0];
 	}
 	
-	static NoSuchResourceException noSuchViewColumnException(RequestEntryChain e) {
+	static NoSuchResourceException noSuchViewResourceException(RequestEntryChain e) {
 		return noSuchResourceException("resource", e.hasNext() 
 				&& currentContext().lookupRegisteredView(e.value).isPresent() 
 						? e.value + "." + e.next.value

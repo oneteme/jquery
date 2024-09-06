@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.JoinType.CROSS;
 import static org.usf.jquery.core.JoinType.FULL;
 import static org.usf.jquery.core.JoinType.INNER;
 import static org.usf.jquery.core.JoinType.LEFT;
@@ -52,5 +53,9 @@ public final class ViewJoin implements DBObject {
 
 	public static ViewJoin fullJoin(DBView view, DBFilter... filters) {
 		return new ViewJoin(FULL, view, filters);
+	}
+
+	public static ViewJoin crossJoin(DBView view, DBFilter... filters) {
+		return new ViewJoin(CROSS, view, filters);
 	}
 }
