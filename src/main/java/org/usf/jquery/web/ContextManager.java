@@ -29,7 +29,7 @@ public final class ContextManager {
 			if(isNull(v)) {
 				return config;
 			}
-			throw resourceAlreadyExistsException(k, v);
+			throw resourceAlreadyExistsException(k);
 		});
 		config.bind(); // outer bind
 	}

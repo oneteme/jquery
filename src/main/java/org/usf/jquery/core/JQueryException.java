@@ -19,10 +19,4 @@ public class JQueryException extends RuntimeException {
 	public JQueryException(String message, Throwable cause) {
 		super(message, cause);
 	}
-	
-	protected static String formatMessage(String msg, Object expected, Object actual) {
-		return msg + ", " + 
-				"expected: " + expected +
-				" but was: " + actual;
-	}
 }

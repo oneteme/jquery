@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static java.lang.String.format;
 
 /**
  * 
@@ -14,7 +14,7 @@ public final class ResourceAccessException extends WebException { //read & write
 		super(message);
 	}
 
-	public static ResourceAccessException resourceAlreadyExistsException(String name, Object value) {
-		return new ResourceAccessException(quote(name) + " is already exists : " + value);
+	public static ResourceAccessException resourceAlreadyExistsException(String name) {
+		return new ResourceAccessException(format("an other ressource with name='%s' is already exists", name));
 	}
 }

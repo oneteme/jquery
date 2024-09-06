@@ -35,7 +35,7 @@ public final class RequestQuery {
 		return execute(ds, new KeyValueMapper());
 	}
 	
-	public <T> T execute(DataSource ds, ResultSetMapper<T> mapper) throws SQLException { // overload with sql types
+	public <T> T execute(DataSource ds, ResultSetMapper<T> mapper) throws SQLException {
 		try(var cn = ds.getConnection()){
 			return execute(cn, mapper);
 		}
@@ -62,7 +62,7 @@ public final class RequestQuery {
 		        try {
 		        	return mapper.map(rs);
 		        }
-				catch(SQLException e) { // re-throw SQLException
+				catch(SQLException e) {
 					throw new MappingException("error while mapping results", e);
 				}
 			}

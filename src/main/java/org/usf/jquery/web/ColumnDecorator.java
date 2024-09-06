@@ -30,17 +30,19 @@ public interface ColumnDecorator {
 		return null; // no criteria by default
 	}
 
-//	default JDBCArgumentParser parser(ViewDecorator vd) // override parser | format | local | validation
+	default JDBCArgumentParser parser(ViewDecorator vd) {
+		throw new UnsupportedOperationException("not impl."); // override parser | format | local | validation
+	}
 	
 	default String pattern(ViewDecorator td) {
-		throw new UnsupportedOperationException(); //improve API security and performance
+		throw new UnsupportedOperationException("not impl."); //improve API security and performance
 	}
 
 	default boolean canSelect(ViewDecorator td) {
-		throw new UnsupportedOperationException(); //authorization inject
+		throw new UnsupportedOperationException("not impl."); //authorization inject
 	}
 
 	default boolean canFilter(ViewDecorator td) {
-		throw new UnsupportedOperationException(); //authorization inject
+		throw new UnsupportedOperationException("not impl."); //authorization inject
 	}
 }

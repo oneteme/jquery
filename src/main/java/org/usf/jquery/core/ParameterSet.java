@@ -35,7 +35,7 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 		var arr = isNull(args) ? new Object[0] : args;
 		forEach(arr.length+idx, (p,i)-> {
 			if(i>=idx && !p.accept(i-idx, arr)) {
-				throw badArgumentTypeException(p.types(arr), arr[i-idx]);
+				throw badArgumentTypeException(arr[i-idx], p.types(arr));
 			}
 		});
 		return arr;
@@ -43,7 +43,7 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 
 	public void forEach(int nArgs, ObjIntConsumer<Parameter> cons) {
 		if(nArgs < nReqArgs || (nArgs > parameters.length && !isVarags())) {
-			throw badArgumentCountException(nReqArgs, nArgs);
+			throw badArgumentCountException(nArgs, nReqArgs);
 		}
 		var i=0;
 		for(; i<min(nArgs, parameters.length); i++) {

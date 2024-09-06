@@ -14,6 +14,7 @@ import static org.usf.jquery.core.QueryVariables.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
+import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -68,7 +69,12 @@ public class QueryBuilder implements QueryContext {
 	}
 	
 	public QueryBuilder columns(@NonNull NamedColumn... columns) {
-		addAll(this.columns, columns); //add only if !exits
+		for(var col : columns) {
+			if(this.columns.stream().anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
+				throw resourceAlreadyExistsException(col.getTag());
+			}
+			this.columns.add(col);
+		}
 		return this;
 	}
 

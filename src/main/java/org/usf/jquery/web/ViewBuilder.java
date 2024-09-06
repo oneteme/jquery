@@ -11,5 +11,4 @@ import org.usf.jquery.core.DBView;
 public interface ViewBuilder {
 
 	DBView build();
-	
 }

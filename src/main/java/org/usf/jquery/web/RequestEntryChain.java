@@ -4,7 +4,6 @@ import static java.lang.String.format;
 import static java.lang.String.join;
 import static java.lang.reflect.Array.newInstance;
 import static java.util.Collections.addAll;
-import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -62,7 +61,6 @@ import org.usf.jquery.core.QueryBuilder;
 import org.usf.jquery.core.QueryColumn;
 import org.usf.jquery.core.QueryContext;
 import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 
@@ -131,7 +129,7 @@ final class RequestEntryChain {
 					case JOIN: q.joins(e.evalJoin(td, ctx)); break;
 					case OFFSET: q.offset((int)e.toOneArg(td, ctx, INTEGER)); break;
 					case FETCH: q.fetch((int)e.toOneArg(td, ctx, INTEGER)); break;
-					default: throw badEntrySyntaxException(joinArray("|", DISTINCT, FILTER, ORDER, JOIN, OFFSET, FETCH), e.value);
+					default: throw badEntrySyntaxException(e.value, join("|", DISTINCT, FILTER, ORDER, JOIN, OFFSET, FETCH));
 					}
 				}
 				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
@@ -192,7 +190,7 @@ final class RequestEntryChain {
 				switch (e.value) {
 				case PARTITION: addAll(cols, columnVarargs(vd, ctx)); break;
 				case ORDER: addAll(ords, e.orderVarargs(vd, ctx)); break;
-				default: throw badEntrySyntaxException(PARTITION_PATTERN, e.value);
+				default: throw badEntrySyntaxException(e.value, PARTITION_PATTERN);
 				}
 				e = e.next;
 			} while(nonNull(e));
@@ -227,7 +225,7 @@ final class RequestEntryChain {
 			var s = ord.requireNoArgs().requireNoNext().value.toUpperCase();
 			return r.col.order(Order.valueOf(s));
 		}
-		throw badEntrySyntaxException(ORDER_PATTERN, ord.value);
+		throw badEntrySyntaxException(ord.value, ORDER_PATTERN);
 	}
 
 	public DBFilter evalFilter(ViewDecorator td, QueryContext ctx) {
@@ -255,7 +253,7 @@ final class RequestEntryChain {
 					var e = new RequestEntryChain(fn.unwrap().id(), false, null, values, null); 
 					return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
 				}
-				throw badEntrySyntaxException(FILTER, this.value);
+				throw badEntrySyntaxException(this.toString(), FILTER);
 			}
 			var e = rc.entry.next;
 			var res = lookupComparator(e.value);
@@ -288,7 +286,7 @@ final class RequestEntryChain {
 				e = e.next;
 			}
 			else {
-				throw badEntrySyntaxException(LOGIC_PATTERN, e.value);
+				throw badEntrySyntaxException(e.value, LOGIC_PATTERN);
 			}
 		}
 		return f;
@@ -514,12 +512,12 @@ final class RequestEntryChain {
 				.collect(joining("|"));
 	}
 	
-	static EntrySyntaxException badEntrySyntaxException(String type, String value) {
-		return new EntrySyntaxException(format("incorrect syntax expected: %s, bat was: %s", type, value));
+	static EntrySyntaxException badEntrySyntaxException(String value, String expect) {
+		return new EntrySyntaxException(format("incorrect syntax: [%s], expected: %s", value, expect));
 	}
 	
 	static EntrySyntaxException expectedEntryTagException(RequestEntryChain e) {
-		throw new EntrySyntaxException(format("expected tag : %s[:tag]", e));
+		throw new EntrySyntaxException(format("expected tag: %s[:tag]", e));
 	}
 
 	@AllArgsConstructor(access = AccessLevel.PRIVATE)

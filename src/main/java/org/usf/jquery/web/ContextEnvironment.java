@@ -76,7 +76,7 @@ public final class ContextEnvironment {
 			if(isNull(v)){
 				return view;
 			}
-			throw resourceAlreadyExistsException(k, v);
+			throw resourceAlreadyExistsException(k);
 		});
 	}
 	
