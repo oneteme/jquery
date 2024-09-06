@@ -69,9 +69,11 @@ public class QueryBuilder implements QueryContext {
 	}
 	
 	public QueryBuilder columns(@NonNull NamedColumn... columns) {
-		for(var col : columns) {
-			if(this.columns.stream().anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
-				throw resourceAlreadyExistsException(col.getTag());
+		for(var col : columns) { //optional tag
+			if(nonNull(col.getTag()) && this.columns.stream()
+					.filter(c-> nonNull(c.getTag()))
+					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
+					throw resourceAlreadyExistsException(col.getTag());
 			}
 			this.columns.add(col);
 		}

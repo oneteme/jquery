@@ -35,7 +35,7 @@ public final class OperationColumn implements DBColumn {
 	
 	@Override
 	public boolean isAggregation() {
-		return operator instanceof AggregateFunction || 
+		return operator.is(AggregateFunction.class) || 
 				(!isOverFunction() && Stream.of(args).anyMatch(Nested::aggregation)); //can do better
 	}
 	
@@ -44,7 +44,7 @@ public final class OperationColumn implements DBColumn {
 		if(isOverFunction()) {
 			return ((Partition)args[1]).groupKeys();
 		}
-		return operator instanceof AggregateFunction || operator instanceof ConstantOperator
+		return operator.is(AggregateFunction.class) || operator.is(ConstantOperator.class)
 				? Stream.empty() 
 				: DBColumn.super.groupKeys();
 	}

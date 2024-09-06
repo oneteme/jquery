@@ -11,7 +11,7 @@ public interface CombinedOperator extends Operator {
 	OperationColumn args(Object... args);
 	
 	@Override
-	default OperationColumn args(JDBCType type, Object... args) {
+	default OperationColumn operation(JDBCType type, Object... args) {
 		var c = args(args);
 		if(type == c.getType()) {
 			return c;

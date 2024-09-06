@@ -11,9 +11,9 @@ import lombok.Getter;
  *
  */
 @Getter
-public class TypedOperator {
+public class TypedOperator implements Operator {
 	
-	private final Operator operator;
+	private final Operator operator; // do not delegate
 	private final ArgTypeRef typeFn;
 	private final ParameterSet parameterSet;
 	
@@ -26,22 +26,37 @@ public class TypedOperator {
 		this.typeFn = typeFn;
 		this.parameterSet = ofParameters(parameter);
 	}
-
-	public OperationColumn operation(Object... args) {
+	
+	@Override
+	public String id() {
+		return operator.id();
+	}
+	
+	@Override
+	public String sql(QueryVariables builder, Object[] args) {
 		try {
-			args = parameterSet.assertArguments(args);
-			return operator.args(typeFn.apply(args), args);
-		} catch (BadArgumentException e) {
+			return operator.sql(builder, parameterSet.assertArguments(args));
+		}
+		catch (BadArgumentException e) {
 			throw badArgumentsException("operator", operator.id(), args, e);
 		}
 	}
+	
+	@Override
+	public boolean is(Class<? extends Operator> type) {
+		return operator.is(type);
+	}
 
-	public boolean isCountFunction() {
-		return "COUNT".equals(operator.id());
+	public OperationColumn operation(Object... args) {
+		return Operator.super.operation(typeFn.apply(args), args);
+	}
+
+	public boolean isWindowFunction() {
+		return operator.is(WindowFunction.class);
 	}
 	
-	public boolean isWindowFunction() {
-		return operator instanceof WindowFunction;
+	public boolean isCountFunction() {
+		return "COUNT".equals(operator.id());
 	}
 	
 	@Override

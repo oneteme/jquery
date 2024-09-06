@@ -25,6 +25,10 @@ public interface Comparator extends DBProcessor {
 		return new ColumnSingleFilter(args[0], 
 				expression(copyOfRange(args, 1, args.length))); // no type
 	}
+	
+	default boolean is(Class<? extends Comparator> type) { 
+		return type.isInstance(this);
+	}
 
 	//basic comparator
 

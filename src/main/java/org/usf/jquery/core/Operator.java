@@ -31,8 +31,12 @@ public interface Operator extends DBProcessor {
 	
 	String id(); //nullable
 
-	default OperationColumn args(JDBCType type, Object... args) {
+	default OperationColumn operation(JDBCType type, Object... args) {
 		return new OperationColumn(this, args, type);
+	}
+	
+	default boolean is(Class<? extends Operator> type) {
+		return type.isInstance(this);
 	}
 	
 	//Arithmetic operations

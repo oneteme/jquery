@@ -11,9 +11,9 @@ import lombok.Getter;
  *
  */
 @Getter
-public final class TypedComparator {
+public final class TypedComparator implements Comparator {
 	
-	private final Comparator comparator;
+	private final Comparator comparator; // do not delegate
 	private final ParameterSet parameterSet;
 	
 	public TypedComparator(Comparator comparator, Parameter... parameters) {
@@ -21,24 +21,23 @@ public final class TypedComparator {
 		this.parameterSet = ofParameters(parameters);
 	}
 	
-	public ComparisonExpression expression(Object... right) {
-		try {
-			return comparator.expression(parameterSet.assertArgumentsFrom(1, right)); //no left 
-		} catch (BadArgumentException e) {
-			throw badArgumentsException("comparator", comparator.id(), right, e);
-		}
+	@Override
+	public String id() {
+		return comparator.id();
 	}
 	
-	public ColumnSingleFilter filter(Object... args) {
+	@Override
+	public String sql(QueryVariables builder, Object[] args) {
 		try {
-			return comparator.filter(parameterSet.assertArguments(args));
+			return comparator.sql(builder, parameterSet.assertArguments(args));
 		} catch (BadArgumentException e) {
 			throw badArgumentsException("comparator", comparator.id(), args, e);
 		}
 	}
-
-	public Comparator unwrap() {
-		return comparator;
+	
+	@Override
+	public boolean is(Class<? extends Comparator> type) {
+		return comparator.is(type);
 	}
 	
 	@Override

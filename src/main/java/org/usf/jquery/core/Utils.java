@@ -46,7 +46,7 @@ public final class Utils {
 	@SuppressWarnings("unchecked")
 	public static <T> String joinAndDelemitArray(String delemiter, String before, String after, T... args) {
 		return isNull(args) 
-				? null 
+				? before + after 
 				: joinAndDelemit(delemiter, before, after, Stream.of(args));
 	}
 	

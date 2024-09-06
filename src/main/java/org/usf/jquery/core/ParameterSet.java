@@ -28,20 +28,16 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 	private final Parameter[] parameters;
 
 	public Object[] assertArguments(Object... args) {
-		return assertArgumentsFrom(0, args);
-	}
-	
-	public Object[] assertArgumentsFrom(int idx, Object... args) { //partial assert
 		var arr = isNull(args) ? new Object[0] : args;
-		forEach(arr.length+idx, (p,i)-> {
-			if(i>=idx && !p.accept(i-idx, arr)) {
-				throw badArgumentTypeException(arr[i-idx], p.types(arr));
+		eachParameter(arr.length, (p,i)-> {
+			if(!p.accept(i, arr)) {
+				throw badArgumentTypeException(arr[i], p.types(arr));
 			}
 		});
 		return arr;
 	}
 
-	public void forEach(int nArgs, ObjIntConsumer<Parameter> cons) {
+	public void eachParameter(int nArgs, ObjIntConsumer<Parameter> cons) {
 		if(nArgs < nReqArgs || (nArgs > parameters.length && !isVarags())) {
 			throw badArgumentCountException(nArgs, nReqArgs);
 		}

@@ -11,6 +11,7 @@ import static java.util.Objects.requireNonNullElse;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.BadArgumentException.badArgumentsFormat;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.Comparator.lookupComparator;
@@ -44,6 +45,7 @@ import java.util.Optional;
 import java.util.function.IntFunction;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.BadArgumentException;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -250,7 +252,7 @@ final class RequestEntryChain {
 			if(rc.entry.isLast()) { // no criteria, no comparator
 				if(!isEmpty(values)) {
 					var fn = values.size() == 1 ? eq() : in(); //non empty
-					var e = new RequestEntryChain(fn.unwrap().id(), false, null, values, null); 
+					var e = new RequestEntryChain(fn.id(), false, null, values, null); 
 					return fn.filter(e.toArgs(vd, ctx, rc.col, fn.getParameterSet())); //no chain
 				}
 				throw badEntrySyntaxException(this.toString(), FILTER);
@@ -429,7 +431,7 @@ final class RequestEntryChain {
 			arr[0] = col;
 		}
 		try {
-			ps.forEach(arr.length, (p,i)-> {
+			ps.eachParameter(arr.length, (p,i)-> {
 				if(i>=inc) { //arg0 already parsed
 					var e = args.get(i-inc);
 					arr[i] = isNull(e.value) || e.text
@@ -439,8 +441,8 @@ final class RequestEntryChain {
 			});
 		}
 		catch (Exception e) {
-			throw new EntrySyntaxException(format("bad entry arguments : %s[(%s)]", 
-					value, isNull(args) ? "" : joinArray(", ", args.toArray())), e);
+			throw new EntrySyntaxException("bad entry arguments: " +
+					badArgumentsFormat(value, nonNull(args) ? args.toArray() : null), e);
 		}
 		return arr;
 	}

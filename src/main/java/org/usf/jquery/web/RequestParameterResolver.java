@@ -55,6 +55,10 @@ public final class RequestParameterResolver {//spring connection bridge
 			}
 			throw new ResourceAccessException("non-aggregate query");
 		}
+		catch (Exception e) {
+			e.printStackTrace();
+			throw e;
+		}
 		finally {
 			releaseContext();
 		}
