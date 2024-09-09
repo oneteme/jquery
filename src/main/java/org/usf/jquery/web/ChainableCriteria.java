@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import org.usf.jquery.core.Chainable;
-import org.usf.jquery.core.QueryContext;
 
 /**
  * 
@@ -11,5 +10,5 @@ import org.usf.jquery.core.QueryContext;
 @FunctionalInterface
 public interface ChainableCriteria<T extends Chainable<T>> {
 
-	T criteria(QueryContext ctx, String arg);
+	T criteria(String arg);
 }

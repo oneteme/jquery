@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.QueryContext;
 
 /**
  * 
@@ -11,6 +10,6 @@ import org.usf.jquery.core.QueryContext;
 @FunctionalInterface
 public interface PartitionBuilder {
 
-	Partition build(QueryContext ctx);
+	Partition build();
 	
 }

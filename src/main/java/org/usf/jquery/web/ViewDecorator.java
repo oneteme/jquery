@@ -29,6 +29,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.ColumnProxy;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
@@ -121,7 +122,7 @@ public interface ViewDecorator {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.remove(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> currentContext().declareView(e.evalView(this, query)));
+			.forEach(e-> currentContext().declareView(e.evalView(this)));
 		}
 	}
 	
@@ -140,7 +141,12 @@ public interface ViewDecorator {
 		if(!isEmpty(cols)) {
 			Stream.of(cols)
 			.flatMap(v-> parseEntries(v).stream())
-			.map(e-> (NamedColumn) e.evalColumn(this, query, true))
+			.map(e-> {
+				var c = e.evalColumn(this, true);
+				return c instanceof ColumnProxy cp 
+						? currentContext().declareColumn(cp) 
+						: (NamedColumn) c;
+			})
 			.forEach(query::columns);
 		}
 		else {
@@ -152,14 +158,14 @@ public interface ViewDecorator {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.remove(ORDER))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> query.orders(e.evalOrder(this, query)));
+			.forEach(e-> query.orders(e.evalOrder(this)));
 		}
 	}
 	default void parseJoin(QueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(JOIN)) {
 			Stream.of(parameters.remove(JOIN))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> query.joins(e.evalJoin(this, query)));
+			.forEach(e-> query.joins(e.evalJoin(this)));
 		}
 	}
 
@@ -175,7 +181,7 @@ public interface ViewDecorator {
     	parameters.entrySet().stream()
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());
-    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, query, parseEntries(v)));
+    		return Stream.of(e.getValue()).map(v-> re.evalFilter(this, parseEntries(v)));
     	})
     	.forEach(query::filters);
 	}

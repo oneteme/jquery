@@ -13,7 +13,6 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.QueryVariables;
 import org.usf.jquery.core.TableView;
 

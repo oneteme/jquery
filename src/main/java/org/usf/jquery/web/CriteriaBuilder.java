@@ -8,7 +8,6 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.Chainable;
 import org.usf.jquery.core.LogicalOperator;
-import org.usf.jquery.core.QueryContext;
 
 /**
  * 
@@ -18,10 +17,10 @@ import org.usf.jquery.core.QueryContext;
 @FunctionalInterface
 public interface CriteriaBuilder<T extends Chainable<T>> {
 	
-	T build(QueryContext ctx, String... arg);
+	T build(String... arg);
 
 	static <T extends Chainable<T>> CriteriaBuilder<T> singleArg(ChainableCriteria<T> cr){
-		return (ctx, args)-> cr.criteria(ctx, isEmpty(args) ? null : requireNArgs(1, args, ()-> "single arg criteria")[0]);
+		return args-> cr.criteria(isEmpty(args) ? null : requireNArgs(1, args, ()-> "single arg criteria")[0]);
 	}
 
 	static <T extends Chainable<T>> CriteriaBuilder<T> multiArgs(ChainableCriteria<T> cr){
@@ -29,8 +28,8 @@ public interface CriteriaBuilder<T extends Chainable<T>> {
 	}
 
 	static <T extends Chainable<T>> CriteriaBuilder<T> multiArgs(LogicalOperator op, ChainableCriteria<T> cr){
-		return (ctx, args)-> isEmpty(args) 
-				? cr.criteria(ctx, null)
-				: Stream.of(args).map(c-> cr.criteria(ctx, c)).reduce(op::combine).orElseThrow();
+		return args-> isEmpty(args) 
+				? cr.criteria(null)
+				: Stream.of(args).map(cr::criteria).reduce(op::combine).orElseThrow();
 	}
 }

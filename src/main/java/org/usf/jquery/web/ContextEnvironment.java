@@ -28,6 +28,7 @@ import java.util.stream.Stream;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.JQueryException;
+import org.usf.jquery.core.NamedColumn;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -54,6 +55,8 @@ public final class ContextEnvironment {
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
 	
+	private Map<String, NamedColumn> declaredColumns = new HashMap<>();
+	
 	ContextEnvironment(ContextEnvironment ctx) {
 		this.database = ctx.database;
 		this.views = new HashMap<>(ctx.views); //modifiable
@@ -63,7 +66,7 @@ public final class ContextEnvironment {
 		this.metadata = ctx.metadata;
 	}
 	
-	public Optional<ViewDecorator> lookupRegisteredView(String name) {
+	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
 		return ofNullable(views.get(name));
 	}
 	
@@ -71,10 +74,26 @@ public final class ContextEnvironment {
 		return ofNullable(columns.get(name));
 	}
 
+	Optional<NamedColumn> lookupDeclaredColumn(String name) {
+		return ofNullable(declaredColumns.get(name));
+	}
+
 	void declareView(ViewDecorator view) { //additional request views
 		views.compute(view.identity(), (k,v)-> {
 			if(isNull(v)){
 				return view;
+			}
+			throw resourceAlreadyExistsException(k);
+		});
+	}
+
+	NamedColumn declareColumn(NamedColumn col) {
+		views.computeIfPresent(col.getTag(), (k,v)-> { //cannot overwrite registered views
+			throw resourceAlreadyExistsException(k);
+		}); //but can overwrite registered columns
+		return declaredColumns.compute(col.getTag(), (k,v)-> {
+			if(isNull(v)){
+				return col;
 			}
 			throw resourceAlreadyExistsException(k);
 		});
