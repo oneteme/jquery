@@ -5,7 +5,7 @@ import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
-import static org.usf.jquery.core.Validation.requireNArgs;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -23,7 +23,7 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	
 	ComparisonExpressionGroup(LogicalOperator operator, ComparisonExpression... expressions) {
 		this.operator = operator;
-		this.expressions = requireNArgs(1, expressions, ComparisonExpressionGroup.class::getSimpleName);
+		this.expressions = requireAtLeastNArgs(1, expressions, ComparisonExpressionGroup.class::getSimpleName);
 	}
 
 	@Override

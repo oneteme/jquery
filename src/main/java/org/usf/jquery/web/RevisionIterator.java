@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.ColumnSingleFilter;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.QueryVariables;
@@ -68,12 +69,15 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	}
 	
 	static DBFilter monthFilter(DBColumn column) {
-		return b-> {
-			var values = currentRev.get().getValue();  //get it on build
-			var filter = values.size() == 1 
-					? column.eq(values.get(0).getMonthValue())
-					: column.in(values.stream().map(YearMonth::getMonthValue).toArray(Integer[]::new));
-			return filter.sql(b);
+		return new ColumnSingleFilter(null, null) {
+			@Override
+			public String sql(QueryVariables vars) {
+				var values = currentRev.get().getValue();  //get it on build
+				var filter = values.size() == 1 
+						? column.eq(values.get(0).getMonthValue())
+						: column.in(values.stream().map(YearMonth::getMonthValue).toArray(Integer[]::new));
+				return filter.sql(vars);
+			}
 		};
 	}
 }

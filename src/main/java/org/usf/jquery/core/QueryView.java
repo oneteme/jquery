@@ -11,10 +11,10 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
+@Getter
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class QueryView implements DBView {
 
-	@Getter
 	private final QueryBuilder builder;
 	
 	@Override

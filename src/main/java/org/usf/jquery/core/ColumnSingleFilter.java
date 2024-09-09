@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+@RequiredArgsConstructor
 public class ColumnSingleFilter implements DBFilter {
 
 	private final Object left;

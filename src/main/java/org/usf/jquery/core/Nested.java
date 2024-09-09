@@ -4,6 +4,9 @@ import static java.util.function.Function.identity;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Collection;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
