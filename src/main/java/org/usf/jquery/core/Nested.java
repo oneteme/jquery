@@ -1,11 +1,8 @@
 package org.usf.jquery.core;
 
-import static java.util.function.Function.identity;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Collection;
-import java.util.function.BiConsumer;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -49,21 +46,21 @@ public interface Nested {
 	
 
 	static <T extends Nested> void viewsOfNested(Collection<DBView> views, T[] arr) {
-		viewsOfNested(views, arr, identity());
+		viewsOfAll(arr, o-> o.views(views));
 	}
 	
 	static <T, N extends Nested> void viewsOfNested(Collection<DBView> views, T[] arr, Function<T, N> fn) {
-		if(!isEmpty(arr)) {
-			for(var o : arr) {
-				fn.apply(o).views(views);
-			}
-		}
+		viewsOfAll(arr, o-> fn.apply(o).views(views));
 	}
 
 	static void viewsOfAll(Collection<DBView> views, Object[] arr) {
+		viewsOfAll(arr, o-> viewsOf(views, o));
+	}
+
+	static <T> void viewsOfAll(T[] arr, Consumer<? super T> cons) {
 		if(!isEmpty(arr)) {
 			for(var o : arr) {
-				viewsOf(views, o);
+				cons.accept(o);
 			}
 		}
 	}

@@ -6,7 +6,6 @@ import static org.usf.jquery.core.QueryVariables.addWithValue;
 
 import java.util.Collection;
 
-import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
 /**
