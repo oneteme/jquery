@@ -62,13 +62,6 @@ public class QueryBuilder {
 	public QueryBuilder(Database target) {
 		setCurrentDatabase(target);
 	}
-	
-	public Optional<NamedColumn> lookupDeclaredColumn(String name) {
-		return columns.stream()
-				.filter(ColumnProxy.class::isInstance)
-				.filter(c-> name.equals(c.getTag()))
-				.findAny();
-	}
 
 	public QueryView overView(DBView view) {
 		return overView(view, ()-> new QueryBuilder().columns(allColumns(view)).asView());
