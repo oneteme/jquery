@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
+import static org.usf.jquery.core.Nested.tryResolve;
 import static org.usf.jquery.core.Nested.viewsOf;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -48,11 +49,10 @@ final class WhenCase implements DBObject, Typed, Nested {
 	@Override
 	public boolean resolve(QueryBuilder builder) {
 		var r1 = nonNull(filter) && filter.resolve(builder);
-		var r2 = Nested.resolve(value, builder);
+		var r2 = tryResolve(value, builder);
 		return r1 || r2;
 	}
 
-	
 	@Override
 	public void views(Collection<DBView> views) {
 		if(nonNull(filter)) {
@@ -64,9 +64,5 @@ final class WhenCase implements DBObject, Typed, Nested {
 	@Override
 	public String toString() {
 		return sql(addWithValue());
-	}
-	
-	public static WhenCase orElse(Object value) {
-		return new WhenCase(null, value);
 	}
 }

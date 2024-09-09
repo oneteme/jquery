@@ -1,17 +1,16 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Order.ASC;
-import static org.usf.jquery.core.Order.DESC;
+import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.OrderType.ASC;
+import static org.usf.jquery.core.OrderType.DESC;
 import static org.usf.jquery.core.QueryVariables.formatValue;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.Collection;
-import java.util.Objects;
 import java.util.function.Supplier;
 
-import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
 import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.NonNull;
@@ -36,7 +35,7 @@ public interface DBColumn extends DBObject, Typed, Nested {
 	}
 	
 	default ColumnProxy as(String name, JDBCType type) {
-		return new ColumnProxy(this, type, Objects.isNull(name) ? null : requireLegalVariable(name));
+		return new ColumnProxy(this, type, nonNull(name) ? requireLegalVariable(name) : null);
 	}
 	
 	// filters
@@ -381,12 +380,12 @@ public interface DBColumn extends DBObject, Typed, Nested {
 		return order(DESC);
 	}
 	
-	default DBOrder order(Order order) {
+	default DBOrder order(OrderType order) {
 		return new DBOrder(this, order);
 	}
 	
-	default WhenFilterBridge when(ComparisonExpression ex) {
-		return new CaseSingleColumnBuilder(this).when(ex);
+	default SingleCaseColumnBuilder whenCase() {
+		return new SingleCaseColumnBuilder(this);
 	}
 	
 	// constants

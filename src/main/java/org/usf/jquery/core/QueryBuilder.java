@@ -9,6 +9,7 @@ import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Clause.COLUMN;
 import static org.usf.jquery.core.Clause.FILTER;
 import static org.usf.jquery.core.Clause.ORDER;
+import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
@@ -38,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class QueryBuilder implements QueryContext {
+public class QueryBuilder {
 	
 	private final List<NamedColumn> columns = new ArrayList<>();
 	private final List<DBColumn> group = new ArrayList<>(); 
@@ -52,7 +53,6 @@ public class QueryBuilder implements QueryContext {
 	private Integer fetch;
 	private Integer offset;
 	private Iterator<?> it;
-	
 	private Clause clause;
 	
 	public QueryBuilder() {
@@ -63,15 +63,17 @@ public class QueryBuilder implements QueryContext {
 		setCurrentDatabase(target);
 	}
 	
-	@Override
 	public Optional<NamedColumn> lookupDeclaredColumn(String name) {
 		return columns.stream()
 				.filter(ColumnProxy.class::isInstance)
 				.filter(c-> name.equals(c.getTag()))
 				.findAny();
 	}
+
+	public QueryView overView(DBView view) {
+		return overView(view, ()-> new QueryBuilder().columns(allColumns(view)).asView());
+	}
 	
-	@Override
 	public QueryView overView(DBView view, Supplier<QueryView> supp) {
 		return overView.computeIfAbsent(view, k-> supp.get());
 	}
@@ -82,7 +84,7 @@ public class QueryBuilder implements QueryContext {
 			if(nonNull(col.getTag()) && this.columns.stream()
 					.filter(c-> nonNull(c.getTag()))
 					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
-					throw resourceAlreadyExistsException(col.getTag());
+				throw resourceAlreadyExistsException(col.getTag());
 			}
 			this.columns.add(col);
 			if(!col.resolve(this)) {

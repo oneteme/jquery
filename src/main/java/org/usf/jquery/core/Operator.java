@@ -39,6 +39,10 @@ public interface Operator extends DBProcessor {
 		return type.isInstance(this);
 	}
 	
+	default boolean is(String name) {
+		return name.equals(id());
+	}
+	
 	//Arithmetic operations
 
 	static TypedOperator plus() {

@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public final class DBOrder implements DBObject {
 
 	private final DBColumn column;
-	private final Order order;
+	private final OrderType order;
 	
 	public DBOrder(DBColumn column) {
 		this(column, null);

@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.Nested.tryResolve;
 import static org.usf.jquery.core.Nested.viewsOf;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 
@@ -26,7 +27,7 @@ public class ColumnSingleFilter implements DBFilter {
 
 	@Override
 	public boolean resolve(QueryBuilder builder) {
-		var res1 = Nested.resolve(left, builder);
+		var res1 = tryResolve(left, builder);
 		var res2 = expression.resolve(builder);
 		return res1 || res2;
 	}

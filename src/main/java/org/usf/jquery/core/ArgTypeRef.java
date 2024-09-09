@@ -14,6 +14,6 @@ interface ArgTypeRef extends Function<Object[], JDBCType> {
 
 	static ArgTypeRef firstArgJdbcType() {
 		return arr-> typeOf(requireAtLeastNArgs(1, arr, ArgTypeRef.class::getSimpleName)[0])
-				.orElse(null); // not sure 
+				.orElse(null);
 	} 
 }

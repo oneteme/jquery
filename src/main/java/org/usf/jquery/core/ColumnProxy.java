@@ -6,7 +6,6 @@ import static org.usf.jquery.core.QueryVariables.addWithValue;
 import java.util.Objects;
 
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
 
@@ -15,7 +14,6 @@ import lombok.experimental.Delegate;
  * @author u$f
  *
  */
-@Getter
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ColumnProxy implements NamedColumn {
 
@@ -25,8 +23,18 @@ public final class ColumnProxy implements NamedColumn {
 	private final String tag; //optional
 	
 	@Override
+	public String getTag() {
+		return tag;
+	}
+	
+	@Override
 	public JDBCType getType() {
 		return nonNull(type) ? type : column.getType();
+	}
+	
+	@Override // do not delegate this
+	public ColumnProxy as(String name) { 
+		return NamedColumn.super.as(name);
 	}
 	
 	@Override
@@ -38,6 +46,6 @@ public final class ColumnProxy implements NamedColumn {
 	
 	@Override
 	public String toString() {
-		return this.sqlWithTag(addWithValue());
+		return this.sql(addWithValue());
 	}
 }

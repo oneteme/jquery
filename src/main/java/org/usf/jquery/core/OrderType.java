@@ -5,7 +5,7 @@ package org.usf.jquery.core;
  * @author u$f
  *
  */
-public enum Order {
+public enum OrderType {
 	
 	ASC, DESC;
 

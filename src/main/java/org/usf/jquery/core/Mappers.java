@@ -42,5 +42,4 @@ public final class Mappers {
 	public static CsvResultMapper csv(DataWriter out) {
 		return new CsvResultMapper(out);
 	}
-	
 }

@@ -2,13 +2,13 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Clause.FILTER;
+import static org.usf.jquery.core.Nested.tryResolveAll;
 import static org.usf.jquery.core.Nested.viewsOfAll;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Objects;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -31,13 +31,13 @@ public final class OperationColumn implements DBColumn {
 	}
 	
 	@Override
-	public String sql(QueryVariables qv) {
-		return Objects.isNull(overColumn) ? operator.sql(qv, args) : overColumn.sql(qv);
+	public String sql(QueryVariables vars) {
+		return nonNull(overColumn) ? overColumn.sql(vars) : operator.sql(vars, args);
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return Objects.isNull(overColumn) ? type : overColumn.getType();
+		return nonNull(overColumn) ? overColumn.getType() : type;
 	}
 
 	@Override
@@ -46,7 +46,7 @@ public final class OperationColumn implements DBColumn {
 			builder.aggregation();
 			return true;
 		}
-		else if(isOverFunction()) {
+		else if(operator.is("OVER")) {
 			if(builder.getClause() == FILTER) {
 				var views = new HashSet<DBView>();
 				views(views);
@@ -54,7 +54,7 @@ public final class OperationColumn implements DBColumn {
 					var view = views.iterator().next();
 					var cTag = "over_" + hashCode(); //over_view_hash
 					builder.overView(view).getBuilder().columns(new OperationColumn(operator, args, type).as(cTag)); //clone
-					this.overColumn = new ViewColumn(cTag, view, getType(), null);
+					overColumn = new ViewColumn(cTag, view, type, null);
 					return false;
 				}
 				throw new UnsupportedOperationException("require only one view");
@@ -62,7 +62,7 @@ public final class OperationColumn implements DBColumn {
 			return requirePartition().resolve(builder); //no aggregation
 		}
 		return operator.is(ConstantOperator.class) 
-				|| Nested.tryResolveAll(builder, args);
+				|| tryResolveAll(builder, args);
 	}
 	
 	@Override
@@ -74,14 +74,10 @@ public final class OperationColumn implements DBColumn {
 			viewsOfAll(views, args);
 		}
 	}
-
+	
 	@Override
 	public String toString() {
 		return sql(addWithValue());
-	}
-	
-	boolean isOverFunction() {
-		return "OVER".equals(operator.id());
 	}
 	
 	private Partition requirePartition() {

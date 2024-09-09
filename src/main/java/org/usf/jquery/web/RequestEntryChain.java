@@ -55,7 +55,7 @@ import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.LogicalOperator;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OperationColumn;
-import org.usf.jquery.core.Order;
+import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.QueryBuilder;
@@ -81,7 +81,7 @@ import lombok.Setter;
 @RequiredArgsConstructor
 final class RequestEntryChain {
 
-	private static final String ORDER_PATTERN = enumPattern(Order.class); 
+	private static final String ORDER_PATTERN = enumPattern(OrderType.class); 
 	private static final String LOGIC_PATTERN = enumPattern(LogicalOperator.class); 
 	private static final String PARTITION_PATTERN = join("|", PARTITION, ORDER);
 	
@@ -223,7 +223,7 @@ final class RequestEntryChain {
 		var ord = r.entry.next;
 		if(ord.value.matches(ORDER_PATTERN)) { //check args & next only if order exists
 			var s = ord.requireNoArgs().requireNoNext().value.toUpperCase();
-			return r.col.order(Order.valueOf(s));
+			return r.col.order(OrderType.valueOf(s));
 		}
 		throw badEntrySyntaxException(ord.value, ORDER_PATTERN);
 	}

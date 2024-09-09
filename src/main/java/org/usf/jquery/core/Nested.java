@@ -13,14 +13,13 @@ import java.util.function.Predicate;
  *
  */
 public interface Nested {
+
+	boolean resolve(QueryBuilder builder);
 	
 	void views(Collection<DBView> views);
 
-	boolean resolve(QueryBuilder builder);
-
-
 	static boolean tryResolveAll(QueryBuilder builder, Object... args){
-		return resolveAll(args, o-> resolve(o, builder));
+		return resolveAll(args, o-> tryResolve(o, builder));
 	}
 
 	static <T, N extends Nested> boolean resolveAll(T[] arr, Function<T, N> fn, QueryBuilder builder){
@@ -41,10 +40,9 @@ public interface Nested {
 		return res;
 	}
 	
-	static boolean resolve(Object o, QueryBuilder builder) {
+	static boolean tryResolve(Object o, QueryBuilder builder) {
 		return o instanceof Nested n && n.resolve(builder);
 	}
-	
 	
 
 	static <T extends Nested> void viewsOfNested(Collection<DBView> views, T[] arr) {

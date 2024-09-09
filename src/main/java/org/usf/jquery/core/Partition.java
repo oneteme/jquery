@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -40,8 +41,8 @@ public final class Partition implements DBObject, Nested {
 	
 	@Override
 	public boolean resolve(QueryBuilder builder) { 
-		var r1 = Nested.resolveAll(columns, builder);
-		var r2 = Nested.resolveAll(orders, DBOrder::getColumn, builder);
+		var r1 = resolveAll(columns, builder);
+		var r2 = resolveAll(orders, DBOrder::getColumn, builder);
 		return r1 || r2;
 	}
 	

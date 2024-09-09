@@ -1,50 +1,47 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Objects;
-
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
+import java.util.stream.Stream;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class CaseColumn implements DBColumn { // TD override isAggregation
+public final class CaseColumn implements DBColumn {
 
-	private final Collection<WhenCase> whenCases = new ArrayList<>(); //immutable
+	private final WhenCase[] whenCases;
 	
+	public CaseColumn(WhenCase[] whenCases) {
+		this.whenCases = requireAtLeastNArgs(1, whenCases, CaseColumn.class::getSimpleName);
+	}
+
 	@Override
-	public String sql(QueryVariables builder) {
-		var b = builder.withValue(); //force literal parameter
-		return whenCases.stream() //empty !? 
-		.map(o-> o.sql(b))
+	public String sql(QueryVariables vars) {
+		var sub = vars.withValue(); //force literal parameter
+		return Stream.of(whenCases)
+		.map(o-> o.sql(sub))
 		.collect(joining(SPACE, "CASE ", " END"));
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return whenCases.stream()
+		return Stream.of(whenCases)
 				.map(WhenCase::getType)
 				.filter(Objects::nonNull) // should have same type
-				.findAny()
-				.orElse(null);
+				.findAny().orElse(null);
 	}
 	
 	@Override
 	public boolean resolve(QueryBuilder builder) {
-		var res = false;
-		for(var c : whenCases) {
-			res |= c.resolve(builder);
-		}
-		return res;
+		return resolveAll(whenCases, builder);
 	}
 	
 	@Override
@@ -54,18 +51,8 @@ public final class CaseColumn implements DBColumn { // TD override isAggregation
 		}
 	}
 		
-	public CaseColumn append(WhenCase we) {
-		whenCases.add(we);
-		return this;
-	}
-	
 	@Override
 	public String toString() {
 		return sql(addWithValue());
-	}
-
-	public static CaseColumn caseWhen(DBFilter filter, Object value){
-		return new CaseColumn()
-				.append(new WhenCase(filter, value));
 	}
 }

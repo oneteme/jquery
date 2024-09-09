@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.addAll;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Nested.tryResolveAll;
 import static org.usf.jquery.core.Nested.viewsOfAll;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 
@@ -34,7 +35,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	
 	@Override
 	public boolean resolve(QueryBuilder builder) {
-		return Nested.tryResolveAll(builder, right);
+		return tryResolveAll(builder, right);
 	}
 
 	@Override
