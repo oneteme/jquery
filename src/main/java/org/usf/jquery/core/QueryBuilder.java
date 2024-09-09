@@ -41,9 +41,9 @@ import lombok.extern.slf4j.Slf4j;
 public class QueryBuilder implements QueryContext {
 	
 	private final List<NamedColumn> columns = new ArrayList<>();
-	private final List<DBColumn> group = new ArrayList<>();  //WHERE & HAVING
-	private final List<DBFilter> where = new ArrayList<>();  //WHERE & HAVING
-	private final List<DBFilter> having = new ArrayList<>();  //WHERE & HAVING
+	private final List<DBColumn> group = new ArrayList<>(); 
+	private final List<DBFilter> where = new ArrayList<>(); 
+	private final List<DBFilter> having = new ArrayList<>();
 	private final List<DBOrder> orders = new ArrayList<>();
 	private final List<ViewJoin> joins = new ArrayList<>(); 
 	private final Map<DBView, QueryView> overView = new HashMap<>();
