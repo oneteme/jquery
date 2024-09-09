@@ -10,12 +10,12 @@ import org.usf.jquery.core.JavaType.Typed;
  * @author u$f
  *
  */
-public final class SingleQueryColumn implements DBObject, Typed {
+public final class SingleColumnQuery implements DBObject, Typed {
 	
 	private final QueryView query;
 	private final JDBCType type;
 
-	SingleQueryColumn(QueryView query) {
+	SingleColumnQuery(QueryView query) {
 		this.query = query;
 		if(query.getBuilder().getColumns().size() == 1) {
 			this.type = query.getBuilder().getColumns().get(0).getType();
@@ -27,7 +27,7 @@ public final class SingleQueryColumn implements DBObject, Typed {
 
 	@Override
 	public String sql(QueryVariables builder, Object[] args) {
-		requireNoArgs(args, SingleQueryColumn.class::getSimpleName);
+		requireNoArgs(args, SingleColumnQuery.class::getSimpleName);
 		return sql(builder);
 	}
 		

@@ -19,7 +19,7 @@ public final class CaseColumn implements DBColumn {
 
 	private final WhenCase[] whenCases;
 	
-	public CaseColumn(WhenCase[] whenCases) {
+	CaseColumn(WhenCase[] whenCases) {
 		this.whenCases = requireAtLeastNArgs(1, whenCases, CaseColumn.class::getSimpleName);
 	}
 

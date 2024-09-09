@@ -8,5 +8,4 @@ package org.usf.jquery.core;
 public enum OrderType {
 	
 	ASC, DESC;
-
 }

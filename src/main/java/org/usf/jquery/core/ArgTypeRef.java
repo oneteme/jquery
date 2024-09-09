@@ -10,6 +10,7 @@ import java.util.function.Function;
  * @author u$f
  *
  */
+@FunctionalInterface
 interface ArgTypeRef extends Function<Object[], JDBCType> {
 
 	static ArgTypeRef firstArgJdbcType() {

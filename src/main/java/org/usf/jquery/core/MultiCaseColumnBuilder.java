@@ -3,21 +3,17 @@ package org.usf.jquery.core;
 import java.util.ArrayList;
 import java.util.List;
 
-import lombok.RequiredArgsConstructor;
-
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor
-public final class SingleCaseColumnBuilder {
+public final class MultiCaseColumnBuilder {
 
-	private final DBColumn column;
 	private final List<WhenCase> cases = new ArrayList<>();
 	
-	public SingleCaseColumnBuilder when(ComparisonExpression exp, Object then) {
-		cases.add(new WhenCase(column.filter(exp), then));
+	public MultiCaseColumnBuilder when(DBFilter filter, Object then) {
+		cases.add(new WhenCase(filter, then));
 		return this;
 	}
 

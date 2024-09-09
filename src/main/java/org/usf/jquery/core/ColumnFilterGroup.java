@@ -1,9 +1,11 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.Collection;
 import java.util.stream.Stream;
@@ -21,7 +23,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	
 	ColumnFilterGroup(LogicalOperator operator, DBFilter... filters) {
 		this.operator = operator;
-		this.filters = filters;
+		this.filters = requireAtLeastNArgs(1, filters, ColumnFilterGroup.class::getSimpleName);
 	}
 
 	@Override
@@ -33,7 +35,7 @@ public final class ColumnFilterGroup implements DBFilter {
 		
 	@Override
 	public boolean resolve(QueryBuilder builder) {
-		return Nested.resolveAll(filters, builder);
+		return resolveAll(filters, builder);
 	}
 	
 	@Override

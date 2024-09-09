@@ -24,8 +24,8 @@ public final class QueryView implements DBView {
 		return s.append(")").toString();
 	}
 	
-	public SingleQueryColumn asColumn(){
-		return new SingleQueryColumn(this);
+	public SingleColumnQuery asColumn(){
+		return new SingleColumnQuery(this);
 	}
 	
 	@Override

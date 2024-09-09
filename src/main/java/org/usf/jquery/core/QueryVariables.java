@@ -4,7 +4,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
@@ -13,12 +12,10 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -52,14 +49,6 @@ public final class QueryVariables {
 			views.add(view);
 		}
 		return vPrefix + (idx+1);
-	}
-
-	public QueryView overView(DBView view) {
-		return overView(view, ()-> new QueryBuilder().columns(allColumns(view)).asView());
-	}
-	
-	public QueryView overView(DBView view, Supplier<QueryView> supp) {
-		return overView.computeIfAbsent(view, k-> supp.get());
 	}
 	
 	public Optional<DBView> viewOverload(DBView view) {
@@ -159,7 +148,7 @@ public final class QueryVariables {
 	}
 	
 	public QueryVariables subQuery(Map<DBView, QueryView> overView) {
-		return new QueryVariables(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), new HashMap<>(overView));
+		return new QueryVariables(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), overView);
 	}
 
 	public static QueryVariables addWithValue() {
@@ -167,10 +156,10 @@ public final class QueryVariables {
 	}
 
 	public static QueryVariables addWithValue(String schema, Map<DBView, QueryView> overView) {
-		return new QueryVariables(schema, "v", null, null, new ArrayList<>(), new HashMap<>(overView)); //no args
+		return new QueryVariables(schema, "v", null, null, new ArrayList<>(), overView); //no args
 	}
 
 	public static QueryVariables parameterized(String schema, Map<DBView, QueryView> overView) {
-		return new QueryVariables(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new HashMap<>(overView));
+		return new QueryVariables(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), overView);
 	}
 }

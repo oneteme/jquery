@@ -56,7 +56,7 @@ public class TypedOperator implements Operator {
 	}
 	
 	public boolean isCountFunction() {
-		return "COUNT".equals(operator.id());
+		return operator.is("COUNT");
 	}
 	
 	@Override

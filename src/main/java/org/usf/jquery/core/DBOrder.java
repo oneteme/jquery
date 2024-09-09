@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @Getter(AccessLevel.PACKAGE)
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+@RequiredArgsConstructor
 public final class DBOrder implements DBObject {
 
 	private final DBColumn column;

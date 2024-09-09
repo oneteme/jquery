@@ -59,7 +59,7 @@ import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.QueryBuilder;
-import org.usf.jquery.core.SingleQueryColumn;
+import org.usf.jquery.core.SingleColumnQuery;
 import org.usf.jquery.core.QueryContext;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.ViewJoin;
@@ -103,7 +103,7 @@ final class RequestEntryChain {
 				.orElseThrow(()-> noSuchResourceException(VIEW, value));
 	}
 	
-	public SingleQueryColumn evalQueryColumn(ViewDecorator td, QueryContext ctx) {
+	public SingleColumnQuery evalQueryColumn(ViewDecorator td, QueryContext ctx) {
 		return evalQuery(td, ctx, false)
 				.map(QueryDecorator::getQuery)
 				.map(QueryView::asColumn)
