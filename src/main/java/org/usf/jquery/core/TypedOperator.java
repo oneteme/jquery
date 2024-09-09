@@ -4,6 +4,7 @@ import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import lombok.Getter;
+import lombok.experimental.Delegate;
 
 /**
  * 
@@ -13,7 +14,8 @@ import lombok.Getter;
 @Getter
 public class TypedOperator implements Operator {
 	
-	private final Operator operator; // do not delegate
+	@Delegate
+	private final Operator operator;
 	private final ArgTypeRef typeFn;
 	private final ParameterSet parameterSet;
 	
@@ -28,11 +30,6 @@ public class TypedOperator implements Operator {
 	}
 	
 	@Override
-	public String id() {
-		return operator.id();
-	}
-	
-	@Override
 	public String sql(QueryVariables builder, Object[] args) {
 		try {
 			return operator.sql(builder, parameterSet.assertArguments(args));
@@ -41,16 +38,16 @@ public class TypedOperator implements Operator {
 			throw badArgumentsException("operator", operator.id(), args, e);
 		}
 	}
-	
-	@Override
-	public boolean is(Class<? extends Operator> type) {
-		return operator.is(type);
-	}
 
 	public OperationColumn operation(Object... args) {
-		return Operator.super.operation(typeFn.apply(args), args);
+		return this.operation(typeFn.apply(args), args);
 	}
 
+	@Override // do not delegate this
+	public OperationColumn operation(JDBCType type, Object... args) {
+		return Operator.super.operation(type, args);
+	}
+	
 	public boolean isWindowFunction() {
 		return operator.is(WindowFunction.class);
 	}
