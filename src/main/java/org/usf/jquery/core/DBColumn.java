@@ -7,9 +7,9 @@ import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.Collection;
 import java.util.Objects;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import org.usf.jquery.core.CaseSingleColumnBuilder.WhenFilterBridge;
 import org.usf.jquery.core.JavaType.Typed;
@@ -21,8 +21,7 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-@FunctionalInterface
-public interface DBColumn extends DBObject, Typed, Groupable {
+public interface DBColumn extends DBObject, Typed, Nested {
 	
 	String sql(QueryVariables builder);
 	
@@ -30,21 +29,6 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	default String sql(QueryVariables builder, Object[] args) {
 		requireNoArgs(args, DBColumn.class::getSimpleName);
 		return sql(builder);
-	}
-	
-	@Override
-	default JDBCType getType() {
-		return null;
-	}
-
-	@Override
-	default boolean isAggregation() {
-		return false;
-	}
-	
-	@Override
-	default Stream<DBColumn> groupKeys() {
-		return Stream.of(this);
 	}
 	
 	default ColumnProxy as(String name) {
@@ -419,8 +403,8 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 		return Operator.ctimestamp().operation();
 	}
 
-	static OperationColumn countAll() {
-		return Operator.count().operation(column("*"));
+	static OperationColumn countAll(DBView view) {
+		return Operator.count().operation(allColumns(view));
 	}
 	
 	//window functions
@@ -438,7 +422,7 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 	
 	static DBColumn column(@NonNull String value) {
-		return b-> value;
+		return new ViewColumn(requireLegalVariable(value), null, null, value);
 	}
 
 	static NamedColumn allColumns(@NonNull DBView view) {
@@ -446,10 +430,10 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 	}
 	
 	static DBColumn constant(Object value) {
-		return constant(()-> value);
+		return constant(JDBCType.typeOf(value).orElse(null), ()-> value);
 	}
 
-	static DBColumn constant(Supplier<Object> value) {
+	static DBColumn constant(JDBCType type, Supplier<Object> value) {
 		return new DBColumn() {
 			
 			@Override
@@ -458,8 +442,18 @@ public interface DBColumn extends DBObject, Typed, Groupable {
 			}
 			
 			@Override
-			public Stream<DBColumn> groupKeys() {
-				return Stream.empty();
+			public JDBCType getType() {
+				return type;
+			}
+
+			@Override
+			public boolean resolve(QueryBuilder builder) {
+				return false;
+			}
+			
+			@Override
+			public void views(Collection<DBView> views) {
+				//no view
 			}
 		};
 	}

@@ -1,9 +1,10 @@
 package org.usf.jquery.core;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
@@ -12,21 +13,26 @@ import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 /**
  * 
  * @author u$f
  *
  */
-@AllArgsConstructor(access = AccessLevel.PRIVATE)
+@Setter(AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryVariables {
 	
 	private static final String P_ARG = "?";
@@ -37,10 +43,9 @@ public final class QueryVariables {
 	private final List<Object> args; //parameterized flag
 	private final List<JDBCType> argTypes;
 	private final List<DBView> views; //indexed view
-	private final Map<DBView, DBView> overView;
-		
+	private final Map<DBView, QueryView> overView;
+	
 	public String viewAlias(DBView view) {
-		view = viewOverload(view);
 		var idx = views.indexOf(view);
 		if(idx < 0) {
 			idx = views.size();
@@ -48,9 +53,17 @@ public final class QueryVariables {
 		}
 		return vPrefix + (idx+1);
 	}
+
+	public QueryView overView(DBView view) {
+		return overView(view, ()-> new QueryBuilder().columns(allColumns(view)).asView());
+	}
 	
-	public DBView viewOverload(DBView view) {
-		return overView.getOrDefault(view, view);
+	public QueryView overView(DBView view, Supplier<QueryView> supp) {
+		return overView.computeIfAbsent(view, k-> supp.get());
+	}
+	
+	public Optional<DBView> viewOverload(DBView view) {
+		return ofNullable(overView.get(view));
 	}
 	
 	public List<DBView> views(){
@@ -145,19 +158,19 @@ public final class QueryVariables {
 		return new QueryVariables(schema, vPrefix, null, null, views, overView);
 	}
 	
-	public QueryVariables subQuery(Map<DBView, ? extends DBView> overView) {
-		return new QueryVariables(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), unmodifiableMap(overView));
+	public QueryVariables subQuery(Map<DBView, QueryView> overView) {
+		return new QueryVariables(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), new HashMap<>(overView));
 	}
 
 	public static QueryVariables addWithValue() {
 		return addWithValue(null, emptyMap()); //no args
 	}
 
-	public static QueryVariables addWithValue(String schema, Map<DBView, ? extends DBView> overView) {
-		return new QueryVariables(schema, "v", null, null, new ArrayList<>(), unmodifiableMap(overView)); //no args
+	public static QueryVariables addWithValue(String schema, Map<DBView, QueryView> overView) {
+		return new QueryVariables(schema, "v", null, null, new ArrayList<>(), new HashMap<>(overView)); //no args
 	}
 
-	public static QueryVariables parameterized(String schema, Map<DBView, ? extends DBView> overView) {
-		return new QueryVariables(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), unmodifiableMap(overView));
+	public static QueryVariables parameterized(String schema, Map<DBView, QueryView> overView) {
+		return new QueryVariables(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new HashMap<>(overView));
 	}
 }

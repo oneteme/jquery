@@ -1,11 +1,11 @@
 package org.usf.jquery.core;
 
-import static java.util.stream.Stream.concat;
+import static org.usf.jquery.core.Nested.viewsOfNested;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.stream.Stream;
+import java.util.Collection;
 
 import lombok.RequiredArgsConstructor;
 
@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public final class Partition implements DBObject, Groupable {
+public final class Partition implements DBObject, Nested {
 
 	private final DBColumn[] columns;
 	private final  DBOrder[] orders;
@@ -37,16 +37,17 @@ public final class Partition implements DBObject, Groupable {
 		}
 		return sb.toString();
 	}
-
+	
 	@Override
-	public Stream<DBColumn> groupKeys() {
-		Stream<DBColumn> s = Stream.empty();
-		if(!isEmpty(columns)) {
-			s = Stream.of(columns);
-		}
-		if(!isEmpty(orders)) {
-			s = concat(s, Stream.of(orders).map(DBOrder::getColumn));
-		}
-		return s;
+	public boolean resolve(QueryBuilder builder) { 
+		var r1 = Nested.resolveAll(columns, builder);
+		var r2 = Nested.resolveAll(orders, DBOrder::getColumn, builder);
+		return r1 || r2;
+	}
+	
+	@Override
+	public void views(Collection<DBView> views) {
+		viewsOfNested(views, columns);
+		viewsOfNested(views, orders, DBOrder::getColumn);
 	}
 }

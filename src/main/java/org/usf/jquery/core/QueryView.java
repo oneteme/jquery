@@ -24,9 +24,9 @@ public final class QueryView implements DBView {
 		return s.append(")").toString();
 	}
 	
-	public QueryColumn asColumn(){
+	public SingleQueryColumn asColumn(){
 		if(builder.getColumns().size() == 1) {
-			return new QueryColumn(this, builder.getColumns().get(0).getType());
+			return new SingleQueryColumn(this, builder.getColumns().get(0).getType());
 		}
 		throw new IllegalStateException("too many column");
 	}

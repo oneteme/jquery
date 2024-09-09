@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.util.stream.Collectors.groupingBy;
 import static org.usf.jquery.core.DBColumn.constant;
+import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.time.YearMonth;
@@ -12,6 +13,7 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.QueryVariables;
 import org.usf.jquery.core.TableView;
 
@@ -63,7 +65,7 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	}
 
 	static DBColumn yearColumn() {
-		return constant(()-> currentRev.get().getKey()); //get it on build
+		return constant(INTEGER, ()-> currentRev.get().getKey()); //get it on build
 	}
 	
 	static DBFilter monthFilter(DBColumn column) {

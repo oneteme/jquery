@@ -9,7 +9,7 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-public interface ComparisonExpression extends DBExpression, Nested, Chainable<ComparisonExpression> {
+public interface ComparisonExpression extends DBObject, Nested, Chainable<ComparisonExpression> {
 
 	String sql(QueryVariables builder, Object left); // do change method order
 

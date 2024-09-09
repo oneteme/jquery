@@ -59,10 +59,9 @@ import org.usf.jquery.core.Order;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.QueryBuilder;
-import org.usf.jquery.core.QueryColumn;
+import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.QueryContext;
 import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 
 import lombok.AccessLevel;
@@ -104,7 +103,7 @@ final class RequestEntryChain {
 				.orElseThrow(()-> noSuchResourceException(VIEW, value));
 	}
 	
-	public QueryColumn evalQueryColumn(ViewDecorator td, QueryContext ctx) {
+	public SingleQueryColumn evalQueryColumn(ViewDecorator td, QueryContext ctx) {
 		return evalQuery(td, ctx, false)
 				.map(QueryDecorator::getQuery)
 				.map(QueryView::asColumn)
@@ -304,7 +303,7 @@ final class RequestEntryChain {
 					var o = fn.operation(e.toArgs(vd, ctx, r.col, fn.getParameterSet()));
 					r.cd = null;
 					r.entry = e;
-					r.col = filter && "over".equals(e.value) ? windowColumn(r.vd, ctx, o) : o; 
+					r.col = o; 
 					e = e.next;
 				}
 				else {
@@ -313,13 +312,6 @@ final class RequestEntryChain {
 			}
 		} //else filter
 		return r;
-	}
-	
-	private static DBColumn windowColumn(ViewDecorator vd, QueryContext ctx, DBColumn col) {
-		var v = vd.view();
-		var tag = "over_" + vd.identity() + "_" + col.hashCode();  //over_view_hash
-		ctx.overView(v).getBuilder().columns(col.as(tag)); //append over colum
-		return new ViewColumn(doubleQuote(tag), v, col.getType(), null);
 	}
 	
 	//view.resource | resource

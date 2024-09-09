@@ -2,10 +2,11 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.addAll;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Nested.viewsOfAll;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 
 import java.util.ArrayList;
-import java.util.stream.Stream;
+import java.util.Collection;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	private final Comparator comparator;
-	private final Object[] right; //nullable
+	private final Object[] right; //optional
 	
 	@Override
 	public String sql(QueryVariables builder, Object left) {
@@ -32,8 +33,13 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	}
 	
 	@Override
-	public boolean isAggregation() {
-		return nonNull(right) && Stream.of(right).anyMatch(Nested::aggregation);
+	public boolean resolve(QueryBuilder builder) {
+		return Nested.tryResolveAll(builder, right);
+	}
+
+	@Override
+	public void views(Collection<DBView> views) {
+		viewsOfAll(views, right);
 	}
 	
 	@Override

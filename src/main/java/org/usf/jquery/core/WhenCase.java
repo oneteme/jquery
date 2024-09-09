@@ -1,9 +1,13 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
+import static org.usf.jquery.core.Nested.viewsOf;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Validation.requireNoArgs;
+
+import java.util.Collection;
 
 import org.usf.jquery.core.JavaType.Typed;
 
@@ -15,14 +19,14 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-final class WhenExpression implements DBExpression, Typed {
+final class WhenCase implements DBObject, Typed, Nested {
 	
-	private final DBFilter filter;
+	private final DBFilter filter; //optional
 	private final Object value;
 
 	@Override
 	public String sql(QueryVariables qv, Object[] args) {
-		requireNoArgs(args, WhenExpression.class::getSimpleName);
+		requireNoArgs(args, WhenCase.class::getSimpleName);
 		return sql(qv);
 	}
 	
@@ -42,11 +46,27 @@ final class WhenExpression implements DBExpression, Typed {
 	}
 	
 	@Override
+	public boolean resolve(QueryBuilder builder) {
+		var r1 = nonNull(filter) && filter.resolve(builder);
+		var r2 = Nested.resolve(value, builder);
+		return r1 || r2;
+	}
+
+	
+	@Override
+	public void views(Collection<DBView> views) {
+		if(nonNull(filter)) {
+			filter.views(views);
+		}
+		viewsOf(views, value);
+	}
+	
+	@Override
 	public String toString() {
 		return sql(addWithValue());
 	}
 	
-	public static WhenExpression orElse(Object value) {
-		return new WhenExpression(null, value);
+	public static WhenCase orElse(Object value) {
+		return new WhenCase(null, value);
 	}
 }

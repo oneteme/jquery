@@ -26,9 +26,9 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.QueryBuilder;
 import org.usf.jquery.core.TableView;
-import org.usf.jquery.core.NamedColumn;
 
 /**
  * 

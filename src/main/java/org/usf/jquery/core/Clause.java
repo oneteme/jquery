@@ -5,4 +5,9 @@ package org.usf.jquery.core;
  * @author u$f
  *
  */
-public interface Groupable extends Nested {}
+public enum Clause {
+	
+	COLUMN,
+	FILTER,
+	ORDER;
+}

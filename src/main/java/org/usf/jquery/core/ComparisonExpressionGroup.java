@@ -1,9 +1,11 @@
 package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.Nested.viewsOfNested;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
 
+import java.util.Collection;
 import java.util.stream.Stream;
 
 /**
@@ -30,8 +32,13 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 	
 	@Override
-	public boolean isAggregation() {
-		return Stream.of(expressions).anyMatch(ComparisonExpression::isAggregation);
+	public boolean resolve(QueryBuilder builder) {
+		return Nested.resolveAll(expressions, builder);
+	}
+	
+	@Override
+	public void views(Collection<DBView> views) {
+		viewsOfNested(views, expressions);
 	}
 	
 	@Override

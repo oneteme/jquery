@@ -19,27 +19,43 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class CaseColumn implements DBColumn { // TD override isAggregation
 
-	private final Collection<WhenExpression> expressions = new ArrayList<>();
+	private final Collection<WhenCase> whenCases = new ArrayList<>(); //immutable
 	
 	@Override
 	public String sql(QueryVariables builder) {
 		var b = builder.withValue(); //force literal parameter
-		return expressions.stream() //empty !? 
+		return whenCases.stream() //empty !? 
 		.map(o-> o.sql(b))
 		.collect(joining(SPACE, "CASE ", " END"));
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return expressions.stream()
-				.map(WhenExpression::getType)
+		return whenCases.stream()
+				.map(WhenCase::getType)
 				.filter(Objects::nonNull) // should have same type
 				.findAny()
 				.orElse(null);
 	}
+	
+	@Override
+	public boolean resolve(QueryBuilder builder) {
+		var res = false;
+		for(var c : whenCases) {
+			res |= c.resolve(builder);
+		}
+		return res;
+	}
+	
+	@Override
+	public void views(Collection<DBView> views) {
+		for(var e : whenCases) {
+			e.views(views);
+		}
+	}
 		
-	public CaseColumn append(WhenExpression we) {
-		expressions.add(we);
+	public CaseColumn append(WhenCase we) {
+		whenCases.add(we);
 		return this;
 	}
 	
@@ -50,6 +66,6 @@ public final class CaseColumn implements DBColumn { // TD override isAggregation
 
 	public static CaseColumn caseWhen(DBFilter filter, Object value){
 		return new CaseColumn()
-				.append(new WhenExpression(filter, value));
+				.append(new WhenCase(filter, value));
 	}
 }

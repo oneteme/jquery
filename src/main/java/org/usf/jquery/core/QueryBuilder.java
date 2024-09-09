@@ -6,6 +6,9 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.Clause.COLUMN;
+import static org.usf.jquery.core.Clause.FILTER;
+import static org.usf.jquery.core.Clause.ORDER;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
@@ -38,14 +41,19 @@ import lombok.extern.slf4j.Slf4j;
 public class QueryBuilder implements QueryContext {
 	
 	private final List<NamedColumn> columns = new ArrayList<>();
-	private final List<DBFilter> filters = new ArrayList<>();  //WHERE & HAVING
+	private final List<DBColumn> group = new ArrayList<>();  //WHERE & HAVING
+	private final List<DBFilter> where = new ArrayList<>();  //WHERE & HAVING
+	private final List<DBFilter> having = new ArrayList<>();  //WHERE & HAVING
 	private final List<DBOrder> orders = new ArrayList<>();
 	private final List<ViewJoin> joins = new ArrayList<>(); 
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private boolean distinct;
+	private boolean aggregation;
 	private Integer fetch;
 	private Integer offset;
 	private Iterator<?> it;
+	
+	private Clause clause;
 	
 	public QueryBuilder() {
 		this(null);
@@ -69,6 +77,7 @@ public class QueryBuilder implements QueryContext {
 	}
 	
 	public QueryBuilder columns(@NonNull NamedColumn... columns) {
+		this.clause = COLUMN;
 		for(var col : columns) { //optional tag
 			if(nonNull(col.getTag()) && this.columns.stream()
 					.filter(c-> nonNull(c.getTag()))
@@ -76,17 +85,30 @@ public class QueryBuilder implements QueryContext {
 					throw resourceAlreadyExistsException(col.getTag());
 			}
 			this.columns.add(col);
+			if(!col.resolve(this)) {
+				group.add(col);
+			}
 		}
 		return this;
 	}
 
 	public QueryBuilder filters(@NonNull DBFilter... filters){
-		addAll(this.filters, filters);
+		this.clause = FILTER;
+		for(var f : filters) {
+			(f.resolve(this) ? having : where).add(f);
+		}
 		return this;
 	}
 	
 	public QueryBuilder orders(@NonNull DBOrder... orders) {
-		addAll(this.orders, orders);
+		this.clause = ORDER;
+		for(var o : orders) {
+			this.orders.add(o);
+			var c = o.getColumn();
+			if(!c.resolve(this)) {
+				this.group.add(c);
+			}
+		}
 		return this;
 	}
 
@@ -112,6 +134,11 @@ public class QueryBuilder implements QueryContext {
 	
 	public QueryBuilder repeat(@NonNull Iterator<?> it) {
 		this.it = it;
+		return this;
+	}
+	
+	QueryBuilder aggregation() {
+		this.aggregation = true;
 		return this;
 	}
 
@@ -141,18 +168,18 @@ public class QueryBuilder implements QueryContext {
 
 	public final void build(SqlStringBuilder sb, QueryVariables pb){
 		var sub = new SqlStringBuilder(100);
-		join(sub, pb);
-    	where(sub, pb);
+    	where(sub, pb); //first resolve over view
     	groupBy(sub, pb);
     	having(sub, pb);
     	orderBy(sub, pb);
-    	fetch(sub);
+    	fetch(sub, pb);
     	select(sb, pb);
 		from(sb, pb); //enumerate all views before from clause
+		join(sb, pb);
 		sb.append(sub.toString()); //TODO optim
 	}
 
-	void select(SqlStringBuilder sb, QueryVariables pb){
+	void select(SqlStringBuilder sb, QueryVariables qv){
 		if(currentDatabase() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
@@ -165,64 +192,53 @@ public class QueryBuilder implements QueryContext {
     	.appendIf(distinct, " DISTINCT")
     	.appendIf(nonNull(fetch) && currentDatabase() == TERADATA, ()-> " TOP " + fetch) //???????
     	.append(SPACE)
-    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(pb));
+    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(qv));
 	}
 	
-	void from(SqlStringBuilder sb, QueryVariables pb) {
-		var excludes = joins.stream().map(ViewJoin::getView).map(pb::viewOverload).toList();
-		var views = pb.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
+	void from(SqlStringBuilder sb, QueryVariables qv) {
+		var excludes = joins.stream().map(ViewJoin::getView).mapMulti((v,c)-> qv.viewOverload(v).ifPresent(c)).toList();
+		var views = qv.views().stream().filter(not(excludes::contains)).distinct().toList(); //do not remove views
 		if(!views.isEmpty()) {
-			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(pb));
+			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(qv));
 		}
 	}
 	
-	void join(SqlStringBuilder sb, QueryVariables pb) {
+	void join(SqlStringBuilder sb, QueryVariables qv) {
 		if(!joins.isEmpty()) {
-			sb.append(SPACE).appendEach(joins, SPACE, v-> v.sql(pb));
+			sb.append(SPACE).appendEach(joins, SPACE, v-> v.sql(qv));
 		}
 	}
 
-	void where(SqlStringBuilder sb, QueryVariables pb){
-		var expr = filters.stream()
-				.filter(not(DBFilter::isAggregation))
-				.map(f-> f.sql(pb))
-    			.collect(joining(AND.sql()));
-    	if(!expr.isEmpty()) {
-    		sb.append(" WHERE ").append(expr);
-    	}
+	void where(SqlStringBuilder sb, QueryVariables qv){
+		if(!where.isEmpty()) {
+    		sb.append(" WHERE ").appendEach(where, AND.sql(), f-> f.sql(qv));
+		}
 	}
 	
-	void groupBy(SqlStringBuilder sb, QueryVariables pb){
-        if(isAggregation()) { // also check filter
-        	var expr = columns.stream()
-        			.filter(not(DBColumn::isAggregation))
-        			.flatMap(DBColumn::groupKeys)
-        			.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((NamedColumn)c).getTag() : c.sql(pb)) //add alias 
-        			.collect(joining(SCOMA));
-        	if(!expr.isEmpty()) {
-        		sb.append(" GROUP BY ").append(expr);
-        	}
-        }
+	void groupBy(SqlStringBuilder sb, QueryVariables qv){
+		if(aggregation && !group.isEmpty()) {
+    		sb.append(" GROUP BY ")
+    		.append(group.stream()
+    				.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((NamedColumn)c).getTag() : c.sql(qv)) //add alias 
+        			.collect(joining(SCOMA)));
+		}
 	}
 	
-	void having(SqlStringBuilder sb, QueryVariables pb){
-		var having = filters.stream()
-				.filter(DBFilter::isAggregation)
-				.toList();
-    	if(!having.isEmpty()) {
+	void having(SqlStringBuilder sb, QueryVariables qv){
+		if(!having.isEmpty()) {
     		sb.append(" HAVING ")
-    		.appendEach(having, AND.sql(), f-> f.sql(pb));
-    	}
+    		.appendEach(having, AND.sql(), f-> f.sql(qv));
+		}
 	}
 	
-	void orderBy(SqlStringBuilder sb, QueryVariables pb) {
+	void orderBy(SqlStringBuilder sb, QueryVariables qv) {
     	if(!orders.isEmpty()) {
     		sb.append(" ORDER BY ")
-    		.appendEach(orders, SCOMA, o-> o.sql(pb));
+    		.appendEach(orders, SCOMA, o-> o.sql(qv));
     	}
 	}
 	
-	void fetch(SqlStringBuilder sb) {
+	void fetch(SqlStringBuilder sb, QueryVariables qv) {
 		if(currentDatabase() != TERADATA) { // TOP n
 			if(nonNull(offset)) {
 				sb.append(" OFFSET ").append(offset.toString()).append(" ROWS");
@@ -231,11 +247,6 @@ public class QueryBuilder implements QueryContext {
 				sb.append(" FETCH NEXT ").append(fetch.toString()).append(" ROWS ONLY");
 			}
 		}
-	}
-	
-	public boolean isAggregation() {
-		return columns.stream().anyMatch(Nested::isAggregation) ||
-				filters.stream().anyMatch(Nested::isAggregation);
 	}
 
 	@Override

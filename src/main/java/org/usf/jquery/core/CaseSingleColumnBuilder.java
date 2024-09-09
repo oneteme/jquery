@@ -50,7 +50,7 @@ public final class CaseSingleColumnBuilder {
 	}
 	
 	private CaseColumn orElseExp(Object elseValue) {
-		caseColumn.append(WhenExpression.orElse(elseValue));
+		caseColumn.append(WhenCase.orElse(elseValue));
 		return caseColumn;
 	}
 	
@@ -85,7 +85,7 @@ public final class CaseSingleColumnBuilder {
 		}
 		
 		private CaseSingleColumnBuilder thenExp(Object o) {
-			caseColumn.append(new WhenExpression(requireNonNull(filter), o));
+			caseColumn.append(new WhenCase(requireNonNull(filter), o));
 			filter = null;
 			return CaseSingleColumnBuilder.this;			
 		}

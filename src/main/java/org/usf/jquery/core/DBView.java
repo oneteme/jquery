@@ -22,7 +22,7 @@ public interface DBView extends DBObject {
 	
 	default String sqlWithTag(QueryVariables builder) {
 		var tag = builder.viewAlias(this);
-		var sql = builder.viewOverload(this).sql(builder); //!important
+		var sql = builder.viewOverload(this).orElse(this).sql(builder); //!important
 		return isNull(tag) ? sql : sql + SPACE + tag;
 	}
 }

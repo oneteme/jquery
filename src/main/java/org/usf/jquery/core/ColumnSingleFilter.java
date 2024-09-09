@@ -1,7 +1,9 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Nested.aggregation;
+import static org.usf.jquery.core.Nested.viewsOf;
 import static org.usf.jquery.core.QueryVariables.addWithValue;
+
+import java.util.Collection;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -12,7 +14,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class ColumnSingleFilter implements DBFilter {
+public class ColumnSingleFilter implements DBFilter {
 
 	private final Object left;
 	private final ComparisonExpression expression;
@@ -21,10 +23,18 @@ public final class ColumnSingleFilter implements DBFilter {
 	public String sql(QueryVariables ph) {
 		return expression.sql(ph, left);
 	}
+
+	@Override
+	public boolean resolve(QueryBuilder builder) {
+		var res1 = Nested.resolve(left, builder);
+		var res2 = expression.resolve(builder);
+		return res1 || res2;
+	}
 	
 	@Override
-	public boolean isAggregation() {
-		return aggregation(left) || expression.isAggregation();
+	public void views(Collection<DBView> views) {
+		viewsOf(views, left);
+		expression.views(views);
 	}
 
 	@Override
