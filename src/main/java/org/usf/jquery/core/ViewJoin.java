@@ -7,12 +7,14 @@ import static org.usf.jquery.core.JoinType.INNER;
 import static org.usf.jquery.core.JoinType.LEFT;
 import static org.usf.jquery.core.JoinType.RIGHT;
 import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.QueryContext.addWithValue;
+import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.stream.Stream;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * 
@@ -20,23 +22,36 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @Getter
-@RequiredArgsConstructor
 public final class ViewJoin implements DBObject {
 	
 	private final JoinType joinType;
 	private final DBView view;
 	private final DBFilter[] filters;
 	//join results !?
+	
+	public ViewJoin(JoinType joinType, DBView view, DBFilter[] filters) {
+		super();
+		this.joinType = joinType;
+		this.view = view;
+		this.filters = joinType == CROSS 
+				? filters 
+				: requireAtLeastNArgs(1, filters, ViewJoin.class::getSimpleName);
+	}
 
 	@Override
-	public String sql(QueryVariables qv, Object[] args) {
+	public String sql(QueryContext qv, Object[] args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
 		return sql(qv);
 	}
 
-	public String sql(QueryVariables qv) {
-		return joinType + " JOIN " + view.sqlWithTag(qv) + " ON " +
-				Stream.of(filters).map(f-> f.sql(qv)).collect(joining(AND.sql()));
+	public String sql(QueryContext ctx) {
+		var s = joinType + " JOIN " + view.sqlWithTag(ctx);
+		if(!isEmpty(filters)) {
+			s += " ON " + Stream.of(filters)
+			.map(f-> f.sql(ctx))
+			.collect(joining(AND.sql()));
+		}
+		return s;
 	}
 	
 	public static ViewJoin innerJoin(DBView view, DBFilter... filters) {
@@ -57,5 +72,10 @@ public final class ViewJoin implements DBObject {
 
 	public static ViewJoin crossJoin(DBView view, DBFilter... filters) {
 		return new ViewJoin(CROSS, view, filters);
+	}
+	
+	@Override
+	public String toString() {
+		return sql(addWithValue());
 	}
 }

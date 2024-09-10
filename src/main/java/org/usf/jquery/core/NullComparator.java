@@ -12,8 +12,8 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 public interface NullComparator extends Comparator {
 
 	@Override
-	default String sql(QueryVariables builder, Object[] args) {
+	default String sql(QueryContext ctx, Object[] args) {
 		requireNArgs(1, args, NullComparator.class::getSimpleName);
-		return builder.appendParameter(args[0]) + SPACE + id();
+		return ctx.appendParameter(args[0]) + SPACE + id();
 	}
 }

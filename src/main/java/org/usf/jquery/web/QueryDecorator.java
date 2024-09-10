@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-final class QueryDecorator implements ViewDecorator { //non public
+final class QueryDecorator implements ViewDecorator {
 	
 	private final String id;
 	private final QueryView query;

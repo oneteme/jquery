@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.QueryVariables.addWithValue;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.member;
 
 import java.util.Collection;
@@ -24,8 +24,8 @@ public final class ViewColumn implements NamedColumn {
 	private final String tag;  //optional
 	
 	@Override
-	public String sql(QueryVariables qv) {
-		return nonNull(view) ? member(qv.viewAlias(view), name) : name;
+	public String sql(QueryContext ctx) {
+		return nonNull(view) ? member(ctx.viewAlias(view), name) : name;
 	}
 	
 	public boolean resolve(QueryBuilder builder) {

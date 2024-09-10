@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
-import static org.usf.jquery.core.QueryVariables.addWithValue;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -26,15 +26,15 @@ public final class DBOrder implements DBObject {
 	}
 	
 	@Override
-	public String sql(QueryVariables builder, Object[] args) {
+	public String sql(QueryContext ctx, Object[] args) {
 		requireNoArgs(args, DBOrder.class::getSimpleName);
-		return sql(builder);
+		return sql(ctx);
 	}
 
-	public String sql(QueryVariables builder) {
+	public String sql(QueryContext ctx) {
 		return isNull(order)
-				? column.sql(builder)
-				: column.sql(builder) + SPACE + order.name();
+				? column.sql(ctx)
+				: column.sql(ctx) + SPACE + order.name();
 	}
 	
 	@Override

@@ -13,8 +13,8 @@ import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 public interface InComparator extends Comparator {
 
 	@Override
-	default String sql(QueryVariables builder, Object[] args) {
+	default String sql(QueryContext ctx, Object[] args) {
 		requireAtLeastNArgs(2, args, InComparator.class::getSimpleName);
-		return builder.appendParameter(args[0]) + SPACE + id() + parenthese(builder.appendArrayParameter(args, 1));
+		return ctx.appendParameter(args[0]) + SPACE + id() + parenthese(ctx.appendArrayParameter(args, 1));
 	}
 }

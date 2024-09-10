@@ -30,9 +30,9 @@ public class TypedOperator implements Operator {
 	}
 	
 	@Override
-	public String sql(QueryVariables builder, Object[] args) {
+	public String sql(QueryContext ctx, Object[] args) {
 		try {
-			return operator.sql(builder, parameterSet.assertArguments(args));
+			return operator.sql(ctx, parameterSet.assertArguments(args));
 		}
 		catch (BadArgumentException e) {
 			throw badArgumentsException("operator", operator.id(), args, e);

@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.QueryVariables.addWithValue;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.member;
 
 import lombok.Getter;
@@ -25,8 +25,8 @@ public class TableView implements DBView {
 	}
 
 	@Override
-	public String sql(QueryVariables qv) {
-		return member(getSchemaOrElse(qv.getSchema()), name);
+	public String sql(QueryContext ctx) {
+		return member(getSchemaOrElse(ctx.getSchema()), name);
 	}
 
 	public String getSchemaOrElse(String defaultSchema) {

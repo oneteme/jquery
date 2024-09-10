@@ -18,7 +18,7 @@ public interface CastFunction extends FunctionOperator {
 	}
 	
 	@Override
-	default String sql(QueryVariables builder, Object[] args) {
+	default String sql(QueryContext builder, Object[] args) {
 		requireAtLeastNArgs(1, args, CastFunction.class::getSimpleName);
 		var sb = new SqlStringBuilder(id())
 				.append("(")

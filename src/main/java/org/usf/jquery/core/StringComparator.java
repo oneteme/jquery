@@ -12,9 +12,9 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 public interface StringComparator extends Comparator {
 	
 	@Override
-	default String sql(QueryVariables builder, Object[] args) {
+	default String sql(QueryContext ctx, Object[] args) {
 		requireNArgs(2, args, StringComparator.class::getSimpleName);
-		return builder.appendParameter(args[0]) + space(id()) + builder.appendParameter(wildcardArg(args[1]));
+		return ctx.appendParameter(args[0]) + space(id()) + ctx.appendParameter(wildcardArg(args[1]));
 	}
 	
 	default Object wildcardArg(Object o) {

@@ -14,7 +14,7 @@ import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryVariables.parameterized;
+import static org.usf.jquery.core.QueryContext.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
@@ -25,7 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Supplier;
 
 import lombok.Getter;
@@ -161,20 +160,20 @@ public class QueryBuilder {
 		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
 	}
 
-	public final void build(SqlStringBuilder sb, QueryVariables pb){
+	public final void build(SqlStringBuilder sb, QueryContext ctx){
 		var sub = new SqlStringBuilder(100);
-    	where(sub, pb); //first resolve over view
-    	groupBy(sub, pb);
-    	having(sub, pb);
-    	orderBy(sub, pb);
-    	fetch(sub, pb);
-    	select(sb, pb);
-		from(sb, pb); //enumerate all views before from clause
-		join(sb, pb);
+    	where(sub, ctx); //first resolve over view
+    	groupBy(sub, ctx);
+    	having(sub, ctx);
+    	orderBy(sub, ctx);
+    	fetch(sub, ctx);
+    	select(sb, ctx);
+		from(sb, ctx); //enumerate all views before from clause
+		join(sb, ctx);
 		sb.append(sub.toString()); //TODO optim
 	}
 
-	void select(SqlStringBuilder sb, QueryVariables qv){
+	void select(SqlStringBuilder sb, QueryContext ctx){
 		if(currentDatabase() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
@@ -187,53 +186,53 @@ public class QueryBuilder {
     	.appendIf(distinct, " DISTINCT")
     	.appendIf(nonNull(fetch) && currentDatabase() == TERADATA, ()-> " TOP " + fetch) //???????
     	.append(SPACE)
-    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(qv));
+    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(ctx));
 	}
 	
-	void from(SqlStringBuilder sb, QueryVariables qv) {
-		var excludes = joins.stream().map(ViewJoin::getView).mapMulti((v,c)-> qv.viewOverload(v).ifPresent(c)).toList();
-		var views = qv.views().stream().filter(not(excludes::contains)).distinct().toList(); //do not remove views
+	void from(SqlStringBuilder sb, QueryContext ctx) {
+		var excludes = joins.stream().map(ViewJoin::getView).toList();
+		var views = ctx.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
-			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(qv));
+			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(ctx));
 		}
 	}
 	
-	void join(SqlStringBuilder sb, QueryVariables qv) {
+	void join(SqlStringBuilder sb, QueryContext ctx) {
 		if(!joins.isEmpty()) {
-			sb.append(SPACE).appendEach(joins, SPACE, v-> v.sql(qv));
+			sb.append(SPACE).appendEach(joins, SPACE, v-> v.sql(ctx));
 		}
 	}
 
-	void where(SqlStringBuilder sb, QueryVariables qv){
+	void where(SqlStringBuilder sb, QueryContext ctx){
 		if(!where.isEmpty()) {
-    		sb.append(" WHERE ").appendEach(where, AND.sql(), f-> f.sql(qv));
+    		sb.append(" WHERE ").appendEach(where, AND.sql(), f-> f.sql(ctx));
 		}
 	}
 	
-	void groupBy(SqlStringBuilder sb, QueryVariables qv){
+	void groupBy(SqlStringBuilder sb, QueryContext ctx){
 		if(aggregation && !group.isEmpty()) {
     		sb.append(" GROUP BY ")
     		.append(group.stream()
-    				.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((NamedColumn)c).getTag() : c.sql(qv)) //add alias 
+    				.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((NamedColumn)c).getTag() : c.sql(ctx)) //add alias 
         			.collect(joining(SCOMA)));
 		}
 	}
 	
-	void having(SqlStringBuilder sb, QueryVariables qv){
+	void having(SqlStringBuilder sb, QueryContext ctx){
 		if(!having.isEmpty()) {
     		sb.append(" HAVING ")
-    		.appendEach(having, AND.sql(), f-> f.sql(qv));
+    		.appendEach(having, AND.sql(), f-> f.sql(ctx));
 		}
 	}
 	
-	void orderBy(SqlStringBuilder sb, QueryVariables qv) {
+	void orderBy(SqlStringBuilder sb, QueryContext ctx) {
     	if(!orders.isEmpty()) {
     		sb.append(" ORDER BY ")
-    		.appendEach(orders, SCOMA, o-> o.sql(qv));
+    		.appendEach(orders, SCOMA, o-> o.sql(ctx));
     	}
 	}
 	
-	void fetch(SqlStringBuilder sb, QueryVariables qv) {
+	void fetch(SqlStringBuilder sb, QueryContext ctx) {
 		if(currentDatabase() != TERADATA) { // TOP n
 			if(nonNull(offset)) {
 				sb.append(" OFFSET ").append(offset.toString()).append(" ROWS");

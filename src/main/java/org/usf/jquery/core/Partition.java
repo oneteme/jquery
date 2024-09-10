@@ -22,19 +22,19 @@ public final class Partition implements DBObject, Nested {
 	private final  DBOrder[] orders;
 	
 	@Override
-	public String sql(QueryVariables builder, Object[] args) {
+	public String sql(QueryContext ctx, Object[] args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
-		return sql(builder);
+		return sql(ctx);
 	}
 	
-	String sql(QueryVariables builder) {
+	String sql(QueryContext ctx) {
 		var sb = new SqlStringBuilder(100);
 		if(!isEmpty(columns)) {
-			sb.append("PARTITION BY ").append(builder.appendLiteralArray(columns));
+			sb.append("PARTITION BY ").append(ctx.appendLiteralArray(columns));
 		}
 		if(!isEmpty(orders)) { //require orders
 			sb.appendIf(!isEmpty(columns), SPACE)
-			.append("ORDER BY ").append(builder.appendLiteralArray(orders));
+			.append("ORDER BY ").append(ctx.appendLiteralArray(orders));
 		}
 		return sb.toString();
 	}

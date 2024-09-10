@@ -341,7 +341,7 @@ final class RequestEntryChain {
 		return empty();
 	}
 	
-	//view[.operator|column[.criteria]|criteria]
+	//[view].operator|column[.criteria]|criteria
 	private Optional<ViewResource> lookupViewResource(ViewDecorator vd, ViewDecorator current, boolean filter) {
 		var cur = requireNonNullElse(current, vd);
 		var res = lookupViewOperation(vd, current) 
@@ -360,6 +360,7 @@ final class RequestEntryChain {
 		});
 	}
 	
+	//[view.]count | rank|rowNumber|denseRank
 	private Optional<ViewResource> lookupColumnResource(ViewDecorator td, boolean filter) {
 		var res = currentContext().lookupRegisteredColumn(value);
 		if(res.isPresent()) {

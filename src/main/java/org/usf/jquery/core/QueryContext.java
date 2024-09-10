@@ -30,7 +30,7 @@ import lombok.Setter;
  */
 @Setter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class QueryVariables {
+public final class QueryContext {
 	
 	private static final String P_ARG = "?";
 	
@@ -143,23 +143,23 @@ public final class QueryVariables {
 		return nonNull(o) ? quote(o.toString()) : "null";
 	}
 	
-	public QueryVariables withValue() {
-		return new QueryVariables(schema, vPrefix, null, null, views, overView);
+	public QueryContext withValue() {
+		return new QueryContext(schema, vPrefix, null, null, views, overView);
 	}
 	
-	public QueryVariables subQuery(Map<DBView, QueryView> overView) {
-		return new QueryVariables(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), overView);
+	public QueryContext subQuery(Map<DBView, QueryView> overView) {
+		return new QueryContext(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), overView);
 	}
 
-	public static QueryVariables addWithValue() {
+	public static QueryContext addWithValue() {
 		return addWithValue(null, emptyMap()); //no args
 	}
 
-	public static QueryVariables addWithValue(String schema, Map<DBView, QueryView> overView) {
-		return new QueryVariables(schema, "v", null, null, new ArrayList<>(), overView); //no args
+	public static QueryContext addWithValue(String schema, Map<DBView, QueryView> overView) {
+		return new QueryContext(schema, "v", null, null, new ArrayList<>(), overView); //no args
 	}
 
-	public static QueryVariables parameterized(String schema, Map<DBView, QueryView> overView) {
-		return new QueryVariables(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), overView);
+	public static QueryContext parameterized(String schema, Map<DBView, QueryView> overView) {
+		return new QueryContext(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), overView);
 	}
 }

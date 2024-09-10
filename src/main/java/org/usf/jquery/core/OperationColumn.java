@@ -4,7 +4,7 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Clause.FILTER;
 import static org.usf.jquery.core.Nested.tryResolveAll;
 import static org.usf.jquery.core.Nested.viewsOfAll;
-import static org.usf.jquery.core.QueryVariables.addWithValue;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Collection;
@@ -31,8 +31,8 @@ public final class OperationColumn implements DBColumn {
 	}
 	
 	@Override
-	public String sql(QueryVariables vars) {
-		return nonNull(overColumn) ? overColumn.sql(vars) : operator.sql(vars, args);
+	public String sql(QueryContext ctx) {
+		return nonNull(overColumn) ? overColumn.sql(ctx) : operator.sql(ctx, args);
 	}
 	
 	@Override

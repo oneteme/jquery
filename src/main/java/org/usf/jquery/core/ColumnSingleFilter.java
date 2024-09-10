@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Nested.tryResolve;
 import static org.usf.jquery.core.Nested.viewsOf;
-import static org.usf.jquery.core.QueryVariables.addWithValue;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 
 import java.util.Collection;
 
@@ -20,14 +20,14 @@ public class ColumnSingleFilter implements DBFilter {
 	private final ComparisonExpression expression;
 
 	@Override
-	public String sql(QueryVariables ph) {
-		return expression.sql(ph, left);
+	public String sql(QueryContext ctx) {
+		return expression.sql(ctx, left);
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder builder) {
-		var res1 = tryResolve(left, builder);
-		var res2 = expression.resolve(builder);
+	public boolean resolve(QueryBuilder ctx) {
+		var res1 = tryResolve(left, ctx);
+		var res2 = expression.resolve(ctx);
 		return res1 || res2;
 	}
 	

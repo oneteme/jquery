@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
-import static org.usf.jquery.core.QueryVariables.formatValue;
+import static org.usf.jquery.core.QueryContext.formatValue;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -22,12 +22,12 @@ import lombok.NonNull;
  */
 public interface DBColumn extends DBObject, Typed, Nested {
 	
-	String sql(QueryVariables builder);
+	String sql(QueryContext ctx);
 	
 	@Override
-	default String sql(QueryVariables builder, Object[] args) {
+	default String sql(QueryContext ctx, Object[] args) {
 		requireNoArgs(args, DBColumn.class::getSimpleName);
-		return sql(builder);
+		return sql(ctx);
 	}
 	
 	default ColumnProxy as(String name) {
@@ -384,7 +384,7 @@ public interface DBColumn extends DBObject, Typed, Nested {
 		return new DBOrder(this, order);
 	}
 	
-	default SingleCaseColumnBuilder whenCase() {
+	default SingleCaseColumnBuilder beginCase() {
 		return new SingleCaseColumnBuilder(this);
 	}
 	
@@ -436,7 +436,7 @@ public interface DBColumn extends DBObject, Typed, Nested {
 		return new DBColumn() {
 			
 			@Override
-			public String sql(QueryVariables arg) {
+			public String sql(QueryContext ctx) {
 				return formatValue(value.get()); //lazy 
 			}
 			

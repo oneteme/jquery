@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Nested.resolveAll;
-import static org.usf.jquery.core.QueryVariables.addWithValue;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
@@ -24,8 +24,8 @@ public final class CaseColumn implements DBColumn {
 	}
 
 	@Override
-	public String sql(QueryVariables vars) {
-		var sub = vars.withValue(); //force literal parameter
+	public String sql(QueryContext ctx) {
+		var sub = ctx.withValue(); //force literal parameter
 		return Stream.of(whenCases)
 		.map(o-> o.sql(sub))
 		.collect(joining(SPACE, "CASE ", " END"));

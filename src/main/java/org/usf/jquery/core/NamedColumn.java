@@ -12,8 +12,8 @@ public interface NamedColumn extends DBColumn {
 
 	String getTag();
 	
-	default String sqlWithTag(QueryVariables builder) {
-		var s = sql(builder);
+	default String sqlWithTag(QueryContext ctx) {
+		var s = sql(ctx);
 		if(nonNull(getTag())) {
 			s += " AS " + doubleQuote(getTag());
 		}

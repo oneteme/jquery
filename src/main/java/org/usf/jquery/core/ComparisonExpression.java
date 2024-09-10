@@ -11,12 +11,12 @@ import lombok.NonNull;
  */
 public interface ComparisonExpression extends DBObject, Nested, Chainable<ComparisonExpression> {
 
-	String sql(QueryVariables builder, Object left); // do change method order
+	String sql(QueryContext ctx, Object left); // do change method order
 
 	@Override
-	default String sql(QueryVariables builder, Object[] args) {
+	default String sql(QueryContext ctx, Object[] args) {
 		requireNArgs(1, args, ComparisonExpression.class::getSimpleName);
-		return sql(builder, args[0]);
+		return sql(ctx, args[0]);
 	}
 	
 	static ComparisonExpression eq(Object right) {

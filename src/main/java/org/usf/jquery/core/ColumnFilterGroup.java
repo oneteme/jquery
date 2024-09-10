@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
-import static org.usf.jquery.core.QueryVariables.addWithValue;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
@@ -27,15 +27,15 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public String sql(QueryVariables builder) {
+	public String sql(QueryContext ctx) {
 		return Stream.of(filters)
-		.map(o-> o.sql(builder))
+		.map(o-> o.sql(ctx))
 		.collect(joining(operator.sql(), "(", ")"));
 	}
 		
 	@Override
-	public boolean resolve(QueryBuilder builder) {
-		return resolveAll(filters, builder);
+	public boolean resolve(QueryBuilder ctx) {
+		return resolveAll(filters, ctx);
 	}
 	
 	@Override

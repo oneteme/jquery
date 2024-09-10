@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
-import static org.usf.jquery.core.QueryVariables.addWithValue;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
@@ -27,9 +27,9 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 
 	@Override
-	public String sql(QueryVariables builder, Object operand) {
+	public String sql(QueryContext ctx, Object operand) {
 		return Stream.of(expressions)
-		.map(o-> o.sql(builder, operand))
+		.map(o-> o.sql(ctx, operand))
 		.collect(joining(operator.sql(), "(", ")"));
 	}
 	
