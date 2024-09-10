@@ -15,9 +15,9 @@ import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.Parameters.COLUMN;
 import static org.usf.jquery.web.Parameters.COLUMN_DISTINCT;
-import static org.usf.jquery.web.Parameters.FETCH;
-import static org.usf.jquery.web.Parameters.JOIN;
 import static org.usf.jquery.web.Parameters.OFFSET;
+import static org.usf.jquery.web.Parameters.JOIN;
+import static org.usf.jquery.web.Parameters.LIMIT;
 import static org.usf.jquery.web.Parameters.ORDER;
 import static org.usf.jquery.web.Parameters.VIEW;
 import static org.usf.jquery.web.RequestParser.parseEntries;
@@ -112,7 +112,7 @@ public interface ViewDecorator {
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
 		parseJoin(query, parameterMap);
-		parseFetch(query, parameterMap);
+		parseLimit(query, parameterMap);
 		parseOffset(query, parameterMap);
 		parseFilters(query, parameterMap); //remove all entries before parse filters
 		return query;
@@ -169,8 +169,8 @@ public interface ViewDecorator {
 		}
 	}
 
-	default void parseFetch(QueryBuilder query, Map<String, String[]> parameters) {
-		requirePositiveInt(FETCH, parameters).ifPresent(query::fetch);
+	default void parseLimit(QueryBuilder query, Map<String, String[]> parameters) {
+		requirePositiveInt(LIMIT, parameters).ifPresent(query::limit);
 	}
 	
 	default void parseOffset(QueryBuilder query, Map<String, String[]> parameters) {

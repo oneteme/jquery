@@ -49,7 +49,7 @@ public class QueryBuilder {
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private boolean distinct;
 	private boolean aggregation;
-	private Integer fetch;
+	private Integer limit;
 	private Integer offset;
 	private Iterator<?> it;
 	private Clause clause;
@@ -111,8 +111,8 @@ public class QueryBuilder {
 		return this;
 	}
 	
-	public QueryBuilder fetch(int fetch) {
-		this.fetch = fetch;
+	public QueryBuilder limit(int limit) {
+		this.limit = limit;
 		return this;
 	}
 	
@@ -178,13 +178,13 @@ public class QueryBuilder {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
 			}
-			if(distinct && nonNull(fetch)) {
+			if(distinct && nonNull(limit)) {
 				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
 			}
 		}
 		sb.append("SELECT")
     	.appendIf(distinct, " DISTINCT")
-    	.appendIf(nonNull(fetch) && currentDatabase() == TERADATA, ()-> " TOP " + fetch) //???????
+    	.appendIf(nonNull(limit) && currentDatabase() == TERADATA, ()-> " TOP " + limit) //???????
     	.append(SPACE)
     	.appendEach(columns, SCOMA, o-> o.sqlWithTag(ctx));
 	}
@@ -234,11 +234,11 @@ public class QueryBuilder {
 	
 	void fetch(SqlStringBuilder sb, QueryContext ctx) {
 		if(currentDatabase() != TERADATA) { // TOP n
-			if(nonNull(offset)) {
-				sb.append(" OFFSET ").append(offset.toString()).append(" ROWS");
+			if(nonNull(limit)) {
+				sb.append(" limit ").append(limit.toString());
 			}
-			if(nonNull(fetch)) {
-				sb.append(" FETCH NEXT ").append(fetch.toString()).append(" ROWS ONLY");
+			if(nonNull(offset)) {
+				sb.append(" OFFSET ").append(offset.toString());
 			}
 		}
 	}

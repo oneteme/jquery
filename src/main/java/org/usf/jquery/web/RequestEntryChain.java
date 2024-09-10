@@ -29,10 +29,10 @@ import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.DISTINCT;
-import static org.usf.jquery.web.Parameters.FETCH;
+import static org.usf.jquery.web.Parameters.OFFSET;
 import static org.usf.jquery.web.Parameters.FILTER;
 import static org.usf.jquery.web.Parameters.JOIN;
-import static org.usf.jquery.web.Parameters.OFFSET;
+import static org.usf.jquery.web.Parameters.LIMIT;
 import static org.usf.jquery.web.Parameters.ORDER;
 import static org.usf.jquery.web.Parameters.PARTITION;
 import static org.usf.jquery.web.Parameters.QUERY;
@@ -126,9 +126,9 @@ final class RequestEntryChain {
 					case FILTER: q.filters(e.filterVarargs(td)); break;
 					case ORDER: q.orders(e.orderVarargs(td)); break;
 					case JOIN: q.joins(e.evalJoin(td)); break;
+					case LIMIT: q.limit((int)e.toOneArg(td, INTEGER)); break;
 					case OFFSET: q.offset((int)e.toOneArg(td, INTEGER)); break;
-					case FETCH: q.fetch((int)e.toOneArg(td, INTEGER)); break;
-					default: throw badEntrySyntaxException(e.value, join("|", DISTINCT, FILTER, ORDER, JOIN, OFFSET, FETCH));
+					default: throw badEntrySyntaxException(e.value, join("|", DISTINCT, FILTER, ORDER, JOIN, LIMIT, OFFSET));
 					}
 				}
 				return Optional.of(new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView()));
@@ -313,7 +313,7 @@ final class RequestEntryChain {
 		return r;
 	}
 	
-	//view.resource | resource
+	//[view|query.]resource
 	private ViewResource lookupResource(ViewDecorator vd, boolean filter) { //do not change priority
 		if(hasNext()) {
 			var rc = currentContext().lookupRegisteredView(value);

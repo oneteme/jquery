@@ -47,8 +47,9 @@ public final class ViewJoin implements DBObject {
 	public String sql(QueryContext ctx) {
 		var s = joinType + " JOIN " + view.sqlWithTag(ctx);
 		if(!isEmpty(filters)) {
+			var val = ctx.withValue();
 			s += " ON " + Stream.of(filters)
-			.map(f-> f.sql(ctx))
+			.map(f-> f.sql(val))
 			.collect(joining(AND.sql()));
 		}
 		return s;

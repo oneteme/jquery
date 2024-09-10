@@ -20,8 +20,8 @@ public final class Parameters {
 	public static final String COLUMN_DISTINCT = "column.distinct";  //select.distinct
 	public static final String FILTER = "filter";
 	public static final String ORDER = "order";
-	public static final String FETCH = "fetch";
 	public static final String OFFSET = "offset";
+	public static final String LIMIT = "limit";
 	public static final String JOIN = "join";
 	public static final String PARTITION = "partition";
 }
