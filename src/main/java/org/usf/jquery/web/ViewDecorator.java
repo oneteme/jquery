@@ -145,7 +145,7 @@ public interface ViewDecorator {
 			.forEach(query::columns);
 		}
 		else {
-			throw new IllegalArgumentException(format("requrie '%s' or '%s' parameter", COLUMN, COLUMN_DISTINCT));
+			throw new IllegalArgumentException(format("require '%s' or '%s' parameter", COLUMN, COLUMN_DISTINCT));
 		}
 	}
 
