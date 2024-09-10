@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
@@ -148,7 +149,7 @@ public final class QueryContext {
 	}
 	
 	public QueryContext subQuery(Map<DBView, QueryView> overView) {
-		return new QueryContext(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), overView);
+		return new QueryContext(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), unmodifiableMap(overView));
 	}
 
 	public static QueryContext addWithValue() {
@@ -156,10 +157,10 @@ public final class QueryContext {
 	}
 
 	public static QueryContext addWithValue(String schema, Map<DBView, QueryView> overView) {
-		return new QueryContext(schema, "v", null, null, new ArrayList<>(), overView); //no args
+		return new QueryContext(schema, "v", null, null, new ArrayList<>(), unmodifiableMap(overView)); //no args
 	}
 
 	public static QueryContext parameterized(String schema, Map<DBView, QueryView> overView) {
-		return new QueryContext(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), overView);
+		return new QueryContext(schema, "v", new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), unmodifiableMap(overView));
 	}
 }

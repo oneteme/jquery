@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Nested.tryResolve;
@@ -33,11 +32,11 @@ final class WhenCase implements DBObject, Typed, Nested {
 	
 	public String sql(QueryContext ctx) {
 		var sb = new StringBuilder(50);
-		sb = isNull(filter)
-				? sb.append("ELSE ")
-				: sb.append("WHEN ")
-				.append(filter.sql(ctx))
-				.append(" THEN ");
+		sb = nonNull(filter)
+				? sb.append("WHEN ")
+						.append(filter.sql(ctx))
+						.append(" THEN ")
+				: sb.append("ELSE ");
 		return sb.append(ctx.appendLiteral(value)).toString();
 	}
 	

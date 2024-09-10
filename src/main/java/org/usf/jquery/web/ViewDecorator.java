@@ -5,19 +5,21 @@ import static java.lang.String.format;
 import static java.util.Map.entry;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 import static org.usf.jquery.web.Parameters.COLUMN;
 import static org.usf.jquery.web.Parameters.COLUMN_DISTINCT;
-import static org.usf.jquery.web.Parameters.OFFSET;
 import static org.usf.jquery.web.Parameters.JOIN;
 import static org.usf.jquery.web.Parameters.LIMIT;
+import static org.usf.jquery.web.Parameters.OFFSET;
 import static org.usf.jquery.web.Parameters.ORDER;
 import static org.usf.jquery.web.Parameters.VIEW;
 import static org.usf.jquery.web.RequestParser.parseEntries;
@@ -188,17 +190,13 @@ public interface ViewDecorator {
 	
 	private static Optional<Integer> requirePositiveInt(String key, Map<String, String[]> parameters) {
 		if(parameters.containsKey(key)) {
-			var values = parameters.remove(key);
-			if(values.length == 1) {
-				var v = parseInt(values[0]);
-				if(v >= 0) {
-					return Optional.of(v);
-				}
-				throw new IllegalArgumentException(key + " cannot be negative");
+			var v = parseInt(requireNArgs(1, parameters.remove(key), ()-> key)[0]);
+			if(v >= 0) {
+				return Optional.of(v);
 			}
-			throw new IllegalArgumentException("too many value");
+			throw new IllegalArgumentException(key + " cannot be negative");
 		}
-		return Optional.empty();
+		return empty();
 	}
 	
 	static Stream<String> flatParameters(String... arr) { //number local separator
