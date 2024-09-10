@@ -349,9 +349,9 @@ final class RequestEntryChain {
 				.or(()-> lookupColumnResource(cur, filter));
 		return filter ? res.or(()-> ofNullable(cur.criteria(value)).map(crt-> new ViewResource(this, cur, crt))) : res;
 	}
-	
+
+	//[view.]count | rank|rowNumber|denseRank
 	private Optional<OperationColumn> lookupViewOperation(ViewDecorator vd, ViewDecorator current) {
-		 //view.[count|rank|rowNumber|danseRank] only
 		return lookupOperator(value, isNull(current) ? null : op-> op.isCountFunction() || op.isWindowFunction()).map(fn-> {
 			var col = isEmpty(args) && fn.isCountFunction() 
 					? allColumns(requireNonNullElse(current, vd).view()) 
@@ -360,7 +360,7 @@ final class RequestEntryChain {
 		});
 	}
 	
-	//[view.]count | rank|rowNumber|denseRank
+	//[view.]column[.criteria]
 	private Optional<ViewResource> lookupColumnResource(ViewDecorator td, boolean filter) {
 		var res = currentContext().lookupRegisteredColumn(value);
 		if(res.isPresent()) {
