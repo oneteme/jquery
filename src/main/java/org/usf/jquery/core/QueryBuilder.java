@@ -111,12 +111,12 @@ public class QueryBuilder {
 		return this;
 	}
 	
-	public QueryBuilder limit(int limit) {
+	public QueryBuilder limit(Integer limit) {
 		this.limit = limit;
 		return this;
 	}
 	
-	public QueryBuilder offset(int offset) {
+	public QueryBuilder offset(Integer offset) {
 		this.offset = offset;
 		return this;
 	}

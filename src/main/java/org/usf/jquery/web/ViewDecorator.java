@@ -5,7 +5,6 @@ import static java.lang.String.format;
 import static java.util.Map.entry;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
@@ -28,7 +27,6 @@ import static org.usf.jquery.web.RequestParser.parseEntry;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.ColumnProxy;
@@ -113,7 +111,7 @@ public interface ViewDecorator {
 		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
-		parseJoin(query, parameterMap);
+		parseJoins(query, parameterMap);
 		parseLimit(query, parameterMap);
 		parseOffset(query, parameterMap);
 		parseFilters(query, parameterMap); //remove all entries before parse filters
@@ -163,7 +161,7 @@ public interface ViewDecorator {
 			.forEach(e-> query.orders(e.evalOrder(this)));
 		}
 	}
-	default void parseJoin(QueryBuilder query, Map<String, String[]> parameters) {
+	default void parseJoins(QueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(JOIN)) {
 			Stream.of(parameters.remove(JOIN))
 			.flatMap(c-> parseEntries(c).stream())
@@ -172,11 +170,11 @@ public interface ViewDecorator {
 	}
 
 	default void parseLimit(QueryBuilder query, Map<String, String[]> parameters) {
-		requirePositiveInt(LIMIT, parameters).ifPresent(query::limit);
+		query.limit(requirePositiveInt(LIMIT, parameters));
 	}
 	
 	default void parseOffset(QueryBuilder query, Map<String, String[]> parameters) {
-		requirePositiveInt(OFFSET, parameters).ifPresent(query::offset);
+		query.offset(requirePositiveInt(OFFSET, parameters));
 	}
 	
 	default void parseFilters(QueryBuilder query, Map<String, String[]> parameters) {
@@ -188,15 +186,15 @@ public interface ViewDecorator {
     	.forEach(query::filters);
 	}
 	
-	private static Optional<Integer> requirePositiveInt(String key, Map<String, String[]> parameters) {
+	private static Integer requirePositiveInt(String key, Map<String, String[]> parameters) {
 		if(parameters.containsKey(key)) {
 			var v = parseInt(requireNArgs(1, parameters.remove(key), ()-> key)[0]);
 			if(v >= 0) {
-				return Optional.of(v);
+				return v;
 			}
 			throw new IllegalArgumentException(key + " cannot be negative");
 		}
-		return empty();
+		return null;
 	}
 	
 	static Stream<String> flatParameters(String... arr) { //number local separator
