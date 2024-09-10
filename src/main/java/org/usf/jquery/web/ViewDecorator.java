@@ -7,8 +7,6 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toUnmodifiableMap;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
@@ -54,7 +52,7 @@ public interface ViewDecorator {
 		return this::buildView;
 	}
 
-	default CriteriaBuilder<DBFilter> criteria(String name) { //!aggregation 
+	default CriteriaBuilder<DBFilter> criteria(String name) { 
 		return null; //no criteria by default
 	}
 	
@@ -127,18 +125,15 @@ public interface ViewDecorator {
 	}
 	
 	default void parseColumns(QueryBuilder query, Map<String, String[]> parameters) {
-		if(parameters.containsKey(COLUMN) && parameters.containsKey(COLUMN_DISTINCT)) {
-			throw new IllegalStateException("both parameters are present " + quote(COLUMN_DISTINCT) + " and " + quote(COLUMN));
-		}
-		String[] cols;
-		if(parameters.containsKey(COLUMN_DISTINCT)) {
-			cols = parameters.remove(COLUMN_DISTINCT);
-			query.distinct();
-		}
-		else {
-			cols = parameters.remove(COLUMN);	
-		}
-		if(!isEmpty(cols)) {
+		if(parameters.containsKey(COLUMN) ^ parameters.containsKey(COLUMN_DISTINCT)) {
+			String[] cols;
+			if(parameters.containsKey(COLUMN)) {
+				cols = parameters.remove(COLUMN);
+			}
+			else {
+				cols = parameters.remove(COLUMN_DISTINCT);
+				query.distinct();
+			}
 			Stream.of(cols)
 			.flatMap(v-> parseEntries(v).stream())
 			.map(e-> {
@@ -150,7 +145,7 @@ public interface ViewDecorator {
 			.forEach(query::columns);
 		}
 		else {
-			throw new IllegalArgumentException(format("requrie %s or %s parameter", COLUMN, COLUMN_DISTINCT));
+			throw new IllegalArgumentException(format("requrie '%s' or '%s' parameter", COLUMN, COLUMN_DISTINCT));
 		}
 	}
 
@@ -192,12 +187,12 @@ public interface ViewDecorator {
 			if(v >= 0) {
 				return v;
 			}
-			throw new IllegalArgumentException(key + " cannot be negative");
+			throw new IllegalArgumentException(key + " parameter cannot be negative");
 		}
 		return null;
 	}
 	
 	static Stream<String> flatParameters(String... arr) { //number local separator
 		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
-	}
+	}	
 }

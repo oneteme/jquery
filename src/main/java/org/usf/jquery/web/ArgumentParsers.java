@@ -45,7 +45,7 @@ public class ArgumentParsers {
 	
 	private static final JDBCType[] STD_TYPES = {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
-			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR }; //varchar !?
+			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
 	public static Object parse(RequestEntryChain entry, ViewDecorator td, JavaType... types) {
 		List<JavaType> list = new ArrayList<>();

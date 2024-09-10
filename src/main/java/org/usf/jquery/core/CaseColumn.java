@@ -50,7 +50,7 @@ public final class CaseColumn implements DBColumn {
 			e.views(views);
 		}
 	}
-		
+	
 	@Override
 	public String toString() {
 		return sql(addWithValue());
