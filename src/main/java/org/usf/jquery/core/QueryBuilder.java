@@ -166,7 +166,7 @@ public class QueryBuilder {
     	groupBy(sub, ctx);
     	having(sub, ctx);
     	orderBy(sub, ctx);
-    	fetch(sub, ctx);
+    	fetch(sub);
     	select(sb, ctx);
 		from(sb, ctx); //enumerate all views before from clause
 		join(sb, ctx);
@@ -232,14 +232,10 @@ public class QueryBuilder {
     	}
 	}
 	
-	void fetch(SqlStringBuilder sb, QueryContext ctx) {
+	void fetch(SqlStringBuilder sb) {
 		if(currentDatabase() != TERADATA) { // TOP n
-			if(nonNull(limit)) {
-				sb.append(" limit ").append(limit.toString());
-			}
-			if(nonNull(offset)) {
-				sb.append(" OFFSET ").append(offset.toString());
-			}
+			sb.appendIf(nonNull(limit),  ()-> " LIMIT " + limit);
+			sb.appendIf(nonNull(offset), ()-> " OFFSET " + offset);
 		}
 	}
 
