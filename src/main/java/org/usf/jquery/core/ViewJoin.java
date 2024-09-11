@@ -51,8 +51,13 @@ public final class ViewJoin implements DBObject {
 			s += " ON " + Stream.of(filters)
 			.map(f-> f.sql(val))
 			.collect(joining(AND.sql()));
-		}
+		} //else cross join
 		return s;
+	}
+	
+	@Override
+	public String toString() {
+		return sql(addWithValue());
 	}
 	
 	public static ViewJoin innerJoin(DBView view, DBFilter... filters) {
@@ -73,10 +78,5 @@ public final class ViewJoin implements DBObject {
 
 	public static ViewJoin crossJoin(DBView view, DBFilter... filters) {
 		return new ViewJoin(CROSS, view, filters);
-	}
-	
-	@Override
-	public String toString() {
-		return sql(addWithValue());
 	}
 }
