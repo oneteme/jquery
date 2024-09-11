@@ -45,7 +45,9 @@ public class TypedOperator implements Operator {
 
 	@Override // do not delegate this
 	public OperationColumn operation(JDBCType type, Object... args) {
-		return Operator.super.operation(type, args);
+		return operator.is(CombinedOperator.class)
+				? operator.operation(type, args) //no sql
+				: Operator.super.operation(type, args);
 	}
 	
 	public boolean isWindowFunction() {

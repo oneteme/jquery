@@ -298,6 +298,18 @@ public interface DBColumn extends DBObject, Typed, Nested {
 		return Operator.yearMonth().operation(this);
 	}
 	
+	default OperationColumn yearWeek() {
+		return Operator.yearWeek().operation(this);
+	}
+	
+	default OperationColumn monthDay() {
+		return Operator.monthDay().operation(this);
+	}
+	
+	default OperationColumn hourMinute() {
+		return Operator.hourMinute().operation(this);
+	}
+	
 	//cast functions
 
 	default OperationColumn varchar() {

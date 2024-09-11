@@ -213,14 +213,36 @@ public interface Operator extends DBProcessor {
 	
 	//combined functions
 	
-	static TypedOperator yearMonth() {
+	static TypedOperator yearMonth() {//YYYY-MM
+		CombinedOperator op = args-> left().operation(varchar().operation(requireNArgs(1, args, ()-> "yearMonth")[0]), 7);
+		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	static TypedOperator yearWeek() {//YYYY-'W'WW //!ISO
 		CombinedOperator op = args-> {
-			var col = requireNArgs(1, args, ()-> "yearMonth")[0];
-			return concat().operation(
-					lpad().operation(varchar().operation(year().operation(col)), 4, "0"), "-", //varchar => postgres
-					lpad().operation(varchar().operation(month().operation(col)), 2, "0"));
+			var col = requireNArgs(1, args, ()-> "yearWeek")[0];
+			return concat().operation(varchar().operation(year().operation(col)), 
+					"-W", 
+					lpad().operation(varchar().operation(doy().operation(col)), 2, "0"));
 		};
-		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
+		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	}
+	
+	static TypedOperator monthDay() {//MM-DD
+		CombinedOperator op = args-> {
+			var col = requireNArgs(1, args, ()-> "monthDay")[0];
+			return substring().operation(varchar().operation(col), 6, 5);
+		};
+		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	}
+	
+	static TypedOperator hourMinute() {//HH:MM
+		CombinedOperator op = args-> {
+			var col = requireNArgs(1, args, ()-> "houtMinute")[0];
+			var time = JDBCType.typeOf(col).filter(t-> t == TIME).isPresent() ? col : time().operation(col);
+			return left().operation(varchar().operation(time), 5);
+		};
+		return new TypedOperator(VARCHAR, op, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	//cast functions
@@ -231,6 +253,10 @@ public interface Operator extends DBProcessor {
 	
 	static TypedOperator date() {
 		return new TypedOperator(DATE, cast("DATE"), required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+
+	static TypedOperator time() {
+		return new TypedOperator(TIME, cast("TIME"), required(TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	static TypedOperator timestamp() {
