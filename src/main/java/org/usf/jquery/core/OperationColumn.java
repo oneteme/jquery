@@ -61,8 +61,7 @@ public final class OperationColumn implements DBColumn {
 			}
 			return requirePartition().resolve(builder); //no aggregation
 		}
-		return operator.is(ConstantOperator.class) 
-				|| tryResolveAll(builder, args);
+		return !operator.is(ConstantOperator.class) && tryResolveAll(builder, args);
 	}
 	
 	@Override

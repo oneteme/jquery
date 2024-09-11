@@ -166,6 +166,10 @@ public interface Operator extends DBProcessor {
 		return new TypedOperator(VARCHAR, function("RPAD"), required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
 	}
 
+	static TypedOperator age() { //td interval type
+		return new TypedOperator(VARCHAR, function("AGE"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE), optional(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	}
+
 	//temporal functions
 	
 	static TypedOperator year() {
@@ -252,16 +256,16 @@ public interface Operator extends DBProcessor {
 		return new TypedOperator(VARCHAR, cast("VARCHAR"), required(), optional(INTEGER)); //any
 	}
 	
+	static TypedOperator timestamp() {
+		return new TypedOperator(TIMESTAMP, cast("TIMESTAMP"), required(VARCHAR, DATE)); 
+	}
+	
 	static TypedOperator date() {
 		return new TypedOperator(DATE, cast("DATE"), required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 
 	static TypedOperator time() {
 		return new TypedOperator(TIME, cast("TIME"), required(TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
-	}
-	
-	static TypedOperator timestamp() {
-		return new TypedOperator(TIMESTAMP, cast("TIMESTAMP"), required(VARCHAR, DATE)); 
 	}
 	
 	static TypedOperator integer() {

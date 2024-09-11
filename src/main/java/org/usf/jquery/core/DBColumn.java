@@ -452,7 +452,7 @@ public interface DBColumn extends DBObject, Typed, Nested {
 
 			@Override
 			public boolean resolve(QueryBuilder builder) {
-				return true; //agg
+				return false; //agg
 			}
 			
 			@Override
