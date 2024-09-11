@@ -265,7 +265,7 @@ public interface Operator extends DBProcessor {
 	}
 
 	static TypedOperator time() {
-		return new TypedOperator(TIME, cast("TIME"), required(TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return new TypedOperator(TIME, cast("TIME"), required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	static TypedOperator integer() {
