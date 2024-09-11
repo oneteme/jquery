@@ -26,7 +26,7 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx, Object operand) {
 		sb.parenthesis(()-> 
-			sb.appendEach(expressions, operator.sql(), o-> o.sql(sb, ctx, operand)));
+			sb.forEach(expressions, operator.sql(), o-> o.sql(sb, ctx, operand)));
 	}
 	
 	@Override

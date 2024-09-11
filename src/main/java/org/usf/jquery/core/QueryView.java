@@ -17,9 +17,8 @@ public final class QueryView implements DBView {
 	
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.openParenthesis();
-		builder.build(sb, ctx.subQuery(builder.getOverView()));
-		sb.closeParenthesis();
+		sb.parenthesis(()->
+			builder.build(sb, ctx.subQuery(builder.getOverView())));
 	}
 	
 	public SingleColumnQuery asColumn(){

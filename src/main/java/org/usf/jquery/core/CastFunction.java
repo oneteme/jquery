@@ -23,7 +23,7 @@ public interface CastFunction extends FunctionOperator {
 		sb.function(id(), ()->{
 			sb.append(ctx.appendLiteral(args[0])).as(asType());
 			if(args.length > 1) {
-				sb.parenthesis(()-> ctx.appendLiteralArray(args, 1));
+				sb.parenthesis(ctx.appendLiteralArray(args, 1));
 			}
 		});
 	}

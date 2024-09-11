@@ -24,7 +24,7 @@ public final class CaseColumn implements DBColumn {
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		var sub = ctx.withValue(); //force literal parameter
-		sb.appendEach(whenCases, SPACE, o-> o.sql(sb, sub), "CASE ", " END");
+		sb.forEach(whenCases, SPACE, o-> o.sql(sb, sub), "CASE ", " END");
 	}
 	
 	@Override

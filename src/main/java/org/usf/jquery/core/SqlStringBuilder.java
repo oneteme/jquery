@@ -43,11 +43,11 @@ public final class SqlStringBuilder {
 		return condition ? append(sup.get()) : this;
 	}
 
-	public <T> SqlStringBuilder appendEach(T[] arr, String separator, Consumer<T> fn) {
-		return appendEach(arr, separator, fn, EMPTY, EMPTY);
+	public <T> SqlStringBuilder forEach(T[] arr, String separator, Consumer<T> fn) {
+		return forEach(arr, separator, fn, EMPTY, EMPTY);
 	}
 
-	public <T> SqlStringBuilder appendEach(T[] arr, String separator, Consumer<T> fn, String prefix, String suffix) {
+	public <T> SqlStringBuilder forEach(T[] arr, String separator, Consumer<T> fn, String prefix, String suffix) {
 		sb.append(prefix);
 		if(!isEmpty(arr)) {
 			var i=0;
@@ -60,12 +60,12 @@ public final class SqlStringBuilder {
 		sb.append(suffix);
 		return this;
 	}
-	
+
 	public <T> SqlStringBuilder forEach(Iterator<T> it, String separator, Consumer<T> cons) {
 		if(it.hasNext()) {
 			cons.accept(it.next());
 			while(it.hasNext()) {
-				append(separator);
+				sb.append(separator);
 				cons.accept(it.next());
 			}
 		} 
@@ -86,6 +86,12 @@ public final class SqlStringBuilder {
 
 	public SqlStringBuilder function(String name, Runnable args) {
 		return append(name).parenthesis(args);
+	}
+
+	public SqlStringBuilder parenthesis(String s) {
+		openParenthesis();
+		sb.append(s);
+		return closeParenthesis();
 	}
 
 	public SqlStringBuilder parenthesis(Runnable exec) {
@@ -133,10 +139,6 @@ public final class SqlStringBuilder {
 
 	public static String doubleQuote(String op) {
 		return DQUOT + op + DQUOT;
-	}
-
-	public static String parenthese(String op) { 
-		return "(" + op + ")";
 	}
 
 	public static String member(String parent, String child) { 

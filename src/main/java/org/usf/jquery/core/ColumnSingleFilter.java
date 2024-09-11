@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Nested.tryResolve;
 import static org.usf.jquery.core.Nested.viewsOf;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 
 import java.util.Collection;
 
