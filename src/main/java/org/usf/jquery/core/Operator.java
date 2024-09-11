@@ -238,7 +238,7 @@ public interface Operator extends DBProcessor {
 	
 	static TypedOperator hourMinute() {//HH:MM
 		CombinedOperator op = args-> {
-			var col = requireNArgs(1, args, ()-> "houtMinute")[0];
+			var col = requireNArgs(1, args, ()-> "hourMinute")[0];
 			var time = JDBCType.typeOf(col).filter(t-> t == TIME).isPresent() ? col : time().operation(col);
 			return left().operation(varchar().operation(time), 5);
 		};
