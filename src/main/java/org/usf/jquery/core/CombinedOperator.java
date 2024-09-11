@@ -21,7 +21,7 @@ public interface CombinedOperator extends Operator {
 
 	@Override
 	default String id() {
-		return null;
+		return "CombinedOperator"; //do better
 	}
 	
 	@Override

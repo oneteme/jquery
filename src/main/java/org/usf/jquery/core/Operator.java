@@ -218,7 +218,7 @@ public interface Operator extends DBProcessor {
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	static TypedOperator yearWeek() {//YYYY-'W'WW //!ISO
+	static TypedOperator yearWeek() {//YYYY-'W'WW
 		CombinedOperator op = args-> {
 			var col = requireNArgs(1, args, ()-> "yearWeek")[0];
 			return concat().operation(varchar().operation(year().operation(col)), 
@@ -239,8 +239,9 @@ public interface Operator extends DBProcessor {
 	static TypedOperator hourMinute() {//HH:MM
 		CombinedOperator op = args-> {
 			var col = requireNArgs(1, args, ()-> "hourMinute")[0];
-			var time = JDBCType.typeOf(col).filter(t-> t == TIME).isPresent() ? col : time().operation(col);
-			return left().operation(varchar().operation(time), 5);
+			var tim = JDBCType.typeOf(col).filter(t-> t == TIME)
+					.map(t-> col).orElseGet(()-> time().operation(col));
+			return left().operation(varchar().operation(tim), 5);
 		};
 		return new TypedOperator(VARCHAR, op, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}

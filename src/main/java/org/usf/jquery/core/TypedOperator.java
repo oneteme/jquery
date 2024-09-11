@@ -46,7 +46,7 @@ public class TypedOperator implements Operator {
 	@Override // do not delegate this
 	public OperationColumn operation(JDBCType type, Object... args) {
 		return operator.is(CombinedOperator.class)
-				? operator.operation(type, args) //no sql
+				? operator.operation(type, parameterSet.assertArguments(args)) //no sql
 				: Operator.super.operation(type, args);
 	}
 	

@@ -442,7 +442,7 @@ public interface DBColumn extends DBObject, Typed, Nested {
 			@Override
 			public String sql(QueryContext ctx) {
 				ctx.viewAlias(view);
-				return "*"; //lazy 
+				return "*";
 			}
 			
 			@Override
