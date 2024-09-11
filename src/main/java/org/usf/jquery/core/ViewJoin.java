@@ -30,7 +30,6 @@ public final class ViewJoin implements DBObject {
 	//join results !?
 	
 	public ViewJoin(JoinType joinType, DBView view, DBFilter[] filters) {
-		super();
 		this.joinType = joinType;
 		this.view = view;
 		this.filters = joinType == CROSS 
@@ -39,15 +38,15 @@ public final class ViewJoin implements DBObject {
 	}
 
 	@Override
-	public String sql(QueryContext qv, Object[] args) {
+	public String sql(QueryContext ctx, Object[] args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
-		return sql(qv);
+		return sql(ctx);
 	}
 
 	public String sql(QueryContext ctx) {
 		var s = joinType + " JOIN " + view.sqlWithTag(ctx);
 		if(!isEmpty(filters)) {
-			var val = ctx.withValue();
+			var val = ctx.withValue(); //literal filter
 			s += " ON " + Stream.of(filters)
 			.map(f-> f.sql(val))
 			.collect(joining(AND.sql()));
