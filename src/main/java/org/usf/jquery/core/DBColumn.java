@@ -437,7 +437,29 @@ public interface DBColumn extends DBObject, Typed, Nested {
 	}
 
 	static NamedColumn allColumns(@NonNull DBView view) {
-		 return new ViewColumn("*", view, null, null) ; //TODO check this
+		return new DBColumn() {
+			
+			@Override
+			public String sql(QueryContext ctx) {
+				ctx.viewAlias(view);
+				return "*"; //lazy 
+			}
+			
+			@Override
+			public JDBCType getType() {
+				return null;
+			}
+
+			@Override
+			public boolean resolve(QueryBuilder builder) {
+				return true; //agg
+			}
+			
+			@Override
+			public void views(Collection<DBView> views) {
+				views.add(view);
+			}
+		}.as(null);
 	}
 	
 	static DBColumn constant(Object value) {
