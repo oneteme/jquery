@@ -97,10 +97,8 @@ public class QueryBuilder {
 	public QueryBuilder orders(@NonNull DBOrder... orders) {
 		this.clause = ORDER;
 		for(var o : orders) {
-			this.orders.add(o);
-			var c = o.getColumn();
-			if(!c.resolve(this)) {
-				this.group.add(c);
+			if(this.orders.add(o) && !o.resolve(this)) {
+				this.group.add(o.getColumn());
 			}
 		}
 		return this;

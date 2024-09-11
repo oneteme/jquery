@@ -4,7 +4,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Collection;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Predicate;
 
 /**
@@ -20,10 +19,6 @@ public interface Nested {
 
 	static boolean tryResolveAll(QueryBuilder builder, Object... args){
 		return resolveAll(args, o-> tryResolve(o, builder));
-	}
-
-	static <T, N extends Nested> boolean resolveAll(T[] arr, Function<T, N> fn, QueryBuilder builder){
-		return resolveAll(arr, o-> fn.apply(o).resolve(builder));
 	}
 
 	static boolean resolveAll(Nested[] arr, QueryBuilder builder){
@@ -49,10 +44,6 @@ public interface Nested {
 		viewsOfAll(arr, o-> o.views(views));
 	}
 	
-	static <T, N extends Nested> void viewsOfNested(Collection<DBView> views, T[] arr, Function<T, N> fn) {
-		viewsOfAll(arr, o-> fn.apply(o).views(views));
-	}
-
 	static void viewsOfAll(Collection<DBView> views, Object[] arr) {
 		viewsOfAll(arr, o-> viewsOf(views, o));
 	}

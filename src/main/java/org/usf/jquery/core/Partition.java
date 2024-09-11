@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
+import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -18,8 +19,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class Partition implements DBObject, Nested {
 
-	private final DBColumn[] columns;
-	private final  DBOrder[] orders;
+	private final DBColumn[] columns;//optional
+	private final  DBOrder[] orders; //optional
 	
 	@Override
 	public String sql(QueryContext ctx, Object[] args) {
@@ -42,13 +43,18 @@ public final class Partition implements DBObject, Nested {
 	@Override
 	public boolean resolve(QueryBuilder builder) { 
 		var r1 = resolveAll(columns, builder);
-		var r2 = resolveAll(orders, DBOrder::getColumn, builder);
+		var r2 = resolveAll(orders, builder);
 		return r1 || r2;
 	}
 	
 	@Override
 	public void views(Collection<DBView> views) {
 		viewsOfNested(views, columns);
-		viewsOfNested(views, orders, DBOrder::getColumn);
+		viewsOfNested(views, orders);
+	}
+	
+	@Override
+	public String toString() {
+		return sql(addWithValue());
 	}
 }

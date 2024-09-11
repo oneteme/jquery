@@ -26,10 +26,6 @@ public final class OperationColumn implements DBColumn {
 	private final JDBCType type; //optional
 	private DBColumn overColumn;
 
-	public OperationColumn(Operator operation, Object[] args) {
-		this(operation, args, null);
-	}
-	
 	@Override
 	public String sql(QueryContext ctx) {
 		return nonNull(overColumn) ? overColumn.sql(ctx) : operator.sql(ctx, args);
@@ -41,27 +37,27 @@ public final class OperationColumn implements DBColumn {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder builder) {
+	public boolean resolve(QueryBuilder ctx) {
 		if(operator.is(AggregateFunction.class)) {
-			builder.aggregation();
+			ctx.aggregation();
 			return true;
 		}
 		else if(operator.is("OVER")) {
-			if(builder.getClause() == FILTER) {
+			if(ctx.getClause() == FILTER) {
 				var views = new HashSet<DBView>();
 				views(views);
 				if(views.size() == 1) {
 					var view = views.iterator().next();
 					var cTag = "over_" + hashCode(); //over_view_hash
-					builder.overView(view).getBuilder().columns(new OperationColumn(operator, args, type).as(cTag)); //clone
+					ctx.overView(view).getBuilder().columns(new OperationColumn(operator, args, type).as(cTag)); //clone
 					overColumn = new ViewColumn(cTag, view, type, null);
 					return false;
 				}
 				throw new UnsupportedOperationException("require only one view");
 			}
-			return requirePartition().resolve(builder); //no aggregation
+			return requirePartition().resolve(ctx); //no aggregation
 		}
-		return !operator.is(ConstantOperator.class) && tryResolveAll(builder, args);
+		return !operator.is(ConstantOperator.class) && tryResolveAll(ctx, args);
 	}
 	
 	@Override

@@ -5,6 +5,8 @@ import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.Collection;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -16,7 +18,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor
-public final class DBOrder implements DBObject {
+public final class DBOrder implements DBObject, Nested {
 
 	private final DBColumn column;
 	private final OrderType order;
@@ -35,6 +37,16 @@ public final class DBOrder implements DBObject {
 		return isNull(order)
 				? column.sql(ctx)
 				: column.sql(ctx) + SPACE + order.name();
+	}
+	
+	@Override
+	public boolean resolve(QueryBuilder builder) {
+		return column.resolve(builder);
+	}
+	
+	@Override
+	public void views(Collection<DBView> views) {
+		column.views(views);
 	}
 	
 	@Override
