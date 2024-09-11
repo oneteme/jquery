@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public final class ViewColumn implements NamedColumn {
+public class ViewColumn implements NamedColumn {
 
 	private final String name;
 	private final DBView view; //optional
@@ -33,7 +33,9 @@ public final class ViewColumn implements NamedColumn {
 	}
 	
 	public void views(Collection<DBView> views) {
-		views.add(view);
+		if(nonNull(view)) {
+			views.add(view);
+		}
 	}
 	
 	@Override

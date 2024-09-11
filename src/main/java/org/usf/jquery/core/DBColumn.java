@@ -3,12 +3,10 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
-import static org.usf.jquery.core.QueryContext.formatValue;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.Collection;
 import java.util.function.Supplier;
 
 import org.usf.jquery.core.JavaType.Typed;
@@ -432,62 +430,25 @@ public interface DBColumn extends DBObject, Typed, Nested {
 		return Operator.denseRank().operation();
 	}
 	
-	static DBColumn column(@NonNull String value) {
+	static ViewColumn column(@NonNull String value) {
 		return new ViewColumn(requireLegalVariable(value), null, null, value);
 	}
 
-	static NamedColumn allColumns(@NonNull DBView view) {
-		return new DBColumn() {
-			
+	static ViewColumn allColumns(@NonNull DBView view) {
+		return new ViewColumn("*", view, null, null) { //no type, no tag
 			@Override
 			public String sql(QueryContext ctx) {
 				ctx.viewAlias(view);
-				return "*";
+				return getName(); //avoid view.*
 			}
-			
-			@Override
-			public JDBCType getType() {
-				return null;
-			}
-
-			@Override
-			public boolean resolve(QueryBuilder builder) {
-				return false; //agg
-			}
-			
-			@Override
-			public void views(Collection<DBView> views) {
-				views.add(view);
-			}
-		}.as(null);
+		};
 	}
 	
-	static DBColumn constant(Object value) {
+	static ValueColumn constant(Object value) {
 		return constant(JDBCType.typeOf(value).orElse(null), ()-> value);
 	}
 
-	static DBColumn constant(JDBCType type, Supplier<Object> value) {
-		return new DBColumn() {
-			
-			@Override
-			public String sql(QueryContext ctx) {
-				return formatValue(value.get()); //lazy 
-			}
-			
-			@Override
-			public JDBCType getType() {
-				return type;
-			}
-
-			@Override
-			public boolean resolve(QueryBuilder builder) {
-				return false;
-			}
-			
-			@Override
-			public void views(Collection<DBView> views) {
-				//no view
-			}
-		};
+	static ValueColumn constant(JDBCType type, Supplier<Object> supp) {
+		return new ValueColumn(type, supp);
 	}
 }

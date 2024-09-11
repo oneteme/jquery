@@ -3,6 +3,7 @@ package org.usf.jquery.web;
 import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.util.Map.entry;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
@@ -126,11 +127,8 @@ public interface ViewDecorator {
 	
 	default void parseColumns(QueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(COLUMN) ^ parameters.containsKey(COLUMN_DISTINCT)) {
-			String[] cols;
-			if(parameters.containsKey(COLUMN)) {
-				cols = parameters.remove(COLUMN);
-			}
-			else {
+			String[] cols = parameters.remove(COLUMN);
+			if(isNull(cols)) {
 				cols = parameters.remove(COLUMN_DISTINCT);
 				query.distinct();
 			}
