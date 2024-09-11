@@ -43,14 +43,6 @@ public final class SqlStringBuilder {
 		return condition ? append(sup.get()) : this;
 	}
 
-	public SqlStringBuilder appendIf(boolean condition, Supplier<String> sup, Supplier<String> orSup) {
-		return append(condition ? sup.get() : orSup.get());
-	}
-	
-	public SqlStringBuilder appendIf(boolean condition, String sup, String orElse) {
-		return append(condition ? sup : orElse);
-	}
-
 	public <T> SqlStringBuilder appendEach(T[] arr, String separator, Consumer<T> fn) {
 		return appendEach(arr, separator, fn, EMPTY, EMPTY);
 	}
@@ -79,10 +71,6 @@ public final class SqlStringBuilder {
 		} 
 		return this;
 	}
-	
-	public SqlStringBuilder as(String v) {
-		return append(" AS ").append(v);
-	}
 
 	public SqlStringBuilder from(String v) {
 		return from().append(v);
@@ -90,6 +78,10 @@ public final class SqlStringBuilder {
 	
 	public SqlStringBuilder from() {
 		return append(" FROM ");
+	}
+	
+	public SqlStringBuilder as(String v) {
+		return append(" AS ").append(v);
 	}
 
 	public SqlStringBuilder function(String name, Runnable args) {

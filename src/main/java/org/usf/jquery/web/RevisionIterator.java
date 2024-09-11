@@ -15,6 +15,7 @@ import org.usf.jquery.core.ColumnSingleFilter;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.QueryContext;
+import org.usf.jquery.core.SqlStringBuilder;
 import org.usf.jquery.core.TableView;
 
 import lombok.RequiredArgsConstructor;
@@ -58,8 +59,9 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	static TableView yearTable(TableView view) {
 		return new TableView(view.getSchema(), view.getName()) {
 			@Override
-			public String sql(QueryContext builder) {
-				return super.sql(builder) + "_" + currentRev.get().getKey();
+			public void sql(SqlStringBuilder sb, QueryContext builder) {
+				super.sql(sb, builder);
+				sb.append("_" + currentRev.get().getKey());
 			}
 		};
 	}
@@ -71,12 +73,12 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	static DBFilter monthFilter(DBColumn column) {
 		return new ColumnSingleFilter(null, null) {
 			@Override
-			public String sql(QueryContext vars) {
+			public void sql(SqlStringBuilder sb, QueryContext vars) {
 				var values = currentRev.get().getValue();  //get it on build
 				var filter = values.size() == 1 
 						? column.eq(values.get(0).getMonthValue())
 						: column.in(values.stream().map(YearMonth::getMonthValue).toArray(Integer[]::new));
-				return filter.sql(vars);
+				filter.sql(sb, vars);
 			}
 		};
 	}
