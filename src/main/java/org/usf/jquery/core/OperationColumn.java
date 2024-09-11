@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Clause.FILTER;
 import static org.usf.jquery.core.Nested.tryResolveAll;
 import static org.usf.jquery.core.Nested.viewsOfAll;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Collection;
@@ -27,8 +26,13 @@ public final class OperationColumn implements DBColumn {
 	private DBColumn overColumn;
 
 	@Override
-	public String sql(QueryContext ctx) {
-		return nonNull(overColumn) ? overColumn.sql(ctx) : operator.sql(ctx, args);
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		if(nonNull(overColumn)) {
+			overColumn.sql(sb, ctx);
+		}
+		else {
+			operator.sql(sb, ctx, args);
+		}
 	}
 	
 	@Override
@@ -72,7 +76,7 @@ public final class OperationColumn implements DBColumn {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 	
 	private Partition requirePartition() {

@@ -20,8 +20,8 @@ public class ColumnSingleFilter implements DBFilter {
 	private final ComparisonExpression expression;
 
 	@Override
-	public String sql(QueryContext ctx) {
-		return expression.sql(ctx, left);
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		expression.sql(sb, ctx, left);
 	}
 
 	@Override
@@ -44,6 +44,6 @@ public class ColumnSingleFilter implements DBFilter {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 }

@@ -1,14 +1,11 @@
 package org.usf.jquery.core;
 
-import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.Collection;
-import java.util.stream.Stream;
 
 /**
  * 
@@ -27,10 +24,9 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public String sql(QueryContext ctx) {
-		return Stream.of(filters)
-		.map(o-> o.sql(ctx))
-		.collect(joining(operator.sql(), "(", ")"));
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		sb.parenthesis(()->
+			sb.appendEach(filters, operator.sql(), o-> o.sql(sb, ctx)));
 	}
 		
 	@Override
@@ -52,6 +48,6 @@ public final class ColumnFilterGroup implements DBFilter {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 }

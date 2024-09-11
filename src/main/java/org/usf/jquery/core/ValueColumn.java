@@ -19,8 +19,8 @@ public class ValueColumn implements DBColumn {
 	private final Supplier<Object> supp;
 
 	@Override
-	public String sql(QueryContext ctx) {
-		return formatValue(supp.get());
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		sb.append(formatValue(supp.get()));
 	}
 
 	@Override
@@ -36,5 +36,10 @@ public class ValueColumn implements DBColumn {
 	@Override
 	public void views(Collection<DBView> views) {
 		//do nothing
+	}
+	
+	@Override
+	public String toString() {
+		return DBObject.toSQL(this);
 	}
 }

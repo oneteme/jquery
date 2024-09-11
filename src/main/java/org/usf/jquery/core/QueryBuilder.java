@@ -5,7 +5,6 @@ import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.function.Predicate.not;
-import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Clause.COLUMN;
 import static org.usf.jquery.core.Clause.FILTER;
 import static org.usf.jquery.core.Clause.ORDER;
@@ -183,50 +182,54 @@ public class QueryBuilder {
 		sb.append("SELECT")
     	.appendIf(distinct, " DISTINCT")
     	.appendIf(nonNull(limit) && currentDatabase() == TERADATA, ()-> " TOP " + limit) //???????
-    	.append(SPACE)
-    	.appendEach(columns, SCOMA, o-> o.sqlWithTag(ctx));
+    	.space()
+    	.forEach(columns.iterator(), SCOMA, o-> o.sqlWithTag(sb, ctx));
 	}
 	
 	void from(SqlStringBuilder sb, QueryContext ctx) {
 		var excludes = joins.stream().map(ViewJoin::getView).toList();
 		var views = ctx.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
-			sb.append(" FROM ").appendEach(views, SCOMA, v-> v.sqlWithTag(ctx));
+			sb.from().forEach(views.iterator(), SCOMA, v-> v.sqlWithTag(sb, ctx));
 		}
 	}
 	
 	void join(SqlStringBuilder sb, QueryContext ctx) {
 		if(!joins.isEmpty()) {
-			sb.append(SPACE).appendEach(joins, SPACE, v-> v.sql(ctx));
+			sb.space().forEach(joins.iterator(), SPACE, v-> v.sql(sb, ctx));
 		}
 	}
 
 	void where(SqlStringBuilder sb, QueryContext ctx){
 		if(!where.isEmpty()) {
-    		sb.append(" WHERE ").appendEach(where, AND.sql(), f-> f.sql(ctx));
+    		sb.append(" WHERE ").forEach(where.iterator(), AND.sql(), f-> f.sql(sb, ctx));
 		}
 	}
 	
 	void groupBy(SqlStringBuilder sb, QueryContext ctx){
 		if(aggregation && !group.isEmpty()) {
-    		sb.append(" GROUP BY ")
-    		.append(group.stream()
-    				.map(c-> !(c instanceof ViewColumn) && columns.contains(c) ? ((NamedColumn)c).getTag() : c.sql(ctx)) //add alias 
-        			.collect(joining(SCOMA)));
+    		sb.append(" GROUP BY ").forEach(group.iterator(), SCOMA, c-> {
+    			if(!(c instanceof ViewColumn) && columns.contains(c)) {
+    				sb.append(((NamedColumn)c).getTag());
+    			}
+    			else {
+    				 c.sql(sb, ctx);
+    			}
+    		});
 		}
 	}
 	
 	void having(SqlStringBuilder sb, QueryContext ctx){
 		if(!having.isEmpty()) {
     		sb.append(" HAVING ")
-    		.appendEach(having, AND.sql(), f-> f.sql(ctx));
+    		.forEach(having.iterator(), AND.sql(), f-> f.sql(sb, ctx));
 		}
 	}
 	
 	void orderBy(SqlStringBuilder sb, QueryContext ctx) {
     	if(!orders.isEmpty()) {
     		sb.append(" ORDER BY ")
-    		.appendEach(orders, SCOMA, o-> o.sql(ctx));
+    		.forEach(orders.iterator(), SCOMA, o-> o.sql(sb, ctx));
     	}
 	}
 	

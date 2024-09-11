@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 /**
@@ -12,8 +11,8 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 public interface NullComparator extends Comparator {
 
 	@Override
-	default String sql(QueryContext ctx, Object[] args) {
+	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNArgs(1, args, NullComparator.class::getSimpleName);
-		return ctx.appendParameter(args[0]) + SPACE + id();
+		sb.append(ctx.appendParameter(args[0])).space().append(id());
 	}
 }

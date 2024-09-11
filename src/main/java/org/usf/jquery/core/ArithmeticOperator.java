@@ -11,8 +11,10 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 interface ArithmeticOperator extends Operator {
 	
 	@Override
-	default String sql(QueryContext ctx, Object[] args) {
+	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNArgs(2, args, ArithmeticException.class::getSimpleName);
-		return "(" + ctx.appendLiteral(args[0]) + id() + ctx.appendLiteral(args[1]) + ")";
+		sb.openParenthesis()
+		.append(ctx.appendLiteral(args[0])).append(id()).append(ctx.appendLiteral(args[1]))
+		.closeParenthesis();
 	}
 }

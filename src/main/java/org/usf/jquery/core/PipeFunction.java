@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Arrays.copyOfRange;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 /**
@@ -13,9 +12,9 @@ import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 public interface PipeFunction extends FunctionOperator {
 	
 	@Override
-	default String sql(QueryContext builder, Object[] args) {
+	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireAtLeastNArgs(1, args, PipeFunction.class::getSimpleName);
-		return builder.appendLiteral(args[0]) + SPACE 
-				+ FunctionOperator.super.sql(builder, copyOfRange(args, 1, args.length));
+		sb.append(ctx.appendLiteral(args[0])).space();
+		FunctionOperator.super.sql(sb, ctx, copyOfRange(args, 1, args.length));
 	}
 }

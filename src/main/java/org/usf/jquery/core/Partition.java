@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -23,13 +22,12 @@ public final class Partition implements DBObject, Nested {
 	private final  DBOrder[] orders; //optional
 	
 	@Override
-	public String sql(QueryContext ctx, Object[] args) {
+	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
-		return sql(ctx);
+		sql(sb, ctx);
 	}
 	
-	String sql(QueryContext ctx) {
-		var sb = new SqlStringBuilder(100);
+	void sql(SqlStringBuilder sb, QueryContext ctx) {
 		if(!isEmpty(columns)) {
 			sb.append("PARTITION BY ").append(ctx.appendLiteralArray(columns));
 		}
@@ -37,7 +35,6 @@ public final class Partition implements DBObject, Nested {
 			sb.appendIf(!isEmpty(columns), SPACE)
 			.append("ORDER BY ").append(ctx.appendLiteralArray(orders));
 		}
-		return sb.toString();
 	}
 	
 	@Override
@@ -55,6 +52,6 @@ public final class Partition implements DBObject, Nested {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 }

@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.isNull;
-import static org.usf.jquery.core.QueryContext.addWithValue;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -28,15 +27,14 @@ public final class DBOrder implements DBObject, Nested {
 	}
 	
 	@Override
-	public String sql(QueryContext ctx, Object[] args) {
+	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNoArgs(args, DBOrder.class::getSimpleName);
-		return sql(ctx);
+		sql(sb, ctx);
 	}
 
-	public String sql(QueryContext ctx) {
-		return isNull(order)
-				? column.sql(ctx)
-				: column.sql(ctx) + SPACE + order.name();
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		column.sql(sb, ctx);
+		sb.appendIf(nonNull(order), ()-> SPACE + order.name());
 	}
 	
 	@Override
@@ -51,6 +49,6 @@ public final class DBOrder implements DBObject, Nested {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 }

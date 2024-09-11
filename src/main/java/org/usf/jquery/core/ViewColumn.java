@@ -1,8 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.QueryContext.addWithValue;
-import static org.usf.jquery.core.SqlStringBuilder.member;
 
 import java.util.Collection;
 
@@ -24,8 +22,8 @@ public class ViewColumn implements NamedColumn {
 	private final String tag;  //optional
 	
 	@Override
-	public String sql(QueryContext ctx) {
-		return nonNull(view) ? member(ctx.viewAlias(view), name) : name;
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		sb.appendIf(nonNull(view), ()-> ctx.viewAlias(view) + '.').append(name);
 	}
 	
 	public boolean resolve(QueryBuilder builder) {
@@ -40,6 +38,6 @@ public class ViewColumn implements NamedColumn {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 }

@@ -1,12 +1,10 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
-import static java.util.function.Function.identity;
+import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.Consumer;
-import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -24,6 +22,10 @@ public final class SqlStringBuilder {
 	static final String SCOMA  = COMA + SPACE;
 	
 	private final StringBuilder sb;
+	
+	public SqlStringBuilder() {
+		this.sb = new StringBuilder();
+	}
 	
 	public SqlStringBuilder(int capacity) {
 		this.sb = new StringBuilder(capacity);
@@ -49,26 +51,24 @@ public final class SqlStringBuilder {
 		return append(condition ? sup : orElse);
 	}
 
-	public SqlStringBuilder appendEach(Collection<String> list, String separator) {
-		return appendEach(list, separator, EMPTY, identity());
+	public <T> SqlStringBuilder appendEach(T[] arr, String separator, Consumer<T> fn) {
+		return appendEach(arr, separator, fn, EMPTY, EMPTY);
 	}
 
-	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, Function<T, String> fn) {
-		return appendEach(list, separator, EMPTY, fn);
-	}
-
-	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, String prefix, Function<T, String> fn) {
-		if(!list.isEmpty()) {
-			var it = list.iterator();
-			append(prefix).append(fn.apply(it.next()));
-			var before = separator + prefix;
-			while(it.hasNext()) {
-				append(before).append(fn.apply(it.next()));
+	public <T> SqlStringBuilder appendEach(T[] arr, String separator, Consumer<T> fn, String prefix, String suffix) {
+		sb.append(prefix);
+		if(!isEmpty(arr)) {
+			var i=0;
+			fn.accept(arr[i]);
+			for(++i; i<arr.length; i++) {
+				sb.append(separator);
+				fn.accept(arr[i]);
 			}
 		}
+		sb.append(suffix);
 		return this;
 	}
-
+	
 	public <T> SqlStringBuilder forEach(Iterator<T> it, String separator, Consumer<T> cons) {
 		if(it.hasNext()) {
 			cons.accept(it.next());
@@ -80,13 +80,50 @@ public final class SqlStringBuilder {
 		return this;
 	}
 	
-	public SqlStringBuilder append(String s) {
-		sb.append(s);
+	public SqlStringBuilder as(String v) {
+		return append(" AS ").append(v);
+	}
+
+	public SqlStringBuilder from(String v) {
+		return from().append(v);
+	}
+	
+	public SqlStringBuilder from() {
+		return append(" FROM ");
+	}
+
+	public SqlStringBuilder function(String name, Runnable args) {
+		return append(name).parenthesis(args);
+	}
+
+	public SqlStringBuilder parenthesis(Runnable exec) {
+		openParenthesis();
+		exec.run();
+		return closeParenthesis();
+	}
+	
+	public SqlStringBuilder openParenthesis() {
+		sb.append('(');
+		return this;
+	}
+
+	public SqlStringBuilder closeParenthesis() {
+		sb.append(')');
 		return this;
 	}
 	
-	public int length(){
-		return sb.length();
+	public SqlStringBuilder spacing(String s) {
+		return space().append(s).space();
+	}
+	
+	public SqlStringBuilder space() {
+		sb.append(SPACE);
+		return this;
+	}
+	
+	public SqlStringBuilder append(String s) {
+		sb.append(s);
+		return this;
 	}
 	
 	@Override

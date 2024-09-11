@@ -10,9 +10,7 @@ package org.usf.jquery.core;
 public interface FunctionOperator extends Operator {
 
 	@Override
-	default String sql(QueryContext ctx, Object[] args) {
-		return new SqlStringBuilder(id())
-				.append("(").append(ctx.appendLiteralArray(args)).append(")") //accept any
-				.toString();
+	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+		sb.function(id(), ()-> ctx.appendLiteralArray(args));
 	}
 }

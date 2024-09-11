@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Nested.tryResolve;
 import static org.usf.jquery.core.Nested.viewsOf;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.Collection;
@@ -25,19 +24,21 @@ final class WhenCase implements DBObject, Typed, Nested {
 	private final Object value;
 
 	@Override
-	public String sql(QueryContext qv, Object[] args) {
+	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNoArgs(args, WhenCase.class::getSimpleName);
-		return sql(qv);
+		sql(sb, ctx);
 	}
 	
-	public String sql(QueryContext ctx) {
-		var sb = new StringBuilder(50);
-		sb = nonNull(filter)
-				? sb.append("WHEN ")
-						.append(filter.sql(ctx))
-						.append(" THEN ")
-				: sb.append("ELSE ");
-		return sb.append(ctx.appendLiteral(value)).toString();
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		if(nonNull(filter)) {
+			sb.append("WHEN ");
+			filter.sql(sb, ctx);
+			sb.append(" THEN ");
+		}
+		else {
+			sb.append("ELSE ");
+		}
+		sb.append(ctx.appendLiteral(value));
 	}
 	
 	@Override
@@ -62,6 +63,6 @@ final class WhenCase implements DBObject, Typed, Nested {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 }

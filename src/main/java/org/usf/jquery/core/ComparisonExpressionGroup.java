@@ -1,14 +1,11 @@
 package org.usf.jquery.core;
 
-import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.Nested.viewsOfNested;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.Utils.appendLast;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.Collection;
-import java.util.stream.Stream;
 
 /**
  * 
@@ -27,10 +24,9 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 
 	@Override
-	public String sql(QueryContext ctx, Object operand) {
-		return Stream.of(expressions)
-		.map(o-> o.sql(ctx, operand))
-		.collect(joining(operator.sql(), "(", ")"));
+	public void sql(SqlStringBuilder sb, QueryContext ctx, Object operand) {
+		sb.parenthesis(()-> 
+			sb.appendEach(expressions, operator.sql(), o-> o.sql(sb, ctx, operand)));
 	}
 	
 	@Override
@@ -52,6 +48,6 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), "<left>");
+		return DBObject.toSQL(this, "<left>");
 	}
 }

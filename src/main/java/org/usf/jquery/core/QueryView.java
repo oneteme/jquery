@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryContext.addWithValue;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -18,10 +16,10 @@ public final class QueryView implements DBView {
 	private final QueryBuilder builder;
 	
 	@Override
-	public String sql(QueryContext ctx) {
-		var s = new SqlStringBuilder(100).append("(");
-		builder.build(s, ctx.subQuery(builder.getOverView()));
-		return s.append(")").toString();
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		sb.openParenthesis();
+		builder.build(sb, ctx.subQuery(builder.getOverView()));
+		sb.closeParenthesis();
 	}
 	
 	public SingleColumnQuery asColumn(){
@@ -30,6 +28,6 @@ public final class QueryView implements DBView {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue()); 
+		return DBObject.toSQL(this); 
 	}	
 }

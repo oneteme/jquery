@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 
 import java.util.Objects;
 
@@ -46,6 +45,6 @@ public final class ColumnProxy implements NamedColumn {
 	
 	@Override
 	public String toString() {
-		return this.sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 }

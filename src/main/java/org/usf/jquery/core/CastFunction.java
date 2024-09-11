@@ -18,16 +18,13 @@ public interface CastFunction extends FunctionOperator {
 	}
 	
 	@Override
-	default String sql(QueryContext builder, Object[] args) {
+	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireAtLeastNArgs(1, args, CastFunction.class::getSimpleName);
-		var sb = new SqlStringBuilder(id())
-				.append("(")
-				.append(builder.appendLiteral(args[0])).append(" AS ").append(asType());
-		if(args.length > 1) {
-			sb.append("(")
-			.append(builder.appendLiteralArray(args, 1))
-			.append(")");
-		}
-		return sb.append(")").toString();
+		sb.function(id(), ()->{
+			sb.append(ctx.appendLiteral(args[0])).as(asType());
+			if(args.length > 1) {
+				sb.parenthesis(()-> ctx.appendLiteralArray(args, 1));
+			}
+		});
 	}
 }

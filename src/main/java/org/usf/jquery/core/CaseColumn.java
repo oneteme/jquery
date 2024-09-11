@@ -1,8 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Nested.resolveAll;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
@@ -24,11 +22,9 @@ public final class CaseColumn implements DBColumn {
 	}
 
 	@Override
-	public String sql(QueryContext ctx) {
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		var sub = ctx.withValue(); //force literal parameter
-		return Stream.of(whenCases)
-		.map(o-> o.sql(sub))
-		.collect(joining(SPACE, "CASE ", " END"));
+		sb.appendEach(whenCases, SPACE, o-> o.sql(sb, sub), "CASE ", " END");
 	}
 	
 	@Override
@@ -53,6 +49,6 @@ public final class CaseColumn implements DBColumn {
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
 }

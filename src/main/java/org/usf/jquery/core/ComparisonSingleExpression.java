@@ -4,7 +4,6 @@ import static java.util.Collections.addAll;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Nested.tryResolveAll;
 import static org.usf.jquery.core.Nested.viewsOfAll;
-import static org.usf.jquery.core.QueryContext.addWithValue;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -24,13 +23,13 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	private final Object[] right; //optional
 	
 	@Override
-	public String sql(QueryContext ctx, Object left) {
+	public void sql(SqlStringBuilder sb, QueryContext ctx, Object left) {
 		var param = new ArrayList<>();
 		param.add(left);
 		if(nonNull(right)) {
 			addAll(param, right);
 		}
-		return comparator.sql(ctx, param.toArray());
+		comparator.sql(sb, ctx, param.toArray());
 	}
 	
 	@Override
@@ -50,6 +49,6 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	@Override
 	public String toString() {
-		return sql(addWithValue(), "<left>");
+		return DBObject.toSQL(this);
 	}	
 }

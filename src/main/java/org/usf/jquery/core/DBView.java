@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 /**
@@ -11,16 +10,17 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 @FunctionalInterface
 public interface DBView extends DBObject {
 
-	String sql(QueryContext ctx);
+	void sql(SqlStringBuilder sb, QueryContext ctx);
 	
 	@Override
-	default String sql(QueryContext ctx, Object[] args) {
+	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNoArgs(args, DBView.class::getSimpleName);
-		return sql(ctx);
+		sql(sb, ctx);
 	}
 	
-	default String sqlWithTag(QueryContext ctx) {
-		return ctx.viewOverload(this).orElse(this).sql(ctx) //!important
-				+ SPACE + ctx.viewAlias(this);
+	default void sqlWithTag(SqlStringBuilder sb, QueryContext ctx) {
+		ctx.viewOverload(this).orElse(this).sql(sb, ctx); //!important
+		sb.space();
+		ctx.viewAlias(this);
 	}
 }
