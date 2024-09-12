@@ -15,6 +15,6 @@ public interface FunctionOperator extends Operator {
 	}
 	
 	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args, int from) {
-		sb.function(id(), ()-> ctx.appendLiteralArray(sb, args, from)); //avoid array copy
+		sb.function(id(), ()-> ctx.appendLiteralArray(sb, args, from)); //avoid sub array
 	}
 }

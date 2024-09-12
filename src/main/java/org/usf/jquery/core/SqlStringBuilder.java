@@ -65,19 +65,22 @@ public final class SqlStringBuilder {
 	}
 
 	public <T> SqlStringBuilder runForeach(T[] arr, int idx, String delimiter, Consumer<T> fn, String prefix, String suffix) {
-		if(idx < 0 ||  (isEmpty(arr) && idx > 0) || idx >= requireNonNull(arr, "arr connot be null").length) {
+		requireNonNull(arr, "arr connot be null");
+		if((arr.length == 0 && idx == 0) || idx < arr.length) {
+			sb.append(prefix);
+			if(!isEmpty(arr)) { //idx < arr.length
+				var i=idx;
+				fn.accept(arr[i]);
+				for(++i; i<arr.length; i++) {
+					sb.append(delimiter);
+					fn.accept(arr[i]);
+				}
+			}
+			sb.append(suffix);
+		}
+		else {
 			throw new IndexOutOfBoundsException(idx);
 		}
-		sb.append(prefix);
-		if(!isEmpty(arr)) { //idx < arr.length
-			var i=idx;
-			fn.accept(arr[i]);
-			for(++i; i<arr.length; i++) {
-				sb.append(delimiter);
-				fn.accept(arr[i]);
-			}
-		}
-		sb.append(suffix);
 		return this;
 	}
 
