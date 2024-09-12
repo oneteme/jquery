@@ -12,9 +12,9 @@ public interface DBObject {
 	
 	void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args);
 	
-	static String toSQL(DBObject obj, Object... values) {
+	static String toSQL(DBObject obj, Object... args) {
 		var sb = new SqlStringBuilder();
-		obj.sql(sb, addWithValue(), values);
+		obj.sql(sb, addWithValue(), args);
 		return sb.toString();
 	}
 }

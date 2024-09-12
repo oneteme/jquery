@@ -4,20 +4,16 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
 import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -43,6 +39,10 @@ public final class QueryContext {
 	private final List<DBView> views; //indexed view
 	private final Map<DBView, QueryView> overView;
 	
+	public List<DBView> views(){
+		return views;
+	}
+	
 	public String viewAlias(DBView view) {
 		var idx = views.indexOf(view);
 		if(idx < 0) {
@@ -56,62 +56,51 @@ public final class QueryContext {
 		return ofNullable(overView.get(view));
 	}
 	
-	public List<DBView> views(){
-		return views;
+	public void appendArrayParameter(SqlStringBuilder sb, Object[] arr) {
+		appendArrayParameter(sb, arr, 0);
 	}
 	
-	public String appendArrayParameter(Object[] arr) {
-		return appendArrayParameter(arr, 0);
-	}
-	
-	public String appendArrayParameter(Object[] arr, int from) {
-		return dynamic() 
-				? appendArray(arr, from, this::appendParameter) 
-				: appendLiteralArray(arr, from);
-	}
-
-	public String appendLiteralArray(Object[] arr) {
-		return appendLiteralArray(arr, 0);
-	}
-	
-	public String appendLiteralArray(Object[] arr, int from) {
-		return appendArray(arr, from, this::appendLiteral);
-	}
-
-	String appendArray(Object[] arr, int from, Function<Object, String> fn) {
-		if(isEmpty(arr)) {
-			if(from == 0) {
-				return EMPTY;
-			}
+	public void appendArrayParameter(SqlStringBuilder sb, Object[] arr, int from) {
+		if(dynamic()) {
+			sb.forEach(arr, from, SCOMA, o-> appendParameter(sb, o));
 		}
-		else if(from >= 0 && from < arr.length) {
-			return Stream.of(arr)
-					.skip(from)
-					.map(fn)
-					.collect(joining(SCOMA));
+		else {
+			appendLiteralArray(sb, arr, from);
 		}
-		throw new IndexOutOfBoundsException(from);
 	}
 
-	public String appendParameter(Object o) {
+	public void appendLiteralArray(SqlStringBuilder sb, Object[] arr) {
+		appendLiteralArray(sb, arr, 0);
+	}
+	
+	public void appendLiteralArray(SqlStringBuilder sb, Object[] arr, int from) {
+		sb.forEach(arr, from, SCOMA, o-> appendLiteral(sb, o));
+	}
+
+	public void appendParameter(SqlStringBuilder sb, Object o) {
 		if(dynamic()) {
 			if(o instanceof DBObject jo) {
-				return jo.sql(this, null);
+				jo.sql(sb, this, null);
 			}
-			var t = typeOf(o); //o=null=>empty
-			if(t.isPresent()) {
-				return appendArg(t.get(), o);
+			else {
+				var t = typeOf(o);
+				sb.append(t.isPresent() ? appendArg(t.get(), o) : formatValue(o));
 			}
 		}
-		return appendLiteral(o);
+		else {
+			appendLiteral(sb, o);
+		}
 	}
 
-	public String appendLiteral(Object o) {  //TD : stringify value using db default pattern
-		return o instanceof DBObject jo 
-				? jo.sql(this, null)
-				: formatValue(o);
+	public void appendLiteral(SqlStringBuilder sb, Object o) {  //TD : stringify value using db default pattern
+		if(o instanceof DBObject jo) {
+			jo.sql(sb, this, null);
+		}
+		else {
+			sb.append(formatValue(o));
+		}
 	}
-	
+		
 	private String appendArg(JDBCType type, Object o) {
 		argTypes.add(type);
 		args.add(o);

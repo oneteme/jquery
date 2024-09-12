@@ -167,7 +167,7 @@ public class QueryBuilder {
     	select(sb, ctx);
 		from(sb, ctx); //enumerate all views before from clause
 		join(sb, ctx);
-		sb.append(sub.toString()); //TODO optim
+		sb.append(sub.toString());
 	}
 
 	void select(SqlStringBuilder sb, QueryContext ctx){

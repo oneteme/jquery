@@ -13,7 +13,7 @@ public interface InComparator extends Comparator {
 	@Override
 	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireAtLeastNArgs(2, args, InComparator.class::getSimpleName);
-		sb.append(ctx.appendParameter(args[0])).space().append(id()).parenthesis(
-				ctx.appendArrayParameter(args, 1));
+		ctx.appendParameter(sb, args[0]);
+		sb.space().append(id()).parenthesis(()-> ctx.appendArrayParameter(sb, args, 1));
 	}
 }

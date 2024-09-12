@@ -13,7 +13,10 @@ interface ArithmeticOperator extends Operator {
 	@Override
 	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNArgs(2, args, ArithmeticException.class::getSimpleName);
-		sb.parenthesis(()->
-			sb.append(ctx.appendLiteral(args[0])).append(id()).append(ctx.appendLiteral(args[1])));
+		sb.parenthesis(()->{
+			ctx.appendLiteral(sb, args[0]); 
+			sb.append(id());
+			ctx.appendLiteral(sb, args[1]);
+		});
 	}
 }

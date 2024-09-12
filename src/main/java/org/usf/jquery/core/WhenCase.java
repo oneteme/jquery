@@ -38,7 +38,7 @@ final class WhenCase implements DBObject, Typed, Nested {
 		else {
 			sb.append("ELSE ");
 		}
-		sb.append(ctx.appendLiteral(value));
+		ctx.appendLiteral(sb, value);
 	}
 	
 	@Override

@@ -29,11 +29,13 @@ public final class Partition implements DBObject, Nested {
 	
 	void sql(SqlStringBuilder sb, QueryContext ctx) {
 		if(!isEmpty(columns)) {
-			sb.append("PARTITION BY ").append(ctx.appendLiteralArray(columns));
+			sb.append("PARTITION BY ");
+			ctx.appendLiteralArray(sb, columns);
 		}
 		if(!isEmpty(orders)) { //require orders
-			sb.appendIf(!isEmpty(columns), SPACE)
-			.append("ORDER BY ").append(ctx.appendLiteralArray(orders));
+			sb.appendIf(!isEmpty(columns), SPACE);
+			sb.append("ORDER BY ");
+			ctx.appendLiteralArray(sb, orders);
 		}
 	}
 	

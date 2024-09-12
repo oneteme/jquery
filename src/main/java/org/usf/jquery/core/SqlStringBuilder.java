@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
+import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Iterator;
@@ -44,13 +45,24 @@ public final class SqlStringBuilder {
 	}
 
 	public <T> SqlStringBuilder forEach(T[] arr, String separator, Consumer<T> fn) {
-		return forEach(arr, separator, fn, EMPTY, EMPTY);
+		return forEach(arr, 0, separator, fn);
+	}
+	
+	public <T> SqlStringBuilder forEach(T[] arr, int idx, String separator, Consumer<T> fn) {
+		return forEach(arr, idx, separator, fn, EMPTY, EMPTY);
+	}
+	
+	public <T> SqlStringBuilder forEach(T[] arr, String separator, Consumer<T> fn, String prefix, String suffix) {
+		return forEach(arr, 0, separator, fn, prefix, suffix);
 	}
 
-	public <T> SqlStringBuilder forEach(T[] arr, String separator, Consumer<T> fn, String prefix, String suffix) {
+	public <T> SqlStringBuilder forEach(T[] arr, int idx, String separator, Consumer<T> fn, String prefix, String suffix) {
+		if(idx < 0 ||  (isEmpty(arr) && idx > 0) || idx >= requireNonNull(arr).length) {
+			throw new IndexOutOfBoundsException(idx);
+		}
 		sb.append(prefix);
-		if(!isEmpty(arr)) {
-			var i=0;
+		if(!isEmpty(arr)) { //idx < arr.length
+			var i=idx;
 			fn.accept(arr[i]);
 			for(++i; i<arr.length; i++) {
 				sb.append(separator);
