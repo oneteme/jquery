@@ -26,7 +26,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		sb.parenthesis(()->
-			sb.forEach(filters, operator.sql(), o-> o.sql(sb, ctx)));
+			sb.runForeach(filters, operator.sql(), o-> o.sql(sb, ctx)));
 	}
 		
 	@Override

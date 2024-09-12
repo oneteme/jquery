@@ -33,10 +33,6 @@ public final class SqlStringBuilder {
 		this.sb = new StringBuilder(capacity);
 	}
 	
-	public SqlStringBuilder(String v) { //buffer++
-		this.sb = new StringBuilder(v.length() + 50).append(v);
-	}
-
 	public SqlStringBuilder appendIf(boolean condition, String s) {
 		return condition ? append(s) : this;
 	}
@@ -56,19 +52,19 @@ public final class SqlStringBuilder {
 		return this;
 	}
 	
-	public <T> SqlStringBuilder forEach(T[] arr, String delimiter, Consumer<T> fn) {
-		return forEach(arr, 0, delimiter, fn);
+	public <T> SqlStringBuilder runForeach(T[] arr, String delimiter, Consumer<T> fn) {
+		return runForeach(arr, 0, delimiter, fn);
 	}
 	
-	public <T> SqlStringBuilder forEach(T[] arr, int idx, String delimiter, Consumer<T> fn) {
-		return forEach(arr, idx, delimiter, fn, EMPTY, EMPTY);
+	public <T> SqlStringBuilder runForeach(T[] arr, int idx, String delimiter, Consumer<T> fn) {
+		return runForeach(arr, idx, delimiter, fn, EMPTY, EMPTY);
 	}
 	
-	public <T> SqlStringBuilder forEach(T[] arr, String delimiter, Consumer<T> fn, String prefix, String suffix) {
-		return forEach(arr, 0, delimiter, fn, prefix, suffix);
+	public <T> SqlStringBuilder runForeach(T[] arr, String delimiter, Consumer<T> fn, String prefix, String suffix) {
+		return runForeach(arr, 0, delimiter, fn, prefix, suffix);
 	}
 
-	public <T> SqlStringBuilder forEach(T[] arr, int idx, String delimiter, Consumer<T> fn, String prefix, String suffix) {
+	public <T> SqlStringBuilder runForeach(T[] arr, int idx, String delimiter, Consumer<T> fn, String prefix, String suffix) {
 		if(idx < 0 ||  (isEmpty(arr) && idx > 0) || idx >= requireNonNull(arr, "arr connot be null").length) {
 			throw new IndexOutOfBoundsException(idx);
 		}
@@ -85,7 +81,7 @@ public final class SqlStringBuilder {
 		return this;
 	}
 
-	public <T> SqlStringBuilder forEach(Iterator<T> it, String separator, Consumer<T> cons) {
+	public <T> SqlStringBuilder runForeach(Iterator<T> it, String separator, Consumer<T> cons) {
 		if(it.hasNext()) {
 			cons.accept(it.next());
 			while(it.hasNext()) {

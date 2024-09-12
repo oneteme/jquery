@@ -62,7 +62,7 @@ public final class QueryContext {
 	
 	public void appendArrayParameter(SqlStringBuilder sb, Object[] arr, int from) {
 		if(dynamic()) {
-			sb.forEach(arr, from, SCOMA, o-> appendParameter(sb, o));
+			sb.runForeach(arr, from, SCOMA, o-> appendParameter(sb, o));
 		}
 		else {
 			appendLiteralArray(sb, arr, from);
@@ -74,7 +74,7 @@ public final class QueryContext {
 	}
 	
 	public void appendLiteralArray(SqlStringBuilder sb, Object[] arr, int from) {
-		sb.forEach(arr, from, SCOMA, o-> appendLiteral(sb, o));
+		sb.runForeach(arr, from, SCOMA, o-> appendLiteral(sb, o));
 	}
 
 	public void appendParameter(SqlStringBuilder sb, Object o) {

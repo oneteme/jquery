@@ -151,7 +151,7 @@ public class QueryBuilder {
 			build(sb, pb);
 		}
 		else {
-			sb.forEach(it, " UNION ALL ", o-> build(sb, pb));
+			sb.runForeach(it, " UNION ALL ", o-> build(sb, pb));
 		}
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
 		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
@@ -183,32 +183,32 @@ public class QueryBuilder {
     	.appendIf(distinct, " DISTINCT")
     	.appendIf(nonNull(limit) && currentDatabase() == TERADATA, ()-> " TOP " + limit) //???????
     	.space()
-    	.forEach(columns.iterator(), SCOMA, o-> o.sqlWithTag(sb, ctx));
+    	.runForeach(columns.iterator(), SCOMA, o-> o.sqlWithTag(sb, ctx));
 	}
 	
 	void from(SqlStringBuilder sb, QueryContext ctx) {
 		var excludes = joins.stream().map(ViewJoin::getView).toList();
 		var views = ctx.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
-			sb.from().forEach(views.iterator(), SCOMA, v-> v.sqlWithTag(sb, ctx));
+			sb.from().runForeach(views.iterator(), SCOMA, v-> v.sqlWithTag(sb, ctx));
 		}
 	}
 	
 	void join(SqlStringBuilder sb, QueryContext ctx) {
 		if(!joins.isEmpty()) {
-			sb.space().forEach(joins.iterator(), SPACE, v-> v.sql(sb, ctx));
+			sb.space().runForeach(joins.iterator(), SPACE, v-> v.sql(sb, ctx));
 		}
 	}
 
 	void where(SqlStringBuilder sb, QueryContext ctx){
 		if(!where.isEmpty()) {
-    		sb.append(" WHERE ").forEach(where.iterator(), AND.sql(), f-> f.sql(sb, ctx));
+    		sb.append(" WHERE ").runForeach(where.iterator(), AND.sql(), f-> f.sql(sb, ctx));
 		}
 	}
 	
 	void groupBy(SqlStringBuilder sb, QueryContext ctx){
 		if(aggregation && !group.isEmpty()) {
-    		sb.append(" GROUP BY ").forEach(group.iterator(), SCOMA, c-> {
+    		sb.append(" GROUP BY ").runForeach(group.iterator(), SCOMA, c-> {
     			if(!(c instanceof ViewColumn) && columns.contains(c)) {
     				sb.append(((NamedColumn)c).getTag());
     			}
@@ -222,14 +222,14 @@ public class QueryBuilder {
 	void having(SqlStringBuilder sb, QueryContext ctx){
 		if(!having.isEmpty()) {
     		sb.append(" HAVING ")
-    		.forEach(having.iterator(), AND.sql(), f-> f.sql(sb, ctx));
+    		.runForeach(having.iterator(), AND.sql(), f-> f.sql(sb, ctx));
 		}
 	}
 	
 	void orderBy(SqlStringBuilder sb, QueryContext ctx) {
     	if(!orders.isEmpty()) {
     		sb.append(" ORDER BY ")
-    		.forEach(orders.iterator(), SCOMA, o-> o.sql(sb, ctx));
+    		.runForeach(orders.iterator(), SCOMA, o-> o.sql(sb, ctx));
     	}
 	}
 	
