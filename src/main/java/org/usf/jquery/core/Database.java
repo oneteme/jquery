@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
+
 import java.util.Optional;
 import java.util.stream.Stream;
 
@@ -19,7 +21,12 @@ public enum Database {
 	}
 
 	static void setCurrentDatabase(Database db) {
-		local.set(db);
+		if(nonNull(db)) {
+			local.set(db);
+		}
+		else {
+			local.remove();
+		}
 	}
 
 	public static Optional<Database> of(String name) {

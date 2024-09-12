@@ -242,6 +242,6 @@ public class QueryBuilder {
 
 	@Override
 	public String toString() {
-		return this.build().getQuery();
+		return build().getQuery();
 	}
 }
