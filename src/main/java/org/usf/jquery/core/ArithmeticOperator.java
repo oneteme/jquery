@@ -8,7 +8,7 @@ import static org.usf.jquery.core.Validation.requireNArgs;
  *
  */
 @FunctionalInterface
-interface ArithmeticOperator extends Operator {
+public interface ArithmeticOperator extends Operator {
 	
 	@Override
 	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {

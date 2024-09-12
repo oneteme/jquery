@@ -66,9 +66,9 @@ public final class SqlStringBuilder {
 
 	public <T> SqlStringBuilder runForeach(T[] arr, int idx, String delimiter, Consumer<T> fn, String prefix, String suffix) {
 		requireNonNull(arr, "arr connot be null");
-		if((arr.length == 0 && idx == 0) || idx < arr.length) {
+		if( idx < arr.length || (arr.length == 0 && idx == 0)) {
 			sb.append(prefix);
-			if(!isEmpty(arr)) { //idx < arr.length
+			if(!isEmpty(arr)) {
 				var i=idx;
 				fn.accept(arr[i]);
 				for(++i; i<arr.length; i++) {
@@ -93,10 +93,6 @@ public final class SqlStringBuilder {
 			}
 		} 
 		return this;
-	}
-
-	public SqlStringBuilder from(String v) {
-		return from().append(v);
 	}
 	
 	public SqlStringBuilder from() {
