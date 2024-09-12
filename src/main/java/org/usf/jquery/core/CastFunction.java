@@ -10,7 +10,7 @@ import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 @FunctionalInterface
 public interface CastFunction extends FunctionOperator {
 
-	String asType();
+	String type();
 	
 	@Override
 	default String id() {
@@ -22,7 +22,7 @@ public interface CastFunction extends FunctionOperator {
 		requireAtLeastNArgs(1, args, CastFunction.class::getSimpleName);
 		sb.function(id(), ()-> {
 			ctx.appendLiteral(sb, args[0]);
-			sb.as(asType());
+			sb.as(type());
 			if(args.length > 1) {
 				sb.parenthesis(()-> ctx.appendLiteralArray(sb, args, 1));
 			}
