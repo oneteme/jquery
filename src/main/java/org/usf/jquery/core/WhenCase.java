@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
 final class WhenCase implements DBObject, Typed, Nested {
 	
 	private final DBFilter filter; //optional
-	private final Object value;
+	private final Object value; //then|else
 
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {

@@ -18,7 +18,7 @@ public interface StringComparator extends Comparator {
 		ctx.appendParameter(sb, wildcardArg(args[1]));
 	}
 	
-	default Object wildcardArg(Object o) {
+	default Object wildcardArg(Object o) { //Entry<Srtring, Unary<String>>
 		return o;
 	}
 }

@@ -1,11 +1,12 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Iterator;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.function.Supplier;
 
 /**
@@ -44,20 +45,31 @@ public final class SqlStringBuilder {
 		return condition ? append(sup.get()) : this;
 	}
 
-	public <T> SqlStringBuilder forEach(T[] arr, String separator, Consumer<T> fn) {
-		return forEach(arr, 0, separator, fn);
+	public <T> SqlStringBuilder appendIfNonNull(T o, Function<T, String> fn) {
+		return nonNull(o) ? append(fn.apply(o)) : this;
 	}
 	
-	public <T> SqlStringBuilder forEach(T[] arr, int idx, String separator, Consumer<T> fn) {
-		return forEach(arr, idx, separator, fn, EMPTY, EMPTY);
+	public <T> SqlStringBuilder runIfNonNull(T o, Consumer<T> cons) {
+		if(nonNull(o)) {
+			cons.accept(o);
+		}
+		return this;
 	}
 	
-	public <T> SqlStringBuilder forEach(T[] arr, String separator, Consumer<T> fn, String prefix, String suffix) {
-		return forEach(arr, 0, separator, fn, prefix, suffix);
+	public <T> SqlStringBuilder forEach(T[] arr, String delimiter, Consumer<T> fn) {
+		return forEach(arr, 0, delimiter, fn);
+	}
+	
+	public <T> SqlStringBuilder forEach(T[] arr, int idx, String delimiter, Consumer<T> fn) {
+		return forEach(arr, idx, delimiter, fn, EMPTY, EMPTY);
+	}
+	
+	public <T> SqlStringBuilder forEach(T[] arr, String delimiter, Consumer<T> fn, String prefix, String suffix) {
+		return forEach(arr, 0, delimiter, fn, prefix, suffix);
 	}
 
-	public <T> SqlStringBuilder forEach(T[] arr, int idx, String separator, Consumer<T> fn, String prefix, String suffix) {
-		if(idx < 0 ||  (isEmpty(arr) && idx > 0) || idx >= requireNonNull(arr).length) {
+	public <T> SqlStringBuilder forEach(T[] arr, int idx, String delimiter, Consumer<T> fn, String prefix, String suffix) {
+		if(idx < 0 ||  (isEmpty(arr) && idx > 0) || idx >= requireNonNull(arr, "arr connot be null").length) {
 			throw new IndexOutOfBoundsException(idx);
 		}
 		sb.append(prefix);
@@ -65,7 +77,7 @@ public final class SqlStringBuilder {
 			var i=idx;
 			fn.accept(arr[i]);
 			for(++i; i<arr.length; i++) {
-				sb.append(separator);
+				sb.append(delimiter);
 				fn.accept(arr[i]);
 			}
 		}
@@ -100,15 +112,15 @@ public final class SqlStringBuilder {
 		return append(name).parenthesis(args);
 	}
 
-	public SqlStringBuilder parenthesis(String s) {
-		openParenthesis();
-		sb.append(s);
-		return closeParenthesis();
-	}
-
 	public SqlStringBuilder parenthesis(Runnable exec) {
 		openParenthesis();
 		exec.run();
+		return closeParenthesis();
+	}
+	
+	public SqlStringBuilder parenthesis(String s) {
+		openParenthesis();
+		sb.append(s);
 		return closeParenthesis();
 	}
 	
@@ -151,9 +163,5 @@ public final class SqlStringBuilder {
 
 	public static String doubleQuote(String op) {
 		return DQUOT + op + DQUOT;
-	}
-
-	public static String member(String parent, String child) { 
-		return isNull(parent) ? child : parent + "." + child;
 	}
 }

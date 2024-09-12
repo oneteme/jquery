@@ -235,8 +235,8 @@ public class QueryBuilder {
 	
 	void fetch(SqlStringBuilder sb) {
 		if(currentDatabase() != TERADATA) { // TOP n
-			sb.appendIf(nonNull(limit),  ()-> " LIMIT " + limit);
-			sb.appendIf(nonNull(offset), ()-> " OFFSET " + offset);
+			sb.appendIfNonNull(limit,  v-> " LIMIT " + v);
+			sb.appendIfNonNull(offset, v-> " OFFSET " + v);
 		}
 	}
 

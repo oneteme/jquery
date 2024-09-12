@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 
 /**
@@ -14,6 +13,6 @@ public interface NamedColumn extends DBColumn {
 	
 	default void sqlWithTag(SqlStringBuilder sb, QueryContext ctx) {
 		sql(sb, ctx);
-		sb.appendIf(nonNull(getTag()), ()-> " AS " + doubleQuote(getTag()));
+		sb.runIfNonNull(getTag(), v-> sb.as(doubleQuote(v)));
 	}
 }

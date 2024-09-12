@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.Collection;
@@ -34,7 +32,7 @@ public final class DBOrder implements DBObject, Nested {
 
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		column.sql(sb, ctx);
-		sb.appendIf(nonNull(order), ()-> SPACE + order.name());
+		sb.runIfNonNull(order, o-> sb.space().append(o.name()));
 	}
 	
 	@Override

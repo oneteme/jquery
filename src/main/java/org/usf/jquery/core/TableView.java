@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.SqlStringBuilder.member;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -15,9 +14,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class TableView implements DBView {
 	
-	private final String schema;
+	private final String schema; //optional
 	private final String name;
-	private final String tag;
+	private final String tag; //optional
 
 	public TableView(String schema, String name) {
 		this(schema, name, name);
@@ -25,7 +24,7 @@ public class TableView implements DBView {
 
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.append(member(getSchemaOrElse(ctx.getSchema()), name));
+		sb.appendIfNonNull(getSchemaOrElse(ctx.getSchema()), v-> v + '.').append(name);
 	}
 
 	public String getSchemaOrElse(String defaultSchema) {
