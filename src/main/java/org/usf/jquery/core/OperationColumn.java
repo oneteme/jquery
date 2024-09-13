@@ -59,7 +59,8 @@ public final class OperationColumn implements DBColumn {
 				}
 				throw new UnsupportedOperationException("require only one view");
 			}
-			return requirePartition().resolve(ctx); //no aggregation
+			requirePartition().resolve(ctx); //no aggregation
+			return true;
 		}
 		return !operator.is(ConstantOperator.class) && tryResolveAll(ctx, args);
 	}
