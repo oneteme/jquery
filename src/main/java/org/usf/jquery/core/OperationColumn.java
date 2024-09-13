@@ -55,12 +55,12 @@ public final class OperationColumn implements DBColumn {
 					var cTag = "over_" + hashCode(); //over_view_hash
 					ctx.overView(view).getBuilder().columns(new OperationColumn(operator, args, type).as(cTag)); //clone
 					overColumn = new ViewColumn(cTag, view, type, null);
-					return false;
+					return overColumn.resolve(ctx);
 				}
 				throw new UnsupportedOperationException("require only one view");
 			}
-			requirePartition().resolve(ctx); //no aggregation
-			return true;
+			requirePartition().resolve(ctx);
+			return true; //!group by
 		}
 		return !operator.is(ConstantOperator.class) && tryResolveAll(ctx, args);
 	}
