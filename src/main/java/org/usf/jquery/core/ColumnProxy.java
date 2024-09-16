@@ -30,6 +30,11 @@ public final class ColumnProxy implements NamedColumn {
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		column.sql(sb, ctx);
 	}
+	
+	@Override
+	public JDBCType getType() {
+		return nonNull(type) ? type : column.getType();
+	}
 
 	@Override
 	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> cons) {
@@ -39,11 +44,6 @@ public final class ColumnProxy implements NamedColumn {
 	@Override
 	public void views(Consumer<DBView> cons) {
 		column.views(cons);
-	}
-	
-	@Override
-	public JDBCType getType() {
-		return nonNull(type) ? type : column.getType();
 	}
 	
 	@Override // do not delegate this

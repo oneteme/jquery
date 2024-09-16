@@ -28,10 +28,6 @@ public final class SingleColumnQuery implements DBObject, Typed {
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNoArgs(args, SingleColumnQuery.class::getSimpleName);
-		sql(sb, ctx);
-	}
-		
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		query.sql(sb, ctx);
 	}
 	

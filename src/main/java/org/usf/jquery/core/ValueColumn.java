@@ -31,7 +31,7 @@ public class ValueColumn implements DBColumn {
 
 	@Override
 	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return builder.getClause() != FILTER; //COLUMN=> TRUE || FILTER=> FALSE
+		return builder.getClause() != FILTER; //COLUMN=> !GROUPBY || FILTER=> !HAVING
 	}
 
 	@Override

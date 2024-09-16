@@ -23,10 +23,6 @@ public final class Partition implements DBObject, Nested {
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
-		sql(sb, ctx);
-	}
-	
-	void sql(SqlStringBuilder sb, QueryContext ctx) {
 		if(!isEmpty(columns)) {
 			sb.append("PARTITION BY ");
 			ctx.appendLiteralArray(sb, columns);
