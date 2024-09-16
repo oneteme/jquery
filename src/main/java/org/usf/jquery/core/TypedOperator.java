@@ -4,7 +4,6 @@ import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import lombok.Getter;
-import lombok.experimental.Delegate;
 
 /**
  * 
@@ -13,8 +12,8 @@ import lombok.experimental.Delegate;
  */
 @Getter
 public class TypedOperator implements Operator {
-	
-	@Delegate
+
+	//do not @Delegate
 	private final Operator operator;
 	private final ArgTypeRef typeFn;
 	private final ParameterSet parameterSet;
@@ -38,6 +37,12 @@ public class TypedOperator implements Operator {
 			throw badArgumentsException("operator", operator.id(), args, e);
 		}
 	}
+	
+	@Override
+	public String id() {
+		return operator.id();
+	}
+	
 
 	public OperationColumn operation(Object... args) {
 		return this.operation(typeFn.apply(args), args);
@@ -48,6 +53,16 @@ public class TypedOperator implements Operator {
 		return operator.is(CombinedOperator.class)
 				? operator.operation(type, parameterSet.assertArguments(args)) //no sql
 				: Operator.super.operation(type, args);
+	}
+	
+	@Override
+	public boolean is(Class<? extends Operator> type) {
+		return operator.is(type);
+	}
+	
+	@Override
+	public boolean is(String name) {
+		return operator.is(name);
 	}
 	
 	public boolean isWindowFunction() {

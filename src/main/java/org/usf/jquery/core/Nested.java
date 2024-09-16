@@ -13,9 +13,9 @@ import java.util.function.Consumer;
  */
 public interface Nested {
 	
-	void views(Consumer<DBView> cons); //collect used views
-	
 	boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> cons);
+	
+	void views(Consumer<DBView> cons); //collect used views
 	
 	static void viewsOf(Consumer<DBView> cons, Object... args) { //collect used views
 		if(!isEmpty(args)) {

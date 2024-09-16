@@ -89,7 +89,7 @@ public class QueryBuilder {
 				throw resourceAlreadyExistsException(col.getTag());
 			}
 			if(this.columns.add(col) && !col.resolve(this, group::add)) {
-				this.group.add(col);
+				this.group.add(col); //distinct TD: override equals
 			}
 		}
 		return this;

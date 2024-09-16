@@ -3,10 +3,10 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 
 import java.util.Objects;
+import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
-import lombok.experimental.Delegate;
 
 /**
  * 
@@ -16,7 +16,7 @@ import lombok.experimental.Delegate;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ColumnProxy implements NamedColumn {
 
-	@Delegate
+	//do not @Delegate
 	private final DBColumn column;
 	private final JDBCType type; //optional
 	private final String tag; //optional
@@ -24,6 +24,21 @@ public final class ColumnProxy implements NamedColumn {
 	@Override
 	public String getTag() {
 		return tag;
+	}
+
+	@Override
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		column.sql(sb, ctx);
+	}
+
+	@Override
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> cons) {
+		return column.resolve(builder, cons);
+	}
+
+	@Override
+	public void views(Consumer<DBView> cons) {
+		column.views(cons);
 	}
 	
 	@Override

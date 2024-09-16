@@ -446,6 +446,11 @@ public interface DBColumn extends DBObject, Typed, Nested {
 				ctx.viewAlias(view);
 				sb.append(getName()); //avoid view.*
 			}
+
+			@Override
+			public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+				return true; //!group by
+			}
 		};
 	}
 	

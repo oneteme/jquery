@@ -4,7 +4,6 @@ import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import lombok.Getter;
-import lombok.experimental.Delegate;
 
 /**
  * 
@@ -13,8 +12,8 @@ import lombok.experimental.Delegate;
  */
 @Getter
 public final class TypedComparator implements Comparator {
-	
-	@Delegate
+
+	//do not @Delegate
 	private final Comparator comparator;
 	private final ParameterSet parameterSet;
 	
@@ -31,10 +30,15 @@ public final class TypedComparator implements Comparator {
 			throw badArgumentsException("comparator", comparator.id(), args, e);
 		}
 	}
+
+	@Override
+	public String id() {
+		return comparator.id();
+	}
 	
-	@Override // do not delegate this
-	public ColumnSingleFilter filter(Object... args) {
-		return Comparator.super.filter(args);
+	@Override
+	public boolean is(Class<? extends Comparator> type) {
+		return comparator.is(type);
 	}
 	
 	@Override

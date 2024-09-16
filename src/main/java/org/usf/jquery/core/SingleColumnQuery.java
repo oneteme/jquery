@@ -16,8 +16,9 @@ public final class SingleColumnQuery implements DBObject, Typed {
 
 	SingleColumnQuery(QueryView query) {
 		this.query = query;
-		if(query.getBuilder().getColumns().size() == 1) {
-			this.type = query.getBuilder().getColumns().get(0).getType();
+		var cols = query.getBuilder().getColumns(); 
+		if(cols.size() == 1) {
+			this.type = cols.iterator().next().getType();
 		}
 		else{
 			throw new IllegalArgumentException("require only one column");
