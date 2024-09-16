@@ -137,6 +137,15 @@ public final class QueryContext {
 		return new QueryContext(schema, vPrefix, null, null, views, overView);
 	}
 	
+	QueryContext fork() { //share schema, views, but not args
+		return new QueryContext(schema, vPrefix, new ArrayList<>(), new ArrayList<>(), views, overView);
+	}
+	
+	void join(QueryContext ctx) { //share schema, views, but not args
+		args.addAll(ctx.args);
+		argTypes.addAll(ctx.argTypes);
+	}
+	
 	public QueryContext subQuery(Map<DBView, QueryView> overView) {
 		return new QueryContext(schema, vPrefix + "_s", args, argTypes, new ArrayList<>(), unmodifiableMap(overView));
 	}

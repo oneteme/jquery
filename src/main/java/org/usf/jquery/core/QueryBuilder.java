@@ -172,13 +172,15 @@ public class QueryBuilder {
 		var sub = new SqlStringBuilder(500);
 		with(sb, ctx);
     	select(sb, ctx);
-		join(sub, ctx);
-    	where(sub, ctx);
-    	groupBy(sub, ctx);
-    	having(sub, ctx);
-    	orderBy(sub, ctx);
+    	var frk = ctx.fork();
+		join(sub, frk);
+    	where(sub, frk);
+    	groupBy(sub, frk);
+    	having(sub, frk);
+    	orderBy(sub, frk);
     	fetch(sub);
 		from(sb, ctx); //enumerate all views before from clause
+		ctx.join(frk);
 		sb.append(sub.toString());
 	}
 	
