@@ -1,5 +1,6 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
 import org.usf.jquery.core.DBView;
@@ -37,7 +38,7 @@ final class QueryDecorator implements ViewDecorator {
 		return query.getBuilder().getColumns().stream() //do not use declaredColumn
 		.filter(c-> id.equals(c.getTag()))
 		.findAny()
-		.map(c-> new ViewColumn(c.getTag(), query, c.getType(), null))
+		.map(c-> new ViewColumn(doubleQuote(c.getTag()), query, c.getType(), null))
 		.orElseThrow(()-> undeclaredResouceException(id, identity()));
 	}
 	
