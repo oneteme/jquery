@@ -1,11 +1,10 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Nested.resolveAll;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.Collection;
 import java.util.Objects;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 /**
@@ -36,15 +35,13 @@ public final class CaseColumn implements DBColumn {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder) {
-		return resolveAll(whenCases, builder);
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.tryResolve(builder, groupKeys, (Object[])whenCases);
 	}
 	
 	@Override
-	public void views(Collection<DBView> views) {
-		for(var e : whenCases) {
-			e.views(views);
-		}
+	public void views(Consumer<DBView> cons) {
+		Nested.viewsOf(cons, (Object[])whenCases);
 	}
 	
 	@Override

@@ -1,11 +1,9 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Nested.resolveAll;
-import static org.usf.jquery.core.Nested.viewsOfNested;
 import static org.usf.jquery.core.Utils.appendLast;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.Collection;
+import java.util.function.Consumer;
 
 /**
  * 
@@ -28,17 +26,17 @@ public final class ColumnFilterGroup implements DBFilter {
 		sb.parenthesis(()->
 			sb.runForeach(filters, operator.sql(), o-> o.sql(sb, ctx)));
 	}
-		
+
 	@Override
-	public boolean resolve(QueryBuilder ctx) {
-		return resolveAll(filters, ctx);
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.tryResolve(builder, groupKeys, (Object[])filters);
 	}
 	
 	@Override
-	public void views(Collection<DBView> views) {
-		viewsOfNested(views, filters);
+	public void views(Consumer<DBView> cons) {
+		Nested.viewsOf(cons, (Object[])filters);
 	}
-
+	
 	@Override
 	public DBFilter append(LogicalOperator op, DBFilter filter) {
 		return operator == op 

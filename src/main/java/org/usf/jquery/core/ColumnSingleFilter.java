@@ -1,9 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Nested.tryResolve;
-import static org.usf.jquery.core.Nested.viewsOf;
-
-import java.util.Collection;
+import java.util.function.Consumer;
 
 import lombok.RequiredArgsConstructor;
 
@@ -24,18 +21,15 @@ public class ColumnSingleFilter implements DBFilter {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder ctx) {
-		var res1 = tryResolve(left, ctx);
-		var res2 = expression.resolve(ctx);
-		return res1 || res2;
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.tryResolve(builder, groupKeys, left, expression);
 	}
 	
 	@Override
-	public void views(Collection<DBView> views) {
-		viewsOf(views, left);
-		expression.views(views);
+	public void views(Consumer<DBView> cons) {
+		Nested.viewsOf(cons, left, expression);
 	}
-
+	
 	@Override
 	public ColumnFilterGroup append(LogicalOperator op, DBFilter filter) {
 		return new ColumnFilterGroup(op, this, filter);

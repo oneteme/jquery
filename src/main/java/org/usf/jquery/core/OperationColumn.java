@@ -2,12 +2,10 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Clause.FILTER;
-import static org.usf.jquery.core.Nested.tryResolveAll;
-import static org.usf.jquery.core.Nested.viewsOfAll;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
-import java.util.Collection;
 import java.util.HashSet;
+import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -28,7 +26,7 @@ public final class OperationColumn implements DBColumn {
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		if(nonNull(overColumn)) {
-			overColumn.sql(sb, ctx);
+			overColumn.sql(sb, ctx); //no args
 		}
 		else {
 			operator.sql(sb, ctx, args);
@@ -41,37 +39,36 @@ public final class OperationColumn implements DBColumn {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder ctx) {
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		if(operator.is(AggregateFunction.class)) {
-			ctx.aggregation();
-			return true;
+			builder.setAggregation(true);
+			return true; //aggregate function calls cannot be nested
 		}
-		else if(operator.is("OVER")) {
-			if(ctx.getClause() == FILTER) {
+		if(operator.is("OVER")) {
+			if(builder.getClause() == FILTER) {
 				var views = new HashSet<DBView>();
-				views(views);
+				views(views::add);
 				if(views.size() == 1) {
 					var view = views.iterator().next();
 					var cTag = "over_" + hashCode(); //over_view_hash
-					ctx.overView(view).getBuilder().columns(new OperationColumn(operator, args, type).as(cTag)); //clone
+					builder.overView(view).getBuilder().columns(new OperationColumn(operator, args, type).as(cTag)); //clone
 					overColumn = new ViewColumn(cTag, view, type, null);
-					return overColumn.resolve(ctx);
+					return overColumn.resolve(builder, groupKeys);
 				}
-				throw new UnsupportedOperationException("require only one view");
+				throw new UnsupportedOperationException("over multiple views");
 			}
-			requirePartition().resolve(ctx);
-			return true; //!group by
+			return requirePartition().resolve(builder, groupKeys); //!grouping keys 
 		}
-		return !operator.is(ConstantOperator.class) && tryResolveAll(ctx, args);
+		return !operator.is(ConstantOperator.class) && Nested.tryResolve(builder, groupKeys, args);
 	}
 	
 	@Override
-	public void views(Collection<DBView> views) {
+	public void views(Consumer<DBView> cons) {
 		if(nonNull(overColumn)) {
-			overColumn.views(views);
+			overColumn.views(cons);
 		}
 		else {
-			viewsOfAll(views, args);
+			Nested.viewsOf(cons, args);
 		}
 	}
 	

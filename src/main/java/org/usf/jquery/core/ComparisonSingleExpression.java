@@ -2,11 +2,9 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.addAll;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Nested.tryResolveAll;
-import static org.usf.jquery.core.Nested.viewsOfAll;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -33,15 +31,15 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder) {
-		return tryResolveAll(builder, right);
-	}
-
-	@Override
-	public void views(Collection<DBView> views) {
-		viewsOfAll(views, right);
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.tryResolve(builder, groupKeys, right);
 	}
 	
+	@Override
+	public void views(Consumer<DBView> cons) {
+		Nested.viewsOf(cons, right);
+	}
+
 	@Override
 	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
 		return new ComparisonExpressionGroup(op, this, exp);

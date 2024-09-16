@@ -94,13 +94,17 @@ public final class SqlStringBuilder {
 		} 
 		return this;
 	}
+
+	public SqlStringBuilder as(String v) {
+		return as().append(v);
+	}
+	
+	public SqlStringBuilder as() {
+		return append(" AS ");
+	}
 	
 	public SqlStringBuilder from() {
 		return append(" FROM ");
-	}
-	
-	public SqlStringBuilder as(String v) {
-		return append(" AS ").append(v);
 	}
 
 	public SqlStringBuilder function(String name, Runnable args) {

@@ -1,8 +1,9 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.Clause.FILTER;
 import static org.usf.jquery.core.QueryContext.formatValue;
 
-import java.util.Collection;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import lombok.RequiredArgsConstructor;
@@ -29,15 +30,15 @@ public class ValueColumn implements DBColumn {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder builder) {
-		return false;
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return builder.getClause() != FILTER; //COLUMN=> TRUE || FILTER=> FALSE
 	}
 
 	@Override
-	public void views(Collection<DBView> views) {
-		//do nothing
+	public void views(Consumer<DBView> cons) {
+		//no views
 	}
-	
+
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this);

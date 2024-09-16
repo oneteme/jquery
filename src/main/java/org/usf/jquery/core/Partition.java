@@ -1,12 +1,11 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Nested.resolveAll;
-import static org.usf.jquery.core.Nested.viewsOfNested;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.Collection;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 
@@ -40,16 +39,25 @@ public final class Partition implements DBObject, Nested {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder) { 
-		var r1 = resolveAll(columns, builder);
-		var r2 = resolveAll(orders, builder);
-		return r1 || r2;
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) { 
+		if(!isEmpty(columns)) {
+			builder.group(Stream.of(columns)
+					.filter(c-> !c.resolve(builder, groupKeys))
+					.toArray(DBColumn[]::new));
+		}
+		if(!isEmpty(orders)) {
+			builder.group(Stream.of(orders)
+					.filter(c-> !c.resolve(builder, groupKeys))
+					.map(DBOrder::getColumn)
+					.toArray(DBColumn[]::new));
+		}
+		return true; //!grouping keys 
 	}
 	
 	@Override
-	public void views(Collection<DBView> views) {
-		viewsOfNested(views, columns);
-		viewsOfNested(views, orders);
+	public void views(Consumer<DBView> cons) {
+		Nested.viewsOf(cons, (Object[])columns);
+		Nested.viewsOf(cons, (Object[])orders);
 	}
 	
 	@Override

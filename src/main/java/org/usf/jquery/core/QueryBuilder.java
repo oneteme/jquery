@@ -24,10 +24,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -39,14 +42,16 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class QueryBuilder {
 	
+	private final List<QueryView> ctes = new ArrayList<>();
 	private final List<NamedColumn> columns = new ArrayList<>();
 	private final List<DBColumn> group = new ArrayList<>(); 
 	private final List<DBFilter> where = new ArrayList<>(); 
 	private final List<DBFilter> having = new ArrayList<>();
-	private final List<DBOrder> orders = new ArrayList<>();
 	private final List<ViewJoin> joins = new ArrayList<>(); 
+	private final List<DBOrder> orders = new ArrayList<>();
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private boolean distinct;
+	@Setter(AccessLevel.PACKAGE)
 	private boolean aggregation;
 	private Integer limit;
 	private Integer offset;
@@ -69,6 +74,11 @@ public class QueryBuilder {
 		return overView.computeIfAbsent(view, k-> supp.get());
 	}
 	
+	public QueryBuilder ctes(@NonNull QueryView... ctes) {
+		addAll(this.ctes, ctes);
+		return this;
+	}
+	
 	public QueryBuilder columns(@NonNull NamedColumn... columns) {
 		this.clause = COLUMN;
 		for(var col : columns) { //optional tag
@@ -77,18 +87,9 @@ public class QueryBuilder {
 					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
 				throw resourceAlreadyExistsException(col.getTag());
 			}
-			this.columns.add(col);
-			if(!col.resolve(this)) {
-				group.add(col);
+			if(this.columns.add(col) && !col.resolve(this, group::add)) {
+				this.group.add(col);
 			}
-		}
-		return this;
-	}
-
-	public QueryBuilder filters(@NonNull DBFilter... filters){
-		this.clause = FILTER;
-		for(var f : filters) {
-			(f.resolve(this) ? having : where).add(f);
 		}
 		return this;
 	}
@@ -96,10 +97,24 @@ public class QueryBuilder {
 	public QueryBuilder orders(@NonNull DBOrder... orders) {
 		this.clause = ORDER;
 		for(var o : orders) {
-			if(this.orders.add(o) && !o.resolve(this)) {
+			if(this.orders.add(o) && !o.resolve(this, group::add)) {
 				this.group.add(o.getColumn());
 			}
 		}
+		return this;
+	}
+
+	public QueryBuilder filters(@NonNull DBFilter... filters){
+		this.clause = FILTER;
+		Consumer<Object> noCons = v->{};
+		for(var f : filters) {
+			(f.resolve(this, noCons) ? having : where).add(f);
+		}
+		return this;
+	}
+
+	QueryBuilder group(@NonNull DBColumn... columns){
+		addAll(this.group, columns);
 		return this;
 	}
 
@@ -128,11 +143,6 @@ public class QueryBuilder {
 		return this;
 	}
 	
-	QueryBuilder aggregation() {
-		this.aggregation = true;
-		return this;
-	}
-
 	public QueryView asView() {
 		return new QueryView(this);
 	}
@@ -158,16 +168,28 @@ public class QueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryContext ctx){
-		var sub = new SqlStringBuilder(100);
-    	where(sub, ctx); //first resolve over view
+		var sub = new SqlStringBuilder(500);
+		with(sb, ctx);
+    	select(sb, ctx);
+		join(sub, ctx);
+    	where(sub, ctx);
     	groupBy(sub, ctx);
     	having(sub, ctx);
     	orderBy(sub, ctx);
     	fetch(sub);
-    	select(sb, ctx);
 		from(sb, ctx); //enumerate all views before from clause
-		join(sb, ctx);
 		sb.append(sub.toString());
+	}
+	
+	void with(SqlStringBuilder sb, QueryContext ctx) {
+		if(!ctes.isEmpty()) {
+			sb.append("WITH ")
+			.runForeach(ctes.iterator(), SCOMA, v->{
+				sb.append(ctx.viewAlias(v)).as();
+				v.sql(sb, ctx); //query parenthesis
+			})
+			.space();
+		}
 	}
 
 	void select(SqlStringBuilder sb, QueryContext ctx){
@@ -187,8 +209,16 @@ public class QueryBuilder {
 	}
 	
 	void from(SqlStringBuilder sb, QueryContext ctx) {
-		var excludes = joins.stream().map(ViewJoin::getView).toList();
-		var views = ctx.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
+		var excludes = new ArrayList<DBView>();
+		if(!ctes.isEmpty()) {
+			ctes.forEach(excludes::add);
+		}
+		if(!joins.isEmpty()) {
+			joins.forEach(j-> excludes.add(j.getView()));
+		}
+		var views = excludes.isEmpty() 
+				? ctx.views() 
+				: ctx.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
 			sb.from().runForeach(views.iterator(), SCOMA, v-> v.sqlWithTag(sb, ctx));
 		}

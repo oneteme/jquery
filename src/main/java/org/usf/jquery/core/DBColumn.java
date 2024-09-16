@@ -7,6 +7,7 @@ import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import org.usf.jquery.core.JavaType.Typed;

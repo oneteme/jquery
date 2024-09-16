@@ -1,8 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
-
-import java.util.Collection;
+import java.util.function.Consumer;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -26,14 +24,14 @@ public class ViewColumn implements NamedColumn {
 		sb.appendIfNonNull(view, v-> ctx.viewAlias(v) + '.').append(name);
 	}
 	
-	public boolean resolve(QueryBuilder builder) {
+	@Override
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		return false;
 	}
-	
-	public void views(Collection<DBView> views) {
-		if(nonNull(view)) {
-			views.add(view);
-		}
+
+	@Override
+	public void views(Consumer<DBView> cons) {
+		cons.accept(view);
 	}
 	
 	@Override

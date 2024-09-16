@@ -1,10 +1,10 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.Clause.FILTER;
 import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.Collection;
+import java.util.ArrayList;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 /**
  * 
@@ -12,53 +12,44 @@ import java.util.function.Predicate;
  *
  */
 public interface Nested {
-
-	boolean resolve(QueryBuilder builder);
 	
-	void views(Collection<DBView> views);
-
-	static boolean tryResolveAll(QueryBuilder builder, Object... args){
-		return resolveAll(args, o-> tryResolve(o, builder));
-	}
-
-	static boolean resolveAll(Nested[] arr, QueryBuilder builder){
-		return resolveAll(arr, n-> n.resolve(builder));
-	}
+	void views(Consumer<DBView> cons); //collect used views
 	
-	static <T> boolean resolveAll(T[] arr, Predicate<T> fn){
-		var res = false;
-		if(!isEmpty(arr)) {
-			for(var o : arr) {
-				res |= fn.test(o);
-			}
-		}
-		return res;
-	}
+	boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> cons);
 	
-	static boolean tryResolve(Object o, QueryBuilder builder) {
-		return o instanceof Nested n && n.resolve(builder);
-	}
-	
-
-	static <T extends Nested> void viewsOfNested(Collection<DBView> views, T[] arr) {
-		viewsOfAll(arr, o-> o.views(views));
-	}
-	
-	static void viewsOfAll(Collection<DBView> views, Object[] arr) {
-		viewsOfAll(arr, o-> viewsOf(views, o));
-	}
-
-	static <T> void viewsOfAll(T[] arr, Consumer<? super T> cons) {
-		if(!isEmpty(arr)) {
-			for(var o : arr) {
-				cons.accept(o);
+	static void viewsOf(Consumer<DBView> cons, Object... args) { //collect used views
+		if(!isEmpty(args)) {
+			for(var o : args) {
+				if(o instanceof Nested n) {
+					n.views(cons);
+				}
 			}
 		}
 	}
-
-	static void viewsOf(Collection<DBView> views, Object o) {
-		if(o instanceof Nested n) {
-			n.views(views);
+	
+	static boolean tryResolve(QueryBuilder builder, Consumer<? super DBColumn> cons, Object... args){
+		if(!isEmpty(args)) {
+			if(builder.getClause() == FILTER) {
+				for(var o : args) {
+					if(tryResolve(o, builder, cons)) {
+						return true; //break 
+					}
+				}
+			} //else  WhenCase filter
+			var arr = new ArrayList<DBColumn>();
+			var agg = false;
+			for(var o : args) {
+				agg |= tryResolve(o, builder, arr::add);
+			}
+			if(agg && !arr.isEmpty()) { //partial aggregation
+				arr.forEach(cons);
+			}
+			return agg;
 		}
+		return false;
+	}
+	
+	static boolean tryResolve(Object o, QueryBuilder builder, Consumer<? super DBColumn> cons) {
+		return o instanceof Nested n && n.resolve(builder, cons);
 	}
 }

@@ -22,4 +22,16 @@ public interface DBView extends DBObject {
 		ctx.viewOverload(this).orElse(this).sql(sb, ctx); //!important
 		sb.space().append(ctx.viewAlias(this));
 	}
+
+	default ViewColumn column(String name) {
+		return new ViewColumn(name, this, null, null);
+	}
+
+	default ViewColumn column(String name, JDBCType type) {
+		return new ViewColumn(name, this, type, null);
+	}
+	
+	default ViewColumn column(String name, JDBCType type, String tag) {
+		return new ViewColumn(name, this, type, tag);
+	}
 }

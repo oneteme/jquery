@@ -1,11 +1,9 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Nested.resolveAll;
-import static org.usf.jquery.core.Nested.viewsOfNested;
 import static org.usf.jquery.core.Utils.appendLast;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.Collection;
+import java.util.function.Consumer;
 
 /**
  * 
@@ -30,13 +28,8 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder) {
-		return resolveAll(expressions, builder);
-	}
-	
-	@Override
-	public void views(Collection<DBView> views) {
-		viewsOfNested(views, expressions);
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.tryResolve(builder, groupKeys, (Object[])expressions);
 	}
 	
 	@Override
@@ -44,6 +37,11 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 		return operator == op 
 				? new ComparisonExpressionGroup(op, appendLast(expressions, exp))
 		        : new ComparisonExpressionGroup(op, this, exp);
+	}
+	
+	@Override
+	public void views(Consumer<DBView> cons) {
+		Nested.viewsOf(cons, (Object[])expressions);
 	}
 	
 	@Override

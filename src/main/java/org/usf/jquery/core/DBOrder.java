@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.Collection;
+import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -36,13 +36,13 @@ public final class DBOrder implements DBObject, Nested {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder) {
-		return column.resolve(builder);
+	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return column.resolve(builder, groupKeys);
 	}
 	
 	@Override
-	public void views(Collection<DBView> views) {
-		column.views(views);
+	public void views(Consumer<DBView> cons) {
+		column.views(cons);
 	}
 	
 	@Override
