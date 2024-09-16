@@ -41,7 +41,7 @@ public final class ViewJoin implements DBObject {
 
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		sb.append(joinType + " JOIN ");
-		view.sqlWithTag(sb, ctx);
+		view.sqlUsingTag(sb, ctx);
 		if(!isEmpty(filters)) {
 			sb.append(" ON ").runForeach(filters, AND.sql(), f-> f.sql(sb, ctx));
 		} //else cross join

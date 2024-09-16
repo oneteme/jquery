@@ -208,7 +208,7 @@ public class QueryBuilder {
     	.appendIf(distinct, " DISTINCT")
     	.appendIf(nonNull(limit) && currentDatabase() == TERADATA, ()-> " TOP " + limit) //???????
     	.space()
-    	.runForeach(columns.iterator(), SCOMA, o-> o.sqlWithTag(sb, ctx));
+    	.runForeach(columns.iterator(), SCOMA, o-> o.sqlUsingTag(sb, ctx));
 	}
 	
 	void from(SqlStringBuilder sb, QueryContext ctx) {
@@ -223,7 +223,7 @@ public class QueryBuilder {
 				? ctx.views() 
 				: ctx.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
-			sb.from().runForeach(views.iterator(), SCOMA, v-> v.sqlWithTag(sb, ctx));
+			sb.from().runForeach(views.iterator(), SCOMA, v-> v.sqlUsingTag(sb, ctx));
 		}
 	}
 	

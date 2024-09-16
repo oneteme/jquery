@@ -11,7 +11,7 @@ public interface NamedColumn extends DBColumn {
 
 	String getTag();
 	
-	default void sqlWithTag(SqlStringBuilder sb, QueryContext ctx) {
+	default void sqlUsingTag(SqlStringBuilder sb, QueryContext ctx) {
 		sql(sb, ctx);
 		sb.runIfNonNull(getTag(), v-> sb.as(doubleQuote(v)));
 	}
