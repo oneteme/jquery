@@ -169,9 +169,9 @@ public class QueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryContext ctx){
-		var sub = new SqlStringBuilder(500);
 		with(sb, ctx);
     	select(sb, ctx);
+    	var sub = new SqlStringBuilder(500);
     	var frk = ctx.fork();
 		join(sub, frk);
     	where(sub, frk);

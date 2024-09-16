@@ -43,8 +43,7 @@ public final class ViewJoin implements DBObject {
 		sb.append(joinType + " JOIN ");
 		view.sqlWithTag(sb, ctx);
 		if(!isEmpty(filters)) {
-			var val = ctx.withValue(); //literal filters
-			sb.append(" ON ").runForeach(filters, AND.sql(), f-> f.sql(sb, val));
+			sb.append(" ON ").runForeach(filters, AND.sql(), f-> f.sql(sb, ctx));
 		} //else cross join
 	}
 	
