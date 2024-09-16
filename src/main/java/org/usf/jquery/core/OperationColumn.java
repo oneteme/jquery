@@ -55,11 +55,11 @@ public final class OperationColumn implements DBColumn {
 					overColumn = new ViewColumn(cTag, view, type, null);
 					return overColumn.resolve(builder, groupKeys);
 				}
-				throw new UnsupportedOperationException("over multiple views");
+				throw new UnsupportedOperationException("over require only one view");
 			}
 			return requirePartition().resolve(builder, groupKeys); //!grouping keys 
 		}
-		return !operator.is(ConstantOperator.class) && Nested.tryResolve(builder, groupKeys, args);
+		return operator.is(ConstantOperator.class) || Nested.tryResolve(builder, groupKeys, args);
 	}
 	
 	@Override

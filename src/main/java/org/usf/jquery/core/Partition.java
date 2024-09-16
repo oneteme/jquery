@@ -41,15 +41,15 @@ public final class Partition implements DBObject, Nested {
 	@Override
 	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) { 
 		if(!isEmpty(columns)) {
-			builder.group(Stream.of(columns)
-					.filter(c-> !c.resolve(builder, groupKeys))
-					.toArray(DBColumn[]::new));
+			Stream.of(columns)
+			.filter(c-> !c.resolve(builder, groupKeys))
+			.forEach(groupKeys);
 		}
 		if(!isEmpty(orders)) {
-			builder.group(Stream.of(orders)
-					.filter(c-> !c.resolve(builder, groupKeys))
-					.map(DBOrder::getColumn)
-					.toArray(DBColumn[]::new));
+			Stream.of(orders)
+			.filter(c-> !c.resolve(builder, groupKeys))
+			.map(DBOrder::getColumn)
+			.forEach(groupKeys);
 		}
 		return true; //!grouping keys 
 	}

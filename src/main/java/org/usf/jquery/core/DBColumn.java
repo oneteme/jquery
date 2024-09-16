@@ -373,6 +373,10 @@ public interface DBColumn extends DBObject, Typed, Nested {
 
 	//pipe functions
 	
+	default OperationColumn over(DBColumn[] cols, DBOrder[] orders) {
+		return over(new Partition(cols, orders));
+	}
+	
 	default OperationColumn over(Partition part) {
 		return Operator.over().operation(this, part);
 	}

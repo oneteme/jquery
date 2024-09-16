@@ -20,9 +20,10 @@ import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -42,13 +43,13 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public class QueryBuilder {
 	
-	private final List<QueryView> ctes = new ArrayList<>();
-	private final List<NamedColumn> columns = new ArrayList<>();
-	private final List<DBColumn> group = new ArrayList<>(); 
-	private final List<DBFilter> where = new ArrayList<>(); 
-	private final List<DBFilter> having = new ArrayList<>();
-	private final List<ViewJoin> joins = new ArrayList<>(); 
-	private final List<DBOrder> orders = new ArrayList<>();
+	private final Collection<QueryView> ctes = new ArrayList<>();
+	private final Collection<NamedColumn> columns = new ArrayList<>();
+	private final Collection<DBColumn> group = new HashSet<>(); 
+	private final Collection<DBFilter> where = new ArrayList<>(); 
+	private final Collection<DBFilter> having = new ArrayList<>();
+	private final Collection<ViewJoin> joins = new ArrayList<>(); 
+	private final Collection<DBOrder> orders = new ArrayList<>();
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private boolean distinct;
 	@Setter(AccessLevel.PACKAGE)
