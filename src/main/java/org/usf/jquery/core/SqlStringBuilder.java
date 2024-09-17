@@ -102,10 +102,6 @@ public final class SqlStringBuilder {
 	public SqlStringBuilder as() {
 		return append(" AS ");
 	}
-	
-	public SqlStringBuilder from() {
-		return append(" FROM ");
-	}
 
 	public SqlStringBuilder function(String name, Runnable args) {
 		return append(name).parenthesis(args);

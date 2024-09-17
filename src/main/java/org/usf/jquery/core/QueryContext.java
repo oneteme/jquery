@@ -140,12 +140,16 @@ public final class QueryContext {
 	}
 	
 	QueryContext fork() { //share schema, prefix and views, but not args
-		return new QueryContext(schema, vPrefix, new ArrayList<>(), new ArrayList<>(), views, overView);
+		return dynamic()
+				? new QueryContext(schema, vPrefix, new ArrayList<>(), new ArrayList<>(), views, overView)
+				: withValue();
 	}
 	
 	void join(QueryContext ctx) { //join args only
-		args.addAll(ctx.args);
-		argTypes.addAll(ctx.argTypes);
+		if(dynamic()) {
+			args.addAll(ctx.args);
+			argTypes.addAll(ctx.argTypes);
+		}
 	}
 
 	public static QueryContext addWithValue() {

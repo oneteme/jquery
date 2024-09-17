@@ -121,7 +121,12 @@ public interface ViewDecorator {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.remove(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
-			.forEach(e-> currentContext().declareView(e.evalView(this)));
+			.map(e-> currentContext().declareView(e.evalView(this)))
+			.forEach(v->{ //!ViewDecorator
+				if(v instanceof QueryDecorator qd) {
+					query.ctes(qd.getQuery());
+				}
+			});
 		}
 	}
 	

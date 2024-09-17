@@ -21,7 +21,7 @@ public interface ExtractFunction extends FunctionOperator {
 	default void sql(SqlStringBuilder sb, QueryContext builder, Object[] args) {
 		requireNArgs(1, args, ExtractFunction.class::getSimpleName);
 		sb.function(id(), ()->{
-			sb.append(field()).from();
+			sb.append(field()).append(" FROM ");
 			builder.appendLiteral(sb, args[0]);
 		});
 	}

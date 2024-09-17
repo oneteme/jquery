@@ -169,7 +169,7 @@ public class QueryBuilder {
 	}
 
 	public final void build(SqlStringBuilder sb, QueryContext ctx){
-		with(sb, ctx);
+		with(sb, ctx); //before build
     	select(sb, ctx);
     	var sub = new SqlStringBuilder(500);
     	var frk = ctx.fork();
@@ -212,18 +212,20 @@ public class QueryBuilder {
 	}
 	
 	void from(SqlStringBuilder sb, QueryContext ctx) {
-		var excludes = new ArrayList<DBView>();
-		if(!ctes.isEmpty()) {
-			ctes.forEach(excludes::add);
-		}
+		var views = ctx.views();
 		if(!joins.isEmpty()) {
-			joins.forEach(j-> excludes.add(j.getView()));
+			var exp = joins.stream().map(ViewJoin::getView).toList();
+			views = ctx.views().stream().filter(not(exp::contains)).toList();
 		}
-		var views = excludes.isEmpty() 
-				? ctx.views() 
-				: ctx.views().stream().filter(not(excludes::contains)).toList(); //do not remove views
 		if(!views.isEmpty()) {
-			sb.from().runForeach(views.iterator(), SCOMA, v-> v.sqlUsingTag(sb, ctx));
+			sb.append(" FROM ").runForeach(views.iterator(), SCOMA, v-> {
+				if(ctes.contains(v)) {
+					sb.append(ctx.viewAlias(v));
+				}
+				else {
+					v.sqlUsingTag(sb, ctx);
+				}
+			});
 		}
 	}
 	

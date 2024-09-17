@@ -78,8 +78,8 @@ public final class ContextEnvironment {
 		return ofNullable(declaredColumns.get(name));
 	}
 
-	void declareView(ViewDecorator view) { //additional request views
-		views.compute(view.identity(), (k,v)-> {
+	ViewDecorator declareView(ViewDecorator view) { //additional request views
+		return views.compute(view.identity(), (k,v)-> {
 			if(isNull(v)){
 				return view;
 			}
