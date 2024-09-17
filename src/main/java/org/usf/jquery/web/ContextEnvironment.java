@@ -94,7 +94,7 @@ public final class ContextEnvironment {
 		return declaredColumns.compute(col.getTag(), (k,v)-> {
 			if(isNull(v)){
 				return col;
-			}
+			} //cannot overwrite declared column
 			throw resourceAlreadyExistsException(k);
 		});
 	}

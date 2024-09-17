@@ -114,11 +114,6 @@ public class QueryBuilder {
 		return this;
 	}
 
-	QueryBuilder group(@NonNull DBColumn... columns){
-		addAll(this.group, columns);
-		return this;
-	}
-
 	public QueryBuilder joins(@NonNull ViewJoin... joins) {
 		addAll(this.joins, joins);
 		return this;

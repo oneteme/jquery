@@ -141,7 +141,7 @@ public interface ViewDecorator {
 			.flatMap(v-> parseEntries(v).stream())
 			.map(e-> {
 				var c = e.evalColumn(this, true);
-				return c instanceof ColumnProxy cp 
+				return c instanceof ColumnProxy cp
 						? currentContext().declareColumn(cp) 
 						: (NamedColumn) c;
 			})
