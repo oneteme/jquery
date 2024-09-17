@@ -44,7 +44,7 @@ public final class OperationColumn implements DBColumn {
 			builder.setAggregation(true);
 			return true; //aggregate function calls cannot be nested
 		}
-		if(operator.is("OVER")) {
+		if(operator.is("OVER")) { //TD : nested aggregation avg(count(*)) over(..)
 			if(builder.getClause() == FILTER) {
 				var views = new HashSet<DBView>();
 				views(views::add);
