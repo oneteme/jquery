@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Clause.FILTER;
 import static org.usf.jquery.core.QueryContext.formatValue;
 
 import java.util.function.Consumer;
@@ -30,8 +29,8 @@ public class ValueColumn implements DBColumn {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return builder.getClause() != FILTER; //COLUMN=> !GROUPBY || FILTER=> !HAVING
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return -1;
 	}
 
 	@Override

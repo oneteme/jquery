@@ -1,11 +1,11 @@
 package org.usf.jquery.core;
 
+import static java.lang.Math.max;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,19 +35,9 @@ public final class Partition implements DBObject, Nested {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) { 
-		if(!isEmpty(columns)) {
-			Stream.of(columns)
-			.filter(c-> !c.resolve(builder, groupKeys))
-			.forEach(groupKeys);
-		}
-		if(!isEmpty(orders)) {
-			Stream.of(orders)
-			.filter(c-> !c.resolve(builder, groupKeys))
-			.map(DBOrder::getColumn)
-			.forEach(groupKeys);
-		}
-		return true; //!grouping keys 
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return max(Nested.resolve(builder, groupKeys, columns), 
+				Nested.resolve(builder, groupKeys, orders));
 	}
 	
 	@Override

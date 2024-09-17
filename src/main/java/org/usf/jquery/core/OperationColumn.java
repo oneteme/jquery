@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Clause.FILTER;
 
 import java.util.HashSet;
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import lombok.AccessLevel;
@@ -39,12 +38,11 @@ public final class OperationColumn implements DBColumn {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		if(operator.is(AggregateFunction.class)) {
-			builder.setAggregation(true);
-			return true; //aggregate function calls cannot be nested
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
+			return Math.max(1, Nested.tryResolve(builder, c-> {}, args)+1); //if lvl==-1
 		}
-		if(operator.is("OVER")) { //TD : nested aggregation avg(count(*)) over(..) => setAggregation
+		if(operator.is("OVER")) {
 			if(builder.getClause() == FILTER) {
 				var views = new HashSet<DBView>();
 				views(views::add);
@@ -57,10 +55,9 @@ public final class OperationColumn implements DBColumn {
 				}
 				throw new UnsupportedOperationException("over require only one view");
 			}
-			var par = requirePartition(); //!grouping keys 
-			return Objects.isNull(par) || par.resolve(builder, groupKeys);
+			return Nested.tryResolve(builder, groupKeys, args)-1;
 		}
-		return Nested.tryResolve(builder, groupKeys, args) || operator.is(ConstantOperator.class);
+		return Nested.tryResolve(builder, groupKeys, args);
 	}
 	
 	@Override
@@ -76,15 +73,5 @@ public final class OperationColumn implements DBColumn {
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this);
-	}
-	
-	private Partition requirePartition() {
-		if(nonNull(args) && args.length == 2) {
-			if(args[1] instanceof Partition part) {
-				return part;
-			}
-			throw new IllegalArgumentException("partition parameter expected");
-		}
-		return null;
 	}
 }

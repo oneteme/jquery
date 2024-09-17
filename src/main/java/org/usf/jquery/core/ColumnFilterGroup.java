@@ -28,8 +28,8 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return Nested.tryResolve(builder, groupKeys, (Object[])filters);
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.resolve(builder, groupKeys, filters);
 	}
 	
 	@Override

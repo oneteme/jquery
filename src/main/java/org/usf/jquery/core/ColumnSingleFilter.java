@@ -21,7 +21,7 @@ public class ColumnSingleFilter implements DBFilter {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		return Nested.tryResolve(builder, groupKeys, left, expression);
 	}
 	

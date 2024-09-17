@@ -1,9 +1,8 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Clause.FILTER;
+import static java.lang.Math.max;
 import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.ArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -13,7 +12,8 @@ import java.util.function.Consumer;
  */
 public interface Nested {
 	
-	boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> cons);
+	//0: groupKey, +1: aggregation, -1: other  
+	int resolve(QueryBuilder builder, Consumer<? super DBColumn> cons);
 	
 	void views(Consumer<DBView> cons); //collect used views
 	
@@ -26,31 +26,24 @@ public interface Nested {
 			}
 		}
 	}
-	
-	static boolean tryResolve(QueryBuilder builder, Consumer<? super DBColumn> cons, Object... args){
+
+	static <T extends Nested> int resolve(QueryBuilder builder, Consumer<? super DBColumn> cons, T[] args){
+		var lvl = -1;
 		if(!isEmpty(args)) {
-			if(builder.getClause() == FILTER) {
-				for(var o : args) {
-					if(tryResolve(o, builder, cons)) {
-						return true; //break 
-					}
-				}
-				return false;
-			} //else  WhenCase filter
-			var arr = new ArrayList<DBColumn>();
-			var agg = false;
 			for(var o : args) {
-				agg |= tryResolve(o, builder, arr::add);
+				lvl = max(lvl, o.resolve(builder, cons));
 			}
-			if(agg && !arr.isEmpty()) { //partial aggregation
-				arr.forEach(cons);
-			}
-			return agg;
 		}
-		return false;
+		return lvl;
 	}
 	
-	static boolean tryResolve(Object o, QueryBuilder builder, Consumer<? super DBColumn> cons) {
-		return o instanceof Nested n && n.resolve(builder, cons);
+	static int tryResolve(QueryBuilder builder, Consumer<? super DBColumn> cons, Object... args){
+		var lvl = -1;
+		if(!isEmpty(args)) {
+			for(var o : args) {
+				lvl = max(lvl, o instanceof Nested n ? n.resolve(builder, cons) : -1);
+			}
+		}
+		return lvl;
 	}
 }

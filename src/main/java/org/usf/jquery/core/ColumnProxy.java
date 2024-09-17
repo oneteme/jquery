@@ -37,7 +37,7 @@ public final class ColumnProxy implements NamedColumn {
 	}
 
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> cons) {
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> cons) {
 		return column.resolve(builder, cons);
 	}
 

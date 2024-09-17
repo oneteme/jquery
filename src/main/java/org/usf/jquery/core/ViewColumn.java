@@ -25,8 +25,9 @@ public class ViewColumn implements NamedColumn {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return false;
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		groupKeys.accept(this);
+		return 0;
 	}
 
 	@Override

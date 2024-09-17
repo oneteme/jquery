@@ -31,7 +31,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		return Nested.tryResolve(builder, groupKeys, right);
 	}
 	

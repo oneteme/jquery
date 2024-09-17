@@ -88,8 +88,9 @@ public class QueryBuilder {
 					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
 				throw resourceAlreadyExistsException(col.getTag());
 			}
-			if(this.columns.add(col) && !col.resolve(this, group::add)) {
-				this.group.add(col); //distinct TD: override equals
+			if(this.columns.add(col) && col.resolve(this, group::add) > 0) {
+//				this.group.add(col); //distinct TD: override equals
+				aggregation = true;
 			}
 		}
 		return this;
@@ -98,8 +99,9 @@ public class QueryBuilder {
 	public QueryBuilder orders(@NonNull DBOrder... orders) {
 		this.clause = ORDER;
 		for(var o : orders) {
-			if(this.orders.add(o) && !o.resolve(this, group::add)) {
-				this.group.add(o.getColumn());
+			if(this.orders.add(o) && o.resolve(this, group::add) > 0) {
+//				this.group.add(o.getColumn());
+				aggregation |= true;
 			}
 		}
 		return this;
@@ -109,7 +111,7 @@ public class QueryBuilder {
 		this.clause = FILTER;
 		Consumer<Object> noCons = v->{};
 		for(var f : filters) {
-			(f.resolve(this, noCons) ? having : where).add(f);
+			(f.resolve(this, noCons) > 0 ? having : where).add(f);
 		}
 		return this;
 	}

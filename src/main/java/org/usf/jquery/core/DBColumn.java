@@ -448,8 +448,8 @@ public interface DBColumn extends DBObject, Typed, Nested {
 			}
 
 			@Override
-			public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-				return true; //!group by
+			public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+				return -1; //!group by
 			}
 		};
 	}

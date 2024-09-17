@@ -36,7 +36,7 @@ public final class DBOrder implements DBObject, Nested {
 	}
 	
 	@Override
-	public boolean resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		return column.resolve(builder, groupKeys);
 	}
 	
