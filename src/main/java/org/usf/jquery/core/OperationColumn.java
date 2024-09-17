@@ -60,7 +60,7 @@ public final class OperationColumn implements DBColumn {
 			var par = requirePartition(); //!grouping keys 
 			return Objects.isNull(par) || par.resolve(builder, groupKeys);
 		}
-		return operator.is(ConstantOperator.class) || Nested.tryResolve(builder, groupKeys, args);
+		return Nested.tryResolve(builder, groupKeys, args) || operator.is(ConstantOperator.class);
 	}
 	
 	@Override
