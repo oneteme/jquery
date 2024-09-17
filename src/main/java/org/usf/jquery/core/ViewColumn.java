@@ -25,7 +25,7 @@ public class ViewColumn implements NamedColumn {
 	}
 	
 	@Override
-	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		groupKeys.accept(this);
 		return 0;
 	}

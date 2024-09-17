@@ -35,15 +35,15 @@ public final class Partition implements DBObject, Nested {
 	}
 	
 	@Override
-	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return max(Nested.resolve(builder, groupKeys, columns), 
-				Nested.resolve(builder, groupKeys, orders));
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return max(Nested.resolveColumn(builder, groupKeys, columns), 
+				Nested.resolveColumn(builder, groupKeys, orders));
 	}
 	
 	@Override
 	public void views(Consumer<DBView> cons) {
-		Nested.viewsOf(cons, (Object[])columns);
-		Nested.viewsOf(cons, (Object[])orders);
+		Nested.resolveViews(cons, columns);
+		Nested.resolveViews(cons, orders);
 	}
 	
 	@Override

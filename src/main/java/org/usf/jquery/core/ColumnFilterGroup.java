@@ -28,13 +28,13 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return Nested.resolve(builder, groupKeys, filters);
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.resolveColumn(builder, groupKeys, filters);
 	}
 	
 	@Override
 	public void views(Consumer<DBView> cons) {
-		Nested.viewsOf(cons, (Object[])filters);
+		Nested.resolveViews(cons, filters);
 	}
 	
 	@Override

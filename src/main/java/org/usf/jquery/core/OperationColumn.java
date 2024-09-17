@@ -38,9 +38,9 @@ public final class OperationColumn implements DBColumn {
 	}
 
 	@Override
-	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
-			return Math.max(1, Nested.tryResolve(builder, c-> {}, args)+1); //if lvl==-1
+			return Math.max(1, Nested.tryResolveColumn(builder, DO_NOTHING, args)+1); //if lvl==-1
 		}
 		if(operator.is("OVER")) {
 			if(builder.getClause() == FILTER) {
@@ -51,13 +51,13 @@ public final class OperationColumn implements DBColumn {
 					var cTag = "over_" + hashCode(); //over_view_hash
 					builder.overView(view).getBuilder().columns(new OperationColumn(operator, args, type).as(cTag)); //clone
 					overColumn = new ViewColumn(cTag, view, type, null);
-					return overColumn.resolve(builder, groupKeys);
+					return overColumn.columns(builder, groupKeys);
 				}
 				throw new UnsupportedOperationException("over require only one view");
 			}
-			return Nested.tryResolve(builder, groupKeys, args)-1;
+			return Nested.tryResolveColumn(builder, groupKeys, args)-1;
 		}
-		return Nested.tryResolve(builder, groupKeys, args);
+		return Nested.tryResolveColumn(builder, groupKeys, args);
 	}
 	
 	@Override
@@ -66,7 +66,7 @@ public final class OperationColumn implements DBColumn {
 			overColumn.views(cons);
 		}
 		else {
-			Nested.viewsOf(cons, args);
+			Nested.tryResolveViews(cons, args);
 		}
 	}
 	

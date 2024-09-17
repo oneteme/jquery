@@ -12,12 +12,42 @@ import java.util.function.Consumer;
  */
 public interface Nested {
 	
+	static final Consumer<Object> DO_NOTHING = o-> {};
+	
 	//0: groupKey, +1: aggregation, -1: other  
-	int resolve(QueryBuilder builder, Consumer<? super DBColumn> cons);
+	int columns(QueryBuilder builder, Consumer<? super DBColumn> cons);
 	
 	void views(Consumer<DBView> cons); //collect used views
+
+	static <T extends Nested> int resolveColumn(QueryBuilder builder, Consumer<? super DBColumn> cons, T[] args){
+		var lvl = -1;
+		if(!isEmpty(args)) {
+			for(var n : args) {
+				lvl = max(lvl, n.columns(builder, cons));
+			}
+		}
+		return lvl;
+	}
 	
-	static void viewsOf(Consumer<DBView> cons, Object... args) { //collect used views
+	static int tryResolveColumn(QueryBuilder builder, Consumer<? super DBColumn> cons, Object... args){
+		var lvl = -1;
+		if(!isEmpty(args)) {
+			for(var o : args) {
+				lvl = max(lvl, o instanceof Nested n ? n.columns(builder, cons) : -1);
+			}
+		}
+		return lvl;
+	}
+	
+	static <T extends Nested> void resolveViews(Consumer<DBView> cons, T[] args) { //collect used views
+		if(!isEmpty(args)) {
+			for(var n : args) {
+				n.views(cons);
+			}
+		}
+	}
+	
+	static void tryResolveViews(Consumer<DBView> cons, Object... args) { //collect used views
 		if(!isEmpty(args)) {
 			for(var o : args) {
 				if(o instanceof Nested n) {
@@ -25,25 +55,5 @@ public interface Nested {
 				}
 			}
 		}
-	}
-
-	static <T extends Nested> int resolve(QueryBuilder builder, Consumer<? super DBColumn> cons, T[] args){
-		var lvl = -1;
-		if(!isEmpty(args)) {
-			for(var o : args) {
-				lvl = max(lvl, o.resolve(builder, cons));
-			}
-		}
-		return lvl;
-	}
-	
-	static int tryResolve(QueryBuilder builder, Consumer<? super DBColumn> cons, Object... args){
-		var lvl = -1;
-		if(!isEmpty(args)) {
-			for(var o : args) {
-				lvl = max(lvl, o instanceof Nested n ? n.resolve(builder, cons) : -1);
-			}
-		}
-		return lvl;
 	}
 }

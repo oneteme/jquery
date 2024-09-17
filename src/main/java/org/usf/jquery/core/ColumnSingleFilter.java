@@ -21,13 +21,13 @@ public class ColumnSingleFilter implements DBFilter {
 	}
 
 	@Override
-	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return Nested.tryResolve(builder, groupKeys, left, expression);
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.tryResolveColumn(builder, groupKeys, left, expression);
 	}
 	
 	@Override
 	public void views(Consumer<DBView> cons) {
-		Nested.viewsOf(cons, left, expression);
+		Nested.tryResolveViews(cons, left, expression);
 	}
 	
 	@Override

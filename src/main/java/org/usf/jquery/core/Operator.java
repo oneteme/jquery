@@ -322,6 +322,10 @@ public interface Operator extends DBProcessor {
 		return new TypedOperator(INTEGER, window("DENSE_RANK")); // takes no args
 	}
 
+	static TypedOperator percentRank() {
+		return new TypedOperator(INTEGER, window("PERCENT_RANK")); // takes no args
+	}
+
 	//pipe functions
 	
 	static TypedOperator over() {

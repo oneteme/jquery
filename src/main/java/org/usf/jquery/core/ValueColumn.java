@@ -29,7 +29,7 @@ public class ValueColumn implements DBColumn {
 	}
 
 	@Override
-	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		return -1;
 	}
 

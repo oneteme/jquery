@@ -13,6 +13,7 @@ import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.Nested.DO_NOTHING;
 import static org.usf.jquery.core.QueryContext.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
@@ -25,7 +26,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import lombok.AccessLevel;
@@ -88,10 +88,7 @@ public class QueryBuilder {
 					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
 				throw resourceAlreadyExistsException(col.getTag());
 			}
-			if(this.columns.add(col) && col.resolve(this, group::add) > 0) {
-//				this.group.add(col); //distinct TD: override equals
-				aggregation = true;
-			}
+			aggregation |= this.columns.add(col) && col.columns(this, group::add) > 0;
 		}
 		return this;
 	}
@@ -99,19 +96,15 @@ public class QueryBuilder {
 	public QueryBuilder orders(@NonNull DBOrder... orders) {
 		this.clause = ORDER;
 		for(var o : orders) {
-			if(this.orders.add(o) && o.resolve(this, group::add) > 0) {
-//				this.group.add(o.getColumn());
-				aggregation |= true;
-			}
+			aggregation |= this.orders.add(o) && o.columns(this, group::add) > 0;
 		}
 		return this;
 	}
 
 	public QueryBuilder filters(@NonNull DBFilter... filters){
 		this.clause = FILTER;
-		Consumer<Object> noCons = v->{};
 		for(var f : filters) {
-			(f.resolve(this, noCons) > 0 ? having : where).add(f);
+			(f.columns(this, DO_NOTHING) > 0 ? having : where).add(f);
 		}
 		return this;
 	}

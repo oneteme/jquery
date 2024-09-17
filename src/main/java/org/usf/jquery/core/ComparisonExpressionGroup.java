@@ -28,13 +28,13 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 	
 	@Override
-	public int resolve(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return Nested.resolve(builder, groupKeys, expressions);
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.resolveColumn(builder, groupKeys, expressions);
 	}
 	
 	@Override
 	public void views(Consumer<DBView> cons) {
-		Nested.viewsOf(cons, (Object[])expressions);
+		Nested.resolveViews(cons, expressions);
 	}
 	
 	@Override
