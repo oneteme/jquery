@@ -66,7 +66,7 @@ public final class SqlStringBuilder {
 
 	public <T> SqlStringBuilder runForeach(T[] arr, int idx, String delimiter, Consumer<T> fn, String prefix, String suffix) {
 		requireNonNull(arr, "arr connot be null");
-		if( idx < arr.length || (arr.length == 0 && idx == 0)) {
+		if(idx < arr.length) {
 			sb.append(prefix);
 			if(!isEmpty(arr)) {
 				var i=idx;
@@ -78,9 +78,9 @@ public final class SqlStringBuilder {
 			}
 			sb.append(suffix);
 		}
-		else {
+		else if(idx > arr.length) {
 			throw new IndexOutOfBoundsException(idx);
-		}
+		}// idx == arr.length 
 		return this;
 	}
 

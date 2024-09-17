@@ -2,9 +2,9 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Clause.FILTER;
-import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.HashSet;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import lombok.AccessLevel;
@@ -57,7 +57,8 @@ public final class OperationColumn implements DBColumn {
 				}
 				throw new UnsupportedOperationException("over require only one view");
 			}
-			return requirePartition().resolve(builder, groupKeys); //!grouping keys 
+			var par = requirePartition(); //!grouping keys 
+			return Objects.isNull(par) || par.resolve(builder, groupKeys);
 		}
 		return operator.is(ConstantOperator.class) || Nested.tryResolve(builder, groupKeys, args);
 	}
@@ -78,9 +79,12 @@ public final class OperationColumn implements DBColumn {
 	}
 	
 	private Partition requirePartition() {
-		if(requireNArgs(2, args, ()-> "over operation")[1] instanceof Partition part) {
-			return part;
+		if(nonNull(args) && args.length == 2) {
+			if(args[1] instanceof Partition part) {
+				return part;
+			}
+			throw new IllegalArgumentException("partition parameter expected");
 		}
-		throw new IllegalArgumentException("partition parameter expected");
+		return null;
 	}
 }
