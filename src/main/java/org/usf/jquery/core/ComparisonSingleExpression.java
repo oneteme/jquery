@@ -47,6 +47,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		var args = new Object[]{null};
+		return DBObject.toSQL(this, args);
 	}	
 }

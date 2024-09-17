@@ -35,6 +35,7 @@ public interface Nested {
 						return true; //break 
 					}
 				}
+				return false;
 			} //else  WhenCase filter
 			var arr = new ArrayList<DBColumn>();
 			var agg = false;
