@@ -104,7 +104,9 @@ public class QueryBuilder {
 	public QueryBuilder filters(@NonNull DBFilter... filters){
 		this.clause = FILTER;
 		for(var f : filters) {
-			(f.columns(this, group::add) > 0 ? having : where).add(f);
+			var lvl = f.columns(this, group::add);
+			(lvl > 0 ? having : where).add(f);
+			aggregation |=  lvl > 0;
 		}
 		return this;
 	}
