@@ -89,9 +89,6 @@ public class QueryBuilder {
 				throw resourceAlreadyExistsException(col.getTag());
 			}
 			aggregation |= this.columns.add(col) && col.columns(this, group::add) > 0;
-			
-			System.out.println(col);
-			System.out.println("\t\t" + group);
 		}
 		return this;
 	}
