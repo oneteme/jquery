@@ -57,7 +57,7 @@ public final class OperationColumn implements DBColumn {
 			}
 			return Nested.tryResolveColumn(builder, groupKeys, args)-1;
 		}
-		return Nested.tryResolveColumn(builder, groupKeys, args);
+		return Nested.tryResolveColumn(this, builder, groupKeys, args);
 	}
 	
 	@Override

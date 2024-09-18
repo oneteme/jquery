@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.lang.Math.max;
 import static org.usf.jquery.core.Utils.isEmpty;
 
+import java.util.ArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -18,13 +19,37 @@ public interface Nested {
 	int columns(QueryBuilder builder, Consumer<? super DBColumn> cons);
 	
 	void views(Consumer<DBView> cons); //collect used views
-
+	
+	static <T extends Nested> int resolveColumn(DBColumn col, QueryBuilder builder, Consumer<? super DBColumn> cons, T[] args){
+		var arr = new ArrayList<DBColumn>();
+		var lvl = resolveColumn(builder, arr::add, args);
+		if(lvl == 0) { //group keys
+			cons.accept(col);
+		}
+		else if(lvl > 0 && !arr.isEmpty()) {
+			arr.forEach(cons);
+		}
+		return lvl;
+	}
+	
 	static <T extends Nested> int resolveColumn(QueryBuilder builder, Consumer<? super DBColumn> cons, T[] args){
 		var lvl = -1;
 		if(!isEmpty(args)) {
 			for(var n : args) {
 				lvl = max(lvl, n.columns(builder, cons));
 			}
+		}
+		return lvl;
+	}
+	
+	static int tryResolveColumn(DBColumn col, QueryBuilder builder, Consumer<? super DBColumn> cons, Object... args){
+		var arr = new ArrayList<DBColumn>();
+		var lvl = tryResolveColumn(builder, arr::add, args);
+		if(lvl == 0) { //group keys
+			cons.accept(col);
+		}
+		else if(lvl > 0 && !arr.isEmpty()) {
+			arr.forEach(cons);
 		}
 		return lvl;
 	}
