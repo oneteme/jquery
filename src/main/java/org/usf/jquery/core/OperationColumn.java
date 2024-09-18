@@ -63,10 +63,10 @@ public final class OperationColumn implements DBColumn {
 	
 	private int resolveOverColumns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
 		requireAtLeastNArgs(1, args, ()-> "over");
-		var lvl = Nested.tryResolveColumn(builder, groupKeys, args[0])-1; 
+		var lvl = Nested.tryResolveColumn(builder, groupKeys, args[0])-1; //nested aggregate function
 		return args.length == 1
 				? lvl
-				: Math.max(lvl, Nested.tryResolveColumn(builder, groupKeys, args[1]));
+				: Math.max(lvl, Nested.tryResolveColumn(builder, groupKeys, args[1])); //partition
 	}
 	
 	@Override
