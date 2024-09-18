@@ -104,7 +104,7 @@ public class QueryBuilder {
 	public QueryBuilder filters(@NonNull DBFilter... filters){
 		this.clause = FILTER;
 		for(var f : filters) {
-			(f.columns(this, DO_NOTHING) > 0 ? having : where).add(f);
+			(f.columns(this, group::add) > 0 ? having : where).add(f);
 		}
 		return this;
 	}
