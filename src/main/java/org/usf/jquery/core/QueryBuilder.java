@@ -13,7 +13,6 @@ import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.Nested.DO_NOTHING;
 import static org.usf.jquery.core.QueryContext.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
@@ -28,10 +27,8 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -52,7 +49,6 @@ public class QueryBuilder {
 	private final Collection<DBOrder> orders = new ArrayList<>();
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	private boolean distinct;
-	@Setter(AccessLevel.PACKAGE)
 	private boolean aggregation;
 	private Integer limit;
 	private Integer offset;
@@ -105,8 +101,13 @@ public class QueryBuilder {
 		this.clause = FILTER;
 		for(var f : filters) {
 			var lvl = f.columns(this, group::add);
-			(lvl > 0 ? having : where).add(f);
-			aggregation |=  lvl > 0;
+			if(lvl > 0) {
+				(having).add(f);
+				aggregation |= true;
+			}
+			else {
+				where.add(f);
+			}
 		}
 		return this;
 	}

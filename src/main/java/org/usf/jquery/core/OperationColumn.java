@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Clause.FILTER;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.HashSet;
 import java.util.function.Consumer;
@@ -55,9 +56,17 @@ public final class OperationColumn implements DBColumn {
 				}
 				throw new UnsupportedOperationException("over require only one view");
 			}
-			return Nested.tryResolveColumn(builder, groupKeys, args)-1;
+			return resolveOverColumns(builder, groupKeys);
 		}
 		return Nested.tryResolveColumn(this, builder, groupKeys, args);
+	}
+	
+	private int resolveOverColumns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		requireAtLeastNArgs(1, args, ()-> "over");
+		var lvl = Nested.tryResolveColumn(builder, groupKeys, args[0])-1; 
+		return args.length == 1
+				? lvl
+				: Math.max(lvl, Nested.tryResolveColumn(builder, groupKeys, args[1]));
 	}
 	
 	@Override
