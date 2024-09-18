@@ -100,10 +100,11 @@ public class QueryBuilder {
 	public QueryBuilder filters(@NonNull DBFilter... filters){
 		this.clause = FILTER;
 		for(var f : filters) {
-			var lvl = f.columns(this, group::add);
+			var arr = new ArrayList<DBColumn>();
+			var lvl = f.columns(this, arr::add);
 			if(lvl > 0) {
-				(having).add(f);
-				aggregation |= true;
+				aggregation |= having.add(f);
+				group.addAll(arr);
 			}
 			else {
 				where.add(f);
