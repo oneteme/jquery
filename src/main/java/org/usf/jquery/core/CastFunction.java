@@ -23,7 +23,7 @@ public interface CastFunction extends FunctionOperator {
 		sb.function(id(), ()-> {
 			ctx.appendLiteral(sb, args[0]);
 			sb.as(type());
-			if(args.length > 1) {
+			if(args.length > 1) { //varchar | decimal
 				sb.parenthesis(()-> ctx.appendLiteralArray(sb, args, 1));
 			}
 		});
