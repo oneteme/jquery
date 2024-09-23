@@ -31,7 +31,12 @@ public final class ContextManager {
 			}
 			throw resourceAlreadyExistsException(k);
 		});
-		config.bind(); // outer bind
+		setCurrentContext(config);
+		try {
+			config.bind(); // outer bind
+		} finally {
+			releaseContext();
+		}
 	}
 
 	public static ContextEnvironment currentContext() {

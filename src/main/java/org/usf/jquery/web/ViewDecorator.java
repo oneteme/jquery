@@ -88,7 +88,7 @@ public interface ViewDecorator {
 			return idx == -1 
 					? new TableView(null, requireLegalVariable(tn), identity()) 
 					: new TableView(requireLegalVariable(tn.substring(0, idx)),
-							requireLegalVariable(tn.substring(idx, tn.length())), identity());
+							requireLegalVariable(tn.substring(idx+1, tn.length())), identity());
 		}
 		throw undeclaredResouceException(identity(), currentContext().getDatabase().identity());
 	}
