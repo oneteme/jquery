@@ -78,24 +78,37 @@ public class ViewMetadata {
 	}
 	
 	void fetchView(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
-		try(var rs = metadata.getColumns(null, view.getSchemaOrElse(schema), view.getName(), null)){
-			if(rs.next()) {
-				var db = reverseMapKeys(); //reverse key
-				do {
-					var cm = db.remove(rs.getString("COLUMN_NAME"));
-					if(nonNull(cm)) {
-						cm.update(
-								rs.getInt("DATA_TYPE"), 
-								rs.getInt("COLUMN_SIZE"), 
-								rs.getInt("DECIMAL_DIGITS"));
-					} // else undeclared column
-				} while(rs.next());
-				if(!db.isEmpty()) { //no such columns
-					throw columnsNotFoundException(db.keySet());
+		schema = view.getSchemaOrElse(schema);
+		try(var tm = metadata.getTables(null, schema, view.getName(), null)) {
+			if(tm.next()) {
+				if("TABLE".equals(tm.getString("TABLE_TYPE"))) {
+					try(var rs = metadata.getColumns(null, schema, view.getName(), null)){
+						if(rs.next()) {
+							var db = reverseMapKeys(); //reverse key
+							do {
+								var cm = db.remove(rs.getString("COLUMN_NAME"));
+								if(nonNull(cm)) {
+									cm.update(
+											rs.getInt("DATA_TYPE"), 
+											rs.getInt("COLUMN_SIZE"), 
+											rs.getInt("DECIMAL_DIGITS"));
+								} // else undeclared column
+							} while(rs.next());
+							if(!db.isEmpty()) { //no such columns
+								throw columnsNotFoundException(db.keySet());
+							}
+						}
+						else {
+							throw new IllegalArgumentException("no columns");
+						}
+					}
+				}
+				else {
+					fetch(metadata, view, schema);
 				}
 			}
 			else {
-				throw new NoSuchElementException(quote(view.toString()) + " table not found");
+				throw new NoSuchElementException(quote(view.toString()) + " table or view not found");
 			}
 		}
 	}
