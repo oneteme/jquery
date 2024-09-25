@@ -68,7 +68,7 @@ public class ViewMetadata {
 				printViewColumnMap();
 			}
 			catch(Exception e) {
-				log.error("error while scanning '{}' metadata", identity(), e);
+				log.error("error while scanning '{}' metadata", view.toString(), e);
 			}
 		}
 		else {
