@@ -53,7 +53,7 @@ public final class ContextManager {
 			: new IllegalStateException("no database selected");
 	}
 
-	static ContextEnvironment context(String database){
+	public static ContextEnvironment context(String database){
 		var ctx = CONTEXTS.get(database);
 		if(nonNull(ctx)) {
 			return setCurrentContext(new ContextEnvironment(ctx));
@@ -66,7 +66,7 @@ public final class ContextManager {
 		return ctx;
 	}
 
-	static void releaseContext() {
+	public static void releaseContext() {
 		CURRENT.remove();
 	}
 }
