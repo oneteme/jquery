@@ -1,50 +1,51 @@
 package org.usf.jquery.core;
 
-import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.Collection;
-import java.util.LinkedList;
-
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class CaseColumn implements DBColumn {
 
-	private final Collection<WhenExpression> expressions = new LinkedList<>();
+	private final WhenCase[] whenCases;
+	
+	CaseColumn(WhenCase[] whenCases) {
+		this.whenCases = requireAtLeastNArgs(1, whenCases, CaseColumn.class::getSimpleName);
+	}
+
+	@Override
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		var sub = ctx.withValue(); //force literal parameter
+		sb.runForeach(whenCases, SPACE, o-> o.sql(sb, sub), "CASE ", " END");
+	}
 	
 	@Override
-	public String sql(QueryParameterBuilder builder) {
-		builder.forceValue(true); //add filters as value
-		try {
-			return expressions.stream()
-			.map(o-> o.sql(builder))
-			.collect(joining(SPACE, "CASE ", " END"));
-		}
-		finally {
-			builder.forceValue(false);
-		}
+	public JDBCType getType() {
+		return Stream.of(whenCases)
+				.map(WhenCase::getType)
+				.filter(Objects::nonNull) // should have same type
+				.findAny().orElse(null);
 	}
-		
-	public CaseColumn append(WhenExpression we) {
-		expressions.add(we);
-		return this;
+	
+	@Override
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.resolveColumn(this, builder, groupKeys, whenCases);
+	}
+	
+	@Override
+	public void views(Consumer<DBView> cons) {
+		Nested.resolveViews(cons, whenCases);
 	}
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
-	}
-
-	public static CaseColumn caseWhen(DBFilter filter, Object value){
-		return new CaseColumn()
-				.append(new WhenExpression(filter, value));
+		return DBObject.toSQL(this);
 	}
 }

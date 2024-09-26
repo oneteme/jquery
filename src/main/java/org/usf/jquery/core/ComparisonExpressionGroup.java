@@ -1,15 +1,9 @@
 package org.usf.jquery.core;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
+import static org.usf.jquery.core.Utils.appendLast;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.stream.Stream;
-
-import lombok.NonNull;
+import java.util.function.Consumer;
 
 /**
  * 
@@ -20,38 +14,38 @@ import lombok.NonNull;
 public final class ComparisonExpressionGroup implements ComparisonExpression {
 	
 	private final LogicalOperator operator;
-	private final Collection<ComparisonExpression> expressions;
+	private final ComparisonExpression[] expressions;
 	
-	public ComparisonExpressionGroup(@NonNull LogicalOperator operator, ComparisonExpression... expressions) {
+	ComparisonExpressionGroup(LogicalOperator operator, ComparisonExpression... expressions) {
 		this.operator = operator;
-		this.expressions = expressions == null 
-				? new ArrayList<>()
-				: Stream.of(expressions).collect(toList());
-	}
-	
-	@Override
-	public String sql(QueryParameterBuilder builder, Object operand) {
-		return "(" + expressions.stream().map(o-> o.sql(builder, operand)).collect(joining(operator.sql())) + ")";
-	}
-	
-	@Override
-	public boolean isAggregation() {
-		return expressions.stream()
-				.allMatch(NestedSql::aggregation);
+		this.expressions = requireAtLeastNArgs(1, expressions, ComparisonExpressionGroup.class::getSimpleName);
 	}
 
 	@Override
+	public void sql(SqlStringBuilder sb, QueryContext ctx, Object operand) {
+		sb.parenthesis(()-> 
+			sb.runForeach(expressions, operator.sql(), o-> o.sql(sb, ctx, operand)));
+	}
+	
+	@Override
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.resolveColumn(builder, groupKeys, expressions);
+	}
+	
+	@Override
+	public void views(Consumer<DBView> cons) {
+		Nested.resolveViews(cons, expressions);
+	}
+	
+	@Override
 	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
-		if(operator == op) {
-			expressions.add(exp);
-			return this;
-		}
-		return new ComparisonExpressionGroup(op, this, exp);
+		return operator == op 
+				? new ComparisonExpressionGroup(op, appendLast(expressions, exp))
+		        : new ComparisonExpressionGroup(op, this, exp);
 	}
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue(), EMPTY);
+		return DBObject.toSQL(this, "<left>");
 	}
-
 }

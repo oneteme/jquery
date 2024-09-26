@@ -2,7 +2,8 @@ package org.usf.jquery.web;
 
 import static java.util.stream.Collectors.groupingBy;
 import static org.usf.jquery.core.DBColumn.constant;
-import static org.usf.jquery.core.Utils.isPresent;
+import static org.usf.jquery.core.JDBCType.INTEGER;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.time.YearMonth;
 import java.util.Iterator;
@@ -10,10 +11,12 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.ColumnSingleFilter;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.DBTable;
-import org.usf.jquery.core.QueryParameterBuilder;
+import org.usf.jquery.core.QueryContext;
+import org.usf.jquery.core.SqlStringBuilder;
+import org.usf.jquery.core.TableView;
 
 import lombok.RequiredArgsConstructor;
 
@@ -46,34 +49,37 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	}
 
 	public static RevisionIterator iterator(YearMonth[] revisions){
-		if(isPresent(revisions)) {
+		if(!isEmpty(revisions)) {
 			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
 			return new RevisionIterator(map.entrySet().iterator());
 		}
 		throw new IllegalArgumentException("no revision");
 	}
 
-	static DBTable yearTable(String name, String tagname) {
-		return new DBTable(name, tagname) {
+	static TableView yearTable(TableView view) {
+		return new TableView(view.getSchema(), view.getName()) {
 			@Override
-			public String sql(QueryParameterBuilder builder, String schema) {
-				return super.sql(builder, schema) + "_" + currentRev.get().getKey();
+			public void sql(SqlStringBuilder sb, QueryContext builder) {
+				super.sql(sb, builder);
+				sb.append("_" + currentRev.get().getKey());
 			}
 		};
 	}
 
 	static DBColumn yearColumn() {
-		return constant(()-> currentRev.get().getKey()); //get it on build
+		return constant(INTEGER, ()-> currentRev.get().getKey()); //get it on build
 	}
 	
 	static DBFilter monthFilter(DBColumn column) {
-		return b-> {
-			var values = currentRev.get().getValue();  //get it on build
-			var filter = values.size() == 1 
-					? column.equal(values.get(0).getMonthValue())
-					: column.in(values.stream().map(YearMonth::getMonthValue).toArray(Integer[]::new));
-			return filter.sql(b);
+		return new ColumnSingleFilter(null, null) {
+			@Override
+			public void sql(SqlStringBuilder sb, QueryContext vars) {
+				var values = currentRev.get().getValue();  //get it on build
+				var filter = values.size() == 1 
+						? column.eq(values.get(0).getMonthValue())
+						: column.in(values.stream().map(YearMonth::getMonthValue).toArray(Integer[]::new));
+				filter.sql(sb, vars);
+			}
 		};
 	}
-
 }

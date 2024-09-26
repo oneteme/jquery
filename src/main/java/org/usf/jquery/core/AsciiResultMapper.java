@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class AsciiResultMapper implements ResultMapper<Void> {
+public final class AsciiResultMapper implements ResultSetMapper<Void> {
 	
 	private static final int MAX_LENGTH = 50;
 
@@ -87,27 +87,17 @@ public final class AsciiResultMapper implements ResultMapper<Void> {
 			}
 			writer.writeLine(div);
 		} catch (IOException e) {
-            throw new RuntimeException("error while mapping results", e);
+            throw new MappingException("error writing results", e);
 		}
 		log.info("{} rows mapped in {} ms", rw, currentTimeMillis() - bg);
 		return null;
 	}
 	
 	private static boolean isNumer(int type) {
-		switch (type) {
-		case BOOLEAN:
-		case BIT:
-		case TINYINT:
-		case SMALLINT:
-		case INTEGER:
-		case BIGINT:
-		case REAL:
-		case FLOAT:
-		case DOUBLE:
-		case NUMERIC:
-		case DECIMAL: return true;
-		default: return false;
-		}
+		return switch (type) {
+		case BOOLEAN, BIT, TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL: yield true;
+		default: yield false;
+		};
 	}
 	
 	private static Object[] array(int size, String v) {

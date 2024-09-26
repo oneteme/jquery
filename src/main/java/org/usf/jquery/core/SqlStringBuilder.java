@@ -1,8 +1,9 @@
 package org.usf.jquery.core;
 
-import static java.util.function.Function.identity;
+import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
+import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -23,15 +24,15 @@ public final class SqlStringBuilder {
 	static final String SCOMA  = COMA + SPACE;
 	
 	private final StringBuilder sb;
-
+	
+	public SqlStringBuilder() {
+		this.sb = new StringBuilder();
+	}
+	
 	public SqlStringBuilder(int capacity) {
 		this.sb = new StringBuilder(capacity);
 	}
 	
-	public SqlStringBuilder(String v) { //buffer++
-		this.sb = new StringBuilder(v.length() + 50).append(v);
-	}
-
 	public SqlStringBuilder appendIf(boolean condition, String s) {
 		return condition ? append(s) : this;
 	}
@@ -40,38 +41,100 @@ public final class SqlStringBuilder {
 		return condition ? append(sup.get()) : this;
 	}
 
-	public SqlStringBuilder appendIf(boolean condition, Supplier<String> sup, Supplier<String> orSup) {
-		return append(condition ? sup.get() : orSup.get());
+	public <T> SqlStringBuilder appendIfNonNull(T o, Function<T, String> fn) {
+		return nonNull(o) ? append(fn.apply(o)) : this;
 	}
-
-	public SqlStringBuilder appendEach(Collection<String> list, String separator) {
-		return appendEach(list, separator, EMPTY, identity());
-	}
-
-	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, Function<T, String> fn) {
-		return appendEach(list, separator, EMPTY, fn);
-	}
-
-	public <T> SqlStringBuilder appendEach(Collection<T> list, String separator, String prefix, Function<T, String> fn) {
-		if(!list.isEmpty()) {
-			var it = list.iterator();
-			this.sb.append(prefix).append(fn.apply(it.next()));
-			var before = separator + prefix;
-			while(it.hasNext()) {
-				this.sb.append(before).append(fn.apply(it.next()));
-			}
+	
+	public <T> SqlStringBuilder runIfNonNull(T o, Consumer<T> cons) {
+		if(nonNull(o)) {
+			cons.accept(o);
 		}
 		return this;
 	}
+	
+	public <T> SqlStringBuilder runForeach(T[] arr, String delimiter, Consumer<T> fn) {
+		return runForeach(arr, 0, delimiter, fn);
+	}
+	
+	public <T> SqlStringBuilder runForeach(T[] arr, int idx, String delimiter, Consumer<T> fn) {
+		return runForeach(arr, idx, delimiter, fn, EMPTY, EMPTY);
+	}
+	
+	public <T> SqlStringBuilder runForeach(T[] arr, String delimiter, Consumer<T> fn, String prefix, String suffix) {
+		return runForeach(arr, 0, delimiter, fn, prefix, suffix);
+	}
 
-	public <T> SqlStringBuilder forEach(Iterator<T> it, String separator, Consumer<T> cons) {
+	public <T> SqlStringBuilder runForeach(T[] arr, int idx, String delimiter, Consumer<T> fn, String prefix, String suffix) {
+		requireNonNull(arr, "arr connot be null");
+		if(idx < arr.length) {
+			sb.append(prefix);
+			if(!isEmpty(arr)) {
+				var i=idx;
+				fn.accept(arr[i]);
+				for(++i; i<arr.length; i++) {
+					sb.append(delimiter);
+					fn.accept(arr[i]);
+				}
+			}
+			sb.append(suffix);
+		}
+		else if(idx > arr.length) {
+			throw new IndexOutOfBoundsException(idx);
+		}// idx == arr.length 
+		return this;
+	}
+
+	public <T> SqlStringBuilder runForeach(Iterator<T> it, String separator, Consumer<T> cons) {
 		if(it.hasNext()) {
 			cons.accept(it.next());
 			while(it.hasNext()) {
-				this.sb.append(separator);
+				sb.append(separator);
 				cons.accept(it.next());
 			}
 		} 
+		return this;
+	}
+
+	public SqlStringBuilder as(String v) {
+		return as().append(v);
+	}
+	
+	public SqlStringBuilder as() {
+		return append(" AS ");
+	}
+
+	public SqlStringBuilder function(String name, Runnable args) {
+		return append(name).parenthesis(args);
+	}
+
+	public SqlStringBuilder parenthesis(Runnable exec) {
+		openParenthesis();
+		exec.run();
+		return closeParenthesis();
+	}
+	
+	public SqlStringBuilder parenthesis(String s) {
+		openParenthesis();
+		sb.append(s);
+		return closeParenthesis();
+	}
+	
+	public SqlStringBuilder openParenthesis() {
+		sb.append('(');
+		return this;
+	}
+
+	public SqlStringBuilder closeParenthesis() {
+		sb.append(')');
+		return this;
+	}
+	
+	public SqlStringBuilder spacing(String s) {
+		return space().append(s).space();
+	}
+	
+	public SqlStringBuilder space() {
+		sb.append(SPACE);
 		return this;
 	}
 	
@@ -95,13 +158,5 @@ public final class SqlStringBuilder {
 
 	public static String doubleQuote(String op) {
 		return DQUOT + op + DQUOT;
-	}
-
-	public static String parenthese(String op) { 
-		return "(" + op + ")";
-	}
-
-	public static String member(String parent, String child) { 
-		return parent + "." + child;
 	}
 }

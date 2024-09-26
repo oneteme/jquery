@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Validation.requireAtMostNArgs;
+import static org.usf.jquery.core.Validation.requireNoArgs;
 
 /**
  * 
@@ -10,13 +9,29 @@ import static org.usf.jquery.core.Validation.requireAtMostNArgs;
  */
 @FunctionalInterface
 public interface DBView extends DBObject {
+
+	void sql(SqlStringBuilder sb, QueryContext ctx);
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args) {
-		requireAtMostNArgs(1, args, DBView.class::getSimpleName);
-		return sql(builder, isEmpty(args) ? null : args[0].toString());
+	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+		requireNoArgs(args, DBView.class::getSimpleName);
+		sql(sb, ctx);
+	}
+	
+	default void sqlUsingTag(SqlStringBuilder sb, QueryContext ctx) {
+		ctx.viewOverload(this).orElse(this).sql(sb, ctx); //!important
+		sb.space().append(ctx.viewAlias(this));
 	}
 
-	String sql(QueryParameterBuilder builder, String schema);
+	default ViewColumn column(String name) {
+		return new ViewColumn(name, this, null, null);
+	}
+
+	default ViewColumn column(String name, JDBCType type) {
+		return new ViewColumn(name, this, type, null);
+	}
 	
+	default ViewColumn column(String name, JDBCType type, String tag) {
+		return new ViewColumn(name, this, type, tag);
+	}
 }

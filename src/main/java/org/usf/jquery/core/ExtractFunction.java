@@ -2,32 +2,27 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Validation.requireNArgs;
 
-import java.util.function.IntFunction;
-
 /**
  * 
  * @author u$f
  *
  */
 @FunctionalInterface
-public interface ExtractFunction extends DBFunction {
+public interface ExtractFunction extends FunctionOperator {
 	
 	String field();
 	
 	@Override
-	default String name() {
+	default String id() {
 		return "EXTRACT";
 	}
 	
 	@Override
-	default String sql(QueryParameterBuilder builder, Object[] args, IntFunction<SQLType> indexedType) {
-		requireNArgs(1, args, this::name);
-		return name() + "(" + field() + " FROM " + 
-				builder.appendLitteral(args[0], indexedType.apply(0)) + ")";
+	default void sql(SqlStringBuilder sb, QueryContext builder, Object[] args) {
+		requireNArgs(1, args, ExtractFunction.class::getSimpleName);
+		sb.function(id(), ()->{
+			sb.append(field()).append(" FROM ");
+			builder.appendLiteral(sb, args[0]);
+		});
 	}
-
-	static ExtractFunction extractFunction(String type) {
-		return ()-> type;
-	}
-	
 }

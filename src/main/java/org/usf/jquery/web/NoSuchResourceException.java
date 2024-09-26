@@ -1,8 +1,6 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.core.SqlStringBuilder.quote;
-
-import java.util.NoSuchElementException;
+import static java.lang.String.format;
 
 /**
  * 
@@ -10,26 +8,17 @@ import java.util.NoSuchElementException;
  *
  */
 @SuppressWarnings("serial")
-final class NoSuchResourceException extends NoSuchElementException {
+public final class NoSuchResourceException extends WebException {
 
 	public NoSuchResourceException(String s) {
 		super(s);
 	}
-
-	static NoSuchResourceException throwNoSuchTableException(String resource) {
-		return noSuchResouceException("view", resource);
-	}
 	
-	static NoSuchResourceException throwNoSuchColumnException(String resource) {
-		return noSuchResouceException("column", resource);
-	}
-	
-	static NoSuchResourceException noSuchResouceException(String type, String resource) {
-		return new NoSuchResourceException(quote(resource)  + " " + type + " not found");
+	static NoSuchResourceException noSuchResourceException(String type, String resource) {
+		return new NoSuchResourceException(format("no such %s: '%s'", type, resource));
 	}
 
-	static NoSuchResourceException undeclaredResouceException(String view, String column) {
-		return new NoSuchResourceException("column " + quote(column) + " is not declared in " + quote(view) + " view");
+	static NoSuchResourceException undeclaredResouceException(String child, String parent) {
+		return new NoSuchResourceException(format("'%s' is not member of '%s'", child, parent));
 	}
-
 }

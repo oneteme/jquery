@@ -1,0 +1,9 @@
+<!DOCTYPE html><html lang><head><meta name="viewport" content="width=device-width, initial-scale=1"><title>JQuery</title><script src="https://www.gstatic.com/charts/loader.js"></script><script>
+google.charts.load('current',{callback:'draw','packages':['table'],'language': window.navigator.language.substring(0,2).toLowerCase()});
+function draw() {
+var data = new google.visualization.DataTable();[$columns].forEach(a=>data.addColumn(a[0], a[1]));data.addRows([$data]);
+new google.visualization.Table(document.getElementById('chart')).draw(data, {showRowNumber:true, width:'100%'});
+}
+window.onresize = draw
+</script></head><body><div id="chart" style="width:99.5%;height:97vh;border:1px solid#ccc"></div><a href="https://oneteme.github.io/" target="_blank">
+<img src="https://raw.githubusercontent.com/oneteme/oneteme.github.io/main/badges/jquery.svg" height="12px" style="position:fixed; right:0px;bottom:0px;" alt="JARVIS"></a></body></html>

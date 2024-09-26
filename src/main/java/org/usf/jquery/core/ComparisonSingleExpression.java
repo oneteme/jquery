@@ -1,12 +1,10 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.DBColumn.column;
-import static org.usf.jquery.core.NestedSql.aggregation;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-import static org.usf.jquery.core.QueryParameterBuilder.streamArray;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
+import static java.util.Collections.addAll;
+import static java.util.Objects.nonNull;
 
-import java.util.LinkedList;
+import java.util.ArrayList;
+import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,29 +17,29 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ComparisonSingleExpression implements ComparisonExpression {
 
-	private final DBComparator comparator;
-	private final Object right; //null|array|any
+	private final Comparator comparator;
+	private final Object[] right; //optional
 	
 	@Override
-	public String sql(QueryParameterBuilder builder, Object left) {
-		var param = new LinkedList<>();
+	public void sql(SqlStringBuilder sb, QueryContext ctx, Object left) {
+		var param = new ArrayList<>();
 		param.add(left);
-		if(right != null) {
-			if(right.getClass().isArray()) {
-				streamArray(right).forEach(param::add);
-			}
-			else {
-				param.add(right);
-			}
+		if(nonNull(right)) {
+			addAll(param, right);
 		}
-		return comparator.sql(builder, param.toArray());
+		comparator.sql(sb, ctx, param.toArray());
 	}
 	
 	@Override
-	public boolean isAggregation() {
-		return aggregation(right);
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.tryResolveColumn(builder, groupKeys, right);
 	}
 	
+	@Override
+	public void views(Consumer<DBView> cons) {
+		Nested.tryResolveViews(cons, right);
+	}
+
 	@Override
 	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
 		return new ComparisonExpressionGroup(op, this, exp);
@@ -49,6 +47,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	@Override
 	public String toString() {
-		return sql(addWithValue(), column("<left>"));
-	}
+		var args = new Object[]{null}; //unknown type
+		return DBObject.toSQL(this, args);
+	}	
 }

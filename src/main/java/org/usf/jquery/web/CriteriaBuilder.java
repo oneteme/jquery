@@ -1,14 +1,12 @@
 package org.usf.jquery.web;
 
-import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.LogicalOperator.OR;
-import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
-import static org.usf.jquery.web.ParseException.cannotEvaluateException;
+import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.ComparisonExpression;
-import org.usf.jquery.core.DBComparator;
+import org.usf.jquery.core.Chainable;
 import org.usf.jquery.core.LogicalOperator;
 
 /**
@@ -17,24 +15,21 @@ import org.usf.jquery.core.LogicalOperator;
  * 
  */
 @FunctionalInterface
-public interface CriteriaBuilder<T> {
+public interface CriteriaBuilder<T extends Chainable<T>> {
 	
-	ComparisonExpression criteria(T arg);
-	
-	default LogicalOperator combiner() {
-		return OR;
+	T build(String... arg);
+
+	static <T extends Chainable<T>> CriteriaBuilder<T> singleArg(ChainableCriteria<T> cr){
+		return args-> cr.criteria(isEmpty(args) ? null : requireNArgs(1, args, ()-> "single arg criteria")[0]);
 	}
-	
-	@SuppressWarnings("unchecked")
-	default ComparisonExpression build(T... args) {
-		return Stream.of(requireAtLeastNArgs(1, args, CriteriaBuilder.class::getSimpleName))
-				.map(v-> ofNullable(criteria(v))
-						.orElseThrow(()-> cannotEvaluateException("criteria value", v.toString())))
-				.reduce(ComparisonExpression::or)
-				.orElseThrow();
+
+	static <T extends Chainable<T>> CriteriaBuilder<T> multiArgs(ChainableCriteria<T> cr){
+		return multiArgs(OR, cr);
 	}
-	
-	public static CriteriaBuilder<Object> ofComparator(DBComparator cmp) {
-		return cmp::expression;
+
+	static <T extends Chainable<T>> CriteriaBuilder<T> multiArgs(LogicalOperator op, ChainableCriteria<T> cr){
+		return args-> isEmpty(args) 
+				? cr.criteria(null)
+				: Stream.of(args).map(cr::criteria).reduce(op::combine).orElseThrow();
 	}
 }

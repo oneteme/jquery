@@ -14,4 +14,8 @@ public enum LogicalOperator {
 	public String sql() {
 		return space(name());
 	}
+	
+	public <T extends Chainable<T>> T combine(T o1, T o2) {
+		return o1.append(this, o2);
+	}
 }

@@ -1,39 +1,18 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
-
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.experimental.Delegate;
+import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class NamedColumn implements TaggableColumn {
+public interface NamedColumn extends DBColumn {
 
-	@Delegate
-	private final DBColumn column;
-	private final String reference;
-
-	@Override
-	public String tagname() {
-		return reference;
-	}
+	String getTag();
 	
-	@Override
-	public NamedColumn as(String name) { // map
-		return new NamedColumn(unwrap(), name);
-	}
-	
-	public DBColumn unwrap() {
-		return column;
-	}
-	
-	@Override
-	public String toString() {
-		return sql(addWithValue()) + " AS " + reference;
+	default void sqlUsingTag(SqlStringBuilder sb, QueryContext ctx) {
+		sql(sb, ctx);
+		sb.runIfNonNull(getTag(), v-> sb.as(doubleQuote(v)));
 	}
 }

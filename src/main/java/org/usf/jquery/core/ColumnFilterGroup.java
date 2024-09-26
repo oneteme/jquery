@@ -1,14 +1,9 @@
 package org.usf.jquery.core;
 
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
-import static org.usf.jquery.core.QueryParameterBuilder.addWithValue;
+import static org.usf.jquery.core.Utils.appendLast;
+import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.Collection;
-import java.util.LinkedList;
-import java.util.stream.Stream;
-
-import lombok.NonNull;
+import java.util.function.Consumer;
 
 /**
  * 
@@ -19,38 +14,38 @@ import lombok.NonNull;
 public final class ColumnFilterGroup implements DBFilter {
 	
 	private final LogicalOperator operator;
-	private final Collection<DBFilter> filters;
-
-	ColumnFilterGroup(@NonNull LogicalOperator operator, DBFilter... filters) {//assert length > 1
+	private final DBFilter[] filters;
+	
+	ColumnFilterGroup(LogicalOperator operator, DBFilter... filters) {
 		this.operator = operator;
-		this.filters = filters == null 
-				? new LinkedList<>()
-				: Stream.of(filters).collect(toList());
-	}
-	
-	@Override
-	public String sql(QueryParameterBuilder builder) {
-		return "(" + filters.stream().map(o-> o.sql(builder)).collect(joining(operator.sql())) + ")";
-	}
-	
-	@Override
-	public boolean isAggregation() {
-		return filters.stream()
-				.anyMatch(NestedSql::isAggregation);
+		this.filters = requireAtLeastNArgs(1, filters, ColumnFilterGroup.class::getSimpleName);
 	}
 
+	@Override
+	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+		sb.parenthesis(()->
+			sb.runForeach(filters, operator.sql(), o-> o.sql(sb, ctx)));
+	}
+
+	@Override
+	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+		return Nested.resolveColumn(builder, groupKeys, filters);
+	}
+	
+	@Override
+	public void views(Consumer<DBView> cons) {
+		Nested.resolveViews(cons, filters);
+	}
+	
 	@Override
 	public DBFilter append(LogicalOperator op, DBFilter filter) {
-		if(operator == op) {
-			filters.add(filter);
-			return this;
-		}
-		return new ColumnFilterGroup(op, this, filter);
+		return operator == op 
+				? new ColumnFilterGroup(op, appendLast(filters, filter))
+		        : new ColumnFilterGroup(op, this, filter);
 	}
 	
 	@Override
 	public String toString() {
-		return sql(addWithValue());
+		return DBObject.toSQL(this);
 	}
-	
 }
