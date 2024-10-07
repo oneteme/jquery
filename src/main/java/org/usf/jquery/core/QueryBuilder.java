@@ -64,7 +64,7 @@ public class QueryBuilder {
 	}
 
 	public QueryView overView(DBView view) {
-		return overView(view, ()-> new QueryBuilder().columns(allColumns(view)).asView());
+		return overView(view, ()-> new QueryBuilder(currentDatabase()).columns(allColumns(view)).asView());
 	}
 	
 	public QueryView overView(DBView view, Supplier<QueryView> supp) {
@@ -150,7 +150,7 @@ public class QueryBuilder {
 		log.trace("building query...");
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
-		var pb = parameterized(schema, overView); //over clause
+		var pb = parameterized(schema, ctes, overView); //over clause
 		var sb = new SqlStringBuilder(1000); //avg
 		if(isNull(it)) {
 			build(sb, pb);
@@ -182,8 +182,8 @@ public class QueryBuilder {
 		if(!ctes.isEmpty()) {
 			sb.append("WITH ")
 			.runForeach(ctes.iterator(), SCOMA, v->{
-				sb.append(ctx.viewAlias(v)).as();
-				v.sql(sb, ctx); //query parenthesis
+				ctx.appendView(sb, v);
+				v.sql(sb.as(), ctx); //query parenthesis
 			})
 			.space();
 		}
@@ -208,18 +208,11 @@ public class QueryBuilder {
 	void from(SqlStringBuilder sb, QueryContext ctx) {
 		var views = ctx.views();
 		if(!joins.isEmpty()) {
-			var exp = joins.stream().map(ViewJoin::getView).toList();
-			views = ctx.views().stream().filter(not(exp::contains)).toList();
+			var exp = joins.stream().map(ViewJoin::getView).map(v-> overView.containsKey(v) ? overView.get(v) : v).toList();
+			views = views.stream().filter(not(exp::contains)).toList();
 		}
 		if(!views.isEmpty()) {
-			sb.append(" FROM ").runForeach(views.iterator(), SCOMA, v-> {
-				if(ctes.contains(v)) {
-					sb.append(ctx.viewAlias(v));
-				}
-				else {
-					v.sqlUsingTag(sb, ctx);
-				}
-			});
+			sb.append(" FROM ").runForeach(views.iterator(), SCOMA, v-> ctx.appendView(sb, v));
 		}
 	}
 	

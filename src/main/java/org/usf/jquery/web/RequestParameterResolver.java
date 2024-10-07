@@ -44,19 +44,16 @@ public final class RequestParameterResolver {//spring connection bridge
 		var ctx = ant.database().isEmpty() 
 				? currentContext()
 				: context(ant.database());
-		try {
-			var req = ctx
-					.lookupRegisteredView(ant.view())
-					.orElseThrow(()-> noSuchResourceException(VIEW, ant.view()))
-					.query(parameterMap); //may edit map
-			log.trace("request parsed in {} ms", currentTimeMillis() - t);
-			if(!ant.aggregationOnly() || req.isAggregation()) {
-				return req;
-			}
-			throw new ResourceAccessException("non-aggregate query");
+
+		var req = ctx
+				.lookupRegisteredView(ant.view())
+				.orElseThrow(()-> noSuchResourceException(VIEW, ant.view()))
+				.query(parameterMap); //may edit map
+		log.trace("request parsed in {} ms", currentTimeMillis() - t);
+		if(!ant.aggregationOnly() || req.isAggregation()) {
+			return req;
 		}
-		finally {
-			releaseContext();
-		}
+		throw new ResourceAccessException("non-aggregate query");
+		//do not release context before query execute
 	}
 }

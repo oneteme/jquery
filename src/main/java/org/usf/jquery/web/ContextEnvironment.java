@@ -54,8 +54,7 @@ public final class ContextEnvironment {
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
-	
-	private Map<String, NamedColumn> declaredColumns = new HashMap<>();
+	private final Map<String, NamedColumn> declaredColumns = new HashMap<>();
 	
 	ContextEnvironment(ContextEnvironment ctx) {
 		this.database = ctx.database;

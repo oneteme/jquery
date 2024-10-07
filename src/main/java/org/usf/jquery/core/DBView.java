@@ -19,7 +19,7 @@ public interface DBView extends DBObject {
 	}
 	
 	default void sqlUsingTag(SqlStringBuilder sb, QueryContext ctx) {
-		ctx.viewOverload(this).orElse(this).sql(sb, ctx); //!important
+		sql(sb, ctx);
 		sb.space().append(ctx.viewAlias(this));
 	}
 

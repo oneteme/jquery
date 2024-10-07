@@ -11,5 +11,4 @@ import org.usf.jquery.core.Partition;
 public interface PartitionBuilder {
 
 	Partition build();
-	
 }
