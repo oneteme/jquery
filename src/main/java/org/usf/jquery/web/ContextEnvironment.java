@@ -27,8 +27,10 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
+import org.usf.jquery.core.ColumnProxy;
 import org.usf.jquery.core.JQueryException;
 import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.QueryBuilder;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -54,7 +56,7 @@ public final class ContextEnvironment {
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
-	private final Map<String, NamedColumn> declaredColumns = new HashMap<>();
+	private final QueryBuilder currentQuery;
 	
 	ContextEnvironment(ContextEnvironment ctx) {
 		this.database = ctx.database;
@@ -63,6 +65,7 @@ public final class ContextEnvironment {
 		this.dataSource = ctx.dataSource;
 		this.schema = ctx.schema;
 		this.metadata = ctx.metadata;
+		this.currentQuery = new QueryBuilder(ctx.metadata.getType());
 	}
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
@@ -74,7 +77,10 @@ public final class ContextEnvironment {
 	}
 
 	Optional<NamedColumn> lookupDeclaredColumn(String name) {
-		return ofNullable(declaredColumns.get(name));
+		return currentQuery.getColumns().stream()
+				.filter(ColumnProxy.class::isInstance) //tagged column only
+				.filter(c-> name.equals(c.getTag()))
+				.findAny();
 	}
 
 	ViewDecorator declareView(ViewDecorator view) { //additional request views
@@ -86,18 +92,6 @@ public final class ContextEnvironment {
 		});
 	}
 
-	NamedColumn declareColumn(NamedColumn col) {
-		views.computeIfPresent(col.getTag(), (k,v)-> { //cannot overwrite registered views
-			throw resourceAlreadyExistsException(k);
-		}); //but can overwrite registered columns
-		return declaredColumns.compute(col.getTag(), (k,v)-> {
-			if(isNull(v)){
-				return col;
-			} //cannot overwrite declared column
-			throw resourceAlreadyExistsException(k);
-		});
-	}
-	
 	ViewMetadata computeTableMetadata(ViewDecorator vd, Function<Collection<ColumnDecorator>, ViewMetadata> fn) {
 		return metadata.getTables().computeIfAbsent(vd.identity(), key-> fn.apply(columns.values()));
 	}
@@ -137,7 +131,7 @@ public final class ContextEnvironment {
 		return new ContextEnvironment(database,
 				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), //preserve views order
 				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"),
-				ds, schema, new DatabaseMetadata());
+				ds, schema, new DatabaseMetadata(), null);
 	}
 	
 	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn, String msg){

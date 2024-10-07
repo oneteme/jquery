@@ -16,7 +16,6 @@ public interface DatabaseDecorator {
 	String viewName(ViewDecorator vd); //[schema.]table
 	
 	default QueryBuilder newQuery() {
-		var ctx = context(identity());
-		return new QueryBuilder(ctx.getMetadata().getType()); 
+		return context(identity()).getCurrentQuery();
 	}
 }

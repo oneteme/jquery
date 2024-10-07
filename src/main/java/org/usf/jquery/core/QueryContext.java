@@ -59,11 +59,8 @@ public final class QueryContext {
 		if(globalViews.containsKey(view)) {
 			sb.append(globalViews.get(view)); //alias only
 		}
-		else if(views.containsKey(view)) {
-			view.sqlUsingTag(sb, this); //view as alias
-		}
 		else {
-			throw new JQueryException("view not found " + view);
+			view.sqlUsingTag(sb, this); //view as alias
 		}
 	}
 	

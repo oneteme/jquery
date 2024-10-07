@@ -48,7 +48,7 @@ public final class RequestParameterResolver {//spring connection bridge
 		var req = ctx
 				.lookupRegisteredView(ant.view())
 				.orElseThrow(()-> noSuchResourceException(VIEW, ant.view()))
-				.query(parameterMap); //may edit map
+				.query(ctx.getCurrentQuery(), parameterMap); //may edit map
 		log.trace("request parsed in {} ms", currentTimeMillis() - t);
 		if(!ant.aggregationOnly() || req.isAggregation()) {
 			return req;

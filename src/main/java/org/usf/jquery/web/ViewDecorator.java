@@ -105,8 +105,7 @@ public interface ViewDecorator {
 				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue));
 	}
 	
-	default QueryBuilder query(Map<String, String[]> parameterMap) {
-		var query = new QueryBuilder(currentContext().getMetadata().getType());
+	default QueryBuilder query(QueryBuilder query, Map<String, String[]> parameterMap) {
 		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
@@ -139,12 +138,7 @@ public interface ViewDecorator {
 			}
 			Stream.of(cols)
 			.flatMap(v-> parseEntries(v).stream())
-			.map(e-> {
-				var c = e.evalColumn(this, true);
-				return c instanceof ColumnProxy cp
-						? currentContext().declareColumn(cp) 
-						: (NamedColumn) c;
-			})
+			.map(e-> (NamedColumn)e.evalColumn(this, true))
 			.forEach(query::columns);
 		}
 		else {
@@ -159,6 +153,7 @@ public interface ViewDecorator {
 			.forEach(e-> query.orders(e.evalOrder(this)));
 		}
 	}
+	
 	default void parseJoins(QueryBuilder query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(JOIN)) {
 			Stream.of(parameters.remove(JOIN))
