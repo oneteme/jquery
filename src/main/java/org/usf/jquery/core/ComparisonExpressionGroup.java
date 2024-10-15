@@ -1,8 +1,9 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Utils.appendLast;
+import static java.util.Collections.addAll;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
+import java.util.ArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -18,7 +19,7 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	
 	ComparisonExpressionGroup(LogicalOperator operator, ComparisonExpression... expressions) {
 		this.operator = operator;
-		this.expressions = requireAtLeastNArgs(1, expressions, ComparisonExpressionGroup.class::getSimpleName);
+		this.expressions = chain(operator, requireAtLeastNArgs(1, expressions, ComparisonExpressionGroup.class::getSimpleName));
 	}
 
 	@Override
@@ -39,13 +40,25 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	
 	@Override
 	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
-		return operator == op 
-				? new ComparisonExpressionGroup(op, appendLast(expressions, exp))
-		        : new ComparisonExpressionGroup(op, this, exp);
+		return new ComparisonExpressionGroup(op, this, exp);
 	}
 	
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this, "<left>");
+	}
+	
+
+	static ComparisonExpression[] chain(LogicalOperator op, ComparisonExpression... filters) {
+		var res = new ArrayList<ComparisonExpression>(filters.length);
+		for(var f : filters) {
+			if(f instanceof ComparisonExpressionGroup fg && fg.operator == op) {
+				addAll(res, fg.expressions);
+			}
+			else {
+				res.add(f);
+			}
+		}
+		return res.toArray(ComparisonExpression[]::new);
 	}
 }

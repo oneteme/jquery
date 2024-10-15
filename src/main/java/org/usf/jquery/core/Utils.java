@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.arraycopy;
-import static java.util.Arrays.copyOf;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
 
@@ -56,12 +55,6 @@ public final class Utils {
 	
 	public static <T> String joinAndDelemit(String delemiter, String before, String after, Stream<T> args) {
 		return args.map(Object::toString).collect(joining(delemiter, before, after));
-	}
-	
-	public static <T> T[] appendLast(T[] arr, T o) {
-		var res = copyOf(arr, arr.length+1);
-		res[arr.length] = o;
-		return res;
 	}
 
 	public static Object[] appendFirst(Object[] arr, Object o) {

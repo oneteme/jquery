@@ -1,8 +1,9 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Utils.appendLast;
+import static java.util.Collections.addAll;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
+import java.util.ArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -18,7 +19,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	
 	ColumnFilterGroup(LogicalOperator operator, DBFilter... filters) {
 		this.operator = operator;
-		this.filters = requireAtLeastNArgs(1, filters, ColumnFilterGroup.class::getSimpleName);
+		this.filters = chain(operator, requireAtLeastNArgs(1, filters, ColumnFilterGroup.class::getSimpleName));
 	}
 
 	@Override
@@ -39,13 +40,24 @@ public final class ColumnFilterGroup implements DBFilter {
 	
 	@Override
 	public DBFilter append(LogicalOperator op, DBFilter filter) {
-		return operator == op 
-				? new ColumnFilterGroup(op, appendLast(filters, filter))
-		        : new ColumnFilterGroup(op, this, filter);
+		return new ColumnFilterGroup(op, this, filter);
 	}
 	
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this);
+	}
+	
+	static DBFilter[] chain(LogicalOperator op, DBFilter... filters) {
+		var res = new ArrayList<DBFilter>(filters.length);
+		for(var f : filters) {
+			if(f instanceof ColumnFilterGroup fg && fg.operator == op) {
+				addAll(res, fg.filters);
+			}
+			else {
+				res.add(f);
+			}
+		}
+		return res.toArray(DBFilter[]::new);
 	}
 }
