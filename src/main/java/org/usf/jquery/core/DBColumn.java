@@ -453,7 +453,7 @@ public interface DBColumn extends DBObject, Typed, Nested {
 					if(currentDatabase() == TERADATA) {
 						s = Stream.of(views)
 								.map(ctx::viewAlias)
-								.map(v-> v + getName())
+								.map(v-> v +'.'+ getName())
 								.collect(joining(SCOMA));
 					}
 					else { //avoid view.* for pg
