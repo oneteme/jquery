@@ -35,7 +35,7 @@ public enum JDBCType implements JavaType {
 	DOUBLE(Types.DOUBLE, Double.class, Number.class),
 	NUMERIC(Types.NUMERIC, BigDecimal.class, Number.class),
 	DECIMAL(Types.DECIMAL, BigDecimal.class, Number.class),
-	CHAR(Types.CHAR, Character.class, JDBCType::isChar), //teradata !char
+	CHAR(Types.CHAR, Character.class, JDBCType::isString), //teradata !char
 	VARCHAR(Types.VARCHAR, String.class, JDBCType::isString),
 	NVARCHAR(Types.NVARCHAR, String.class, JDBCType::isString),
 	LONGNVARCHAR(Types.LONGNVARCHAR, String.class, JDBCType::isString),
@@ -89,11 +89,6 @@ public enum JDBCType implements JavaType {
 		return o.getClass() == Boolean.class 
 				|| o.equals(0) || o.equals(1) 
 				|| (o.getClass() == String.class && o.toString().matches("[yYnN]"));
-	}
-	
-	private static boolean isChar(Object o) {
-		return o.getClass() == Character.class 
-				|| (o.getClass() == String.class && o.toString().length() == 1);
 	}
 	
 	private static boolean isString(Object o) {
