@@ -14,6 +14,6 @@ public interface NullComparator extends Comparator {
 	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireNArgs(1, args, NullComparator.class::getSimpleName);
 		ctx.appendParameter(sb, args[0]);
-		sb.space().append(id());
+		sb.appendSpace().append(id());
 	}
 }

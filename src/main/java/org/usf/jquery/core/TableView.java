@@ -24,7 +24,11 @@ public class TableView implements DBView {
 
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.appendIfNonNull(getSchemaOrElse(ctx.getSchema()), v-> v + '.').append(name);
+		var sch = getSchemaOrElse(ctx.getSchema());
+		if(nonNull(sch)){
+			sb.append(sch + '.');
+		}
+		sb.append(name);
 	}
 
 	public String getSchemaOrElse(String defaultSchema) {

@@ -39,7 +39,7 @@ public final class OperationColumn implements DBColumn {
 	}
 
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
 			return Math.max(1, Nested.tryResolveColumn(builder, DO_NOTHING, args)+1); //if lvl==-1
 		}
@@ -61,7 +61,7 @@ public final class OperationColumn implements DBColumn {
 		return Nested.tryResolveColumn(this, builder, groupKeys, args);
 	}
 	
-	private int resolveOverColumns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	private int resolveOverColumns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		requireAtLeastNArgs(1, args, ()-> "over");
 		var lvl = Nested.tryResolveColumn(builder, groupKeys, args[0])-1; //nested aggregate function
 		return args.length == 1

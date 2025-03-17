@@ -14,7 +14,7 @@ public interface PipeFunction extends FunctionOperator {
 	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
 		requireAtLeastNArgs(1, args, PipeFunction.class::getSimpleName);
 		ctx.appendLiteral(sb, args[0]);
-		sb.space();
+		sb.appendSpace();
 		FunctionOperator.super.sql(sb, ctx, args, 1); //optional partition
 	}
 }

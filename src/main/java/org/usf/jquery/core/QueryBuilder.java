@@ -183,9 +183,9 @@ public class QueryBuilder {
 			sb.append("WITH ")
 			.runForeach(ctes.iterator(), SCOMA, v->{
 				ctx.appendView(sb, v);
-				v.sql(sb.as(), ctx); //query parenthesis
+				v.sql(sb.appendAs(), ctx); //query parenthesis
 			})
-			.space();
+			.appendSpace();
 		}
 	}
 
@@ -201,7 +201,7 @@ public class QueryBuilder {
 		sb.append("SELECT")
     	.appendIf(distinct, " DISTINCT")
     	.appendIf(nonNull(limit) && currentDatabase() == TERADATA, ()-> " TOP " + limit) //???????
-    	.space()
+    	.appendSpace()
     	.runForeach(columns.iterator(), SCOMA, o-> o.sqlUsingTag(sb, ctx));
 	}
 	
@@ -218,7 +218,7 @@ public class QueryBuilder {
 	
 	void join(SqlStringBuilder sb, QueryContext ctx) {
 		if(!joins.isEmpty()) {
-			sb.space().runForeach(joins.iterator(), SPACE, v-> v.sql(sb, ctx));
+			sb.appendSpace().runForeach(joins.iterator(), SPACE, v-> v.sql(sb, ctx));
 		}
 	}
 

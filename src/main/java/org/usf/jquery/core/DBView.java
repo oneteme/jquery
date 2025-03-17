@@ -20,7 +20,7 @@ public interface DBView extends DBObject {
 	
 	default void sqlUsingTag(SqlStringBuilder sb, QueryContext ctx) {
 		sql(sb, ctx);
-		sb.space().append(ctx.viewAlias(this));
+		sb.appendSpace().append(ctx.viewAlias(this));
 	}
 
 	default ViewColumn column(String name) {

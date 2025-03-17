@@ -45,13 +45,6 @@ public final class SqlStringBuilder {
 		return nonNull(o) ? append(fn.apply(o)) : this;
 	}
 	
-	public <T> SqlStringBuilder runIfNonNull(T o, Consumer<T> cons) {
-		if(nonNull(o)) {
-			cons.accept(o);
-		}
-		return this;
-	}
-	
 	public <T> SqlStringBuilder runForeach(T[] arr, String delimiter, Consumer<T> fn) {
 		return runForeach(arr, 0, delimiter, fn);
 	}
@@ -95,11 +88,11 @@ public final class SqlStringBuilder {
 		return this;
 	}
 
-	public SqlStringBuilder as(String v) {
-		return as().append(v);
+	public SqlStringBuilder appendAs(String v) {
+		return appendAs().append(v);
 	}
 	
-	public SqlStringBuilder as() {
+	public SqlStringBuilder appendAs() {
 		return append(" AS ");
 	}
 
@@ -130,10 +123,10 @@ public final class SqlStringBuilder {
 	}
 	
 	public SqlStringBuilder spacing(String s) {
-		return space().append(s).space();
+		return appendSpace().append(s).appendSpace();
 	}
 	
-	public SqlStringBuilder space() {
+	public SqlStringBuilder appendSpace() {
 		sb.append(SPACE);
 		return this;
 	}

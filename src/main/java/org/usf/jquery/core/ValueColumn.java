@@ -17,7 +17,7 @@ public class ValueColumn implements DBColumn {
 	
 	private final JDBCType type;
 	private final Supplier<Object> supp;
-
+	
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		sb.append(formatValue(supp.get()));
@@ -29,7 +29,7 @@ public class ValueColumn implements DBColumn {
 	}
 
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		return -1;
 	}
 

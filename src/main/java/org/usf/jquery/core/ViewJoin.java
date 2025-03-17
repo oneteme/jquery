@@ -40,7 +40,7 @@ public final class ViewJoin implements DBObject {
 	}
 
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.append(joinType + " JOIN ");
+		sb.append(joinType.name()).append(" JOIN ");
 		ctx.appendView(sb, view);
 		if(!isEmpty(filters)) {
 			sb.append(" ON ").runForeach(filters, AND.sql(), f-> f.sql(sb, ctx));

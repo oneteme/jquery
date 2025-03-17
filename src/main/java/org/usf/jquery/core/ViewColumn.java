@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
+
 import java.util.function.Consumer;
 
 import lombok.Getter;
@@ -21,11 +23,14 @@ public class ViewColumn implements NamedColumn {
 	
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.appendIfNonNull(view, v-> ctx.viewAlias(v) + '.').append(name);
+		if(nonNull(view)) {
+			sb.append(ctx.viewAlias(view) + '.');
+		}
+		sb.append(name);
 	}
 	
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		groupKeys.accept(this);
 		return 0;
 	}

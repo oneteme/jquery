@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.function.Consumer;
@@ -32,11 +33,13 @@ public final class DBOrder implements DBObject, Nested {
 
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		column.sql(sb, ctx);
-		sb.runIfNonNull(order, o-> sb.space().append(o.name()));
+		if(nonNull(order)) {
+			sb.appendSpace().append(order.name());
+		}
 	}
 	
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		return column.columns(builder, groupKeys);
 	}
 	

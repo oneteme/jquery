@@ -29,7 +29,7 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 	
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		return Nested.resolveColumn(builder, groupKeys, expressions);
 	}
 	
@@ -47,7 +47,6 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	public String toString() {
 		return DBObject.toSQL(this, "<left>");
 	}
-	
 
 	static ComparisonExpression[] chain(LogicalOperator op, ComparisonExpression... filters) {
 		var res = new ArrayList<ComparisonExpression>(filters.length);

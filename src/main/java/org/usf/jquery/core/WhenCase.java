@@ -45,7 +45,7 @@ final class WhenCase implements DBObject, Typed, Nested {
 	}
 	
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		return Nested.tryResolveColumn(builder, groupKeys, filter, value);
 	}
 	

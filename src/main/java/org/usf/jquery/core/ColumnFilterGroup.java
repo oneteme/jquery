@@ -29,7 +29,7 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		return Nested.resolveColumn(builder, groupKeys, filters);
 	}
 	

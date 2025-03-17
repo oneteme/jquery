@@ -35,7 +35,7 @@ public final class CaseColumn implements DBColumn {
 	}
 	
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
+	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
 		return Nested.resolveColumn(this, builder, groupKeys, whenCases);
 	}
 	
