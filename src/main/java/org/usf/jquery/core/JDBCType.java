@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
 import static java.util.Optional.ofNullable;
 
@@ -10,7 +11,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +35,7 @@ public enum JDBCType implements JavaType {
 	DOUBLE(Types.DOUBLE, Double.class, Number.class),
 	NUMERIC(Types.NUMERIC, BigDecimal.class, Number.class),
 	DECIMAL(Types.DECIMAL, BigDecimal.class, Number.class),
-	CHAR(Types.CHAR, Character.class, JDBCType::isString), //teradata !char
+	CHAR(Types.CHAR, Character.class, JDBCType::isString),
 	VARCHAR(Types.VARCHAR, String.class, JDBCType::isString),
 	NVARCHAR(Types.NVARCHAR, String.class, JDBCType::isString),
 	LONGNVARCHAR(Types.LONGNVARCHAR, String.class, JDBCType::isString),
@@ -79,7 +79,7 @@ public enum JDBCType implements JavaType {
 	public boolean accept(Object o) {
 		if(o instanceof Typed v) {
 			var t = v.getType();
-			return t == this || isNull(t) || typeMatcher.test(t.getCorrespondingClass());
+			return t == this || isNull(t) || typeMatcher.test(t.type);
 		}
 		return isNull(o) || valueMatcher.test(o);
 	}
@@ -99,7 +99,7 @@ public enum JDBCType implements JavaType {
 	public static Optional<JDBCType> typeOf(Object o) {
 		return o instanceof Typed t 
 				? ofNullable(t.getType())
-				: ofNullable(o).flatMap(v-> findType(e-> e.getCorrespondingClass().isInstance(o)));
+				: ofNullable(o).flatMap(v-> findType(e-> e.type.isInstance(o)));
 	}
 	
 	public static Optional<JDBCType> fromDataType(int value) {
@@ -107,6 +107,6 @@ public enum JDBCType implements JavaType {
 	}
 	
 	public static Optional<JDBCType> findType(Predicate<JDBCType> pre) {
-		return Stream.of(values()).filter(pre).findAny();
+		return stream(values()).filter(pre).findAny();
 	}
 }

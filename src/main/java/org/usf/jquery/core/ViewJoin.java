@@ -25,7 +25,7 @@ public final class ViewJoin implements DBObject {
 	private final DBFilter[] filters;
 	//join results !?
 	
-	public ViewJoin(JoinType joinType, DBView view, DBFilter[] filters) {
+	ViewJoin(JoinType joinType, DBView view, DBFilter[] filters) {
 		this.joinType = joinType;
 		this.view = view;
 		this.filters = joinType == CROSS 
