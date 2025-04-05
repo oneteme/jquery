@@ -10,6 +10,9 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+
 import lombok.Getter;
 
 /**
@@ -18,7 +21,7 @@ import lombok.Getter;
  *
  */
 @Getter
-public final class ViewJoin implements DBObject {
+public final class ViewJoin implements DBObject, Nested {
 	
 	private final JoinType joinType;
 	private final DBView view;
@@ -41,10 +44,22 @@ public final class ViewJoin implements DBObject {
 
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
 		sb.append(joinType.name()).append(" JOIN ");
-		ctx.appendView(sb, view);
+		view.sql(sb, ctx);
 		if(!isEmpty(filters)) {
 			sb.append(" ON ").runForeach(filters, AND.sql(), f-> f.sql(sb, ctx));
 		} //else cross join
+	}
+	
+	@Override
+	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
+		builder.from(view);
+		return Nested.aggregation(builder, groupKeys, filters);
+	}
+	
+	public ViewJoin map(DBView view) {
+		return Objects.equals(this.view, view) 
+				? this 
+				: new ViewJoin(joinType, view, filters); 
 	}
 	
 	@Override

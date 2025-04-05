@@ -29,13 +29,8 @@ public class ValueColumn implements DBColumn {
 	}
 
 	@Override
-	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
+	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
 		return -1;
-	}
-
-	@Override
-	public void views(Consumer<DBView> cons) {
-		//no views
 	}
 
 	@Override

@@ -30,7 +30,7 @@ import javax.sql.DataSource;
 import org.usf.jquery.core.ColumnProxy;
 import org.usf.jquery.core.JQueryException;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.QueryBuilder;
+import org.usf.jquery.core.RequestComposer;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -56,7 +56,7 @@ public final class ContextEnvironment {
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
-	private final QueryBuilder currentQuery;
+	private final RequestComposer currentQuery;
 	
 	ContextEnvironment(ContextEnvironment ctx) {
 		this.database = ctx.database;
@@ -65,7 +65,7 @@ public final class ContextEnvironment {
 		this.dataSource = ctx.dataSource;
 		this.schema = ctx.schema;
 		this.metadata = ctx.metadata;
-		this.currentQuery = new QueryBuilder(ctx.metadata.getType());
+		this.currentQuery = new RequestComposer(ctx.metadata.getType());
 	}
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared

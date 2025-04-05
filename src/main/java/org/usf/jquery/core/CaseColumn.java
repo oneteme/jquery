@@ -35,13 +35,8 @@ public final class CaseColumn implements DBColumn {
 	}
 	
 	@Override
-	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
-		return Nested.resolveColumn(this, builder, groupKeys, whenCases);
-	}
-	
-	@Override
-	public void views(Consumer<DBView> cons) {
-		Nested.resolveViews(cons, whenCases);
+	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
+		return Nested.aggregation(builder, groupKeys, this, whenCases);
 	}
 	
 	@Override

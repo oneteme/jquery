@@ -1,11 +1,13 @@
 package org.usf.jquery.core;
 
-import static java.lang.Math.max;
-import static org.usf.jquery.core.Utils.isEmpty;
+import static java.util.Arrays.stream;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static java.util.stream.Stream.empty;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Consumer;
+import java.util.stream.Stream;
 
 /**
  * 
@@ -14,72 +16,45 @@ import java.util.function.Consumer;
  */
 public interface Nested {
 	
-	static final Consumer<DBColumn> DO_NOTHING = o-> {};
+	int declare(RequestComposer composer, Consumer<DBColumn> groupKeys);
 	
-	//0: groupKey, +1: aggregation, -1: other  
-	int columns(QueryBuilder builder, Consumer<DBColumn> cons);
-	
-	void views(Consumer<DBView> cons); //collect used views
-	
-	static int resolveColumn(DBColumn col, QueryBuilder builder, Consumer<DBColumn> cons, Nested[] args){
-		var arr = new ArrayList<DBColumn>();
-		var lvl = resolveColumn(builder, arr::add, args);
-		return tryResolveColumn(col, arr, lvl, cons);
+	static int aggregation(RequestComposer composer, Consumer<DBColumn> cons, Nested[] args){
+		return aggregation(composer, cons, null, args);
 	}
 	
-	static int resolveColumn(QueryBuilder builder, Consumer<DBColumn> cons, Nested[] args){
-		var lvl = -1;
-		if(!isEmpty(args)) {
-			for(var o : args) {
-				lvl = max(lvl, o.columns(builder, cons));
+	static int aggregation(RequestComposer composer, Consumer<DBColumn> cons, DBColumn col, Nested[] args){
+		return resolveAggragationColumns(composer, cons, streamOrEmptry(args), col);
+	}
+	
+	static int tryAggregation(RequestComposer composer, Consumer<DBColumn> cons, Object... args){
+		return tryAggregation(composer, cons, null, args);
+	}
+	
+	static int tryAggregation(RequestComposer composer, Consumer<DBColumn> cons, DBColumn col, Object... args){
+		return resolveAggragationColumns(composer, cons, streamOrEmptry(args).mapMulti((o, acc)->{
+			if(o instanceof Nested n) {
+				acc.accept(n);
 			}
+		}), col);
+	}
+
+	//0: groupKey, +1: aggregation, -1: constant  
+	private static int resolveAggragationColumns(RequestComposer composer, Consumer<DBColumn> cons, Stream<Nested> stream, DBColumn col){
+		if(isNull(col) || isNull(cons)) { //declare only
+			return stream.mapToInt(o-> o.declare(composer, cons)).max().orElse(-1);
 		}
-		return lvl;
-	}
-	
-	static int tryResolveColumn(DBColumn col, QueryBuilder builder, Consumer<DBColumn> cons, Object... args){
 		var arr = new ArrayList<DBColumn>();
-		var lvl = tryResolveColumn(builder, arr::add, args);
-		return tryResolveColumn(col, arr, lvl, cons);
-	}
-	
-	private static int tryResolveColumn(DBColumn col, List<DBColumn> subColumns, int lvl, Consumer<DBColumn> cons){
+		var lvl = stream.mapToInt(o-> o.declare(composer, arr::add)).max().orElse(-1);
 		if(lvl == 0) { //group keys
 			cons.accept(col);
 		}
-		else if(lvl > 0 && !subColumns.isEmpty()) {
-			subColumns.forEach(cons);
+		else if(lvl > 0 && !arr.isEmpty()) {
+			arr.forEach(cons);
 		}
 		return lvl;
 	}
 	
-	static int tryResolveColumn(QueryBuilder builder, Consumer<DBColumn> cons, Object... args){
-		var lvl = -1;
-		if(!isEmpty(args)) {
-			for(var o : args) {
-				if(o instanceof Nested n) {
-					lvl = max(lvl, n.columns(builder, cons));
-				}
-			}
-		}
-		return lvl;
-	}
-	
-	static void resolveViews(Consumer<DBView> cons, Nested[] args) { //collect used views
-		if(!isEmpty(args)) {
-			for(var n : args) {
-				n.views(cons);
-			}
-		}
-	}
-	
-	static void tryResolveViews(Consumer<DBView> cons, Object... args) { //collect used views
-		if(!isEmpty(args)) {
-			for(var o : args) {
-				if(o instanceof Nested n) {
-					n.views(cons);
-				}
-			}
-		}
+	private static <T> Stream<T> streamOrEmptry(T[] arr) {
+		return nonNull(arr) ? stream(arr) : empty();
 	}
 }

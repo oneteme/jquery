@@ -1,24 +1,34 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
+
+import java.util.function.BiConsumer;
+
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 
 /**
  * 
  * @author u$f
  *
  */
-@Getter
+@Setter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class QueryView implements DBView {
 
-	private final QueryBuilder builder;
+	@Getter
+	private final RequestComposer composer;
+	private BiConsumer<QueryContext, QueryContext> callback;
 	
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.parenthesis(()->
-			builder.build(sb, ctx.subQuery(builder.getOverView())));
+		var sub = ctx.subQuery(composer.getCtes(), composer.getViews());
+		sb.parenthesis(()-> composer.build(sb, sub));
+		if(nonNull(callback)) { 
+			callback.accept(ctx, sub);
+		}
 	}
 	
 	public SingleColumnQuery asColumn(){
@@ -28,5 +38,5 @@ public final class QueryView implements DBView {
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this); 
-	}	
+	}
 }

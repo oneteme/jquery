@@ -1,19 +1,13 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.Database.TERADATA;
-import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.function.Consumer;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 import org.usf.jquery.core.JavaType.Typed;
 
@@ -408,6 +402,10 @@ public interface DBColumn extends DBObject, Typed, Nested {
 		return new SingleCaseColumnBuilder(this);
 	}
 	
+	default ViewColumn wrapView(String tag) {
+		return new ViewColumn(tag, new RequestComposer().columns(as(tag), allColumns()).asView(), getType(), null);
+	}
+	
 	// constants
 	
 	static OperationColumn cdate() {
@@ -444,32 +442,8 @@ public interface DBColumn extends DBObject, Typed, Nested {
 		return new ViewColumn(requireLegalVariable(value), null, null, value);
 	}
 
-	static ViewColumn allColumns(DBView... views) {
-		return new ViewColumn("*", null, null, null) { //no type, no tag
-			@Override
-			public void sql(SqlStringBuilder sb, QueryContext ctx) {
-				String s = getName();
-				if(nonNull(views)) {
-					if(currentDatabase() == TERADATA) {
-						s = Stream.of(views)
-								.map(ctx::viewAlias)
-								.map(v-> v +'.'+ getName())
-								.collect(joining(SCOMA));
-					}
-					else { //avoid view.* for pg
-						for(var v : views) {
-							ctx.viewAlias(v); //declare views
-						}
-					}
-				}
-				sb.append(s);
-			}
-
-			@Override
-			public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
-				return -1; //!group by
-			}
-		};
+	static AllColumns allColumns(DBView... views) {
+		return new AllColumns(views);
 	}
 	
 	static ValueColumn constant(Object value) {

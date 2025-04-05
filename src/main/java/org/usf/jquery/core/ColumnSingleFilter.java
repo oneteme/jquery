@@ -21,15 +21,10 @@ public class ColumnSingleFilter implements DBFilter {
 	}
 
 	@Override
-	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
-		return Nested.tryResolveColumn(builder, groupKeys, left, expression);
+	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
+		return Nested.tryAggregation(builder, groupKeys, left, expression);
 	}
-	
-	@Override
-	public void views(Consumer<DBView> cons) {
-		Nested.tryResolveViews(cons, left, expression);
-	}
-	
+
 	@Override
 	public ColumnFilterGroup append(LogicalOperator op, DBFilter filter) {
 		return new ColumnFilterGroup(op, this, filter);

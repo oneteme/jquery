@@ -4,28 +4,28 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.function.Predicate.not;
-import static org.usf.jquery.core.Clause.COLUMN;
-import static org.usf.jquery.core.Clause.FILTER;
-import static org.usf.jquery.core.Clause.ORDER;
-import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryContext.parameterized;
+import static org.usf.jquery.core.Role.COLUMN;
+import static org.usf.jquery.core.Role.FILTER;
+import static org.usf.jquery.core.Role.JOIN;
+import static org.usf.jquery.core.Role.ORDER;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.Set;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -38,70 +38,65 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class QueryBuilder {
+public class RequestComposer {
 	
-	private final Collection<QueryView> ctes = new ArrayList<>();
-	private final Collection<NamedColumn> columns = new ArrayList<>();
-	private final Collection<DBColumn> group = new HashSet<>(); 
-	private final Collection<DBFilter> where = new ArrayList<>(); 
-	private final Collection<DBFilter> having = new ArrayList<>();
-	private final Collection<ViewJoin> joins = new ArrayList<>(); 
-	private final Collection<DBOrder> orders = new ArrayList<>();
-	private final Map<DBView, QueryView> overView = new HashMap<>();
+	private final List<QueryView> ctes = new ArrayList<>();
+	private final List<NamedColumn> columns = new ArrayList<>();
+	private final Set<DBColumn> group = new HashSet<>(); 
+	private final List<DBFilter> where = new ArrayList<>(); 
+	private final List<DBFilter> having = new ArrayList<>();
+	private final List<ViewJoin> joins = new ArrayList<>(); 
+	private final List<DBOrder> orders = new ArrayList<>();
+	private final Set<DBView> views = new LinkedHashSet<>(); //preserve order
 	private boolean distinct;
 	private boolean aggregation;
 	private Integer limit;
 	private Integer offset;
 	private Iterator<?> it;
-	private Clause clause;
 	
-	public QueryBuilder() {
+	private Role role;
+	
+	private final Map<DBView, QueryView> overView = new HashMap<>();
+	
+	public RequestComposer() {
 		this(null);
 	}
 	
-	public QueryBuilder(Database target) {
+	public RequestComposer(Database target) {
 		setCurrentDatabase(target);
 	}
-
-	public QueryView overView(DBView view) {
-		return overView(view, ()-> new QueryBuilder(currentDatabase()).columns(allColumns(view)).asView());
-	}
 	
-	public QueryView overView(DBView view, Supplier<QueryView> supp) {
-		return overView.computeIfAbsent(view, k-> supp.get());
-	}
-	
-	public QueryBuilder ctes(@NonNull QueryView... ctes) {
+	public RequestComposer ctes(@NonNull QueryView... ctes) {
 		addAll(this.ctes, ctes);
 		return this;
 	}
 	
-	public QueryBuilder columns(@NonNull NamedColumn... columns) {
-		this.clause = COLUMN;
+	public RequestComposer columns(@NonNull NamedColumn... columns) {
+		this.role = COLUMN;
 		for(var col : columns) { //optional tag
 			if(nonNull(col.getTag()) && this.columns.stream()
 					.filter(c-> nonNull(c.getTag()))
-					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
+					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) { //tag is null !!
 				throw resourceAlreadyExistsException(col.getTag());
 			}
-			aggregation |= this.columns.add(col) && col.columns(this, group::add) > 0;
+			aggregation |= this.columns.add(col) && col.declare(this, group::add) > 0;
 		}
 		return this;
 	}
 	
-	public QueryBuilder orders(@NonNull DBOrder... orders) {
-		this.clause = ORDER;
+	public RequestComposer orders(@NonNull DBOrder... orders) {
+		this.role = ORDER;
 		for(var o : orders) {
-			aggregation |= this.orders.add(o) && o.columns(this, group::add) > 0;
+			aggregation |= this.orders.add(o) && o.declare(this, group::add) > 0;
 		}
 		return this;
 	}
 
-	public QueryBuilder filters(@NonNull DBFilter... filters){
-		this.clause = FILTER;
+	public RequestComposer filters(@NonNull DBFilter... filters){
+		this.role = FILTER;
 		for(var f : filters) {
 			var arr = new ArrayList<DBColumn>();
-			var lvl = f.columns(this, arr::add);
+			var lvl = f.declare(this, arr::add);
 			if(lvl > 0) {
 				aggregation |= having.add(f);
 				group.addAll(arr);
@@ -113,27 +108,36 @@ public class QueryBuilder {
 		return this;
 	}
 
-	public QueryBuilder joins(@NonNull ViewJoin... joins) {
-		addAll(this.joins, joins);
+	public RequestComposer joins(@NonNull ViewJoin... joins) {
+		this.role = JOIN;
+		for(var j : joins) {
+			j.declare(this, v->{}); //declare views only, no aggregation
+			this.joins.add(j);
+		}
 		return this;
 	}
 	
-	public QueryBuilder limit(Integer limit) {
+	RequestComposer from(@NonNull DBView... views) {
+		addAll(this.views, views);
+		return this;
+	}
+	
+	public RequestComposer limit(Integer limit) {
 		this.limit = limit;
 		return this;
 	}
 	
-	public QueryBuilder offset(Integer offset) {
+	public RequestComposer offset(Integer offset) {
 		this.offset = offset;
 		return this;
 	}
 	
-	public QueryBuilder distinct() {
+	public RequestComposer distinct() {
 		distinct = true;
 		return this;
 	}
 	
-	public QueryBuilder repeat(@NonNull Iterator<?> it) {
+	public RequestComposer repeat(@NonNull Iterator<?> it) {
 		this.it = it;
 		return this;
 	}
@@ -141,16 +145,29 @@ public class QueryBuilder {
 	public QueryView asView() {
 		return new QueryView(this);
 	}
-
-	public RequestQuery build(){
+	
+	public RequestComposer overView(DBView view, RequestComposer builder) {
+		var query = new QueryView(builder);
+		query.setCallback((ctx, sub)-> {
+			if(views.contains(view)) {
+				views.remove(view);
+				views.add(query);
+			} //else unused CTE
+			ctx.viewProxy(view, query);
+			overView.put(view, query);
+		});
+		return ctes(query);
+	}
+	
+	public Query build(){
 		return build(null);
 	}
 
-	public RequestQuery build(String schema) {
+	public Query build(String schema) {
 		log.trace("building query...");
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
-		var pb = parameterized(schema, ctes, overView); //over clause
+		var pb = parameterized(schema, ctes, views); //over clause
 		var sb = new SqlStringBuilder(1000); //avg
 		if(isNull(it)) {
 			build(sb, pb);
@@ -159,32 +176,25 @@ public class QueryBuilder {
 			sb.runForeach(it, " UNION ALL ", o-> build(sb, pb));
 		}
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
-		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
+		return new Query(sb.toString(), pb.args());
 	}
 
 	public final void build(SqlStringBuilder sb, QueryContext ctx){
 		with(sb, ctx); //before build
     	select(sb, ctx);
-    	var sub = new SqlStringBuilder(500);
-    	var frk = ctx.fork();
-		join(sub, frk);
-    	where(sub, frk);
-    	groupBy(sub, frk);
-    	having(sub, frk);
-    	orderBy(sub, frk);
-    	fetch(sub);
 		from(sb, ctx); //enumerate all views before from clause
-		ctx.join(frk);
-		sb.append(sub.toString());
+		join(sb, ctx);
+    	where(sb, ctx);
+    	groupBy(sb, ctx);
+    	having(sb, ctx);
+    	orderBy(sb, ctx);
+    	fetch(sb);
 	}
 	
 	void with(SqlStringBuilder sb, QueryContext ctx) {
 		if(!ctes.isEmpty()) {
 			sb.append("WITH ")
-			.runForeach(ctes.iterator(), SCOMA, v->{
-				ctx.appendView(sb, v);
-				v.sql(sb.appendAs(), ctx); //query parenthesis
-			})
+			.runForeach(ctes.iterator(), SCOMA, v-> v.sql(sb.appendAs(), ctx)) //query parenthesis
 			.appendSpace();
 		}
 	}
@@ -206,19 +216,26 @@ public class QueryBuilder {
 	}
 	
 	void from(SqlStringBuilder sb, QueryContext ctx) {
-		var views = ctx.views();
+		var from = views;
 		if(!joins.isEmpty()) {
-			var exp = joins.stream().map(ViewJoin::getView).map(v-> overView.containsKey(v) ? overView.get(v) : v).toList();
-			views = views.stream().filter(not(exp::contains)).toList();
+			joins.stream() //exclude join views
+			.map(ViewJoin::getView)
+			.forEach(v-> from.remove(overView.containsKey(v) ? overView.get(v) : v));
 		}
-		if(!views.isEmpty()) {
-			sb.append(" FROM ").runForeach(views.iterator(), SCOMA, v-> ctx.appendView(sb, v));
+		if(!from.isEmpty()) {
+			sb.append(" FROM ").runForeach(from.iterator(), SCOMA, v-> v.sqlUsingTag(sb, ctx));
 		}
 	}
 	
 	void join(SqlStringBuilder sb, QueryContext ctx) {
 		if(!joins.isEmpty()) {
-			sb.appendSpace().runForeach(joins.iterator(), SPACE, v-> v.sql(sb, ctx));
+			sb.appendSpace().runForeach(joins.iterator(), SPACE, v->{
+				if(overView.containsKey(v.getView())) {
+					var cte = overView.get(v.getView()); 
+					v = v.map((s, c)-> s.append(c.viewAlias(cte)));
+				}
+				v.sql(sb, ctx);
+			});
 		}
 	}
 

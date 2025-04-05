@@ -24,12 +24,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public final class RequestQuery {
+public final class Query {
 	
 	@NonNull
 	private final String query;
-	private final Object[] args;
-	private final int[] argTypes;
+	private final QueryArg[] args;
 	
 	public List<DynamicModel> execute(DataSource ds) throws SQLException {
 		return execute(ds, new KeyValueMapper());
@@ -47,11 +46,11 @@ public final class RequestQuery {
 		try(var ps = cn.prepareStatement(query)){
 			if(!isEmpty(args)) {
 				for(var i=0; i<args.length; i++) {
-					if(isNull(args[i])) {
-						ps.setNull(i+1, argTypes[i]);
+					if(isNull(args[i].value())) {
+						ps.setNull(i+1, args[i].type());
 					}
 					else {
-						ps.setObject(i+1, args[i], argTypes[i]);
+						ps.setObject(i+1, args[i].value(), args[i].type());
 					}
 				}						
 			}

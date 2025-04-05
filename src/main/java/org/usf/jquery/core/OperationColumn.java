@@ -1,27 +1,28 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Clause.FILTER;
+import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.HashSet;
 import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class OperationColumn implements DBColumn {
 
 	private final Operator operator;
 	private final Object[] args; //optional
 	private final JDBCType type; //optional
-	private DBColumn overColumn;
+	private ViewColumn overColumn; 
 
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx) {
@@ -39,46 +40,30 @@ public final class OperationColumn implements DBColumn {
 	}
 
 	@Override
-	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
+	public int declare(RequestComposer composer, Consumer<DBColumn> groupKeys) {
 		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
-			return Math.max(1, Nested.tryResolveColumn(builder, DO_NOTHING, args)+1); //if lvl==-1
+			Nested.tryAggregation(composer, null, args);
+			return 1;
 		}
 		if(operator.is("OVER")) {
-			if(builder.getClause() == FILTER) {
-				var views = new HashSet<DBView>();
-				views(views::add);
-				if(views.size() == 1) {
-					var view = views.iterator().next();
-					var cTag = "over_" + hashCode(); //over_view_hash
-					builder.overView(view).getBuilder().columns(new OperationColumn(operator, args, type).as(cTag)); //clone
-					overColumn = new ViewColumn(cTag, view, type, null);
-					return overColumn.columns(builder, groupKeys);
-				}
-				throw new UnsupportedOperationException("over require only one view");
+			if(composer.getRole() == FILTER) {
+				overColumn = new OperationColumn(operator, args, type).wrapView("over_" + hashCode());
+				composer.ctes((QueryView) overColumn.getView());
+				return overColumn.declare(composer, groupKeys);
 			}
-			return resolveOverColumns(builder, groupKeys);
+			return resolveOverColumns(composer, groupKeys);
 		}
-		return Nested.tryResolveColumn(this, builder, groupKeys, args);
+		return Nested.tryAggregation(composer, groupKeys, this, args);
 	}
 	
-	private int resolveOverColumns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
-		requireAtLeastNArgs(1, args, ()-> "over");
-		var lvl = Nested.tryResolveColumn(builder, groupKeys, args[0])-1; //nested aggregate function
+	private int resolveOverColumns(RequestComposer composer, Consumer<DBColumn> groupKeys) {
+		requireAtLeastNArgs(1, args, ()-> "over"); //partition
+		var lvl = Nested.tryAggregation(composer, groupKeys, args[0])-1; //nested aggregate function
 		return args.length == 1
 				? lvl
-				: Math.max(lvl, Nested.tryResolveColumn(builder, groupKeys, args[1])); //partition
+				: Math.max(lvl, Nested.tryAggregation(composer, groupKeys, args[1])); //partition
 	}
-	
-	@Override
-	public void views(Consumer<DBView> cons) {
-		if(nonNull(overColumn)) {
-			overColumn.views(cons);
-		}
-		else {
-			Nested.tryResolveViews(cons, args);
-		}
-	}
-	
+		
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this);

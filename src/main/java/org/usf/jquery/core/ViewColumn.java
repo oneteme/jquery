@@ -30,14 +30,12 @@ public class ViewColumn implements NamedColumn {
 	}
 	
 	@Override
-	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
+	public int declare(RequestComposer composer, Consumer<DBColumn> groupKeys) {
+		if(nonNull(view)) {
+			composer.from(view);
+		}
 		groupKeys.accept(this);
 		return 0;
-	}
-
-	@Override
-	public void views(Consumer<DBView> cons) {
-		cons.accept(view);
 	}
 	
 	@Override

@@ -15,12 +15,12 @@ public final class SingleColumnQuery implements DBObject, Typed {
 	private final JDBCType type;
 
 	SingleColumnQuery(QueryView query) {
-		var cols = query.getBuilder().getColumns(); 
+		var cols = query.getComposer().getColumns(); 
 		if(cols.size() != 1) {
 			throw new IllegalArgumentException("require only one column");
 		}
 		this.query = query;
-		this.type = cols.iterator().next().getType();
+		this.type = cols.get(0).getType();
 	}
 
 	@Override

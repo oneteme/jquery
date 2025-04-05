@@ -45,15 +45,10 @@ final class WhenCase implements DBObject, Typed, Nested {
 	}
 	
 	@Override
-	public int columns(QueryBuilder builder, Consumer<DBColumn> groupKeys) {
-		return Nested.tryResolveColumn(builder, groupKeys, filter, value);
+	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
+		return Nested.tryAggregation(builder, groupKeys, filter, value);
 	}
 	
-	@Override
-	public void views(Consumer<DBView> cons) {
-		Nested.tryResolveViews(cons, filter, value);
-	}
-
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this);

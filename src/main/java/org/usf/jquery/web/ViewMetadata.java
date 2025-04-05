@@ -20,7 +20,7 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.usf.jquery.core.DBView;
-import org.usf.jquery.core.QueryBuilder;
+import org.usf.jquery.core.RequestComposer;
 import org.usf.jquery.core.ResultSetConsumer;
 import org.usf.jquery.core.TableView;
 
@@ -114,7 +114,7 @@ public class ViewMetadata {
 	}
 
 	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
-		var query = new QueryBuilder().columns(allColumns(qr)).filters(constant(1).eq(constant(0))); //no data
+		var query = new RequestComposer().columns(allColumns(qr)).filters(constant(1).eq(constant(0))); //no data
 		query.build(schema).execute(metadata.getConnection(), (ResultSetConsumer) rs->{
 			var db = reverseMapKeys();
 			var meta = rs.getMetaData();

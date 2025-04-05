@@ -1,8 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.COMA;
@@ -13,10 +11,11 @@ import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -25,7 +24,7 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryContext {
 	
 	private static final String P_ARG = "?";
@@ -33,35 +32,19 @@ public final class QueryContext {
 	@Getter
 	private final String schema;
 	private final String vPrefix;
-	private final List<Object> args; //parameterized flag
-	private final List<JDBCType> argTypes;
 	private final Map<DBView, String> views;
-	private final Map<DBView, QueryView> overViews;
-	private final Map<QueryView, String> globalViews; //CTE
+	private final List<QueryArg> args;
 	
 	public Collection<DBView> views(){
 		return views.keySet();
 	}
 	
 	public String viewAlias(DBView view) {
-		if(overViews.containsKey(view)) {
-			view = overViews.get(view);
-		}
-		return views.computeIfAbsent(view, k-> globalViews.containsKey(k)
-			? globalViews.get(k) //global alias
-			: vPrefix + (views.size()+1));
+		return views.get(view);
 	}
 	
-	public void appendView(SqlStringBuilder sb, DBView view){
-		if(overViews.containsKey(view)) {
-			view = overViews.get(view);
-		}
-		if(globalViews.containsKey(view)) {
-			sb.append(globalViews.get(view)); //alias only
-		}
-		else {
-			view.sqlUsingTag(sb, this); //view as alias
-		}
+	public void viewProxy(DBView view, QueryView query) {
+		views.put(view, views.get(query)); //add or replace
 	}
 	
 	public void appendArrayParameter(SqlStringBuilder sb, Object[] arr) {
@@ -110,17 +93,12 @@ public final class QueryContext {
 	}
 		
 	private String appendArg(JDBCType type, Object o) {
-		argTypes.add(type);
-		args.add(o);
+		args.add(new QueryArg(o, type.getValue()));
 		return P_ARG;
 	}
 	
-	public Object[] args() {
-		return dynamic() ? args.toArray() : null;
-	}
-	
-	public int[] argTypes() {
-		return dynamic() ? argTypes.stream().mapToInt(JDBCType::getValue).toArray() : null;
+	public QueryArg[] args() {
+		return dynamic() ? args.toArray(QueryArg[]::new) : null;
 	}
 	
 	private boolean dynamic() {
@@ -142,48 +120,37 @@ public final class QueryContext {
 	}
 	
 	public QueryContext withValue() {
-		return new QueryContext(schema, vPrefix, null, null, views, overViews, globalViews);
+		return new QueryContext(schema, vPrefix, views, null); //no args
 	}
 	
-	public QueryContext subQuery(Map<DBView, QueryView> overViews) { //share schema, prefix, args but not views
-		return new QueryContext(schema, vPrefix + "_s", args, argTypes, new HashMap<>(), overViews, globalViews);
-	}
-	
-	QueryContext fork() { //share schema, prefix and views, but not args
-		return dynamic()
-				? new QueryContext(schema, vPrefix, new ArrayList<>(), new ArrayList<>(), views, overViews, globalViews)
-				: withValue();
-	}
-	
-	void join(QueryContext ctx) { //join args only
-		if(dynamic() && ctx.dynamic()) {
-			args.addAll(ctx.args);
-			argTypes.addAll(ctx.argTypes);
-		}
-		else if(dynamic() ^ ctx.dynamic()){
-			throw new IllegalStateException("not same");
-		}
+	public QueryContext subQuery(Collection<QueryView> ctes, Collection<DBView> views) { //share schema, prefix, args but not views
+		return new QueryContext(schema, vPrefix + "_s", toLinkedMap(ctes, views), args);
 	}
 
 	public static QueryContext addWithValue() {
-		return addWithValue(null, emptyList(), emptyMap()); //no args
+		return addWithValue(null, emptyList(), emptyList()); //no args
 	}
 
-	public static QueryContext addWithValue(String schema, Collection<QueryView> globalViews, Map<DBView, QueryView> overView) {
-		return of(schema, "v", null, null, globalViews, overView); //no args
+	public static QueryContext addWithValue(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
+		return new QueryContext(schema, "v", toLinkedMap(ctes, views), null);
 	}
 
-	public static QueryContext parameterized(String schema, Collection<QueryView> globalViews, Map<DBView, QueryView> overView) {
-		return of(schema, "v", new ArrayList<>(), new ArrayList<>(), globalViews, overView);
+	public static QueryContext parameterized(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
+		return new QueryContext(schema, "v", toLinkedMap(ctes, views), new ArrayList<>());
 	}
 	
-	private static QueryContext of(String schema, String vPrefix, List<Object> args, List<JDBCType> argTypes, Collection<QueryView> globalViews, Map<DBView, QueryView> overViews) {
-		var globMap = new HashMap<QueryView, String>();
-		if(!isEmpty(globalViews)) {
-			for(var v : globalViews) {
-				globMap.put(v, "g"+ (globMap.size()+1));
+	private static Map<DBView, String> toLinkedMap(Collection<QueryView> ctes, Collection<DBView> views){
+		var map = new LinkedHashMap<DBView, String>(); //preserve order
+		if(!isEmpty(ctes)) {
+			for(var v : ctes) {
+				map.put(v, "g"+(map.size()+1));
 			}
 		}
-		return new QueryContext(schema, vPrefix, args, argTypes, new HashMap<>(), unmodifiableMap(overViews), unmodifiableMap(globMap));
+		if(!isEmpty(views)) {
+			for(var v : views) {
+				map.put(v, "v"+(map.size()+1));
+			}
+		}
+		return map;
 	}
 }

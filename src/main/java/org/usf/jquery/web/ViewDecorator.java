@@ -28,11 +28,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.ColumnProxy;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.QueryBuilder;
+import org.usf.jquery.core.RequestComposer;
 import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.ViewColumn;
 
@@ -105,7 +104,7 @@ public interface ViewDecorator {
 				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue));
 	}
 	
-	default QueryBuilder query(QueryBuilder query, Map<String, String[]> parameterMap) {
+	default RequestComposer query(RequestComposer query, Map<String, String[]> parameterMap) {
 		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
@@ -116,7 +115,7 @@ public interface ViewDecorator {
 		return query;
 	}
 	
-	default void parseViews(QueryBuilder query, Map<String, String[]> parameters) {
+	default void parseViews(RequestComposer query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.remove(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
@@ -129,7 +128,7 @@ public interface ViewDecorator {
 		}
 	}
 	
-	default void parseColumns(QueryBuilder query, Map<String, String[]> parameters) {
+	default void parseColumns(RequestComposer query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(COLUMN) ^ parameters.containsKey(COLUMN_DISTINCT)) {
 			String[] cols = parameters.remove(COLUMN);
 			if(isNull(cols)) {
@@ -146,7 +145,7 @@ public interface ViewDecorator {
 		}
 	}
 
-	default void parseOrders(QueryBuilder query, Map<String, String[]> parameters) {
+	default void parseOrders(RequestComposer query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.remove(ORDER))
 			.flatMap(c-> parseEntries(c).stream())
@@ -154,7 +153,7 @@ public interface ViewDecorator {
 		}
 	}
 	
-	default void parseJoins(QueryBuilder query, Map<String, String[]> parameters) {
+	default void parseJoins(RequestComposer query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(JOIN)) {
 			Stream.of(parameters.remove(JOIN))
 			.flatMap(c-> parseEntries(c).stream())
@@ -162,15 +161,15 @@ public interface ViewDecorator {
 		}
 	}
 
-	default void parseLimit(QueryBuilder query, Map<String, String[]> parameters) {
+	default void parseLimit(RequestComposer query, Map<String, String[]> parameters) {
 		query.limit(requirePositiveInt(LIMIT, parameters));
 	}
 	
-	default void parseOffset(QueryBuilder query, Map<String, String[]> parameters) {
+	default void parseOffset(RequestComposer query, Map<String, String[]> parameters) {
 		query.offset(requirePositiveInt(OFFSET, parameters));
 	}
 	
-	default void parseFilters(QueryBuilder query, Map<String, String[]> parameters) {
+	default void parseFilters(RequestComposer query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());

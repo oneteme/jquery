@@ -37,15 +37,10 @@ public final class ColumnProxy implements NamedColumn {
 	}
 
 	@Override
-	public int columns(QueryBuilder builder, Consumer<DBColumn> cons) {
-		return column.columns(builder, cons);
+	public int declare(RequestComposer builder, Consumer<DBColumn> cons) {
+		return column.declare(builder, cons);
 	}
 
-	@Override
-	public void views(Consumer<DBView> cons) {
-		column.views(cons);
-	}
-	
 	@Override // do not delegate this
 	public ColumnProxy as(String name) { 
 		return NamedColumn.super.as(name);

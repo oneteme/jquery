@@ -2,8 +2,6 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
-import java.util.Map;
-
 /**
  * 
  * @author u$f
