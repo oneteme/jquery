@@ -15,15 +15,11 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @Getter(AccessLevel.PACKAGE)
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class DBOrder implements DBObject, Nested {
 
 	private final DBColumn column;
 	private final OrderType order;
-	
-	public DBOrder(DBColumn column) {
-		this(column, null);
-	}
 	
 	@Override
 	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {

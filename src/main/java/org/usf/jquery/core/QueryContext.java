@@ -1,19 +1,19 @@
 package org.usf.jquery.core;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableCollection;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
-import static org.usf.jquery.core.SqlStringBuilder.COMA;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.LinkedHashMap;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.ObjIntConsumer;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -31,9 +31,11 @@ public final class QueryContext {
 	
 	@Getter
 	private final String schema;
-	private final String vPrefix;
+	private final String prefix;
 	private final Map<DBView, String> views;
 	private final List<QueryArg> args;
+	
+	private final Collection<QueryView> ctes; //only for sub query
 	
 	public Collection<DBView> views(){
 		return views.keySet();
@@ -105,26 +107,19 @@ public final class QueryContext {
 		return nonNull(args);
 	}
 
-	static String nParameter(int n){
-		if(n < 1){
-			return EMPTY;
-		}
-        return n == 1 ? P_ARG : P_ARG + (COMA + P_ARG).repeat(n-1);
-    }
-
 	public static String formatValue(Object o) {
 		if(o instanceof Number){
 			return o.toString();
-		}
+		}//else String|Date
 		return nonNull(o) ? quote(o.toString()) : "null";
 	}
 	
 	public QueryContext withValue() {
-		return new QueryContext(schema, vPrefix, views, null); //no args
+		return new QueryContext(schema, prefix, views, null, null); //no args
 	}
 	
-	public QueryContext subQuery(Collection<QueryView> ctes, Collection<DBView> views) { //share schema, prefix, args but not views
-		return new QueryContext(schema, vPrefix + "_s", toLinkedMap(ctes, views), args);
+	public QueryContext subQuery(Collection<DBView> views) { //share schema, prefix, args but not views
+		return new QueryContext(schema, prefix + "_s", toLinkedMap(ctes, views), args, ctes);
 	}
 
 	public static QueryContext addWithValue() {
@@ -132,25 +127,26 @@ public final class QueryContext {
 	}
 
 	public static QueryContext addWithValue(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
-		return new QueryContext(schema, "v", toLinkedMap(ctes, views), null);
+		return new QueryContext(schema, "v", toLinkedMap(ctes, views), null, unmodifiableCollection(ctes));
 	}
 
 	public static QueryContext parameterized(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
-		return new QueryContext(schema, "v", toLinkedMap(ctes, views), new ArrayList<>());
+		return new QueryContext(schema, "v", toLinkedMap(ctes, views), new ArrayList<>(), unmodifiableCollection(ctes));
 	}
 	
 	private static Map<DBView, String> toLinkedMap(Collection<QueryView> ctes, Collection<DBView> views){
-		var map = new LinkedHashMap<DBView, String>(); //preserve order
-		if(!isEmpty(ctes)) {
-			for(var v : ctes) {
-				map.put(v, "g"+(map.size()+1));
-			}
-		}
+		var map = new HashMap<DBView, String>();
+		doForeach(ctes,  (v,i)-> map.put(v, "g"+i));
+		doForeach(views, (v,i)-> map.put(v, "v"+i));
+		return map; //modifiable map
+	}
+	
+	private static <T> void doForeach(Collection<T> views, ObjIntConsumer<? super T> cons) {
 		if(!isEmpty(views)) {
+			int i=0;
 			for(var v : views) {
-				map.put(v, "v"+(map.size()+1));
+				cons.accept(v, i);
 			}
 		}
-		return map;
 	}
 }
