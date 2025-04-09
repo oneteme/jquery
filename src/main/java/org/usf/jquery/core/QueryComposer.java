@@ -8,7 +8,7 @@ import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryContext.parameterized;
+import static org.usf.jquery.core.QueryBuilder.parameterized;
 import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Role.JOIN;
@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class RequestComposer {
+public class QueryComposer {
 	
 	private final List<QueryView> ctes = new ArrayList<>();
 	private final List<NamedColumn> columns = new ArrayList<>();
@@ -58,20 +58,20 @@ public class RequestComposer {
 	
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 	
-	public RequestComposer() {
+	public QueryComposer() {
 		this(null);
 	}
 	
-	public RequestComposer(Database target) {
+	public QueryComposer(Database target) {
 		setCurrentDatabase(target);
 	}
 	
-	public RequestComposer ctes(@NonNull QueryView... ctes) {
+	public QueryComposer ctes(@NonNull QueryView... ctes) {
 		addAll(this.ctes, ctes);
 		return this;
 	}
 	
-	public RequestComposer columns(@NonNull NamedColumn... columns) {
+	public QueryComposer columns(@NonNull NamedColumn... columns) {
 		this.role = COLUMN;
 		for(var col : columns) { //optional tag
 			if(nonNull(col.getTag()) && this.columns.stream()
@@ -79,24 +79,24 @@ public class RequestComposer {
 					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) { //tag is null !!
 				throw resourceAlreadyExistsException(col.getTag());
 			}
-			aggregation |= this.columns.add(col) && col.declare(this, group::add) > 0;
+			aggregation |= this.columns.add(col) && col.compose(this, group::add) > 0;
 		}
 		return this;
 	}
 	
-	public RequestComposer orders(@NonNull DBOrder... orders) {
+	public QueryComposer orders(@NonNull DBOrder... orders) {
 		this.role = ORDER;
 		for(var o : orders) {
-			aggregation |= this.orders.add(o) && o.declare(this, group::add) > 0;
+			aggregation |= this.orders.add(o) && o.compose(this, group::add) > 0;
 		}
 		return this;
 	}
 
-	public RequestComposer filters(@NonNull DBFilter... filters){
+	public QueryComposer filters(@NonNull DBFilter... filters){
 		this.role = FILTER;
 		for(var f : filters) {
 			var arr = new ArrayList<DBColumn>();
-			var lvl = f.declare(this, arr::add);
+			var lvl = f.compose(this, arr::add);
 			if(lvl > 0) {
 				aggregation |= having.add(f);
 				group.addAll(arr);
@@ -108,36 +108,36 @@ public class RequestComposer {
 		return this;
 	}
 
-	public RequestComposer joins(@NonNull ViewJoin... joins) {
+	public QueryComposer joins(@NonNull ViewJoin... joins) {
 		this.role = JOIN;
 		for(var j : joins) {
-			j.declare(this, v->{}); //declare views only, no aggregation
+			j.compose(this, v->{}); //declare views only, no aggregation
 			this.joins.add(j);
 		}
 		return this;
 	}
 	
-	RequestComposer from(@NonNull DBView... views) {
+	QueryComposer declare(@NonNull DBView... views) {
 		addAll(this.views, views);
 		return this;
 	}
 	
-	public RequestComposer limit(Integer limit) {
+	public QueryComposer limit(Integer limit) {
 		this.limit = limit;
 		return this;
 	}
 	
-	public RequestComposer offset(Integer offset) {
+	public QueryComposer offset(Integer offset) {
 		this.offset = offset;
 		return this;
 	}
 	
-	public RequestComposer distinct() {
+	public QueryComposer distinct() {
 		distinct = true;
 		return this;
 	}
 	
-	public RequestComposer repeat(@NonNull Iterator<?> it) {
+	public QueryComposer repeat(@NonNull Iterator<?> it) {
 		this.it = it;
 		return this;
 	}
@@ -146,60 +146,59 @@ public class RequestComposer {
 		return new QueryView(this);
 	}
 	
-	public RequestComposer overView(DBView view, RequestComposer builder) {
-		var query = new QueryView(builder);
-		query.setCallback((ctx, sub)-> {
+	public QueryComposer overView(DBView view, QueryComposer query) {
+		var v = new QueryView(query);
+		v.setCallback((ctx, sub)-> {
 			if(views.contains(view)) {
 				views.remove(view);
-				views.add(query);
+				views.add(v);
 			} //else unused CTE
-			ctx.viewProxy(view, query);
-			overView.put(view, query);
+			ctx.viewProxy(view, v);
+			overView.put(view, v);
 		});
-		return ctes(query);
+		return ctes(v);
 	}
 	
-	public Query build(){
-		return build(null);
+	public Query compose(){
+		return compose(null);
 	}
 
-	public Query build(String schema) {
+	public Query compose(String schema) {
 		log.trace("building query...");
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
 		var pb = parameterized(schema, ctes, views); //over clause
-		var sb = new SqlStringBuilder(1000); //avg
 		if(isNull(it)) {
-			build(sb, pb);
+			build(pb);
 		}
 		else {
-			sb.runForeach(it, " UNION ALL ", o-> build(sb, pb));
+			pb.append(" UNION ALL ", it, o-> build(pb));
 		}
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
-		return new Query(sb.toString(), pb.args());
+		return pb.build();
 	}
 
-	public final void build(SqlStringBuilder sb, QueryContext ctx){
-		with(sb, ctx); //before build
-    	select(sb, ctx);
-		from(sb, ctx); //enumerate all views before from clause
-		join(sb, ctx);
-    	where(sb, ctx);
-    	groupBy(sb, ctx);
-    	having(sb, ctx);
-    	orderBy(sb, ctx);
-    	fetch(sb);
+	public final void build(QueryBuilder builder){
+		with(builder); //before build
+    	select(builder);
+		from(builder); //enumerate all views before from clause
+		join(builder);
+    	where(builder);
+    	groupBy(builder);
+    	having(builder);
+    	orderBy(builder);
+    	fetch(builder);
 	}
 	
-	void with(SqlStringBuilder sb, QueryContext ctx) {
+	void with(QueryBuilder builder) {
 		if(!ctes.isEmpty()) {
-			sb.append("WITH ")
-			.runForeach(ctes.iterator(), SCOMA, v-> v.sql(sb.appendAs(), ctx)) //query parenthesis
+			builder.append("WITH ")
+			.append(SCOMA, ctes.iterator(), v-> builder.appendViewAlias(v).appendAs().append(v)) //query parenthesis
 			.appendSpace();
 		}
 	}
 
-	void select(SqlStringBuilder sb, QueryContext ctx){
+	void select(QueryBuilder builder){
 		if(currentDatabase() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("");
@@ -208,14 +207,17 @@ public class RequestComposer {
 				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
 			}
 		}
-		sb.append("SELECT")
-    	.appendIf(distinct, " DISTINCT")
-    	.appendIf(nonNull(limit) && currentDatabase() == TERADATA, ()-> " TOP " + limit) //???????
-    	.appendSpace()
-    	.runForeach(columns.iterator(), SCOMA, o-> o.sqlUsingTag(sb, ctx));
+		builder.append("SELECT");
+		if(distinct) {
+			builder.append(" DISTINCT");
+		}
+    	if(nonNull(limit) && currentDatabase() == TERADATA){
+    		builder.append(" TOP " + limit);
+    	}
+    	builder.appendSpace().append(SPACE, columns.iterator(), o-> o.sqlUsingTag(builder));
 	}
 	
-	void from(SqlStringBuilder sb, QueryContext ctx) {
+	void from(QueryBuilder query) {
 		var from = views;
 		if(!joins.isEmpty()) {
 			joins.stream() //exclude join views
@@ -223,64 +225,66 @@ public class RequestComposer {
 			.forEach(v-> from.remove(overView.containsKey(v) ? overView.get(v) : v));
 		}
 		if(!from.isEmpty()) {
-			sb.append(" FROM ").runForeach(from.iterator(), SCOMA, v-> v.sqlUsingTag(sb, ctx));
+			query.append(" FROM ").append(SCOMA, from.iterator(), v-> v.sqlUsingTag(query));
 		}
 	}
 	
-	void join(SqlStringBuilder sb, QueryContext ctx) {
+	void join(QueryBuilder builder) {
 		if(!joins.isEmpty()) {
-			sb.appendSpace().runForeach(joins.iterator(), SPACE, v->{
+			builder.appendSpace().append(SPACE, joins.iterator(), v-> {
 				if(overView.containsKey(v.getView())) {
 					var cte = overView.get(v.getView()); 
-					v = v.map((s, c)-> s.append(c.viewAlias(cte)));
+					v = v.map(c-> c.appendViewAlias(cte));
 				}
-				v.sql(sb, ctx);
+				v.build(builder);
 			});
 		}
 	}
 
-	void where(SqlStringBuilder sb, QueryContext ctx){
+	void where(QueryBuilder builder){
 		if(!where.isEmpty()) {
-    		sb.append(" WHERE ").runForeach(where.iterator(), AND.sql(), f-> f.sql(sb, ctx));
+    		builder.append(" WHERE ").append(AND.sql(), where.iterator());
 		}
 	}
 	
-	void groupBy(SqlStringBuilder sb, QueryContext ctx){
+	void groupBy(QueryBuilder builder){
 		if(aggregation && !group.isEmpty()) {
-    		sb.append(" GROUP BY ").runForeach(group.iterator(), SCOMA, c-> {
+    		builder.append(" GROUP BY ").append(SCOMA, group.iterator(), c-> {
     			if(!(c instanceof ViewColumn) && columns.contains(c)) {
-    				sb.append(((NamedColumn)c).getTag());
+    				builder.append(((NamedColumn)c).getTag());
     			}
     			else {
-    				 c.sql(sb, ctx);
+    				 c.build(builder);
     			}
     		});
 		}
 	}
 	
-	void having(SqlStringBuilder sb, QueryContext ctx){
+	void having(QueryBuilder builder){
 		if(!having.isEmpty()) {
-    		sb.append(" HAVING ")
-    		.runForeach(having.iterator(), AND.sql(), f-> f.sql(sb, ctx));
+    		builder.append(" HAVING ").append(AND.sql(), having.iterator());
 		}
 	}
 	
-	void orderBy(SqlStringBuilder sb, QueryContext ctx) {
+	void orderBy(QueryBuilder builder) {
     	if(!orders.isEmpty()) {
-    		sb.append(" ORDER BY ")
-    		.runForeach(orders.iterator(), SCOMA, o-> o.sql(sb, ctx));
+    		builder.append(" ORDER BY ").append(SCOMA, orders.iterator());
     	}
 	}
 	
-	void fetch(SqlStringBuilder sb) {
+	void fetch(QueryBuilder builder) {
 		if(currentDatabase() != TERADATA) { // TOP n
-			sb.appendIfNonNull(limit,  v-> " LIMIT " + v);
-			sb.appendIfNonNull(offset, v-> " OFFSET " + v);
+			if(nonNull(limit)) {
+				builder.append(" LIMIT " + limit);
+			}
+			if(nonNull(offset)) {
+				builder.append(" OFFSET " + offset);
+			}
 		}
 	}
 
 	@Override
 	public String toString() {
-		return build().getQuery();
+		return compose().getQuery();
 	}
 }

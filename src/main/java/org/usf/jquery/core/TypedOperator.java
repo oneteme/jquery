@@ -29,9 +29,9 @@ public class TypedOperator implements Operator {
 	}
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	public void build(QueryBuilder query, Object... args) {
 		try {
-			operator.sql(sb, ctx, parameterSet.assertArguments(args));
+			operator.build(query, parameterSet.assertArguments(args));
 		}
 		catch (BadArgumentException e) {
 			throw badArgumentsException("operator", operator.id(), args, e);

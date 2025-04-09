@@ -9,11 +9,11 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
  */
 public interface DBFilter extends DBObject, Nested, Chainable<DBFilter> {
 	
-	void sql(SqlStringBuilder sb, QueryContext ctx);
+	void sql(QueryBuilder query);
 
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, DBFilter.class::getSimpleName);
-		sql(sb, ctx);
+		sql(query);
 	}
 }

@@ -22,21 +22,17 @@ public final class DBOrder implements DBObject, Nested {
 	private final OrderType order;
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, DBOrder.class::getSimpleName);
-		sql(sb, ctx);
-	}
-
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		column.sql(sb, ctx);
+		query.append(column);
 		if(nonNull(order)) {
-			sb.appendSpace().append(order.name());
+			query.appendSpace().append(order.name());
 		}
 	}
 	
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
-		return column.declare(builder, groupKeys);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return column.compose(query, groupKeys);
 	}
 	
 	@Override

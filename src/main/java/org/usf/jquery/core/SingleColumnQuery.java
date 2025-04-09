@@ -11,22 +11,22 @@ import org.usf.jquery.core.JavaType.Typed;
  */
 public final class SingleColumnQuery implements DBObject, Typed {
 	
-	private final QueryView query;
+	private final QueryView view;
 	private final JDBCType type;
 
-	SingleColumnQuery(QueryView query) {
-		var cols = query.getComposer().getColumns(); 
+	SingleColumnQuery(QueryView view) {
+		var cols = view.getComposer().getColumns(); 
 		if(cols.size() != 1) {
 			throw new IllegalArgumentException("require only one column");
 		}
-		this.query = query;
+		this.view = view;
 		this.type = cols.get(0).getType();
 	}
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, SingleColumnQuery.class::getSimpleName);
-		query.sql(sb, ctx);
+		query.append(view);
 	}
 	
 	@Override

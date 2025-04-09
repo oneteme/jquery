@@ -11,11 +11,11 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 public interface StringComparator extends Comparator {
 	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireNArgs(2, args, StringComparator.class::getSimpleName);
-		ctx.appendParameter(sb, args[0]);
-		sb.spacing(id());
-		ctx.appendParameter(sb, wildcardArg(args[1]));
+		query.appendParameter(args[0])
+		.appendSpace().append(id()).appendSpace()
+		.appendParameter(wildcardArg(args[1]));
 	}
 	
 	default Object wildcardArg(Object o) { //Entry<Srtring, Unary<String>>

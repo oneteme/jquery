@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.addAll;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
+import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;
@@ -23,14 +24,13 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.parenthesis(()->
-			sb.runForeach(filters, operator.sql(), o-> o.sql(sb, ctx)));
+	public void sql(QueryBuilder query) {
+		query.parenthesis(()-> query.append(operator.sql(), filters));
 	}
 
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
-		return Nested.aggregation(builder, groupKeys, filters);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return Nested.aggregation(query, groupKeys, filters);
 	}
 	
 	@Override

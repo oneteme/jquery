@@ -25,7 +25,7 @@ public interface CombinedOperator extends Operator {
 	}
 	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) { //no SQL
+	default void build(QueryBuilder query, Object... args) { //no SQL
 		throw new UnsupportedOperationException("CombinedOperator::sql");
 	}
 }

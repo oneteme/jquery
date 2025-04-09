@@ -25,12 +25,12 @@ public final class OperationColumn implements DBColumn {
 	private ViewColumn overColumn; 
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
+	public void build(QueryBuilder query) {
 		if(nonNull(overColumn)) {
-			overColumn.sql(sb, ctx); //no args
+			query.append(overColumn); //no args
 		}
 		else {
-			operator.sql(sb, ctx, args);
+			operator.build(query, args);
 		}
 	}
 	
@@ -40,23 +40,23 @@ public final class OperationColumn implements DBColumn {
 	}
 
 	@Override
-	public int declare(RequestComposer composer, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
 		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
-			Nested.tryAggregation(composer, null, args);
+			Nested.tryAggregation(query, null, args);
 			return 1;
 		}
 		if(operator.is("OVER")) {
-			if(composer.getRole() == FILTER) {
+			if(query.getRole() == FILTER) {
 				overColumn = new OperationColumn(operator, args, type).wrapView("over_" + hashCode());
-				composer.ctes((QueryView) overColumn.getView());
-				return overColumn.declare(composer, groupKeys);
+				query.ctes((QueryView) overColumn.getView());
+				return overColumn.compose(query, groupKeys);
 			}
-			return resolveOverColumns(composer, groupKeys);
+			return resolveOverColumns(query, groupKeys);
 		}
-		return Nested.tryAggregation(composer, groupKeys, this, args);
+		return Nested.tryAggregation(query, groupKeys, this, args);
 	}
 	
-	private int resolveOverColumns(RequestComposer composer, Consumer<DBColumn> groupKeys) {
+	private int resolveOverColumns(QueryComposer composer, Consumer<DBColumn> groupKeys) {
 		requireAtLeastNArgs(1, args, ()-> "over"); //partition
 		var lvl = Nested.tryAggregation(composer, groupKeys, args[0])-1; //nested aggregate function
 		return args.length == 1

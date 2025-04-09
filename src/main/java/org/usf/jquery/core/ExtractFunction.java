@@ -18,11 +18,9 @@ public interface ExtractFunction extends FunctionOperator {
 	}
 	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext builder, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireNArgs(1, args, ExtractFunction.class::getSimpleName);
-		sb.function(id(), ()->{
-			sb.append(field()).append(" FROM ");
-			builder.appendLiteral(sb, args[0]);
-		});
+		query.append(id()).parenthesis(
+				()-> query.append(field()).append(" FROM ").appendLiteral(args[0]));
 	}
 }

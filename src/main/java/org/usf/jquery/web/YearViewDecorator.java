@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.RequestComposer;
+import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.TableView;
 
 /**
@@ -63,7 +63,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 	
 	@Override
-	default void parseFilters(RequestComposer query, Map<String, String[]> parameterMap) {
+	default void parseFilters(QueryComposer query, Map<String, String[]> parameterMap) {
 		ofNullable(monthRevision()).map(this::column)
 		.ifPresent(c-> query.filters(monthFilter(c)));
 		query.repeat(iterator(parseRevisions(parameterMap)));

@@ -16,13 +16,13 @@ public class ColumnSingleFilter implements DBFilter {
 	private final ComparisonExpression expression;
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		expression.sql(sb, ctx, left);
+	public void sql(QueryBuilder query) {
+		expression.sql(query, left);
 	}
 
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
-		return Nested.tryAggregation(builder, groupKeys, left, expression);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return Nested.tryAggregation(query, groupKeys, left, expression);
 	}
 
 	@Override

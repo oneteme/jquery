@@ -58,8 +58,8 @@ import org.usf.jquery.core.OperationColumn;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.RequestComposer;
 import org.usf.jquery.core.SingleColumnQuery;
 import org.usf.jquery.core.ViewJoin;
 
@@ -118,7 +118,7 @@ final class RequestEntryChain {
 		if(SELECT.equals(value)) {
 			var e =	this;
 			try {
-				var q = new RequestComposer().columns(taggableVarargs(td));
+				var q = new QueryComposer().columns(taggableVarargs(td));
 				while(e.hasNext()) {
 					e = e.next;
 					switch(e.value) {//column not allowed 

@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryContext.addWithValue;
+import static org.usf.jquery.core.QueryBuilder.addWithValue;
 
 /**
  * 
@@ -10,11 +10,11 @@ import static org.usf.jquery.core.QueryContext.addWithValue;
 @FunctionalInterface
 public interface DBObject {
 	
-	void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args);
+	void build(QueryBuilder query, Object... args);
 	
 	static String toSQL(DBObject obj, Object... args) {
-		var sb = new SqlStringBuilder();
-		obj.sql(sb, addWithValue(), args);
-		return sb.toString();
+		var query = addWithValue();
+		obj.build(query, args);
+		return query.build().getQuery();
 	}
 }

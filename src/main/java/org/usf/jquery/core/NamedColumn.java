@@ -11,11 +11,11 @@ public interface NamedColumn extends DBColumn {
 
 	String getTag();
 	
-	default void sqlUsingTag(SqlStringBuilder sb, QueryContext ctx) {
-		sql(sb, ctx);
+	default void sqlUsingTag(QueryBuilder query) {
+		build(query);
 		var tag = getTag();
 		if(nonNull(tag)) {
-			sb.appendAs(tag);
+			query.appendAs().append(tag);
 		}
 	}
 }

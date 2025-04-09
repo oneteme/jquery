@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 /**
@@ -18,13 +19,12 @@ public interface CastFunction extends FunctionOperator {
 	}
 	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(1, args, CastFunction.class::getSimpleName);
-		sb.function(id(), ()-> {
-			ctx.appendLiteral(sb, args[0]);
-			sb.appendAs(type());
+		query.append(id()).parenthesis(()-> {
+			query.appendLiteral(args[0]).appendAs().append(type());
 			if(args.length > 1) { //varchar | decimal
-				sb.parenthesis(()-> ctx.appendLiteralArray(sb, args, 1));
+				query.parenthesis(()-> query.appendLiteralArray(SCOMA, args, 1));
 			}
 		});
 	}

@@ -12,12 +12,10 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 public interface RangeComparator extends Comparator {
 
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireNArgs(3, args, RangeComparator.class::getSimpleName);
-		ctx.appendParameter(sb, args[0]);
-		sb.spacing(id());
-		ctx.appendParameter(sb, args[1]);
-		sb.append(AND.sql());
-		ctx.appendParameter(sb, args[2]);
+		query.appendParameter(args[0])
+		.appendSpace().append(id()).appendSpace()
+		.appendParameter(args[1]).append(AND.sql()).appendParameter(args[2]);
 	}
 }

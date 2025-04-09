@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryContext.formatValue;
+import static org.usf.jquery.core.QueryBuilder.formatValue;
 
 import java.util.function.Consumer;
 import java.util.function.Supplier;
@@ -19,8 +19,8 @@ public class ValueColumn implements DBColumn {
 	private final Supplier<Object> supp;
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.append(formatValue(supp.get()));
+	public void build(QueryBuilder query) {
+		query.append(formatValue(supp.get()));
 	}
 
 	@Override
@@ -29,7 +29,7 @@ public class ValueColumn implements DBColumn {
 	}
 
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
 		return -1;
 	}
 

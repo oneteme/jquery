@@ -10,17 +10,17 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 @FunctionalInterface
 public interface DBView extends DBObject {
 
-	void sql(SqlStringBuilder sb, QueryContext ctx);
+	void sql(QueryBuilder query);
 	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, DBView.class::getSimpleName);
-		sql(sb, ctx);
+		sql(query);
 	}
 	
-	default void sqlUsingTag(SqlStringBuilder sb, QueryContext ctx) {
-		sql(sb, ctx);
-		sb.appendSpace().append(ctx.viewAlias(this));
+	default void sqlUsingTag(QueryBuilder query) {
+		sql(query);
+		query.appendSpace().append(query.viewAlias(this));
 	}
 
 	default ViewColumn column(String name) {

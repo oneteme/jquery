@@ -20,22 +20,23 @@ import lombok.Setter;
 public final class QueryView implements DBView, Nested {
 
 	@Getter
-	private final RequestComposer composer;
-	private BiConsumer<QueryContext, QueryContext> callback; //cte
+	private final QueryComposer composer;
+	private BiConsumer<QueryBuilder, QueryBuilder> callback; //cte
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		var sub = ctx.subQuery(composer.getViews());
-		sb.parenthesis(()-> composer.build(sb, sub));
+	public void sql(QueryBuilder query) {
+		var sub = query.subQuery(composer.getViews());
+		query.parenthesis(()-> composer.build(sub));
 		if(nonNull(callback)) { 
-			callback.accept(ctx, sub);
+			callback.accept(query, sub);
 		}
 	}
 
 	@Override
-	public int declare(RequestComposer composer, Consumer<DBColumn> groupKeys) {
-		if(!this.composer.getCtes().isEmpty()) { //up
-			composer.ctes(this.composer.getCtes().toArray(QueryView[]::new));
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		var ctes = this.composer.getCtes();
+		if(!ctes.isEmpty()) {
+			query.ctes(ctes.toArray(QueryView[]::new));  //up
 		}
 		return -1; //no column
 	}

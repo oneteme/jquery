@@ -23,14 +23,13 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object operand) {
-		sb.parenthesis(()-> 
-			sb.runForeach(expressions, operator.sql(), o-> o.sql(sb, ctx, operand)));
+	public void sql(QueryBuilder query, Object operand) {
+		query.parenthesis(()-> query.append(operator.sql(), expressions));
 	}
 	
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
-		return Nested.aggregation(builder, groupKeys, expressions);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return Nested.aggregation(query, groupKeys, expressions);
 	}
 	
 	@Override

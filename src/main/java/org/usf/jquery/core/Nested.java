@@ -16,22 +16,22 @@ import java.util.stream.Stream;
  */
 public interface Nested {
 	
-	int declare(RequestComposer composer, Consumer<DBColumn> groupKeys);
+	int compose(QueryComposer composer, Consumer<DBColumn> groupKeys);
 	
-	static int aggregation(RequestComposer composer, Consumer<DBColumn> cons, Nested[] args){
-		return aggregation(composer, cons, null, args);
+	static int aggregation(QueryComposer query, Consumer<DBColumn> cons, Nested[] args){
+		return aggregation(query, cons, null, args);
 	}
 	
-	static int aggregation(RequestComposer composer, Consumer<DBColumn> cons, DBColumn col, Nested[] args){
-		return resolveAggragationColumns(composer, cons, streamOrEmptry(args), col);
+	static int aggregation(QueryComposer query, Consumer<DBColumn> cons, DBColumn col, Nested[] args){
+		return resolveAggragationColumns(query, cons, streamOrEmptry(args), col);
 	}
 	
-	static int tryAggregation(RequestComposer composer, Consumer<DBColumn> cons, Object... args){
-		return tryAggregation(composer, cons, null, args);
+	static int tryAggregation(QueryComposer query, Consumer<DBColumn> cons, Object... args){
+		return tryAggregation(query, cons, null, args);
 	}
 	
-	static int tryAggregation(RequestComposer composer, Consumer<DBColumn> cons, DBColumn col, Object... args){
-		return resolveAggragationColumns(composer, cons, streamOrEmptry(args).mapMulti((o, acc)->{
+	static int tryAggregation(QueryComposer query, Consumer<DBColumn> cons, DBColumn col, Object... args){
+		return resolveAggragationColumns(query, cons, streamOrEmptry(args).mapMulti((o, acc)->{
 			if(o instanceof Nested n) {
 				acc.accept(n);
 			}
@@ -39,12 +39,12 @@ public interface Nested {
 	}
 
 	//0: groupKey, +1: aggregation, -1: constant  
-	private static int resolveAggragationColumns(RequestComposer composer, Consumer<DBColumn> cons, Stream<Nested> stream, DBColumn col){
+	private static int resolveAggragationColumns(QueryComposer query, Consumer<DBColumn> cons, Stream<Nested> stream, DBColumn col){
 		if(isNull(col) || isNull(cons)) { //declare only
-			return stream.mapToInt(o-> o.declare(composer, cons)).max().orElse(-1);
+			return stream.mapToInt(o-> o.compose(query, cons)).max().orElse(-1);
 		}
 		var arr = new ArrayList<DBColumn>();
-		var lvl = stream.mapToInt(o-> o.declare(composer, arr::add)).max().orElse(-1);
+		var lvl = stream.mapToInt(o-> o.compose(query, arr::add)).max().orElse(-1);
 		if(lvl == 0) { //group keys
 			cons.accept(col);
 		}

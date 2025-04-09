@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+
 /**
  * https://learnsql.com/blog/standard-sql-functions-cheat-sheet/
  * 
@@ -10,11 +12,11 @@ package org.usf.jquery.core;
 public interface FunctionOperator extends Operator {
 
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
-		sql(sb, ctx, args, 0);
+	default void build(QueryBuilder query, Object... args) {
+		sql(query, args, 0);
 	}
 	
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args, int from) {
-		sb.function(id(), ()-> ctx.appendLiteralArray(sb, args, from)); //avoid sub array
+	default void sql(QueryBuilder query, Object[] args, int from) {
+		query.append(id()).appendLiteralArray(SCOMA, args, from); //avoid sub array
 	}
 }

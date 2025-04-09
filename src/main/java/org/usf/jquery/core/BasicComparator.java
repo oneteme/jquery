@@ -11,10 +11,8 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 public interface BasicComparator extends Comparator {
 
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireNArgs(2, args, BasicComparator.class::getSimpleName);
-		ctx.appendParameter(sb, args[0]);
-		sb.append(id());
-		ctx.appendParameter(sb, args[1]);
+		query.appendParameter(args[0]).append(id()).appendParameter(args[1]);
 	}
 }

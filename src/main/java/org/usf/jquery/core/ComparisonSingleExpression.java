@@ -21,18 +21,18 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	private final Object[] right; //optional
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object left) {
+	public void sql(QueryBuilder query, Object left) {
 		var param = new ArrayList<>();
 		param.add(left);
 		if(nonNull(right)) {
 			addAll(param, right);
 		}
-		comparator.sql(sb, ctx, param.toArray());
+		comparator.build(query, param.toArray());
 	}
 	
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
-		return Nested.tryAggregation(builder, groupKeys, right);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return Nested.tryAggregation(query, groupKeys, right);
 	}
 
 	@Override

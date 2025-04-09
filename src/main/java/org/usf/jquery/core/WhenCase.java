@@ -22,21 +22,12 @@ final class WhenCase implements DBObject, Typed, Nested {
 	private final Object value; //then|else
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, WhenCase.class::getSimpleName);
-		sql(sb, ctx);
-	}
-	
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		if(nonNull(filter)) {
-			sb.append("WHEN ");
-			filter.sql(sb, ctx);
-			sb.append(" THEN ");
-		}
-		else {
-			sb.append("ELSE ");
-		}
-		ctx.appendLiteral(sb, value);
+		(nonNull(filter) 
+				? query.append("WHEN ").append(filter).append(" THEN ") 
+				: query.append("ELSE "))
+		.appendLiteral(value);
 	}
 	
 	@Override
@@ -45,8 +36,8 @@ final class WhenCase implements DBObject, Typed, Nested {
 	}
 	
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
-		return Nested.tryAggregation(builder, groupKeys, filter, value);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return Nested.tryAggregation(query, groupKeys, filter, value);
 	}
 	
 	@Override

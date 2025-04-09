@@ -2,7 +2,7 @@ package org.usf.jquery.web;
 
 import static org.usf.jquery.web.ContextManager.context;
 
-import org.usf.jquery.core.RequestComposer;
+import org.usf.jquery.core.QueryComposer;
 
 /**
  * 
@@ -15,7 +15,7 @@ public interface DatabaseDecorator {
 	
 	String viewName(ViewDecorator vd); //[schema.]table
 	
-	default RequestComposer newQuery() {
+	default QueryComposer newQuery() {
 		return context(identity()).getCurrentQuery();
 	}
 }

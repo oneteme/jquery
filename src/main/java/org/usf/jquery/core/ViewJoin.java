@@ -37,23 +37,18 @@ public final class ViewJoin implements DBObject, Nested {
 	}
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
-		sql(sb, ctx);
-	}
-
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.append(joinType.name()).append(" JOIN ");
-		view.sql(sb, ctx);
+		query.append(joinType.name()).append(" JOIN ").append(view);
 		if(!isEmpty(filters)) {
-			sb.append(" ON ").runForeach(filters, AND.sql(), f-> f.sql(sb, ctx));
+			query.append(" ON ").append(AND.sql(), filters);
 		} //else cross join
 	}
 	
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
-		builder.from(view);
-		return Nested.aggregation(builder, groupKeys, filters);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		query.declare(view);
+		return Nested.aggregation(query, groupKeys, filters);
 	}
 	
 	public ViewJoin map(DBView view) {

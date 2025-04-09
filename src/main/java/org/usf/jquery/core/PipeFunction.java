@@ -11,10 +11,9 @@ import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 public interface PipeFunction extends FunctionOperator {
 	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(1, args, PipeFunction.class::getSimpleName);
-		ctx.appendLiteral(sb, args[0]);
-		sb.appendSpace();
-		FunctionOperator.super.sql(sb, ctx, args, 1); //optional partition
+		query.appendLiteral(args[0]).appendSpace();
+		FunctionOperator.super.sql(query, args, 1); //optional partition
 	}
 }

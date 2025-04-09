@@ -22,18 +22,13 @@ public final class AllColumns implements NamedColumn {
 	private final DBView[] views;
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		String s = "*";
-		if(currentDatabase() == TERADATA) {
-			var arr = nonNull(views) ? views : ctx.views().toArray(DBView[]::new);
-			if(nonNull(arr)) {
-				s = stream(arr)
-					.map(ctx::viewAlias)
-					.map(v-> v +".*")
-					.collect(joining(SCOMA));
-			}
-		}
-		sb.append(s);
+	public void build(QueryBuilder query) {
+		query.append(currentDatabase() == TERADATA && nonNull(views) 
+				? stream(views)
+						.map(query::viewAlias)
+						.map(v-> v+".*")
+						.collect(joining(SCOMA))
+				: "*");
 	}
 	
 	@Override
@@ -42,9 +37,9 @@ public final class AllColumns implements NamedColumn {
 	}
 	
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> cons) {
+	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
 		if(nonNull(views)) {
-			builder.from(views); //declare views
+			query.declare(views); //declare views
 		}
 		return -1;
 	}

@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.lang.Math.max;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -21,23 +21,24 @@ public final class Partition implements DBObject, Nested {
 	private final  DBOrder[] orders; //optional
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
 		if(!isEmpty(columns)) {
-			sb.append("PARTITION BY ");
-			ctx.appendLiteralArray(sb, columns);
+			query.append("PARTITION BY ").append(SCOMA, columns);
 		}
 		if(!isEmpty(orders)) { //require orders
-			sb.appendIf(!isEmpty(columns), SPACE);
-			sb.append("ORDER BY ");
-			ctx.appendLiteralArray(sb, orders);
+			if(!isEmpty(columns)) {
+				query.appendSpace();
+			}
+			query.append("ORDER BY ").append(SCOMA, orders);
 		}
 	}
 	
 	@Override
-	public int declare(RequestComposer composer, Consumer<DBColumn> groupKeys) {
-		return max(Nested.aggregation(composer, groupKeys, columns), 
-				Nested.aggregation(composer, groupKeys, orders));
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return max(
+				Nested.aggregation(query, groupKeys, columns), 
+				Nested.aggregation(query, groupKeys, orders));
 	}
 	
 	@Override

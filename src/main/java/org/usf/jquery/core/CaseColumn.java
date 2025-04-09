@@ -21,9 +21,9 @@ public final class CaseColumn implements DBColumn {
 	}
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		var sub = ctx.withValue(); //force literal parameter
-		sb.runForeach(whenCases, SPACE, o-> o.sql(sb, sub), "CASE ", " END");
+	public void build(QueryBuilder query) {
+		query.withValue() //append filters literally 
+		.append("CASE ").append(SPACE, whenCases).append(" END");
 	}
 	
 	@Override
@@ -35,8 +35,8 @@ public final class CaseColumn implements DBColumn {
 	}
 	
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> groupKeys) {
-		return Nested.aggregation(builder, groupKeys, this, whenCases);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return Nested.aggregation(query, groupKeys, this, whenCases);
 	}
 	
 	@Override

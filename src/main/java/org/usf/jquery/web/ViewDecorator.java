@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.RequestComposer;
+import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.ViewColumn;
 
@@ -104,7 +104,7 @@ public interface ViewDecorator {
 				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue));
 	}
 	
-	default RequestComposer query(RequestComposer query, Map<String, String[]> parameterMap) {
+	default QueryComposer query(QueryComposer query, Map<String, String[]> parameterMap) {
 		parseViews(query, parameterMap);
 		parseColumns(query, parameterMap);
 		parseOrders(query, parameterMap);
@@ -115,7 +115,7 @@ public interface ViewDecorator {
 		return query;
 	}
 	
-	default void parseViews(RequestComposer query, Map<String, String[]> parameters) {
+	default void parseViews(QueryComposer query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(VIEW)) {
 			Stream.of(parameters.remove(VIEW))
 			.flatMap(c-> parseEntries(c).stream())
@@ -128,7 +128,7 @@ public interface ViewDecorator {
 		}
 	}
 	
-	default void parseColumns(RequestComposer query, Map<String, String[]> parameters) {
+	default void parseColumns(QueryComposer query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(COLUMN) ^ parameters.containsKey(COLUMN_DISTINCT)) {
 			String[] cols = parameters.remove(COLUMN);
 			if(isNull(cols)) {
@@ -145,7 +145,7 @@ public interface ViewDecorator {
 		}
 	}
 
-	default void parseOrders(RequestComposer query, Map<String, String[]> parameters) {
+	default void parseOrders(QueryComposer query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(ORDER)) {
 			Stream.of(parameters.remove(ORDER))
 			.flatMap(c-> parseEntries(c).stream())
@@ -153,7 +153,7 @@ public interface ViewDecorator {
 		}
 	}
 	
-	default void parseJoins(RequestComposer query, Map<String, String[]> parameters) {
+	default void parseJoins(QueryComposer query, Map<String, String[]> parameters) {
 		if(parameters.containsKey(JOIN)) {
 			Stream.of(parameters.remove(JOIN))
 			.flatMap(c-> parseEntries(c).stream())
@@ -161,15 +161,15 @@ public interface ViewDecorator {
 		}
 	}
 
-	default void parseLimit(RequestComposer query, Map<String, String[]> parameters) {
+	default void parseLimit(QueryComposer query, Map<String, String[]> parameters) {
 		query.limit(requirePositiveInt(LIMIT, parameters));
 	}
 	
-	default void parseOffset(RequestComposer query, Map<String, String[]> parameters) {
+	default void parseOffset(QueryComposer query, Map<String, String[]> parameters) {
 		query.offset(requirePositiveInt(OFFSET, parameters));
 	}
 	
-	default void parseFilters(RequestComposer query, Map<String, String[]> parameters) {
+	default void parseFilters(QueryComposer query, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
     	.flatMap(e-> {
     		var re = parseEntry(e.getKey());

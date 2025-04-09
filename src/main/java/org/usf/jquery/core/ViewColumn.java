@@ -22,17 +22,15 @@ public class ViewColumn implements NamedColumn {
 	private final String tag;  //optional
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		if(nonNull(view)) {
-			sb.append(ctx.viewAlias(view) + '.');
-		}
-		sb.append(name);
+	public void build(QueryBuilder query) {
+		(nonNull(view) ? query.appendViewAlias(view).append("."): query)
+		.append(name);
 	}
 	
 	@Override
-	public int declare(RequestComposer composer, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
 		if(nonNull(view)) {
-			composer.from(view);
+			query.declare(view);
 		}
 		groupKeys.accept(this);
 		return 0;

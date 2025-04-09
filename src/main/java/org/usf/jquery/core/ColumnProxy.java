@@ -27,8 +27,8 @@ public final class ColumnProxy implements NamedColumn {
 	}
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		column.sql(sb, ctx);
+	public void build(QueryBuilder query) {
+		query.append(column);
 	}
 	
 	@Override
@@ -37,8 +37,8 @@ public final class ColumnProxy implements NamedColumn {
 	}
 
 	@Override
-	public int declare(RequestComposer builder, Consumer<DBColumn> cons) {
-		return column.declare(builder, cons);
+	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
+		return column.compose(query, cons);
 	}
 
 	@Override // do not delegate this

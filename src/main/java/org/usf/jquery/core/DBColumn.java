@@ -20,12 +20,12 @@ import lombok.NonNull;
  */
 public interface DBColumn extends DBObject, Typed, Nested {
 	
-	void sql(SqlStringBuilder sb, QueryContext ctx);
+	void build(QueryBuilder query);
 	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	default void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, DBColumn.class::getSimpleName);
-		sql(sb, ctx);
+		build(query);
 	}
 	
 	default ColumnProxy as(String name) {
@@ -403,7 +403,7 @@ public interface DBColumn extends DBObject, Typed, Nested {
 	}
 	
 	default ViewColumn wrapView(String tag) {
-		return new ViewColumn(tag, new RequestComposer().columns(as(tag), allColumns()).asView(), getType(), null);
+		return new ViewColumn(tag, new QueryComposer().columns(as(tag), allColumns()).asView(), getType(), null);
 	}
 	
 	// constants

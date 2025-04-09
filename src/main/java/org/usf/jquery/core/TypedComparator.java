@@ -23,9 +23,9 @@ public final class TypedComparator implements Comparator {
 	}
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
+	public void build(QueryBuilder query, Object... args) {
 		try {
-			comparator.sql(sb, ctx, parameterSet.assertArguments(args));
+			comparator.build(query, parameterSet.assertArguments(args));
 		} catch (BadArgumentException e) {
 			throw badArgumentsException("comparator", comparator.id(), args, e);
 		}
