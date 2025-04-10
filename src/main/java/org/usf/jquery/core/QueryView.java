@@ -24,9 +24,9 @@ public final class QueryView implements DBView, Nested {
 	private BiConsumer<QueryBuilder, QueryBuilder> callback; //cte
 	
 	@Override
-	public void sql(QueryBuilder query) {
+	public void build(QueryBuilder query) {
 		var sub = query.subQuery(composer.getViews());
-		query.parenthesis(()-> composer.build(sub));
+		query.appendParenthesis(()-> composer.build(sub));
 		if(nonNull(callback)) { 
 			callback.accept(query, sub);
 		}

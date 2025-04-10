@@ -13,7 +13,7 @@ public interface ArithmeticOperator extends Operator {
 	@Override
 	default void build(QueryBuilder query, Object... args) {
 		requireNArgs(2, args, ArithmeticException.class::getSimpleName);
-		query.parenthesis(()->
+		query.appendParenthesis(()->
 			query.appendLiteral(args[0]).append(id()).appendLiteral(args[1]));
 	}
 }

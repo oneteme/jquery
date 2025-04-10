@@ -10,19 +10,14 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 @FunctionalInterface
 public interface DBView extends DBObject {
 
-	void sql(QueryBuilder query);
+	void build(QueryBuilder query);
 	
 	@Override
 	default void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, DBView.class::getSimpleName);
-		sql(query);
+		build(query);
 	}
 	
-	default void sqlUsingTag(QueryBuilder query) {
-		sql(query);
-		query.appendSpace().append(query.viewAlias(this));
-	}
-
 	default ViewColumn column(String name) {
 		return new ViewColumn(name, this, null, null);
 	}

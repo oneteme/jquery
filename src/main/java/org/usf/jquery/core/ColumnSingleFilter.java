@@ -16,7 +16,7 @@ public class ColumnSingleFilter implements DBFilter {
 	private final ComparisonExpression expression;
 
 	@Override
-	public void sql(QueryBuilder query) {
+	public void build(QueryBuilder query) {
 		expression.sql(query, left);
 	}
 

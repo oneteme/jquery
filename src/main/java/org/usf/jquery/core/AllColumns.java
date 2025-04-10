@@ -1,11 +1,10 @@
 package org.usf.jquery.core;
 
-import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
-import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.function.Consumer;
 
@@ -23,12 +22,12 @@ public final class AllColumns implements NamedColumn {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		query.append(currentDatabase() == TERADATA && nonNull(views) 
-				? stream(views)
-						.map(query::viewAlias)
-						.map(v-> v+".*")
-						.collect(joining(SCOMA))
-				: "*");
+		if(isEmpty(views) || currentDatabase() != TERADATA) {
+			query.append("*");
+		}
+		else {
+			query.append(SCOMA, views, v-> query.appendViewAlias(v).append(".*"));
+		}
 	}
 	
 	@Override

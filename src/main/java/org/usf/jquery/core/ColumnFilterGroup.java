@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.addAll;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
-import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.ArrayList;
 import java.util.function.Consumer;
@@ -24,8 +23,8 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public void sql(QueryBuilder query) {
-		query.parenthesis(()-> query.append(operator.sql(), filters));
+	public void build(QueryBuilder query) {
+		query.appendParenthesis(()-> query.append(operator.sql(), filters));
 	}
 
 	@Override

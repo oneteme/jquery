@@ -23,7 +23,7 @@ public class ViewColumn implements NamedColumn {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		(nonNull(view) ? query.appendViewAlias(view).append("."): query)
+		(nonNull(view) ? query.appendViewAlias(view).append(".") : query)
 		.append(name);
 	}
 	

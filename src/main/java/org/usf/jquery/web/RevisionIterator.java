@@ -58,8 +58,8 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	static TableView yearTable(TableView view) {
 		return new TableView(view.getSchema(), view.getName()) {
 			@Override
-			public void sql(QueryBuilder query) {
-				super.sql(query);
+			public void build(QueryBuilder query) {
+				super.build(query);
 				query.append("_" + currentRev.get().getKey());
 			}
 		};
@@ -72,12 +72,12 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 	static DBFilter monthFilter(DBColumn column) {
 		return new ColumnSingleFilter(null, null) {
 			@Override
-			public void sql(QueryBuilder query) {
+			public void build(QueryBuilder query) {
 				var values = currentRev.get().getValue();  //get it on build
 				var filter = values.size() == 1 
 						? column.eq(values.get(0).getMonthValue())
 						: column.in(values.stream().map(YearMonth::getMonthValue).toArray(Integer[]::new));
-				filter.sql(query);
+				filter.build(query);
 			}
 		};
 	}

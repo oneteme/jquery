@@ -3,7 +3,9 @@ package org.usf.jquery.core;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
+import static org.usf.jquery.core.QueryArg.arg;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -14,6 +16,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 import java.util.function.ObjIntConsumer;
 
@@ -34,15 +37,11 @@ public final class QueryBuilder {
 	@Getter
 	private final String schema;
 	private final String prefix;
-	private final SqlStringBuilder query;
+	private final StringBuilder query;
 	private final Map<DBView, String> views;
 	private final List<QueryArg> args;
 	
 	private final Collection<QueryView> ctes; //only for sub query
-	
-	public String viewAlias(DBView view) {
-		return views.get(view);
-	}
 	
 	public void viewProxy(DBView view, QueryView query) {
 		views.put(view, views.get(query)); //add or replace
@@ -57,10 +56,14 @@ public final class QueryBuilder {
 	}
 	
 	public QueryBuilder appendViewAlias(DBView view) {
-		return append(viewAlias(view));
+		var v = views.get(view);
+		if(nonNull(v)) {
+			return append(v);
+		}
+		throw new NoSuchElementException("no alias for view " + view);
 	}
 	
-	public QueryBuilder parenthesis(Runnable exec) {
+	public QueryBuilder appendParenthesis(Runnable exec) {
 		append("(");
 		exec.run();
 		append(")");
@@ -83,34 +86,35 @@ public final class QueryBuilder {
 	
 	public void appendParameters(String delemiter, Object[] arr, int from) {
 		if(dynamic()) {
-			query.runForeach(arr, from, delemiter, this::appendParameter);
+			runForeach(delemiter, arr, from, this::appendParameter);
 		}
 		else {
-			appendLiteralArray(delemiter, arr, from);
+			appendLiteral(delemiter, arr, from);
 		}
 	}
 	
 	public QueryBuilder append(String delemiter, DBObject[] arr) {
-		query.runForeach(arr, 0, delemiter, o-> o.build(this));
-		return this;
+		return runForeach(delemiter, arr, 0, o-> o.build(this));
 	}
 	
-	public <T extends DBObject> QueryBuilder append(String delemiter, Iterator<T> it) {
-		query.runForeach(it, delemiter, o-> o.build(this));
-		return this;
+	public <T> QueryBuilder append(String delemiter, T[] arr, Consumer<T> cons) {
+		return runForeach(delemiter, arr, 0, cons);
+	}
+	
+	public QueryBuilder append(String delemiter, Iterator<? extends DBObject> it) {
+		return runForeach(delemiter, it, o-> o.build(this));
 	}
 	
 	public <T> QueryBuilder append(String delemiter, Iterator<T> it, Consumer<T> cons) {
-		query.runForeach(it, delemiter, cons);
-		return this;
+		return runForeach(delemiter, it, cons);
 	}
 
-	public void appendLiteralArray(String delemiter, Object[] arr) {
-		appendLiteralArray(delemiter, arr, 0);
+	public QueryBuilder appendLiteral(String delemiter, Object[] arr) {
+		return appendLiteral(delemiter, arr, 0);
 	}
 	
-	public void appendLiteralArray(String delemiter, Object[] arr, int from) {
-		query.runForeach(arr, from, delemiter, this::appendLiteral);
+	public QueryBuilder appendLiteral(String delemiter, Object[] arr, int from) {
+		return runForeach(delemiter, arr, from, this::appendLiteral);
 	}
 
 	public QueryBuilder appendParameter(Object o) {
@@ -130,7 +134,7 @@ public final class QueryBuilder {
 	}
 
 	public QueryBuilder appendLiteral(Object o) {  //TD : stringify value using db default pattern
-		if(o instanceof DBObject jo) { //DBColumn | QueryView
+		if(o instanceof DBObject jo) {
 			jo.build(this);
 		}
 		else {
@@ -140,7 +144,7 @@ public final class QueryBuilder {
 	}
 		
 	private String appendArg(JDBCType type, Object o) {
-		args.add(new QueryArg(o, type.getValue()));
+		args.add(arg(o, type.getValue()));
 		return P_ARG;
 	}
 	
@@ -166,17 +170,46 @@ public final class QueryBuilder {
 	public Query build() {
 		return new Query(query.toString(), dynamic() ? args.toArray(QueryArg[]::new) : null);
 	}
+	
+	private <T> QueryBuilder runForeach(String delimiter, T[] arr, int idx, Consumer<T> fn) {
+		requireNonNull(arr, "arr connot be null");
+		if(idx < arr.length) {
+			if(!isEmpty(arr)) {
+				var i=idx;
+				fn.accept(arr[i]);
+				for(++i; i<arr.length; i++) {
+					query.append(delimiter);
+					fn.accept(arr[i]);
+				}
+			}
+		}
+		else if(idx > arr.length) {
+			throw new IndexOutOfBoundsException(idx);
+		}// idx == arr.length 
+		return this;
+	}
+
+	private <T> QueryBuilder runForeach(String delimiter, Iterator<T> it, Consumer<T> cons) {
+		if(nonNull(it) && it.hasNext()) {
+			cons.accept(it.next());
+			while(it.hasNext()) {
+				query.append(delimiter);
+				cons.accept(it.next());
+			}
+		} 
+		return this;
+	}
 
 	public static QueryBuilder addWithValue() {
 		return addWithValue(null, emptyList(), emptyList()); //no args
 	}
 
 	public static QueryBuilder addWithValue(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
-		return new QueryBuilder(schema, "v", new SqlStringBuilder(), toLinkedMap(ctes, views), null, unmodifiableCollection(ctes));
+		return new QueryBuilder(schema, "v", new StringBuilder(), toLinkedMap(ctes, views), null, unmodifiableCollection(ctes));
 	}
 
 	public static QueryBuilder parameterized(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
-		return new QueryBuilder(schema, "v", new SqlStringBuilder(), toLinkedMap(ctes, views), new ArrayList<>(), unmodifiableCollection(ctes));
+		return new QueryBuilder(schema, "v", new StringBuilder(), toLinkedMap(ctes, views), new ArrayList<>(), unmodifiableCollection(ctes));
 	}
 	
 	private static Map<DBView, String> toLinkedMap(Collection<QueryView> ctes, Collection<DBView> views){

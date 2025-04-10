@@ -21,10 +21,10 @@ public interface CastFunction extends FunctionOperator {
 	@Override
 	default void build(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(1, args, CastFunction.class::getSimpleName);
-		query.append(id()).parenthesis(()-> {
+		query.append(id()).appendParenthesis(()-> {
 			query.appendLiteral(args[0]).appendAs().append(type());
 			if(args.length > 1) { //varchar | decimal
-				query.parenthesis(()-> query.appendLiteralArray(SCOMA, args, 1));
+				query.appendParenthesis(()-> query.appendLiteral(SCOMA, args, 1));
 			}
 		});
 	}

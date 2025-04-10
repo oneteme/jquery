@@ -214,7 +214,13 @@ public class QueryComposer {
     	if(nonNull(limit) && currentDatabase() == TERADATA){
     		builder.append(" TOP " + limit);
     	}
-    	builder.appendSpace().append(SPACE, columns.iterator(), o-> o.sqlUsingTag(builder));
+    	builder.appendSpace().append(SPACE, columns.iterator(), o-> {
+    		builder.append(o);
+    		var tag = o.getTag();
+    		if(nonNull(tag)) {
+    			builder.appendAs().append(tag);
+    		}
+    	});
 	}
 	
 	void from(QueryBuilder query) {
@@ -225,7 +231,7 @@ public class QueryComposer {
 			.forEach(v-> from.remove(overView.containsKey(v) ? overView.get(v) : v));
 		}
 		if(!from.isEmpty()) {
-			query.append(" FROM ").append(SCOMA, from.iterator(), v-> v.sqlUsingTag(query));
+			query.append(" FROM ").append(SCOMA, from.iterator(), v-> query.append(v).appendSpace().appendViewAlias(v));
 		}
 	}
 	

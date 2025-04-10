@@ -20,7 +20,7 @@ public interface ExtractFunction extends FunctionOperator {
 	@Override
 	default void build(QueryBuilder query, Object... args) {
 		requireNArgs(1, args, ExtractFunction.class::getSimpleName);
-		query.append(id()).parenthesis(
+		query.append(id()).appendParenthesis(
 				()-> query.append(field()).append(" FROM ").appendLiteral(args[0]));
 	}
 }

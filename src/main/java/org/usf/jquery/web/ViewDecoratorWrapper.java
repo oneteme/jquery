@@ -28,7 +28,7 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	
 	@Override
 	public ViewBuilder builder() {
-		return ()-> view.builder().build()::sql; //different reference
+		return ()-> view.builder().build()::build; //different reference
 	}
 	
 	@Override
