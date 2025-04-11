@@ -6,6 +6,4 @@ package org.usf.jquery.core;
  *
  */
 @FunctionalInterface
-public interface AggregateFunction extends FunctionOperator {
-
-}
+public interface AggregateFunction extends FunctionOperator { }

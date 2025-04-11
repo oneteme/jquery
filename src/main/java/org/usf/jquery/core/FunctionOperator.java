@@ -17,6 +17,6 @@ public interface FunctionOperator extends Operator {
 	}
 	
 	default void sql(QueryBuilder query, Object[] args, int from) {
-		query.append(id()).appendLiteral(SCOMA, args, from); //avoid sub array
+		query.append(id()).appendParenthesis(()-> query.appendLiteral(SCOMA, args, from)); //avoid sub array
 	}
 }

@@ -146,17 +146,18 @@ public class QueryComposer {
 		return new QueryView(this);
 	}
 	
-	public QueryComposer overView(DBView view, QueryComposer query) {
-		var v = new QueryView(query);
-		v.setCallback((ctx, sub)-> {
-			if(views.contains(view)) {
-				views.remove(view);
-				views.add(v);
-			} //else unused CTE
-			ctx.viewProxy(view, v);
-			overView.put(view, v);
-		});
-		return ctes(v);
+	public QueryComposer overView(QueryView over) {
+		var subViews = over.getComposer().getViews();
+		if(subViews.size() == 1) {
+			var view = subViews.iterator().next();
+			return overView(view, over);
+		} //else 
+		throw new IllegalStateException("view required");
+	}
+
+	public QueryComposer overView(DBView view, QueryView over) {
+		overView.put(view, over);
+		return ctes(over);
 	}
 	
 	public Query compose(){
@@ -167,6 +168,11 @@ public class QueryComposer {
 		log.trace("building query...");
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
+		overView.forEach((v,o)->{
+			if(views.remove(v)) {
+				views.add(o);
+			}
+		});
 		var pb = parameterized(schema, ctes, views); //over clause
 		if(isNull(it)) {
 			build(pb);
@@ -214,7 +220,7 @@ public class QueryComposer {
     	if(nonNull(limit) && currentDatabase() == TERADATA){
     		builder.append(" TOP " + limit);
     	}
-    	builder.appendSpace().append(SPACE, columns.iterator(), o-> {
+    	builder.appendSpace().append(SCOMA, columns.iterator(), o-> {
     		builder.append(o);
     		var tag = o.getTag();
     		if(nonNull(tag)) {
@@ -231,7 +237,12 @@ public class QueryComposer {
 			.forEach(v-> from.remove(overView.containsKey(v) ? overView.get(v) : v));
 		}
 		if(!from.isEmpty()) {
-			query.append(" FROM ").append(SCOMA, from.iterator(), v-> query.append(v).appendSpace().appendViewAlias(v));
+			query.append(" FROM ").append(SCOMA, from.iterator(), v-> {
+				if(!ctes.contains(v)) {
+					query.append(v).appendSpace();
+				}
+				query.appendViewAlias(v);
+			});
 		}
 	}
 	
@@ -291,6 +302,6 @@ public class QueryComposer {
 
 	@Override
 	public String toString() {
-		return compose().getQuery();
+		return compose().getSql();
 	}
 }

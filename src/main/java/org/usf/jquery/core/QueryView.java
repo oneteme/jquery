@@ -1,8 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
-
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import lombok.AccessLevel;
@@ -15,26 +12,22 @@ import lombok.Setter;
  * @author u$f
  *
  */
+@Getter
 @Setter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class QueryView implements DBView, Nested {
 
-	@Getter
 	private final QueryComposer composer;
-	private BiConsumer<QueryBuilder, QueryBuilder> callback; //cte
 	
 	@Override
 	public void build(QueryBuilder query) {
 		var sub = query.subQuery(composer.getViews());
 		query.appendParenthesis(()-> composer.build(sub));
-		if(nonNull(callback)) { 
-			callback.accept(query, sub);
-		}
 	}
 
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		var ctes = this.composer.getCtes();
+		var ctes = composer.getCtes();
 		if(!ctes.isEmpty()) {
 			query.ctes(ctes.toArray(QueryView[]::new));  //up
 		}

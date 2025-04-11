@@ -1,13 +1,12 @@
 package org.usf.jquery.core;
 
 import static java.util.Collections.emptyList;
-import static java.util.Collections.unmodifiableCollection;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
-import static org.usf.jquery.core.QueryArg.arg;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.TypedArg.arg;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
@@ -18,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
-import java.util.function.ObjIntConsumer;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -38,14 +36,9 @@ public final class QueryBuilder {
 	private final String schema;
 	private final String prefix;
 	private final StringBuilder query;
+	private final Map<QueryView, String> ctes;
 	private final Map<DBView, String> views;
-	private final List<QueryArg> args;
-	
-	private final Collection<QueryView> ctes; //only for sub query
-	
-	public void viewProxy(DBView view, QueryView query) {
-		views.put(view, views.get(query)); //add or replace
-	}
+	private final List<TypedArg> args;
 	
 	public QueryBuilder appendSpace() {
 		return append(SPACE);
@@ -56,7 +49,7 @@ public final class QueryBuilder {
 	}
 	
 	public QueryBuilder appendViewAlias(DBView view) {
-		var v = views.get(view);
+		var v = ctes.containsKey(view) ? ctes.get(view) : views.get(view);
 		if(nonNull(v)) {
 			return append(v);
 		}
@@ -160,15 +153,16 @@ public final class QueryBuilder {
 	}
 	
 	public QueryBuilder withValue() {
-		return new QueryBuilder(schema, prefix, query, views, null, null); //no args
+		return new QueryBuilder(schema, prefix, query, ctes, views, null); //no args
 	}
 	
 	public QueryBuilder subQuery(Collection<DBView> views) { //share schema, prefix, args but not views
-		return new QueryBuilder(schema, prefix + "_s", query, toLinkedMap(ctes, views), args, ctes);
+		var s = prefix + "_s";
+		return new QueryBuilder(schema, s, query, ctes, toLinkedMap(s, views), args);
 	}
 	
 	public Query build() {
-		return new Query(query.toString(), dynamic() ? args.toArray(QueryArg[]::new) : null);
+		return new Query(query.toString(), dynamic() ? args.toArray(TypedArg[]::new) : null);
 	}
 	
 	private <T> QueryBuilder runForeach(String delimiter, T[] arr, int idx, Consumer<T> fn) {
@@ -205,26 +199,21 @@ public final class QueryBuilder {
 	}
 
 	public static QueryBuilder addWithValue(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
-		return new QueryBuilder(schema, "v", new StringBuilder(), toLinkedMap(ctes, views), null, unmodifiableCollection(ctes));
+		return new QueryBuilder(schema, "v", new StringBuilder(), toLinkedMap("g", ctes), toLinkedMap("v", views), null);
 	}
 
 	public static QueryBuilder parameterized(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
-		return new QueryBuilder(schema, "v", new StringBuilder(), toLinkedMap(ctes, views), new ArrayList<>(), unmodifiableCollection(ctes));
+		return new QueryBuilder(schema, "v", new StringBuilder(), toLinkedMap("g", ctes), toLinkedMap("v", views), new ArrayList<>());
 	}
-	
-	private static Map<DBView, String> toLinkedMap(Collection<QueryView> ctes, Collection<DBView> views){
-		var map = new HashMap<DBView, String>();
-		doForeach(ctes,  (v,i)-> map.put(v, "g"+i));
-		doForeach(views, (v,i)-> map.put(v, "v"+i));
-		return map; //modifiable map
-	}
-	
-	private static <T> void doForeach(Collection<T> views, ObjIntConsumer<? super T> cons) {
+		
+	private static <T> Map<T, String> toLinkedMap(String prefix, Collection<T> views){
+		var map = new HashMap<T, String>();
 		if(!isEmpty(views)) {
 			int i=0;
 			for(var v : views) {
-				cons.accept(v, i);
+				map.put(v, prefix+i);
 			}
 		}
-	}
+		return map; //modifiable map
+	}	
 }

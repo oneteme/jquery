@@ -15,6 +15,6 @@ public interface DBObject {
 	static String toSQL(DBObject obj, Object... args) {
 		var query = addWithValue();
 		obj.build(query, args);
-		return query.build().getQuery();
+		return query.build().getSql();
 	}
 }

@@ -14,7 +14,7 @@ public interface InComparator extends Comparator {
 	@Override
 	default void build(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(2, args, InComparator.class::getSimpleName);
-		query.appendParameter(args[0]).appendSpace()
-		.append(id()).appendParameters(SCOMA, args, 1);
+		query.appendParameter(args[0]).appendSpace().append(id()).appendParenthesis(
+				()->query.appendParameters(SCOMA, args, 1));
 	}
 }

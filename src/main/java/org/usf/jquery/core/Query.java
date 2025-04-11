@@ -27,8 +27,8 @@ import lombok.extern.slf4j.Slf4j;
 public final class Query {
 	
 	@NonNull
-	private final String query;
-	private final QueryArg[] args;
+	private final String sql;
+	private final TypedArg[] args;
 	
 	public List<DynamicModel> execute(DataSource ds) throws SQLException {
 		return execute(ds, new KeyValueMapper());
@@ -41,9 +41,9 @@ public final class Query {
 	}
 	
 	public <T> T execute(Connection cn, ResultSetMapper<T> mapper) throws SQLException {
-		log.debug("preparing statement : {}", query);
+		log.debug("preparing statement : {}", sql);
 		log.debug("using arguments : {}", Arrays.toString(args)); //before prepare
-		try(var ps = cn.prepareStatement(query)){
+		try(var ps = cn.prepareStatement(sql)){
 			if(!isEmpty(args)) {
 				for(var i=0; i<args.length; i++) {
 					if(isNull(args[i].value())) {
