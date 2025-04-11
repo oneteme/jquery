@@ -42,9 +42,9 @@ public final class Query {
 	
 	public <T> T execute(Connection cn, ResultSetMapper<T> mapper) throws SQLException {
 		log.debug("preparing statement : {}", sql);
-		log.debug("using arguments : {}", Arrays.toString(args)); //before prepare
 		try(var ps = cn.prepareStatement(sql)){
 			if(!isEmpty(args)) {
+				log.debug("using arguments : {}", Arrays.toString(args));
 				for(var i=0; i<args.length; i++) {
 					if(isNull(args[i].value())) {
 						ps.setNull(i+1, args[i].type());

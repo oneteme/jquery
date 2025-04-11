@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Collections.emptyList;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
@@ -13,7 +14,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
@@ -38,7 +38,22 @@ public final class QueryBuilder {
 	private final StringBuilder query;
 	private final Map<QueryView, String> ctes;
 	private final Map<DBView, String> views;
-	private final List<TypedArg> args;
+	private final Collection<TypedArg> args;
+
+	public QueryBuilder appendViewAlias(DBView view) {
+		return appendViewAlias(view, "");
+	}
+	
+	public QueryBuilder appendViewAlias(DBView view, String after) {
+		if(ctes.isEmpty() && views.isEmpty()) {
+			return this; //no alias
+		}
+		var v = ctes.containsKey(view) ? ctes.get(view) : views.get(view);
+		if(nonNull(v)) {
+			return append(v).append(after); //view.
+		}
+		throw new NoSuchElementException("no alias for view " + view);
+	}
 	
 	public QueryBuilder appendSpace() {
 		return append(SPACE);
@@ -46,14 +61,6 @@ public final class QueryBuilder {
 	
 	public QueryBuilder appendAs() {
 		return append(" AS ");
-	}
-	
-	public QueryBuilder appendViewAlias(DBView view) {
-		var v = ctes.containsKey(view) ? ctes.get(view) : views.get(view);
-		if(nonNull(v)) {
-			return append(v);
-		}
-		throw new NoSuchElementException("no alias for view " + view);
 	}
 	
 	public QueryBuilder appendParenthesis(Runnable exec) {
@@ -78,7 +85,7 @@ public final class QueryBuilder {
 	}
 	
 	public void appendParameters(String delemiter, Object[] arr, int from) {
-		if(dynamic()) {
+		if(isParameterized()) {
 			runForeach(delemiter, arr, from, this::appendParameter);
 		}
 		else {
@@ -111,7 +118,7 @@ public final class QueryBuilder {
 	}
 
 	public QueryBuilder appendParameter(Object o) {
-		if(dynamic()) {
+		if(isParameterized()) {
 			if(o instanceof DBObject jo) {
 				jo.build(this);
 			}
@@ -141,7 +148,7 @@ public final class QueryBuilder {
 		return P_ARG;
 	}
 	
-	private boolean dynamic() {
+	private boolean isParameterized() {
 		return nonNull(args);
 	}
 
@@ -158,11 +165,11 @@ public final class QueryBuilder {
 	
 	public QueryBuilder subQuery(Collection<DBView> views) { //share schema, prefix, args but not views
 		var s = prefix + "_s";
-		return new QueryBuilder(schema, s, query, ctes, toLinkedMap(s, views), args);
+		return new QueryBuilder(schema, s, query, ctes, viewAlias(s, views), args);
 	}
 	
 	public Query build() {
-		return new Query(query.toString(), dynamic() ? args.toArray(TypedArg[]::new) : null);
+		return new Query(query.toString(), isParameterized() ? args.toArray(TypedArg[]::new) : null);
 	}
 	
 	private <T> QueryBuilder runForeach(String delimiter, T[] arr, int idx, Consumer<T> fn) {
@@ -194,26 +201,40 @@ public final class QueryBuilder {
 		return this;
 	}
 
+	@Override
+	public String toString() {
+		return query.toString();
+	}
+
 	public static QueryBuilder addWithValue() {
-		return addWithValue(null, emptyList(), emptyList()); //no args
+		return create(null, emptyList(), emptyList(), emptyList(), null);
 	}
 
-	public static QueryBuilder addWithValue(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
-		return new QueryBuilder(schema, "v", new StringBuilder(), toLinkedMap("g", ctes), toLinkedMap("v", views), null);
+	public static QueryBuilder addWithValue(String schema, Collection<QueryView> ctes, Collection<DBView> views, Map<DBView, QueryView> overview) {
+		return create(schema, ctes, views, null, overview);
 	}
 
-	public static QueryBuilder parameterized(String schema, Collection<QueryView> ctes, Collection<DBView> views) {
-		return new QueryBuilder(schema, "v", new StringBuilder(), toLinkedMap("g", ctes), toLinkedMap("v", views), new ArrayList<>());
+	public static QueryBuilder parameterized(String schema, Collection<QueryView> ctes, Collection<DBView> views, Map<DBView, QueryView> overview) {
+		return create(schema, ctes, views, new ArrayList<>(), overview);
+	}
+	
+	private static QueryBuilder create(String schema, Collection<QueryView> ctes, Collection<DBView> views, Collection<TypedArg> args, Map<DBView, QueryView> overview) {
+		var cMap = viewAlias("g", ctes);
+		var vMap = viewAlias("v", views);
+		if(!isEmpty(overview)) {
+			overview.forEach((k,v)-> vMap.put(k, cMap.get(v)));//override or add
+		}
+		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args);
 	}
 		
-	private static <T> Map<T, String> toLinkedMap(String prefix, Collection<T> views){
+	private static <T> Map<T, String> viewAlias(String prefix, Collection<T> views){
 		var map = new HashMap<T, String>();
-		if(!isEmpty(views)) {
+		if(!isEmpty(views) && nonNull(prefix)) {
 			int i=0;
 			for(var v : views) {
 				map.put(v, prefix+i);
 			}
 		}
-		return map; //modifiable map
-	}	
+		return map;
+	}
 }

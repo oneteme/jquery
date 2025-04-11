@@ -173,7 +173,7 @@ public class QueryComposer {
 				views.add(o);
 			}
 		});
-		var pb = parameterized(schema, ctes, views); //over clause
+		var pb = parameterized(schema, ctes, views, overView); //over clause
 		if(isNull(it)) {
 			build(pb);
 		}

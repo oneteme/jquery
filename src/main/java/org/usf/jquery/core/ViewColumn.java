@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.SqlStringBuilder.DOT;
 
 import java.util.function.Consumer;
 
@@ -23,7 +24,7 @@ public class ViewColumn implements NamedColumn {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		(nonNull(view) ? query.appendViewAlias(view).append(".") : query)
+		(nonNull(view) ? query.appendViewAlias(view, DOT) : query)
 		.append(name);
 	}
 	

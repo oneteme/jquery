@@ -3,6 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
+import static org.usf.jquery.core.SqlStringBuilder.DOT;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -26,7 +27,7 @@ public final class AllColumns implements NamedColumn {
 			query.append("*");
 		}
 		else {
-			query.append(SCOMA, views, v-> query.appendViewAlias(v).append(".*"));
+			query.append(SCOMA, views, v-> query.appendViewAlias(v, DOT).append("*"));
 		}
 	}
 	
@@ -46,5 +47,10 @@ public final class AllColumns implements NamedColumn {
 	@Override
 	public String getTag() {
 		return null;
+	}
+	
+	@Override
+	public String toString() {
+		return DBObject.toSQL(this);
 	}
 }

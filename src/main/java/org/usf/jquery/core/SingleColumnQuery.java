@@ -26,7 +26,8 @@ public final class SingleColumnQuery implements DBObject, Typed {
 	@Override
 	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, SingleColumnQuery.class::getSimpleName);
-		query.append(view);
+		view.build(query);
+//		query.append(view); !FROM
 	}
 	
 	@Override

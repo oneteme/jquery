@@ -12,11 +12,11 @@ import lombok.NoArgsConstructor;
 public final class SqlStringBuilder {
 	
 	static final String EMPTY = "";
-	static final String COMA  = ",";
 	static final String SPACE = " ";
 	static final String QUOTE = "'";
 	static final String DQUOT = "\"";
-	static final String SCOMA  = COMA + SPACE;
+	static final String DOT = ".";
+	static final String SCOMA  = "," + SPACE;
 	
 	public static String space(String op) {
 		return SPACE + op + SPACE;
