@@ -402,10 +402,6 @@ public interface DBColumn extends DBObject, Typed, Nested {
 		return new SingleCaseColumnBuilder(this);
 	}
 	
-	default ViewColumn wrapView(String tag) {
-		return new ViewColumn(tag, new QueryComposer().columns(as(tag), allColumns()).asView(), getType(), null);
-	}
-	
 	// constants
 	
 	static OperationColumn cdate() {

@@ -4,6 +4,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
@@ -145,6 +146,12 @@ public class QueryComposer {
 	
 	public QueryView asView() {
 		return new QueryView(this);
+	}
+
+	public ViewColumn overColumnView(DBColumn column, String tag) {
+		var over = new QueryComposer().columns(column.as(tag), allColumns()).asView();
+		overView(over);
+		return new ViewColumn(tag, over, column.getType(), null);
 	}
 	
 	public QueryComposer overView(QueryView over) {
