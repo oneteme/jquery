@@ -6,6 +6,4 @@ package org.usf.jquery.core;
  *
  */
 @FunctionalInterface
-public interface WindowFunction extends FunctionOperator {
-	
-}
+public interface WindowFunction extends FunctionOperator { }

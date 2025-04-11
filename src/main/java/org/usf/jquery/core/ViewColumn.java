@@ -33,7 +33,9 @@ public class ViewColumn implements NamedColumn {
 		if(nonNull(view)) {
 			query.declare(view);
 		}
-		groupKeys.accept(this);
+		if(nonNull(groupKeys)) { //unsafe
+			groupKeys.accept(this);
+		}
 		return 0;
 	}
 	

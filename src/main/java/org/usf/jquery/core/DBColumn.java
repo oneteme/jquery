@@ -7,7 +7,6 @@ import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.UUID;
 import java.util.function.Supplier;
 
 import org.usf.jquery.core.JavaType.Typed;
@@ -453,9 +452,5 @@ public interface DBColumn extends DBObject, Typed, Nested {
 
 	static ValueColumn constant(JDBCType type, Supplier<Object> supp) {
 		return new ValueColumn(type, supp);
-	}
-	
-	public static void main(String[] args) {
-		System.out.println(UUID.randomUUID());
 	}
 }

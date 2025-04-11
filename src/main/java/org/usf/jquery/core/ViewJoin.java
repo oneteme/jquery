@@ -39,7 +39,7 @@ public final class ViewJoin implements DBObject, Nested {
 	@Override
 	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
-		query.append(joinType.name()).append(" JOIN ").append(view);
+		query.append(joinType.name()).append(" JOIN ").append(view).appendAs().appendViewAlias(view);
 		if(!isEmpty(filters)) {
 			query.append(" ON ").append(AND.sql(), filters);
 		} //else cross join

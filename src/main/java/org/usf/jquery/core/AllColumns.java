@@ -19,15 +19,16 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class AllColumns implements NamedColumn {
 	
+	private static final String ASTR = "*";
 	private final DBView[] views;
 	
 	@Override
 	public void build(QueryBuilder query) {
 		if(isEmpty(views) || currentDatabase() != TERADATA) {
-			query.append("*");
+			query.append(ASTR);
 		}
 		else {
-			query.append(SCOMA, views, v-> query.appendViewAlias(v, DOT).append("*"));
+			query.append(SCOMA, views, v-> query.appendViewAlias(v, DOT).append(ASTR));
 		}
 	}
 	

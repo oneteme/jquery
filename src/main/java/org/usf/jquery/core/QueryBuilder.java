@@ -80,17 +80,14 @@ public final class QueryBuilder {
 		return this;
 	}
 	
-	public void appendParameters(String delemiter, Object[] arr) {
-		appendParameters(delemiter, arr, 0);
+	public QueryBuilder appendParameters(String delemiter, Object[] arr) {
+		return appendParameters(delemiter, arr, 0);
 	}
 	
-	public void appendParameters(String delemiter, Object[] arr, int from) {
-		if(isParameterized()) {
-			runForeach(delemiter, arr, from, this::appendParameter);
-		}
-		else {
-			appendLiteral(delemiter, arr, from);
-		}
+	public QueryBuilder appendParameters(String delemiter, Object[] arr, int from) {
+		return isParameterized()
+			? runForeach(delemiter, arr, from, this::appendParameter)
+			: appendLiteral(delemiter, arr, from);
 	}
 	
 	public QueryBuilder append(String delemiter, DBObject[] arr) {
@@ -119,28 +116,19 @@ public final class QueryBuilder {
 
 	public QueryBuilder appendParameter(Object o) {
 		if(isParameterized()) {
-			if(o instanceof DBObject jo) {
-				jo.build(this);
-			}
-			else {
-				var t = typeOf(o);
-				query.append(t.isPresent() ? appendArg(t.get(), o) : formatValue(o));
-			}
+			return o instanceof DBObject jo
+					? append(jo)
+					: append(typeOf(o).map(t-> appendArg(t, o)).orElseGet(()-> formatValue(o)));
 		}
 		else {
-			appendLiteral(o);
+			return appendLiteral(o);
 		}
-		return this;
 	}
 
 	public QueryBuilder appendLiteral(Object o) {  //TD : stringify value using db default pattern
-		if(o instanceof DBObject jo) {
-			jo.build(this);
-		}
-		else {
-			append(formatValue(o));
-		}
-		return this;
+		return o instanceof DBObject jo 
+				? append(jo) 
+				: append(formatValue(o));
 	}
 		
 	private String appendArg(JDBCType type, Object o) {
@@ -232,7 +220,7 @@ public final class QueryBuilder {
 		if(!isEmpty(views) && nonNull(prefix)) {
 			int i=0;
 			for(var v : views) {
-				map.put(v, prefix+i);
+				map.put(v, prefix+i++);
 			}
 		}
 		return map;

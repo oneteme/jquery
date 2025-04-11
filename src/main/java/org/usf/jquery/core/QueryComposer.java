@@ -15,6 +15,7 @@ import static org.usf.jquery.core.Role.JOIN;
 import static org.usf.jquery.core.Role.ORDER;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
@@ -224,7 +225,7 @@ public class QueryComposer {
     		builder.append(o);
     		var tag = o.getTag();
     		if(nonNull(tag)) {
-    			builder.appendAs().append(tag);
+    			builder.appendAs().append(doubleQuote(tag));
     		}
     	});
 	}
