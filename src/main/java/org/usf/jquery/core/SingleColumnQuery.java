@@ -2,6 +2,8 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.function.Consumer;
+
 import org.usf.jquery.core.JavaType.Typed;
 
 /**
@@ -9,7 +11,7 @@ import org.usf.jquery.core.JavaType.Typed;
  * @author u$f
  *
  */
-public final class SingleColumnQuery implements DBObject, Typed {
+public final class SingleColumnQuery implements DBObject, Typed, Nested {
 	
 	private final QueryView view;
 	private final JDBCType type;
@@ -27,7 +29,11 @@ public final class SingleColumnQuery implements DBObject, Typed {
 	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, SingleColumnQuery.class::getSimpleName);
 		view.build(query);
-//		query.append(view); !FROM
+	}
+	
+	@Override
+	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+		return view.compose(composer, groupKeys);
 	}
 	
 	@Override

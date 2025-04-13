@@ -66,8 +66,7 @@ public final class QueryBuilder {
 	public QueryBuilder appendParenthesis(Runnable exec) {
 		append("(");
 		exec.run();
-		append(")");
-		return this;
+		return append(")");
 	}
 	
 	public QueryBuilder append(String sql) {
@@ -98,11 +97,11 @@ public final class QueryBuilder {
 		return runForeach(delemiter, arr, 0, cons);
 	}
 	
-	public QueryBuilder append(String delemiter, Iterator<? extends DBObject> it) {
+	public QueryBuilder append(String delemiter, Collection<? extends DBObject> it) {
 		return runForeach(delemiter, it, o-> o.build(this));
 	}
 	
-	public <T> QueryBuilder append(String delemiter, Iterator<T> it, Consumer<T> cons) {
+	public <T> QueryBuilder append(String delemiter, Collection<T> it, Consumer<T> cons) {
 		return runForeach(delemiter, it, cons);
 	}
 
@@ -151,9 +150,13 @@ public final class QueryBuilder {
 		return new QueryBuilder(schema, prefix, query, ctes, views, null); //no args
 	}
 	
-	public QueryBuilder subQuery(Collection<DBView> views) { //share schema, prefix, args but not views
+	public QueryBuilder subQuery(Collection<DBView> views) { //inherit schema, prefix, args but not views
 		var s = prefix + "_s";
 		return new QueryBuilder(schema, s, query, ctes, viewAlias(s, views), args);
+	}
+
+	public QueryBuilder subQuery(Collection<DBView> views, Object model) { //inherit schema, prefix, args but not views
+		
 	}
 	
 	public Query build() {
@@ -178,8 +181,9 @@ public final class QueryBuilder {
 		return this;
 	}
 
-	private <T> QueryBuilder runForeach(String delimiter, Iterator<T> it, Consumer<T> cons) {
-		if(nonNull(it) && it.hasNext()) {
+	private <T> QueryBuilder runForeach(String delimiter, Collection<T> c, Consumer<T> cons) {
+		if(!isEmpty(c)) {
+			var it = c.iterator();
 			cons.accept(it.next());
 			while(it.hasNext()) {
 				query.append(delimiter);

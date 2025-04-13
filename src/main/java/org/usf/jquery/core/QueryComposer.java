@@ -14,6 +14,7 @@ import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Role.JOIN;
 import static org.usf.jquery.core.Role.ORDER;
+import static org.usf.jquery.core.Role.UNION;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
@@ -23,7 +24,6 @@ import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsEx
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -50,11 +50,12 @@ public class QueryComposer {
 	private final List<ViewJoin> joins = new ArrayList<>(); 
 	private final List<DBOrder> orders = new ArrayList<>();
 	private final Set<DBView> views = new LinkedHashSet<>(); //preserve order
+	private final List<QueryUnion> unions = new ArrayList<>();
 	private boolean distinct;
 	private boolean aggregation;
 	private Integer limit;
 	private Integer offset;
-	private Iterator<?> it;
+	private Object[] drivenData;
 	
 	private Role role;
 	
@@ -119,8 +120,13 @@ public class QueryComposer {
 		return this;
 	}
 	
-	QueryComposer declare(@NonNull DBView... views) {
-		addAll(this.views, views);
+
+	public QueryComposer unions(@NonNull QueryUnion... unions) {
+		this.role = UNION;
+		for(var o : unions) {
+			o.compose(this, v->{}); //declare views only, no aggregation
+			this.unions.add(o);
+		}
 		return this;
 	}
 	
@@ -139,8 +145,13 @@ public class QueryComposer {
 		return this;
 	}
 	
-	public QueryComposer repeat(@NonNull Iterator<?> it) {
-		this.it = it;
+	public <T> QueryComposer repeat(@NonNull T[] it) {
+		this.drivenData = it;
+		return this;
+	}
+	
+	QueryComposer declare(@NonNull DBView... views) {
+		addAll(this.views, views);
 		return this;
 	}
 	
@@ -177,24 +188,29 @@ public class QueryComposer {
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
 		overView.forEach((v,o)->{
-			if(views.remove(v)) {
+			if(views.remove(v)) { 
 				views.add(o);
+				log.trace("{} => {}", v, o);
 			}
 		});
-		var pb = parameterized(schema, ctes, views, overView); //over clause
-		if(isNull(it)) {
-			build(pb);
+		var builder = parameterized(schema, ctes, views, overView);
+		with(builder); //before build
+		build(builder);
+		log.trace("query built in {} ms", currentTimeMillis() - bg);
+		return builder.build();
+	}
+	
+	public final void build(QueryBuilder builder){
+		if(isNull(drivenData)) {
+			internalBuild(builder);
 		}
 		else {
-			pb.append(" UNION ALL ", it, o-> build(pb));
+			builder.append(" UNION ALL ", drivenData, o-> internalBuild(builder.subQuery(views, o)));
 		}
-		log.trace("query built in {} ms", currentTimeMillis() - bg);
-		return pb.build();
 	}
-
-	public final void build(QueryBuilder builder){
-		with(builder); //before build
-    	select(builder);
+	
+	private void internalBuild(QueryBuilder builder) {
+		select(builder);
 		from(builder); //enumerate all views before from clause
 		join(builder);
     	where(builder);
@@ -202,12 +218,13 @@ public class QueryComposer {
     	having(builder);
     	orderBy(builder);
     	fetch(builder);
+    	union(builder);
 	}
 	
 	void with(QueryBuilder builder) {
 		if(!ctes.isEmpty()) {
 			builder.append("WITH ")
-			.append(SCOMA, ctes.iterator(), v-> builder.appendViewAlias(v).appendAs().append(v)) //query parenthesis
+			.append(SCOMA, ctes, v-> builder.appendViewAlias(v).appendAs().append(v)) //query parenthesis
 			.appendSpace();
 		}
 	}
@@ -221,14 +238,14 @@ public class QueryComposer {
 				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
 			}
 		}
-		builder.append("SELECT");
+		builder.append("SELECT ");
 		if(distinct) {
-			builder.append(" DISTINCT");
+			builder.append("DISTINCT ");
 		}
     	if(nonNull(limit) && currentDatabase() == TERADATA){
-    		builder.append(" TOP " + limit);
+    		builder.append("TOP " + limit);
     	}
-    	builder.appendSpace().append(SCOMA, columns.iterator(), o-> {
+    	builder.append(SCOMA, columns, o-> {
     		builder.append(o);
     		var tag = o.getTag();
     		if(nonNull(tag)) {
@@ -245,7 +262,7 @@ public class QueryComposer {
 			.forEach(v-> from.remove(overView.containsKey(v) ? overView.get(v) : v));
 		}
 		if(!from.isEmpty()) {
-			query.append(" FROM ").append(SCOMA, from.iterator(), v-> {
+			query.append(" FROM ").append(SCOMA, from, v-> {
 				if(!ctes.contains(v)) {
 					query.append(v).appendSpace();
 				}
@@ -256,7 +273,7 @@ public class QueryComposer {
 	
 	void join(QueryBuilder builder) {
 		if(!joins.isEmpty()) {
-			builder.appendSpace().append(SPACE, joins.iterator(), v-> {
+			builder.appendSpace().append(SPACE, joins, v-> {
 				if(overView.containsKey(v.getView())) {
 					var cte = overView.get(v.getView()); 
 					v = v.map(c-> c.appendViewAlias(cte));
@@ -268,13 +285,13 @@ public class QueryComposer {
 
 	void where(QueryBuilder builder){
 		if(!where.isEmpty()) {
-    		builder.append(" WHERE ").append(AND.sql(), where.iterator());
+    		builder.append(" WHERE ").append(AND.sql(), where);
 		}
 	}
 	
 	void groupBy(QueryBuilder builder){
 		if(aggregation && !group.isEmpty()) {
-    		builder.append(" GROUP BY ").append(SCOMA, group.iterator(), c-> {
+    		builder.append(" GROUP BY ").append(SCOMA, group, c-> {
     			if(!(c instanceof ViewColumn) && columns.contains(c)) {
     				builder.append(((NamedColumn)c).getTag());
     			}
@@ -287,13 +304,13 @@ public class QueryComposer {
 	
 	void having(QueryBuilder builder){
 		if(!having.isEmpty()) {
-    		builder.append(" HAVING ").append(AND.sql(), having.iterator());
+    		builder.append(" HAVING ").append(AND.sql(), having);
 		}
 	}
 	
 	void orderBy(QueryBuilder builder) {
     	if(!orders.isEmpty()) {
-    		builder.append(" ORDER BY ").append(SCOMA, orders.iterator());
+    		builder.append(" ORDER BY ").append(SCOMA, orders);
     	}
 	}
 	
@@ -308,6 +325,12 @@ public class QueryComposer {
 		}
 	}
 
+	void union(QueryBuilder builder) {
+    	if(!unions.isEmpty()) {
+    		builder.appendSpace().append(SPACE, unions);
+    	}
+	}
+	
 	@Override
 	public String toString() {
 		return compose().getSql();

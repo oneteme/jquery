@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.isNull;
+import static org.usf.jquery.core.TypedArg.values;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.Connection;
@@ -44,7 +45,7 @@ public final class Query {
 		log.debug("preparing statement : {}", sql);
 		try(var ps = cn.prepareStatement(sql)){
 			if(!isEmpty(args)) {
-				log.debug("using arguments : {}", Arrays.toString(args));
+				log.debug("using arguments : {}", Arrays.toString(values(args)));
 				for(var i=0; i<args.length; i++) {
 					if(isNull(args[i].value())) {
 						ps.setNull(i+1, args[i].type());

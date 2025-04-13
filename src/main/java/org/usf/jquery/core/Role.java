@@ -10,5 +10,6 @@ public enum Role {
 	COLUMN,
 	FILTER,
 	ORDER,
-	JOIN;
+	JOIN,
+	UNION;
 }
