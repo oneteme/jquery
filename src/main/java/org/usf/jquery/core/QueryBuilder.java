@@ -98,11 +98,11 @@ public final class QueryBuilder {
 		return runForeach(delemiter, arr, 0, cons);
 	}
 	
-	public QueryBuilder append(String delemiter, Collection<? extends DBObject> it) {
+	public QueryBuilder appendEach(String delemiter, Collection<? extends DBObject> it) {
 		return runForeach(delemiter, it, o-> o.build(this));
 	}
 	
-	public <T> QueryBuilder append(String delemiter, Collection<T> it, Consumer<T> cons) {
+	public <T> QueryBuilder appendEach(String delemiter, Collection<T> it, Consumer<T> cons) {
 		return runForeach(delemiter, it, cons);
 	}
 

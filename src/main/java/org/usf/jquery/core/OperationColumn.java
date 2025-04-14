@@ -27,7 +27,7 @@ public final class OperationColumn implements DBColumn {
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
 		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
-			DBObject.tryComposeNested(query, null, args);
+			DBObject.tryComposeNested(query, c-> {}, args); //declare views only
 			return 1;
 		}
 		if(operator.is("OVER")) {

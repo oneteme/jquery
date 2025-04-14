@@ -28,6 +28,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -41,6 +42,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 public class QueryComposer {
+	
+	static final Consumer<DBColumn> DO_NOTHING = o->{};
 	
 	private final List<QueryView> ctes = new ArrayList<>();
 	private final List<NamedColumn> columns = new ArrayList<>();
@@ -114,7 +117,7 @@ public class QueryComposer {
 	public QueryComposer joins(@NonNull ViewJoin... joins) {
 		this.role = JOIN;
 		for(var j : joins) {
-			j.compose(this, v->{}); //declare views only, no aggregation
+			j.compose(this, DO_NOTHING); //declare views only, no aggregation
 			this.joins.add(j);
 		}
 		return this;
@@ -124,7 +127,7 @@ public class QueryComposer {
 	public QueryComposer unions(@NonNull QueryUnion... unions) {
 		this.role = UNION;
 		for(var o : unions) {
-			o.compose(this, v->{}); //declare views only, no aggregation
+			o.compose(this, DO_NOTHING); //declare views only, no aggregation
 			this.unions.add(o);
 		}
 		return this;
@@ -153,7 +156,7 @@ public class QueryComposer {
 	QueryComposer declare(@NonNull DBView... views) {
 		for(var v : views) {
 			if(this.views.add(v)) {
-				v.compose(this, o-> {}); //
+				v.compose(this, DO_NOTHING); //
 			}
 		}
 		return this;
@@ -228,7 +231,7 @@ public class QueryComposer {
 	void with(QueryBuilder builder) {
 		if(!ctes.isEmpty()) {
 			builder.append("WITH ")
-			.append(SCOMA, ctes, v-> builder.appendViewAlias(v).appendAs().append(v)) //query parenthesis
+			.appendEach(SCOMA, ctes, v-> builder.appendViewAlias(v).appendAs().append(v)) //query parenthesis
 			.appendSpace();
 		}
 	}
@@ -249,7 +252,7 @@ public class QueryComposer {
     	if(nonNull(limit) && currentDatabase() == TERADATA){
     		builder.append("TOP " + limit);
     	}
-    	builder.append(SCOMA, columns, o-> {
+    	builder.appendEach(SCOMA, columns, o-> {
     		builder.append(o);
     		var tag = o.getTag();
     		if(nonNull(tag)) {
@@ -266,7 +269,7 @@ public class QueryComposer {
 			.forEach(v-> from.remove(overView.containsKey(v) ? overView.get(v) : v));
 		}
 		if(!from.isEmpty()) {
-			query.append(" FROM ").append(SCOMA, from, v-> {
+			query.append(" FROM ").appendEach(SCOMA, from, v-> {
 				if(!ctes.contains(v)) {
 					query.append(v).appendSpace();
 				}
@@ -277,7 +280,7 @@ public class QueryComposer {
 	
 	void join(QueryBuilder builder) {
 		if(!joins.isEmpty()) {
-			builder.appendSpace().append(SPACE, joins, v-> {
+			builder.appendSpace().appendEach(SPACE, joins, v-> {
 				if(overView.containsKey(v.getView())) {
 					var cte = overView.get(v.getView()); 
 					v = v.map(c-> c.appendViewAlias(cte));
@@ -289,13 +292,13 @@ public class QueryComposer {
 
 	void where(QueryBuilder builder){
 		if(!where.isEmpty()) {
-    		builder.append(" WHERE ").append(AND.sql(), where);
+    		builder.append(" WHERE ").appendEach(AND.sql(), where);
 		}
 	}
 	
 	void groupBy(QueryBuilder builder){
 		if(aggregation && !group.isEmpty()) {
-    		builder.append(" GROUP BY ").append(SCOMA, group, c-> {
+    		builder.append(" GROUP BY ").appendEach(SCOMA, group, c-> {
     			if(!(c instanceof ViewColumn) && columns.contains(c)) {
     				builder.append(((NamedColumn)c).getTag());
     			}
@@ -308,13 +311,13 @@ public class QueryComposer {
 	
 	void having(QueryBuilder builder){
 		if(!having.isEmpty()) {
-    		builder.append(" HAVING ").append(AND.sql(), having);
+    		builder.append(" HAVING ").appendEach(AND.sql(), having);
 		}
 	}
 	
 	void orderBy(QueryBuilder builder) {
     	if(!orders.isEmpty()) {
-    		builder.append(" ORDER BY ").append(SCOMA, orders);
+    		builder.append(" ORDER BY ").appendEach(SCOMA, orders);
     	}
 	}
 	
@@ -331,7 +334,7 @@ public class QueryComposer {
 
 	void union(QueryBuilder builder) {
     	if(!unions.isEmpty()) {
-    		builder.appendSpace().append(SPACE, unions);
+    		builder.appendSpace().appendEach(SPACE, unions);
     	}
 	}
 	
