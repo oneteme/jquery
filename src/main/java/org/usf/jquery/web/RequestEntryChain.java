@@ -60,7 +60,7 @@ import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.SingleColumnQuery;
+import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.ViewJoin;
 
 import lombok.AccessLevel;
@@ -102,7 +102,7 @@ final class RequestEntryChain {
 				.orElseThrow(()-> noSuchResourceException(VIEW, value));
 	}
 	
-	public SingleColumnQuery evalQueryColumn(ViewDecorator td) {
+	public SingleQueryColumn evalQueryColumn(ViewDecorator td) {
 		return evalQuery(td, false)
 				.map(QueryDecorator::getQuery)
 				.map(QueryView::asColumn)

@@ -26,7 +26,7 @@ public interface DBObject {
 	}
 	
 	static int composeNested(QueryComposer query, Consumer<DBColumn> cons, DBColumn col, DBObject[] args){
-		return composeNested(query, cons, streamOrEmptry(args), col);
+		return composeNested(query, cons, streamOrEmpty(args), col);
 	}
 
 	static int tryComposeNested(QueryComposer query, Consumer<DBColumn> cons, Object... args){
@@ -34,7 +34,7 @@ public interface DBObject {
 	}
 
 	static int tryComposeNested(QueryComposer query, Consumer<DBColumn> cons, DBColumn col, Object... args){
-		return composeNested(query, cons, streamOrEmptry(args).mapMulti((o, acc)->{
+		return composeNested(query, cons, streamOrEmpty(args).mapMulti((o, acc)->{
 			if(o instanceof DBObject n) {
 				acc.accept(n);
 			}
@@ -43,7 +43,7 @@ public interface DBObject {
 
 	//0: groupKey, +1: aggregation, -1: constant  
 	static int composeNested(QueryComposer query, Consumer<DBColumn> cons, Stream<DBObject> stream, DBColumn col){
-		if(isNull(col)) { //declare only
+		if(isNull(col)) {
 			return stream.mapToInt(o-> o.compose(query, cons)).max().orElse(-1);
 		}
 		var arr = new ArrayList<DBColumn>();
@@ -63,7 +63,7 @@ public interface DBObject {
 		return query.build().getSql();
 	}
 	
-	private static <T> Stream<T> streamOrEmptry(T[] arr) {
+	private static <T> Stream<T> streamOrEmpty(T[] arr) {
 		return nonNull(arr) ? stream(arr) : empty();
 	}
 }

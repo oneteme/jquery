@@ -58,7 +58,7 @@ public class QueryComposer {
 	private boolean aggregation;
 	private Integer limit;
 	private Integer offset;
-	private Object[] drivenData;
+	private Object[] drivenModel;
 	
 	private Role role;
 	
@@ -148,8 +148,8 @@ public class QueryComposer {
 		return this;
 	}
 	
-	public <T> QueryComposer repeat(@NonNull T[] drivenData) {
-		this.drivenData = drivenData;
+	public <T> QueryComposer repeat(@NonNull T[] drivenModel) {
+		this.drivenModel = drivenModel;
 		return this;
 	}
 	
@@ -208,11 +208,11 @@ public class QueryComposer {
 	}
 	
 	public final void build(QueryBuilder builder){
-		if(isNull(drivenData)) {
+		if(isNull(drivenModel)) {
 			internalBuild(builder);
 		}
 		else {
-			builder.appendEach(" UNION ALL ", drivenData, o-> internalBuild(builder.withModel(o)));
+			builder.appendEach(" UNION ALL ", drivenModel, o-> internalBuild(builder.withModel(o)));
 		}
 	}
 	

@@ -39,7 +39,7 @@ public final class QueryBuilder {
 	private final Map<QueryView, String> ctes;
 	private final Map<DBView, String> views;
 	private final List<TypedArg> args;
-	private final Object model;
+	private final Object currentModel;
 
 	public QueryBuilder appendViewAlias(DBView view) {
 		return appendViewAlias(view, "");
@@ -148,7 +148,7 @@ public final class QueryBuilder {
 	}
 	
 	public QueryBuilder withValue() { //inherit schema, prefix, args but not views
-		return new QueryBuilder(schema, prefix, query, ctes, views, null, model); //no args
+		return new QueryBuilder(schema, prefix, query, ctes, views, null, currentModel); //no args
 	}
 
 	public QueryBuilder withModel(Object model) { //overwrite model only
@@ -157,7 +157,7 @@ public final class QueryBuilder {
 	
 	public QueryBuilder subQuery(Collection<DBView> views) { //inherit schema, prefix, args but not views
 		var s = prefix + "_s";
-		return new QueryBuilder(schema, s, query, ctes, viewAlias(s, views), args, model);
+		return new QueryBuilder(schema, s, query, ctes, viewAlias(s, views), args, currentModel);
 	}
 	
 	public Query build() {

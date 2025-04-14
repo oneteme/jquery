@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.Utils.isEmpty;
+
 import java.util.function.Consumer;
 
 import lombok.AccessLevel;
@@ -26,14 +28,14 @@ public final class QueryView implements DBView {
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
 		var ctes = composer.getCtes();
-		if(!ctes.isEmpty()) {
+		if(!isEmpty(ctes)) {
 			query.ctes(ctes.toArray(QueryView[]::new));  //cte propagation
 		}
 		return -1; //no column
 	}
 
-	public SingleColumnQuery asColumn(){ 
-		return new SingleColumnQuery(this); 
+	public SingleQueryColumn asColumn(){ 
+		return new SingleQueryColumn(this); 
 	}
 	
 	public QueryUnion asUnion(boolean all) {
