@@ -25,6 +25,22 @@ public final class OperationColumn implements DBColumn {
 	private ViewColumn overColumn; 
 
 	@Override
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
+			DBObject.tryComposeNested(query, null, args);
+			return 1;
+		}
+		if(operator.is("OVER")) {
+			if(query.getRole() == FILTER) {
+				overColumn = query.overColumnView(new OperationColumn(operator, args, type), "over_" + hashCode());
+				return overColumn.compose(query, groupKeys);
+			}
+			return resolveOverColumns(query, groupKeys);
+		}
+		return DBObject.tryComposeNested(query, groupKeys, this, args);
+	}
+
+	@Override
 	public void build(QueryBuilder query) {
 		if(nonNull(overColumn)) {
 			query.append(overColumn); //no args
@@ -38,29 +54,13 @@ public final class OperationColumn implements DBColumn {
 	public JDBCType getType() {
 		return nonNull(overColumn) ? overColumn.getType() : type;
 	}
-
-	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
-			Nested.tryAggregation(query, null, args);
-			return 1;
-		}
-		if(operator.is("OVER")) {
-			if(query.getRole() == FILTER) {
-				overColumn = query.overColumnView(new OperationColumn(operator, args, type), "over_" + hashCode());
-				return overColumn.compose(query, groupKeys);
-			}
-			return resolveOverColumns(query, groupKeys);
-		}
-		return Nested.tryAggregation(query, groupKeys, this, args);
-	}
 	
 	private int resolveOverColumns(QueryComposer composer, Consumer<DBColumn> groupKeys) {
 		requireAtLeastNArgs(1, args, ()-> "over"); //partition
-		var lvl = Nested.tryAggregation(composer, groupKeys, args[0])-1; //nested aggregate function
+		var lvl = DBObject.tryComposeNested(composer, groupKeys, args[0])-1; //nested aggregate function
 		return args.length == 1
 				? lvl
-				: Math.max(lvl, Nested.tryAggregation(composer, groupKeys, args[1])); //partition
+				: Math.max(lvl, DBObject.tryComposeNested(composer, groupKeys, args[1])); //partition
 	}
 		
 	@Override

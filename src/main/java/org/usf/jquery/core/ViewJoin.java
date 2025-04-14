@@ -21,12 +21,11 @@ import lombok.Getter;
  *
  */
 @Getter
-public final class ViewJoin implements DBObject, Nested {
+public final class ViewJoin implements DBObject {
 	
 	private final JoinType joinType;
 	private final DBView view;
 	private final DBFilter[] filters;
-	//join results !?
 	
 	ViewJoin(JoinType joinType, DBView view, DBFilter[] filters) {
 		this.joinType = joinType;
@@ -35,20 +34,20 @@ public final class ViewJoin implements DBObject, Nested {
 				? filters 
 				: requireAtLeastNArgs(1, filters, ViewJoin.class::getSimpleName);
 	}
+	
+	@Override
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		query.declare(view); //if filters is null
+		return DBObject.composeNested(query, groupKeys, filters);
+	}
 
 	@Override
 	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
 		query.append(joinType.name()).append(" JOIN ").append(view).appendAs().appendViewAlias(view);
 		if(!isEmpty(filters)) {
-			query.append(" ON ").append(AND.sql(), filters);
+			query.append(" ON ").appendEach(AND.sql(), filters);
 		} //else cross join
-	}
-	
-	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		query.declare(view);
-		return Nested.aggregation(query, groupKeys, filters);
 	}
 	
 	public ViewJoin map(DBView view) {

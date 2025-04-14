@@ -16,11 +16,16 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-final class WhenCase implements DBObject, Typed, Nested {
+final class WhenCase implements DBObject, Typed {
 	
 	private final DBFilter filter; //optional
 	private final Object value; //then|else
 
+	@Override
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return DBObject.tryComposeNested(query, groupKeys, filter, value);
+	}
+	
 	@Override
 	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, WhenCase.class::getSimpleName);
@@ -33,11 +38,6 @@ final class WhenCase implements DBObject, Typed, Nested {
 	@Override
 	public JDBCType getType() {
 		return typeOf(value).orElse(null);
-	}
-	
-	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		return Nested.tryAggregation(query, groupKeys, filter, value);
 	}
 	
 	@Override

@@ -145,13 +145,17 @@ public class QueryComposer {
 		return this;
 	}
 	
-	public <T> QueryComposer repeat(@NonNull T[] it) {
-		this.drivenData = it;
+	public <T> QueryComposer repeat(@NonNull T[] drivenData) {
+		this.drivenData = drivenData;
 		return this;
 	}
 	
 	QueryComposer declare(@NonNull DBView... views) {
-		addAll(this.views, views);
+		for(var v : views) {
+			if(this.views.add(v)) {
+				v.compose(this, o-> {}); //
+			}
+		}
 		return this;
 	}
 	
@@ -205,13 +209,13 @@ public class QueryComposer {
 			internalBuild(builder);
 		}
 		else {
-			builder.append(" UNION ALL ", drivenData, o-> internalBuild(builder.subQuery(views, o)));
+			builder.appendEach(" UNION ALL ", drivenData, o-> internalBuild(builder.withModel(o)));
 		}
 	}
 	
 	private void internalBuild(QueryBuilder builder) {
 		select(builder);
-		from(builder); //enumerate all views before from clause
+		from(builder);
 		join(builder);
     	where(builder);
     	groupBy(builder);

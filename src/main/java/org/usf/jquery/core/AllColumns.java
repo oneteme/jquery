@@ -23,26 +23,26 @@ public final class AllColumns implements NamedColumn {
 	private final DBView[] views;
 	
 	@Override
+	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
+		if(nonNull(views)) {
+			query.declare(views); //declare views
+		}
+		return -1;
+	}
+	
+	@Override
 	public void build(QueryBuilder query) {
 		if(isEmpty(views) || currentDatabase() != TERADATA) {
 			query.append(ASTR);
 		}
 		else {
-			query.append(SCOMA, views, v-> query.appendViewAlias(v, DOT).append(ASTR));
+			query.appendEach(SCOMA, views, v-> query.appendViewAlias(v, DOT).append(ASTR));
 		}
 	}
 	
 	@Override
 	public JDBCType getType() {
 		return null;
-	}
-	
-	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
-		if(nonNull(views)) {
-			query.declare(views); //declare views
-		}
-		return -1;
 	}
 	
 	@Override

@@ -11,7 +11,7 @@ import org.usf.jquery.core.JavaType.Typed;
  * @author u$f
  *
  */
-public final class SingleColumnQuery implements DBObject, Typed, Nested {
+public final class SingleColumnQuery implements DBObject, Typed {
 	
 	private final QueryView view;
 	private final JDBCType type;

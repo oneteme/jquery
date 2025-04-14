@@ -13,7 +13,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.function.Consumer;
@@ -38,7 +38,8 @@ public final class QueryBuilder {
 	private final StringBuilder query;
 	private final Map<QueryView, String> ctes;
 	private final Map<DBView, String> views;
-	private final Collection<TypedArg> args;
+	private final List<TypedArg> args;
+	private final Object model;
 
 	public QueryBuilder appendViewAlias(DBView view) {
 		return appendViewAlias(view, "");
@@ -89,11 +90,11 @@ public final class QueryBuilder {
 			: appendLiteral(delemiter, arr, from);
 	}
 	
-	public QueryBuilder append(String delemiter, DBObject[] arr) {
+	public QueryBuilder appendEach(String delemiter, DBObject[] arr) {
 		return runForeach(delemiter, arr, 0, o-> o.build(this));
 	}
 	
-	public <T> QueryBuilder append(String delemiter, T[] arr, Consumer<T> cons) {
+	public <T> QueryBuilder appendEach(String delemiter, T[] arr, Consumer<T> cons) {
 		return runForeach(delemiter, arr, 0, cons);
 	}
 	
@@ -146,17 +147,17 @@ public final class QueryBuilder {
 		return nonNull(o) ? quote(o.toString()) : "null";
 	}
 	
-	public QueryBuilder withValue() {
-		return new QueryBuilder(schema, prefix, query, ctes, views, null); //no args
+	public QueryBuilder withValue() { //inherit schema, prefix, args but not views
+		return new QueryBuilder(schema, prefix, query, ctes, views, null, model); //no args
+	}
+
+	public QueryBuilder withModel(Object model) { //overwrite model only
+		return new QueryBuilder(schema, prefix, query, ctes, views, args, model);
 	}
 	
 	public QueryBuilder subQuery(Collection<DBView> views) { //inherit schema, prefix, args but not views
 		var s = prefix + "_s";
-		return new QueryBuilder(schema, s, query, ctes, viewAlias(s, views), args);
-	}
-
-	public QueryBuilder subQuery(Collection<DBView> views, Object model) { //inherit schema, prefix, args but not views
-		
+		return new QueryBuilder(schema, s, query, ctes, viewAlias(s, views), args, model);
 	}
 	
 	public Query build() {
@@ -210,13 +211,13 @@ public final class QueryBuilder {
 		return create(schema, ctes, views, new ArrayList<>(), overview);
 	}
 	
-	private static QueryBuilder create(String schema, Collection<QueryView> ctes, Collection<DBView> views, Collection<TypedArg> args, Map<DBView, QueryView> overview) {
+	private static QueryBuilder create(String schema, Collection<QueryView> ctes, Collection<DBView> views, List<TypedArg> args, Map<DBView, QueryView> overview) {
 		var cMap = viewAlias("g", ctes);
 		var vMap = viewAlias("v", views);
 		if(!isEmpty(overview)) {
 			overview.forEach((k,v)-> vMap.put(k, cMap.get(v)));//override or add
 		}
-		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args);
+		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args, null);
 	}
 		
 	private static <T> Map<T, String> viewAlias(String prefix, Collection<T> views){

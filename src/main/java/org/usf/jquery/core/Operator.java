@@ -20,6 +20,7 @@ import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Optional;
+import java.util.function.Consumer;
 import java.util.function.Predicate;
 
 /**
@@ -30,6 +31,11 @@ import java.util.function.Predicate;
 public interface Operator extends DBProcessor {
 	
 	String id(); //nullable
+
+	@Override
+	default int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+		throw new UnsupportedOperationException("compose operator");
+	}
 
 	default OperationColumn operation(JDBCType type, Object... args) {
 		return new OperationColumn(this, args, type);

@@ -17,6 +17,11 @@ public class ValueColumn implements DBColumn {
 	
 	private final JDBCType type;
 	private final Supplier<Object> supp;
+
+	@Override
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return -1;
+	}
 	
 	@Override
 	public void build(QueryBuilder query) {
@@ -26,11 +31,6 @@ public class ValueColumn implements DBColumn {
 	@Override
 	public JDBCType getType() {
 		return type;
-	}
-
-	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		return -1;
 	}
 
 	@Override

@@ -23,15 +23,15 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public void build(QueryBuilder query) {
-		query.appendParenthesis(()-> query.append(operator.sql(), filters));
-	}
-
-	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		return Nested.aggregation(query, groupKeys, filters);
+		return DBObject.composeNested(query, groupKeys, filters);
 	}
 	
+	@Override
+	public void build(QueryBuilder query) {
+		query.appendParenthesis(()-> query.appendEach(operator.sql(), filters));
+	}
+
 	@Override
 	public DBFilter append(LogicalOperator op, DBFilter filter) {
 		return new ColumnFilterGroup(op, this, filter);

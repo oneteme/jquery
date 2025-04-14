@@ -2,6 +2,8 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.function.Consumer;
+
 /**
  * 
  * @author u$f
@@ -11,6 +13,14 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 public interface DBView extends DBObject {
 
 	void build(QueryBuilder query);
+	
+	/**
+	 * do not declare self on composer
+	 */
+	@Override
+	default int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+		return -1; 
+	}
 	
 	@Override
 	default void build(QueryBuilder query, Object... args) {

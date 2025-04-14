@@ -18,7 +18,7 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-public interface DBColumn extends DBObject, Typed, Nested {
+public interface DBColumn extends DBObject, Typed {
 	
 	void build(QueryBuilder query);
 	

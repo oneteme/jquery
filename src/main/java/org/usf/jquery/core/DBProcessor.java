@@ -14,7 +14,7 @@ import java.util.function.Predicate;
  *
  */
 public interface DBProcessor extends DBObject {
-
+	
 	static <T,U> Optional<U> lookup(Class<T> clazz, Class<U> type, String name, Predicate<? super U> pre) {
 		try {
 			var m = clazz.getMethod(name); //no parameter

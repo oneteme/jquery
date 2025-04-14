@@ -7,7 +7,7 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
  * @author u$f
  *
  */
-public interface DBFilter extends DBObject, Nested, Chainable<DBFilter> {
+public interface DBFilter extends DBObject, Chainable<DBFilter> {
 	
 	void build(QueryBuilder query);
 

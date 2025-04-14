@@ -5,7 +5,6 @@ import java.util.function.Consumer;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * 
@@ -14,7 +13,7 @@ import lombok.Setter;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class QueryView implements DBView, Nested {
+public final class QueryView implements DBView {
 
 	private final QueryComposer composer;
 	
@@ -32,9 +31,9 @@ public final class QueryView implements DBView, Nested {
 		}
 		return -1; //no column
 	}
-	
-	public SingleColumnQuery asColumn(){
-		return new SingleColumnQuery(this);
+
+	public SingleColumnQuery asColumn(){ 
+		return new SingleColumnQuery(this); 
 	}
 	
 	public QueryUnion asUnion(boolean all) {

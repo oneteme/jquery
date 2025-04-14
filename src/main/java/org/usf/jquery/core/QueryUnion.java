@@ -13,24 +13,21 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class QueryUnion implements DBObject, Nested {
+public final class QueryUnion implements DBObject {
 	
 	private final boolean all;
 	private final QueryView view;
 	
 	@Override
-	public void build(QueryBuilder query, Object... args) {
-		requireNoArgs(args, QueryUnion.class::getSimpleName);
-		query.append(" UNION ");
-		if(all) {
-			query.append("ALL ");
-		}
-		query.append(view);
+	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+		return view.compose(composer, groupKeys);
 	}
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
-		return view.compose(composer, groupKeys);
+	public void build(QueryBuilder query, Object... args) {
+		requireNoArgs(args, QueryUnion.class::getSimpleName);
+		query.append(" UNION ");
+		(all ? query.append("ALL ") : query).append(view);
 	}
 	
 	@Override

@@ -22,8 +22,8 @@ public final class ColumnProxy implements NamedColumn {
 	private final String tag; //optional
 	
 	@Override
-	public String getTag() {
-		return tag;
+	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
+		return column.compose(query, cons);
 	}
 
 	@Override
@@ -37,8 +37,8 @@ public final class ColumnProxy implements NamedColumn {
 	}
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
-		return column.compose(query, cons);
+	public String getTag() {
+		return tag;
 	}
 
 	@Override // do not delegate this

@@ -21,13 +21,7 @@ public class ViewColumn implements NamedColumn {
 	private final DBView view; //optional
 	private final JDBCType type; //optional
 	private final String tag;  //optional
-	
-	@Override
-	public void build(QueryBuilder query) {
-		(nonNull(view) ? query.appendViewAlias(view, DOT) : query)
-		.append(name);
-	}
-	
+
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
 		if(nonNull(view)) {
@@ -37,6 +31,12 @@ public class ViewColumn implements NamedColumn {
 			groupKeys.accept(this);
 		}
 		return 0;
+	}
+	
+	@Override
+	public void build(QueryBuilder query) {
+		(nonNull(view) ? query.appendViewAlias(view, DOT) : query)
+		.append(name);
 	}
 	
 	@Override

@@ -21,15 +21,15 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 		this.operator = operator;
 		this.expressions = chain(operator, requireAtLeastNArgs(1, expressions, ComparisonExpressionGroup.class::getSimpleName));
 	}
-
-	@Override
-	public void sql(QueryBuilder query, Object operand) {
-		query.appendParenthesis(()-> query.append(operator.sql(), expressions, e-> e.build(query, operand)));
-	}
 	
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		return Nested.aggregation(query, groupKeys, expressions);
+		return DBObject.composeNested(query, groupKeys, expressions);
+	}
+
+	@Override
+	public void build(QueryBuilder query, Object operand) {
+		query.appendParenthesis(()-> query.appendEach(operator.sql(), expressions, e-> e.build(query, operand)));
 	}
 	
 	@Override
