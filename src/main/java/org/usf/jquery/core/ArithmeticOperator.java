@@ -14,6 +14,6 @@ public interface ArithmeticOperator extends Operator {
 	default void build(QueryBuilder query, Object... args) {
 		requireNArgs(2, args, ArithmeticException.class::getSimpleName);
 		query.appendParenthesis(()->
-			query.appendLiteral(args[0]).append(id()).appendLiteral(args[1]));
+			query.appendParameter(args[0]).append(id()).appendParameter(args[1]));
 	}
 }

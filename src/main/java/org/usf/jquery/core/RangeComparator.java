@@ -16,6 +16,6 @@ public interface RangeComparator extends Comparator {
 		requireNArgs(3, args, RangeComparator.class::getSimpleName);
 		query.appendParameter(args[0])
 		.appendSpace().append(id()).appendSpace()
-		.appendParameter(args[1]).append(AND.sql()).appendParameter(args[2]);
+		.appendParameter(args[1], true).append(AND.sql()).appendParameter(args[2], true);
 	}
 }

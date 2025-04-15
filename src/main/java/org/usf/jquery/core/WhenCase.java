@@ -32,7 +32,7 @@ final class WhenCase implements DBObject, Typed {
 		(nonNull(filter) 
 				? query.append("WHEN ").append(filter).append(" THEN ") 
 				: query.append("ELSE "))
-		.appendLiteral(value);
+		.appendParameter(value);
 	}
 	
 	@Override

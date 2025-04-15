@@ -21,6 +21,6 @@ public interface ExtractFunction extends FunctionOperator {
 	default void build(QueryBuilder query, Object... args) {
 		requireNArgs(1, args, ExtractFunction.class::getSimpleName);
 		query.append(id()).appendParenthesis(
-				()-> query.append(field()).append(" FROM ").appendLiteral(args[0]));
+				()-> query.append(field()).append(" FROM ").appendParameter(args[0]));
 	}
 }

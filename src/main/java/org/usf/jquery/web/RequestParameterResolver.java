@@ -32,8 +32,8 @@ public final class RequestParameterResolver {//spring connection bridge
 		var t = currentTimeMillis();
 		log.trace("parsing request...");
 		parameterMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
-		if(!parameterMap.containsKey(COLUMN)) {
-			parameterMap.computeIfAbsent(COLUMN_DISTINCT, k-> ant.defaultColumns());
+		if(!parameterMap.containsKey(COLUMN_DISTINCT)) {
+			parameterMap.computeIfAbsent(COLUMN, k-> ant.defaultColumns());
 		}
 		if(!isEmpty(ant.ignoreParameters())) {
 			for(var k : ant.ignoreParameters()) {

@@ -30,8 +30,6 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryBuilder {
 	
-	private static final String P_ARG = "?";
-	
 	@Getter
 	private final String schema;
 	private final String prefix;
@@ -54,7 +52,24 @@ public final class QueryBuilder {
 		if(nonNull(v)) {
 			return append(v).append(after); //view.
 		}
-		throw new NoSuchElementException("no alias for view " + view);
+		throw new NoSuchElementException("alias not found for view=" + view);
+	}
+	
+	public QueryBuilder append(Object o) {
+		if(o instanceof DBObject jo) {
+			return append(jo);
+		}
+		return append(nonNull(o) ? o.toString() : "null");
+	}
+	
+	public QueryBuilder append(String sql) {
+		query.append(sql);
+		return this;
+	}
+	
+	public QueryBuilder append(DBObject o) {
+		o.build(this);
+		return this;
 	}
 	
 	public QueryBuilder appendSpace() {
@@ -70,84 +85,60 @@ public final class QueryBuilder {
 		exec.run();
 		return append(")");
 	}
-	
-	public QueryBuilder append(String sql) {
-		query.append(sql);
-		return this;
-	}
-	
-	public QueryBuilder append(DBObject o) {
-		o.build(this);
-		return this;
-	}
-	
-	public QueryBuilder appendParameters(String delemiter, Object[] arr) {
-		return appendParameters(delemiter, arr, 0);
-	}
-	
-	public QueryBuilder appendParameters(String delemiter, Object[] arr, int from) {
-		return isParameterized()
-			? runForeach(delemiter, arr, from, this::appendParameter)
-			: appendLiteral(delemiter, arr, from);
-	}
-	
-	public QueryBuilder appendEach(String delemiter, DBObject[] arr) {
-		return runForeach(delemiter, arr, 0, o-> o.build(this));
-	}
-	
-	public <T> QueryBuilder appendEach(String delemiter, T[] arr, Consumer<T> cons) {
-		return runForeach(delemiter, arr, 0, cons);
-	}
-	
-	public QueryBuilder appendEach(String delemiter, Collection<? extends DBObject> it) {
-		return runForeach(delemiter, it, o-> o.build(this));
-	}
-	
-	public <T> QueryBuilder appendEach(String delemiter, Collection<T> it, Consumer<T> cons) {
-		return runForeach(delemiter, it, cons);
-	}
 
-	public QueryBuilder appendLiteral(String delemiter, Object[] arr) {
-		return appendLiteral(delemiter, arr, 0);
+	public QueryBuilder appendParameters(String delimiter, Object[] arr) {
+		return appendParameters(delimiter, arr, 0, false);
 	}
 	
-	public QueryBuilder appendLiteral(String delemiter, Object[] arr, int from) {
-		return runForeach(delemiter, arr, from, this::appendLiteral);
+	public QueryBuilder appendParameters(String delimiter, Object[] arr, boolean parameterized) {
+		return appendParameters(delimiter, arr, 0, parameterized);
 	}
-
+	
+	public QueryBuilder appendParameters(String delimiter, Object[] arr, int from) {
+		return appendParameters(delimiter, arr, from, false);
+	}
+	
+	public QueryBuilder appendParameters(String delimiter, Object[] arr, int from, boolean parameterized) {
+		return runForeach(delimiter, arr, from, o-> appendParameter(o, parameterized));
+	}
+	
 	public QueryBuilder appendParameter(Object o) {
-		if(isParameterized()) {
-			return o instanceof DBObject jo
-					? append(jo)
-					: append(typeOf(o).map(t-> appendArg(t, o)).orElseGet(()-> formatValue(o)));
-		}
-		else {
-			return appendLiteral(o);
-		}
+		return appendParameter(o, false);
 	}
 
-	public QueryBuilder appendLiteral(Object o) {  //TD : stringify value using db default pattern
-		return o instanceof DBObject jo 
-				? append(jo) 
-				: append(formatValue(o));
-	}
-		
-	private String appendArg(JDBCType type, Object o) {
-		args.add(arg(o, type.getValue()));
-		return P_ARG;
-	}
-	
-	private boolean isParameterized() {
-		return nonNull(args);
-	}
-
-	public static String formatValue(Object o) {
+	public QueryBuilder appendParameter(Object o, boolean parameterized) { //comparators
+		if(o instanceof DBObject jo) {
+			return append(jo);
+		}
+		if(parameterized && isParameterized()) {
+			var t = typeOf(o);
+			if(t.isPresent()) {
+				args.add(arg(o, t.get().getValue()));
+				return append("?");
+			}
+		}
 		if(o instanceof Number){
-			return o.toString();
-		}//else String|Date
-		return nonNull(o) ? quote(o.toString()) : "null";
+			return append(o.toString());
+		} 
+		return append(nonNull(o) ? quote(o.toString()) : "null");   //TD : stringify value using db default pattern
+	}
+
+	public QueryBuilder appendEach(String delimiter, DBObject[] arr) {
+		return runForeach(delimiter, arr, 0, o-> o.build(this));
 	}
 	
+	public <T> QueryBuilder appendEach(String delimiter, T[] arr, Consumer<T> cons) {
+		return runForeach(delimiter, arr, 0, cons);
+	}
+	
+	public QueryBuilder appendEach(String delimiter, Collection<? extends DBObject> it) {
+		return runForeach(delimiter, it, o-> o.build(this));
+	}
+	
+	public <T> QueryBuilder appendEach(String delimiter, Collection<T> it, Consumer<T> cons) {
+		return runForeach(delimiter, it, cons);
+	}
+
 	public QueryBuilder withValue() { //inherit schema, prefix, args but not views
 		return new QueryBuilder(schema, prefix, query, ctes, views, null, currentModel); //no args
 	}
@@ -163,6 +154,10 @@ public final class QueryBuilder {
 	
 	public Query build() {
 		return new Query(query.toString(), isParameterized() ? args.toArray(TypedArg[]::new) : null);
+	}
+
+	private boolean isParameterized() {
+		return nonNull(args);
 	}
 	
 	private <T> QueryBuilder runForeach(String delimiter, T[] arr, int idx, Consumer<T> fn) {
@@ -216,7 +211,7 @@ public final class QueryBuilder {
 		var cMap = viewAlias("g", ctes);
 		var vMap = viewAlias("v", views);
 		if(!isEmpty(overview)) {
-			overview.forEach((k,v)-> vMap.put(k, cMap.get(v)));//override or add
+			overview.forEach((k,v)-> vMap.put(k, cMap.get(v))); //override or add
 		}
 		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args, null);
 	}

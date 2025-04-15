@@ -13,7 +13,7 @@ public interface PipeFunction extends FunctionOperator {
 	@Override
 	default void build(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(1, args, PipeFunction.class::getSimpleName);
-		query.appendLiteral(args[0]).appendSpace();
+		query.appendParameter(args[0]).appendSpace();
 		FunctionOperator.super.build(query, args, 1); //optional partition
 	}
 }

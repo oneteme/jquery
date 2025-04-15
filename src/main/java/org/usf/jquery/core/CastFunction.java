@@ -22,9 +22,9 @@ public interface CastFunction extends FunctionOperator {
 	default void build(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(1, args, CastFunction.class::getSimpleName);
 		query.append(id()).appendParenthesis(()-> {
-			query.appendLiteral(args[0]).appendAs().append(type());
+			query.appendParameter(args[0]).appendAs().append(type());
 			if(args.length > 1) { //varchar | decimal
-				query.appendParenthesis(()-> query.appendLiteral(SCOMA, args, 1));
+				query.appendParenthesis(()-> query.appendParameters(SCOMA, args, 1));
 			}
 		});
 	}

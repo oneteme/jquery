@@ -15,7 +15,7 @@ public interface StringComparator extends Comparator {
 		requireNArgs(2, args, StringComparator.class::getSimpleName);
 		query.appendParameter(args[0])
 		.appendSpace().append(id()).appendSpace()
-		.appendParameter(wildcardArg(args[1]));
+		.appendParameter(wildcardArg(args[1]), true);
 	}
 	
 	default Object wildcardArg(Object o) { //Entry<Srtring, Unary<String>>
