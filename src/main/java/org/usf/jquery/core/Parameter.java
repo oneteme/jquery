@@ -1,10 +1,9 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.joinArray;
-
-import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -26,7 +25,7 @@ public final class Parameter {
 
 	public boolean accept(int idx, Object[] args) {
 		var arr = types(args);
-		return isEmpty(arr) || Stream.of(arr).anyMatch(t-> t.accept(args[idx]));
+		return isEmpty(arr) || stream(arr).anyMatch(t-> t.accept(args[idx]));
 	}
 	
 	public JavaType[] types(Object[] args) {

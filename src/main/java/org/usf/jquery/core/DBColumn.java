@@ -7,8 +7,6 @@ import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.function.Supplier;
-
 import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.NonNull;
@@ -443,10 +441,10 @@ public interface DBColumn extends DBObject, Typed {
 	}
 	
 	static ValueColumn constant(Object value) {
-		return constant(JDBCType.typeOf(value).orElse(null), ()-> value);
+		return constant(JDBCType.typeOf(value).orElse(null), value);
 	}
 
-	static ValueColumn constant(JDBCType type, Supplier<Object> supp) {
-		return new ValueColumn(type, supp);
+	static ValueColumn constant(JDBCType type, Object value) {
+		return new ValueColumn(type, value);
 	}
 }

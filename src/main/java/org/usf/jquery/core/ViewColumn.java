@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public class ViewColumn implements NamedColumn {
+public class ViewColumn implements NamedColumn, DrivenObject<String> {
 
 	private final String name;
 	private final DBView view; //optional
@@ -34,7 +34,12 @@ public class ViewColumn implements NamedColumn {
 	@Override
 	public void build(QueryBuilder query) {
 		(nonNull(view) ? query.appendViewAlias(view, DOT) : query)
-		.append(name);
+		.append(adjust(query, name));
+	}
+	
+	@Override
+	public String adjust(QueryBuilder query, String name) {
+		return name;
 	}
 	
 	@Override

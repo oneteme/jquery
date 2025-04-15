@@ -39,6 +39,7 @@ public final class QueryBuilder {
 	private final Map<QueryView, String> ctes;
 	private final Map<DBView, String> views;
 	private final List<TypedArg> args;
+	@Getter
 	private final Object currentModel;
 
 	public QueryBuilder appendViewAlias(DBView view) {

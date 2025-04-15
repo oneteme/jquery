@@ -13,10 +13,10 @@ public interface FunctionOperator extends Operator {
 
 	@Override
 	default void build(QueryBuilder query, Object... args) {
-		sql(query, args, 0);
+		build(query, args, 0);
 	}
 	
-	default void sql(QueryBuilder query, Object[] args, int from) {
+	default void build(QueryBuilder query, Object[] args, int from) {
 		query.append(id()).appendParenthesis(()-> query.appendLiteral(SCOMA, args, from)); //avoid sub array
 	}
 }

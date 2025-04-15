@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.QueryBuilder.formatValue;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,11 +11,11 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor
-public class ValueColumn implements DBColumn {
+@RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
+public class ValueColumn implements DBColumn, DrivenObject<Object> {
 	
 	private final JDBCType type;
-	private final Supplier<Object> supp;
+	private final Object value;
 
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
@@ -25,7 +24,12 @@ public class ValueColumn implements DBColumn {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		query.append(formatValue(supp.get()));
+		query.append(formatValue(adjust(query, value)));
+	}
+	
+	@Override
+	public Object adjust(QueryBuilder query, Object value) {
+		return value;
 	}
 
 	@Override

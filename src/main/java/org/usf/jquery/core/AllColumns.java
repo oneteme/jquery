@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class AllColumns implements NamedColumn {
 	
-	private static final String ASTR = "*";
+	static final String ASTR = "*";
 	private final DBView[] views;
 	
 	@Override

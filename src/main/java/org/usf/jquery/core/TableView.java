@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public class TableView implements DBView {
+public class TableView implements DBView, DrivenObject<String> {
 	
 	private final String schema; //optional
 	private final String name;
@@ -25,7 +25,12 @@ public class TableView implements DBView {
 	@Override
 	public void build(QueryBuilder query) {
 		var sch = getSchemaOrElse(query.getSchema());
-		(nonNull(sch) ? query.append(sch + '.') : query).append(name);
+		(nonNull(sch) ? query.append(sch + '.') : query).append(adjust(query, name));
+	}
+	
+	@Override
+	public String adjust(QueryBuilder query, String name) {
+		return name;
 	}
 
 	public String getSchemaOrElse(String defaultSchema) {
