@@ -7,7 +7,6 @@ import static org.usf.jquery.core.Validation.requireLegalVariable;
 import java.util.function.Consumer;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * 

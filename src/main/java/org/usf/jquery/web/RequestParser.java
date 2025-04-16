@@ -125,8 +125,9 @@ public final class RequestParser {
 		throw new EntrySyntaxException("illegal identifier : " + quote(s));
 	}
 	
+	//bug param="Côte d'Azur" => exclude && c != '\''
 	private static boolean legalTxtChar(char c) { //avoid SQL / HTTP reserved symbol
-		return c != '"' && c != '\'' && c != '&' && c != '?' && c != '=';
+		return c != '"' && c != '&' && c != '?' && c != '=';
 	}
 	
 	private static boolean legalValChar(char c) {

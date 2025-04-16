@@ -54,19 +54,28 @@ public final class RevisionIterator implements Iterator<Entry<Integer, List<Year
 		}
 		throw new IllegalArgumentException("no revision");
 	}
+	
+	public static Object[] iterator2(YearMonth[] revisions){
+		if(!isEmpty(revisions)) {
+			var map = Stream.of(revisions).collect(groupingBy(YearMonth::getYear));
+			return map.entrySet().toArray();
+		}
+		throw new IllegalArgumentException("no revision");
+	}
 
 	static TableView yearTable(TableView view) {
-		return new TableView(view.getSchema(), view.getName()) {
-			@Override
-			public void build(QueryBuilder query) {
-				super.build(query);
-				query.append("_" + currentRev.get().getKey());
-			}
-		};
+		return null;
+//		return new TableView(view.getSchema(), view.getName()) {
+//			@Override
+//			public void build(QueryBuilder query) {
+//				super.build(query);
+//				query.append("_" + currentRev.get().getKey());
+//			}
+//		};
 	}
 
 	static DBColumn yearColumn() {
-		return constant(INTEGER, ()-> currentRev.get().getKey()); //get it on build
+		return null;//constant(INTEGER, ()-> currentRev.get().getKey()); //get it on build
 	}
 	
 	static DBFilter monthFilter(DBColumn column) {

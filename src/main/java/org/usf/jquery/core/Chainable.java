@@ -8,7 +8,6 @@ import static org.usf.jquery.core.LogicalOperator.OR;
  * @author u$f
  *
  */
-@FunctionalInterface
 public interface Chainable<T extends Chainable<T>> {
 	
 	T append(LogicalOperator op, T exp);
