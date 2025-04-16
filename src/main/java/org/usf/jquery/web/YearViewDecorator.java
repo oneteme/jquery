@@ -6,6 +6,8 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.DBColumn.constant;
+import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.ContextManager.currentContext;
@@ -22,10 +24,13 @@ import java.time.YearMonth;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
+import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.TableView;
@@ -46,19 +51,21 @@ public interface YearViewDecorator extends ViewDecorator {
 	ColumnDecorator monthRevision(); //optional
 	
 	@Override
+	@SuppressWarnings("unchecked")
 	default DBView view() {
 		var v = ViewDecorator.super.builder().build();
 		if(v instanceof TableView t) {
-			return yearTable(t);
+			return t.adjuster((n, c)-> n + "_" + ((Entry<Integer, ?>)c).getKey());
 		}
 		throw new UnsupportedOperationException(requireNonNull(v).getClass().getSimpleName());
 	}
 
 	@Override
+	@SuppressWarnings("unchecked")
 	default NamedColumn column(ColumnDecorator column) {
 		var cd = yearRevision();
 		return cd.equals(column)
-				? yearColumn().as(cd.reference(this)) 
+				? constant(INTEGER, null, (v, c)-> ((Entry<Integer, ?>)c).getKey()).as(cd.reference(this)) 
 				: ViewDecorator.super.column(column);
 	}
 	

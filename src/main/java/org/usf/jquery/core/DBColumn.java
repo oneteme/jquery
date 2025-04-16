@@ -7,9 +7,8 @@ import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import org.usf.jquery.core.Driven.Adjuster;
 import org.usf.jquery.core.JavaType.Typed;
-
-import lombok.NonNull;
 
 /**
  * 
@@ -432,8 +431,24 @@ public interface DBColumn extends DBObject, Typed {
 		return Operator.denseRank().operation();
 	}
 	
-	static ViewColumn column(@NonNull String value) {
-		return new ViewColumn(requireLegalVariable(value), null, null, value);
+	static ViewColumn column(String value) {
+		return new ViewColumn(value, null, null, null);
+	}
+
+	static ViewColumn column(String value, DBView view) {
+		return new ViewColumn(value, view, null, null);
+	}
+
+	static ViewColumn column(String value, DBView view, JDBCType type) {
+		return new ViewColumn(value, view, type, null);
+	}
+
+	static ViewColumn column(String value, JDBCType type) {
+		return new ViewColumn(value, null, type, null);
+	}
+	
+	static ViewColumn column(String value, DBView view, JDBCType type, String tag) {
+		return new ViewColumn(value, view, type, tag);
 	}
 
 	static AllColumns allColumns(DBView... views) {
@@ -441,10 +456,14 @@ public interface DBColumn extends DBObject, Typed {
 	}
 	
 	static ValueColumn constant(Object value) {
-		return constant(JDBCType.typeOf(value).orElse(null), value);
+		return constant(value, JDBCType.typeOf(value).orElse(null));
 	}
 
-	static ValueColumn constant(JDBCType type, Object value) {
-		return new ValueColumn(type, value);
+	static ValueColumn constant(Object value, JDBCType type) {
+		return new ValueColumn(type, value, null);
+	}
+
+	static ValueColumn constant(Object value, JDBCType type, Adjuster<Object> adj) {
+		return new ValueColumn(type, value, adj);
 	}
 }

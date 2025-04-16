@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryBuilder.formatValue;
-
 import java.util.function.Consumer;
 
 import lombok.RequiredArgsConstructor;
@@ -12,10 +10,11 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
-public class ValueColumn implements DBColumn, DrivenObject<Object> {
+public class ValueColumn implements DBColumn, Driven<ValueColumn, Object> {
 	
 	private final JDBCType type;
 	private final Object value;
+	private final Adjuster<Object> adjsuter;
 
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
@@ -24,17 +23,17 @@ public class ValueColumn implements DBColumn, DrivenObject<Object> {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		query.append(formatValue(adjust(query, value)));
+		query.appendParameter(value, adjsuter);
 	}
 	
 	@Override
-	public Object adjust(QueryBuilder query, Object value) {
-		return value;
-	}
-
-	@Override
 	public JDBCType getType() {
 		return type;
+	}
+	
+	@Override
+	public ValueColumn adjuster(Adjuster<Object> adjuster) {
+		return new ValueColumn(type, value, adjuster);
 	}
 
 	@Override

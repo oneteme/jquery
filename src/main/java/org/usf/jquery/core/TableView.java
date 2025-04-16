@@ -12,29 +12,33 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public class TableView implements DBView, DrivenObject<String> {
+public final class TableView implements DBView, Driven<TableView, String> {
 	
 	private final String schema; //optional
 	private final String name;
 	private final String tag; //optional
+	private final Adjuster<String> adjsuter;
 
-	public TableView(String schema, String name) {
-		this(schema, name, name);
+	public TableView(String schema, String name, String tag) {
+		this(schema, name, tag, null);
 	}
 
 	@Override
 	public void build(QueryBuilder query) {
 		var sch = getSchemaOrElse(query.getSchema());
-		(nonNull(sch) ? query.append(sch + '.') : query).append(adjust(query, name));
+		if(nonNull(sch)) {
+			query.append(sch + '.');
+		}
+		query.append(name, adjsuter); 
+	}
+	
+	public String getSchemaOrElse(String defaultSchema) {
+		return nonNull(schema) ? schema : defaultSchema; //schema priority order
 	}
 	
 	@Override
-	public String adjust(QueryBuilder query, String name) {
-		return name;
-	}
-
-	public String getSchemaOrElse(String defaultSchema) {
-		return nonNull(schema) ? schema : defaultSchema; //schema priority order
+	public TableView adjuster(Adjuster<String> adjsuter) {
+		return new TableView(schema, name, tag, adjsuter);
 	}
 
 	@Override
