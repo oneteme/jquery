@@ -65,7 +65,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	default NamedColumn column(ColumnDecorator column) {
 		var cd = yearRevision();
 		return cd.equals(column)
-				? constant(INTEGER, null, (v, c)-> ((Entry<Integer, ?>)c).getKey()).as(cd.reference(this)) 
+				? constant(INTEGER, (v, c)-> ((Entry<Integer, ?>)c).getKey()).as(cd.reference(this)) 
 				: ViewDecorator.super.column(column);
 	}
 	

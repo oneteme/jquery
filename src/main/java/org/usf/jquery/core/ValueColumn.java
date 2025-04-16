@@ -12,8 +12,8 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
 public class ValueColumn implements DBColumn, Driven<ValueColumn, Object> {
 	
-	private final JDBCType type;
 	private final Object value;
+	private final JDBCType type;
 	private final Adjuster<Object> adjsuter;
 
 	@Override
@@ -33,7 +33,7 @@ public class ValueColumn implements DBColumn, Driven<ValueColumn, Object> {
 	
 	@Override
 	public ValueColumn adjuster(Adjuster<Object> adjuster) {
-		return new ValueColumn(type, value, adjuster);
+		return new ValueColumn(value, type, adjuster);
 	}
 
 	@Override

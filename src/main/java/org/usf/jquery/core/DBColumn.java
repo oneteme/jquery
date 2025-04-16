@@ -460,10 +460,14 @@ public interface DBColumn extends DBObject, Typed {
 	}
 
 	static ValueColumn constant(Object value, JDBCType type) {
-		return new ValueColumn(type, value, null);
+		return new ValueColumn(value, type, null);
 	}
 
 	static ValueColumn constant(Object value, JDBCType type, Adjuster<Object> adj) {
-		return new ValueColumn(type, value, adj);
+		return new ValueColumn(value, type, adj);
+	}
+
+	static ValueColumn constant(JDBCType type, Adjuster<Object> adj) {
+		return new ValueColumn(null, type, adj);
 	}
 }

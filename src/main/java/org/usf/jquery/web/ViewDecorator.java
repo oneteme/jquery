@@ -85,9 +85,10 @@ public interface ViewDecorator {
 		if(nonNull(tn)){
 			var idx = tn.indexOf('.');
 			return idx == -1 
-					? new TableView(null, requireLegalVariable(tn), identity()) 
-					: new TableView(requireLegalVariable(tn.substring(0, idx)),
-							requireLegalVariable(tn.substring(idx+1, tn.length())), identity());
+					? new TableView(requireLegalVariable(tn), null, identity()) 
+					: new TableView(
+							requireLegalVariable(tn.substring(idx+1, tn.length())),
+							requireLegalVariable(tn.substring(0, idx)), identity());
 		}
 		throw undeclaredResouceException(identity(), currentContext().getDatabase().identity());
 	}

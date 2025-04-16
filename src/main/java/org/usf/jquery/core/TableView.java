@@ -1,9 +1,9 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 /**
  * 
@@ -11,16 +11,22 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @Getter
-@RequiredArgsConstructor
 public final class TableView implements DBView, Driven<TableView, String> {
 	
-	private final String schema; //optional
 	private final String name;
+	private final String schema; //optional
 	private final String tag; //optional
-	private final Adjuster<String> adjsuter;
+	private final Adjuster<String> adjsuter; //optional
 
-	public TableView(String schema, String name, String tag) {
-		this(schema, name, tag, null);
+	public TableView(String name, String schema, String tag, Adjuster<String> adjsuter) {
+		this.name = requireLegalVariable(name);
+		this.schema = requireLegalVariable(schema);
+		this.tag = tag;
+		this.adjsuter = adjsuter;
+	}
+
+	public TableView(String name, String schema, String tag) {
+		this(name, schema, tag, null);
 	}
 
 	@Override
