@@ -1,12 +1,12 @@
 package org.usf.jquery.web;
 
 import static java.util.Collections.emptyList;
-import static java.util.Objects.requireNonNull;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
-import static org.usf.jquery.core.Validation.VAR_PATTERN;
+import static java.util.Objects.nonNull;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import lombok.NonNull;
 
 /**
  * 
@@ -14,6 +14,8 @@ import java.util.List;
  *
  */
 public final class RequestParser {
+	
+	private static final CharPredicate ANY = c-> true;
 
 	private final String s;
 	private final int size;
@@ -26,52 +28,52 @@ public final class RequestParser {
 		this.c = size == 0 ? 0 : s.charAt(idx);
 	}
 
-	public static RequestEntryChain parseEntry(String s) {
-		return new RequestParser(s).parseEntries(false, c-> false).get(0);
+	public static RequestEntryChain parseEntry(@NonNull String s) {
+		return new RequestParser(s).parseAllEntries(false).get(0);
 	}
 	
-	public static List<RequestEntryChain> parseEntries(String s) {
-		return requireNonNull(s, "value is null").isEmpty() 
+	public static List<RequestEntryChain> parseEntries(@NonNull String s) {
+		return s.isEmpty() 
 				? emptyList() 
-				: new RequestParser(s).parseEntries(true, c-> false);
+				: new RequestParser(s).parseAllEntries(true);
 	}
 	
-	private List<RequestEntryChain> parseEntries(boolean multiple, CharPredicate until) {
+	private List<RequestEntryChain> parseAllEntries(boolean multiple) {
+		var res = parseEntries(multiple);
+		if(idx == size) {
+			return res;
+		}
+		throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
+	}
+	
+	private List<RequestEntryChain> parseEntries(boolean multiple) {
 		var entries = new ArrayList<RequestEntryChain>();
 		entries.add(parseEntry());
 		if(multiple) {
 			while(c == ',') {
-				nextChar(false); //null parameter
+				nextChar(null);
 				entries.add(parseEntry());
 			}
 		}
-		if(idx == size || until.test(c)) {
-			return entries;
-		}
-		throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
+		return entries;
 	}
 
 	private RequestEntryChain parseEntry() {
 		if(legalLetter(c)) {
-			var entry = new RequestEntryChain(requireLegalIdentifier(nextWhile(RequestParser::legalVarChar)));
+			var entry = new RequestEntryChain(nextWhile(RequestParser::legalVarChar));
 			if(c == '(') { //operator
-				nextChar(true);
-				entry.setArgs(parseEntries(true, c-> c==')')); // 
+				nextChar(ANY);
+				entry.setArgs(parseEntries(true)); // 
 				requireChar(')');
-				nextChar(false);
+				nextChar(null);
 			}
 			if(c == '.') {
-				nextChar(true);
-				if(legalLetter(c)) { //require identifier after '.'
-					entry.setNext(parseEntry());
-				}
-				else { //avoid .:tag or .(
-					throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
-				}
+				nextChar(RequestParser::legalLetter);
+				entry.setNext(parseEntry());
 			}
 			if(c == ':') {
-				nextChar(true);
-				entry.setTag(requireLegalIdentifier(nextWhile(RequestParser::legalVarChar)));
+				nextChar(RequestParser::legalLetter);
+				entry.setTag(nextWhile(RequestParser::legalVarChar));
 			}
 			return entry;
 		}
@@ -79,10 +81,10 @@ public final class RequestParser {
 			return new RequestEntryChain(nextWhile(RequestParser::legalValChar));
 		}
 		if(c == '"') {
-			nextChar(true);
+			nextChar(ANY); //empty string 
 			var txt = nextWhile(RequestParser::legalTxtChar);
 			requireChar('"');
-			nextChar(false);
+			nextChar(null);
 			return new RequestEntryChain(txt, true);  //no next, no args, no tag
 		}
 		return new RequestEntryChain(null); 
@@ -97,37 +99,33 @@ public final class RequestParser {
 		return s.substring(from, idx);
 	}
 	
-	private void nextChar(boolean require) {
+	private void nextChar(CharPredicate pre) {
 		if(++idx < size) {
 			c = s.charAt(idx);
+			if(nonNull(pre) && !pre.test(c)) {
+				throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
+			}
 		}
 		else if(idx == size) {
 			c = 0;
-			if(require) {
+			if(nonNull(pre)) {
 				throw new EntrySyntaxException("something expected after '" + s.charAt(size-1) + "'");
 			}
 		}
-		else {
+		else { //should never happen
 			throw new ArrayIndexOutOfBoundsException("idx>size");
 		}
 	}
 	
 	private void requireChar(char rc) {
 		if(c != rc) {
-			throw new EntrySyntaxException("'" + rc + "' expected at index=" + idx); // before ends
+			throw new EntrySyntaxException("expected character '" + rc + "' at index=" + idx); // before ends
 		}
-	}
-	
-	private static String requireLegalIdentifier(String s) {
-		if(s.matches(VAR_PATTERN)) {
-			return s;
-		}
-		throw new EntrySyntaxException("illegal identifier : " + quote(s));
 	}
 	
 	//bug param="Côte d'Azur" => exclude && c != '\''
-	private static boolean legalTxtChar(char c) { //avoid SQL / HTTP reserved symbol
-		return c != '"' && c != '&' && c != '?' && c != '=';
+	private static boolean legalTxtChar(char c) {
+		return c != '"';
 	}
 	
 	private static boolean legalValChar(char c) {
