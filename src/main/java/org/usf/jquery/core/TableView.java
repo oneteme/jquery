@@ -20,7 +20,7 @@ public final class TableView implements DBView, Driven<TableView, String> {
 
 	public TableView(String name, String schema, String tag, Adjuster<String> adjsuter) {
 		this.name = requireLegalVariable(name);
-		this.schema = requireLegalVariable(schema);
+		this.schema = nonNull(schema) ? requireLegalVariable(schema) : null;
 		this.tag = tag;
 		this.adjsuter = adjsuter;
 	}

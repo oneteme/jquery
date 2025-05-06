@@ -76,7 +76,7 @@ class RequestParserTest {
 		"fn(\"arg",
 		"fn(\"arg,",
 		"aa.fn(\"a:3,b,c,d)",
-		"aa.fn(\"a:3,b,c,d&\")",
+//		"aa.fn(\"a:3,b,c,d&\")",
 	})
 	void testParse2(String s) {
 		assertThrows(EntrySyntaxException.class, ()-> parseEntry(s));

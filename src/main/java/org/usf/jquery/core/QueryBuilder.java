@@ -15,7 +15,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.NoSuchElementException;
 import java.util.function.Consumer;
 
 import org.usf.jquery.core.Driven.Adjuster;
@@ -23,12 +22,14 @@ import org.usf.jquery.core.Driven.Adjuster;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryBuilder {
 	
@@ -46,14 +47,16 @@ public final class QueryBuilder {
 	}
 	
 	public QueryBuilder appendViewAlias(DBView view, String after) {
-		if(ctes.isEmpty() && views.isEmpty()) {
-			return this; //no alias
-		}
-		var v = ctes.containsKey(view) ? ctes.get(view) : views.get(view);
-		if(nonNull(v)) {
-			return append(v).append(after); //view.
-		}
-		throw new NoSuchElementException("alias not found for view=" + view);
+		if(!ctes.isEmpty() || !views.isEmpty()) {
+			var v = ctes.containsKey(view) ? ctes.get(view) : views.get(view);
+			if(nonNull(v)) {
+				append(v).append(after); //view.
+			}
+			else {
+				log.warn("alias not found for view=" + view);
+			}
+		} //else no alias
+		return this;
 	}
 	
 	public QueryBuilder append(String sql, Adjuster<String> adj) {

@@ -76,8 +76,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
-@AllArgsConstructor
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 final class RequestEntryChain {
 
 	private static final String ORDER_PATTERN = enumPattern(OrderType.class); 
@@ -86,12 +85,20 @@ final class RequestEntryChain {
 	
 	private final String value;
 	private final boolean text; //"string"
-	private RequestEntryChain next;
-	private List<RequestEntryChain> args;
-	private String tag;
+	private final RequestEntryChain next;
+	private final List<RequestEntryChain> args;
+	private final String tag;
 
 	public RequestEntryChain(String value) {
-		this(value, false);
+		this(value, false, null, null, null);
+	}
+	
+	public RequestEntryChain(String value, boolean text) {
+		this(value, text, null, null, null);
+	}
+	
+	public RequestEntryChain(String value, RequestEntryChain next, List<RequestEntryChain> args, String tag) {
+		this(value, false, next, args, tag);
 	}
 	
 	// [view|query]:tag

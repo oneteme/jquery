@@ -60,22 +60,25 @@ public final class RequestParser {
 
 	private RequestEntryChain parseEntry() {
 		if(legalLetter(c)) {
-			var entry = new RequestEntryChain(nextWhile(RequestParser::legalVarChar));
+			var value = nextWhile(RequestParser::legalVarChar);
+			List<RequestEntryChain> args = null;
+			RequestEntryChain next = null;
+			String tag = null;
 			if(c == '(') { //operator
 				nextChar(ANY);
-				entry.setArgs(parseEntries(true)); // 
+				args = parseEntries(true); // 
 				requireChar(')');
 				nextChar(null);
 			}
 			if(c == '.') {
 				nextChar(RequestParser::legalLetter);
-				entry.setNext(parseEntry());
+				next = parseEntry();
 			}
 			if(c == ':') {
 				nextChar(RequestParser::legalLetter);
-				entry.setTag(nextWhile(RequestParser::legalVarChar));
+				tag = nextWhile(RequestParser::legalVarChar);
 			}
-			return entry;
+			return new RequestEntryChain(value, next, args, tag);
 		}
 		if(legalNumber(c) || c == '-') { //negative number
 			return new RequestEntryChain(nextWhile(RequestParser::legalValChar));
@@ -123,11 +126,6 @@ public final class RequestParser {
 		}
 	}
 	
-	//bug param="Côte d'Azur" => exclude && c != '\''
-	private static boolean legalTxtChar(char c) {
-		return c != '"';
-	}
-	
 	private static boolean legalValChar(char c) {
 		return legalVarChar(c) || c == '.' || c == '-' || c == ':' || c == '+' || c == ' '; //double, timestamp, 
 	}
@@ -142,6 +140,11 @@ public final class RequestParser {
 	
 	private static boolean legalNumber(char c) {
 		return c >= '0' && c <= '9';
+	}
+
+	//bug param="Côte d'Azur" => exclude && c != '\''
+	private static boolean legalTxtChar(char c) {
+		return c != '"';
 	}
 	
 	@FunctionalInterface
