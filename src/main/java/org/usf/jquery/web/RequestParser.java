@@ -9,6 +9,7 @@ import java.util.List;
 import lombok.NonNull;
 
 /**
+ * <p><strong>Note that this implementation is not synchronized.</strong>
  * 
  * @author u$f
  *
@@ -40,7 +41,7 @@ public final class RequestParser {
 	
 	private List<RequestEntryChain> parseAllEntries(boolean multiple) {
 		var res = parseEntries(multiple);
-		if(idx == size) {
+		if(idx==size && c==0) {
 			return res;
 		}
 		throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
@@ -51,7 +52,7 @@ public final class RequestParser {
 		entries.add(parseEntry());
 		if(multiple) {
 			while(c == ',') {
-				nextChar(null);
+				assertNextChar(null);
 				entries.add(parseEntry());
 			}
 		}
@@ -65,29 +66,29 @@ public final class RequestParser {
 			RequestEntryChain next = null;
 			String tag = null;
 			if(c == '(') { //operator
-				nextChar(ANY);
+				assertNextChar(ANY);
 				args = parseEntries(true); // 
 				requireChar(')');
-				nextChar(null);
+				assertNextChar(null);
 			}
 			if(c == '.') {
-				nextChar(RequestParser::legalLetter);
+				assertNextChar(RequestParser::legalLetter);
 				next = parseEntry();
 			}
 			if(c == ':') {
-				nextChar(RequestParser::legalLetter);
+				assertNextChar(RequestParser::legalLetter);
 				tag = nextWhile(RequestParser::legalVarChar);
 			}
-			return new RequestEntryChain(value, next, args, tag);
+			return new RequestEntryChain(value, args, next, tag);
 		}
 		if(legalNumber(c) || c == '-') { //negative number
 			return new RequestEntryChain(nextWhile(RequestParser::legalValChar));
 		}
 		if(c == '"') {
-			nextChar(ANY); //empty string 
+			assertNextChar(ANY); //empty string 
 			var txt = nextWhile(RequestParser::legalTxtChar);
 			requireChar('"');
-			nextChar(null);
+			assertNextChar(null);
 			return new RequestEntryChain(txt, true);  //no next, no args, no tag
 		}
 		return new RequestEntryChain(null); 
@@ -102,7 +103,7 @@ public final class RequestParser {
 		return s.substring(from, idx);
 	}
 	
-	private void nextChar(CharPredicate pre) {
+	private void assertNextChar(CharPredicate pre) {
 		if(++idx < size) {
 			c = s.charAt(idx);
 			if(nonNull(pre) && !pre.test(c)) {
@@ -142,7 +143,7 @@ public final class RequestParser {
 		return c >= '0' && c <= '9';
 	}
 
-	//bug param="Côte d'Azur" => exclude && c != '\''
+	//param="Côte d'Azur" => exclude && c != '\''
 	private static boolean legalTxtChar(char c) {
 		return c != '"';
 	}

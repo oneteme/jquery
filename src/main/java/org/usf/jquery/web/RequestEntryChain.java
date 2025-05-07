@@ -85,8 +85,8 @@ final class RequestEntryChain {
 	
 	private final String value;
 	private final boolean text; //"string"
-	private final RequestEntryChain next;
 	private final List<RequestEntryChain> args;
+	private final RequestEntryChain next;
 	private final String tag;
 
 	public RequestEntryChain(String value) {
@@ -97,8 +97,8 @@ final class RequestEntryChain {
 		this(value, text, null, null, null);
 	}
 	
-	public RequestEntryChain(String value, RequestEntryChain next, List<RequestEntryChain> args, String tag) {
-		this(value, false, next, args, tag);
+	public RequestEntryChain(String value, List<RequestEntryChain> args, RequestEntryChain next, String tag) {
+		this(value, false, args, next, tag);
 	}
 	
 	// [view|query]:tag
@@ -256,7 +256,7 @@ final class RequestEntryChain {
 			if(rc.entry.isLast()) { // no criteria, no comparator
 				if(!isEmpty(values)) {
 					var fn = values.size() == 1 ? eq() : in(); //non empty
-					var e = new RequestEntryChain(fn.id(), false, null, values, null); 
+					var e = new RequestEntryChain(fn.id(), false, values, null, null); 
 					return fn.filter(e.toArgs(vd, rc.col, fn.getParameterSet())); //no chain
 				}
 				throw badEntrySyntaxException(this.toString(), FILTER);
@@ -265,7 +265,7 @@ final class RequestEntryChain {
 			var res = lookupComparator(e.value);
 			if(res.isPresent()) { //column comparator
 				var cmp = res.get();
-				var cp = new RequestEntryChain(e.value, false, null, e.assertOuterParameters(values), null);
+				var cp = new RequestEntryChain(e.value, false, e.assertOuterParameters(values), null, null);
 				return e.chainComparator(vd, cmp.filter(cp.toArgs(vd, rc.col, cmp.getParameterSet())));
 			}
 			throw noSuchResourceException(isNull(rc.cd) ? "comparator" : "comparator|criteria", rc.entry.next.value);
