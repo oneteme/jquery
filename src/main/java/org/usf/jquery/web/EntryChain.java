@@ -1,8 +1,9 @@
 package org.usf.jquery.web;
 
+import static java.lang.Integer.parseInt;
 import static java.lang.String.format;
 import static java.lang.String.join;
-import static java.lang.reflect.Array.newInstance;
+import static java.util.Arrays.stream;
 import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -15,15 +16,13 @@ import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.Comparator.lookupComparator;
 import static org.usf.jquery.core.DBColumn.allColumns;
-import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Operator.lookupOperator;
-import static org.usf.jquery.core.Parameter.required;
-import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.ParameterSet.ofParameters;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.joinArray;
+import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.web.ArgumentParsers.parse;
+import static org.usf.jquery.web.ArgumentParsers.parseAll;
 import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.FILTER;
@@ -37,9 +36,7 @@ import static org.usf.jquery.web.Parameters.SELECT;
 import static org.usf.jquery.web.Parameters.VIEW;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
-import java.util.function.IntFunction;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
 
@@ -49,7 +46,6 @@ import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.JQueryType;
-import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
@@ -82,7 +78,7 @@ final class EntryChain {
 	
 	private final String value;
 	private final boolean text; //"string"
-	private final List<EntryChain> args; //modifiable
+	private final EntryChain[] args; //modifiable
 	private final EntryChain next;
 	private final String tag;
 
@@ -94,7 +90,7 @@ final class EntryChain {
 		this(value, text, null, null, null);
 	}
 	
-	public EntryChain(String value, List<EntryChain> args, EntryChain next, String tag) {
+	public EntryChain(String value, EntryChain[] args, EntryChain next, String tag) {
 		this(value, false, args, next, tag);
 	}
 	
@@ -117,20 +113,20 @@ final class EntryChain {
 		return evalQuery(td, false).orElseThrow(()-> cannotParseEntryException(QUERY, this));
 	}
 	
-	//select[.distinct|filter|order|offset|fetch]*
+	//select[.filter|order|offset|fetch]*
 	Optional<QueryDecorator> evalQuery(RequestContext context, boolean requireTag) { //sub context
 		if(SELECT.equals(value)) {
 			var e =	this;
 			try {
-				var q = new QueryComposer().columns(taggableVarargs(context));
+				var q = new QueryComposer().columns(parseAll(args, context, JQueryType.NAMED_COLUMN));
 				while(e.hasNext()) {
 					e = e.next;
 					switch(e.value) {//column not allowed 
-					case FILTER: q.filters(e.filterVarargs(context)); break;
-					case ORDER: q.orders(e.orderVarargs(context)); break;
-					case JOIN: q.joins(e.evalJoin(context)); break;
-					case LIMIT: q.limit((int)e.toOneArg(context, INTEGER)); break;
-					case OFFSET: q.offset((int)e.toOneArg(context, INTEGER)); break;
+					case FILTER: q.filters(parseAll(args, context, JQueryType.FILTER)); break;
+					case ORDER: q.orders(parseAll(args, context, JQueryType.ORDER)); break;
+					case JOIN: q.joins(parseAll(args, context, JQueryType.JOIN)); break;
+					case LIMIT: q.limit(parseInt(requireNArgs(1, args, ()-> LIMIT)[0].value)); break;
+					case OFFSET: q.offset(parseInt(requireNArgs(1, args, ()-> OFFSET)[0].value)); break;
 					default: throw badEntrySyntaxException(e.value, join("|", FILTER, ORDER, JOIN, LIMIT, OFFSET));
 					}
 				}
@@ -145,64 +141,66 @@ final class EntryChain {
 
 	//[view.]join
 	public ViewJoin[] evalJoin(RequestContext context) { 
-		var e = this;
-		var vd = context.getDefaultView();
-		if(hasNext()) { 
-			var res = context.lookupRegisteredView(value);
-			if(res.isPresent()) {
-				vd = res.get();
-				e = requireNoArgs().next; //check args only if view exists
-			}
-		}
-		var join = vd.join(e.value);
+		return hasNext()
+				? context.lookupRegisteredView(value)
+						.map(vd-> requireNoArgs().next.evalJoin(vd))
+						.orElseThrow(()-> cannotParseEntryException(JOIN, this))
+				: evalJoin(context.getDefaultView());
+	}
+	
+	private ViewJoin[] evalJoin(ViewDecorator vd) { 
+		var join = vd.join(value);
 		if(nonNull(join)) {
-			e.requireNoArgs().requireNoNext(); //check args & next only if joiner exists
-			return requireNonNull(join.build(), vd.identity() + "." + e.value);
+			requireNoArgs().requireNoNext(); 
+			return requireNonNull(join.build(), vd.identity() + "." + value);
 		}
-		throw noSuchResourceException("join", vd.identity(), e.value);
+		throw noSuchResourceException(JOIN, vd.identity(), value);
 	}
 	
-	//[view.]partition | [partition.order]*
+	//[view.]partition | partition(*).order(*) | order(*).partition(*)
 	public Partition evalPartition(RequestContext context) {
-		var e = this;
-		var vd = context.getDefaultView();
 		if(hasNext()) {
-			var res = context.lookupRegisteredView(value);
+			var res = context.lookupRegisteredView(value)
+					.map(vd-> requireNoArgs().next.evalPartition(vd));
 			if(res.isPresent()) {
-				vd = res.get();
-				e = requireNoArgs().next; //check args only if view exists
+				return res.get();
 			}
 		}
-		var par = vd.partition(e.value);
-		if(nonNull(par)) {
-			e.requireNoArgs().requireNoNext();
-			return requireNonNull(par.build(), vd.identity() + "." + e.value);
+		try {
+			return evalPartition(context.getDefaultView());
+		} catch (NoSuchResourceException e) {
+			return parsePartition(context);
 		}
-		var res = evalPartition2(context);
-		if(res.isPresent()) {
-			return res.get();
-		}
-		throw noSuchResourceException(vd.identity() + ".partition", e.value);
 	}
 	
-	private Optional<Partition> evalPartition2(RequestContext context) {
+	private Partition evalPartition(ViewDecorator vd) { 
+		var par = vd.partition(value);
+		if(nonNull(par)) {
+			requireNoArgs().requireNoNext(); 
+			return requireNonNull(par.build(), vd.identity() + "." + value);
+		}
+		throw noSuchResourceException(PARTITION, vd.identity(), value);
+	}
+	
+	//[partition(*).order(*)]
+	private Partition parsePartition(RequestContext context) {
 		if(value.matches(PARTITION_PATTERN)) {
-			List<DBColumn> cols = new ArrayList<>();
-			List<DBOrder> ords = new ArrayList<>();
+			var cols = new ArrayList<DBColumn>();
+			var ords = new ArrayList<DBOrder>();
 			var e = this;
 			do {
 				switch (e.value) {
-				case PARTITION: addAll(cols, columnVarargs(context)); break;
-				case ORDER: addAll(ords, e.orderVarargs(context)); break;
+				case PARTITION: addAll(cols, parseAll(e.args, context, JQueryType.COLUMN)); break;
+				case ORDER: addAll(ords, parseAll(e.args, context, JQueryType.ORDER)); break;
 				default: throw badEntrySyntaxException(e.value, PARTITION_PATTERN);
 				}
 				e = e.next;
 			} while(nonNull(e));
-			return Optional.of(new Partition(
+			return new Partition(
 					cols.toArray(DBColumn[]::new), 
-					ords.toArray(DBOrder[]::new)));
+					ords.toArray(DBOrder[]::new));
 		}
-		return empty();
+		throw cannotParseEntryException(PARTITION, this);
 	}
 	
 	//[view.]column[.operator(args)]*
@@ -237,7 +235,7 @@ final class EntryChain {
 	}
 
 	//[view.]criteria | [view.]column.criteria |  [view.]column[.operator]*[.comparator][.and|or(comparator)]*
-	public DBFilter evalFilter(RequestContext context, List<EntryChain> outerArgs) { //use CD.parser
+	public DBFilter evalFilter(RequestContext context, EntryChain[] outerArgs) { //use CD.parser
 		var res = chainResourceExpression(context, outerArgs);
 		if(res.entry.isLast()) {
 			if(res.col instanceof DBFilter f) {
@@ -252,7 +250,7 @@ final class EntryChain {
 		return chainResourceExpression(context, null);
 	}
 	
-	private EntyChainCursor chainResourceExpression(RequestContext context, List<EntryChain> outerArgs) {
+	private EntyChainCursor chainResourceExpression(RequestContext context, EntryChain[] outerArgs) {
 		var r = lookupResource(context);
 		if(r.isCriteria()) {
 			var crArgs = r.entry.args;
@@ -295,7 +293,7 @@ final class EntryChain {
 			e = e.next;
 		}
 		if(!isEmpty(outerArgs)) {
-			var fn = outerArgs.size() == 1 ? eq() : in();
+			var fn = outerArgs.length == 1 ? eq() : in();
 			e = new EntryChain(fn.id(), false, outerArgs, null, null); 
 			r.col = fn.filter(e.toArgs(context, r.col, fn.getParameterSet())); //no chain
 		}
@@ -360,51 +358,17 @@ final class EntryChain {
 		}
 		return opt.map(cd-> new EntyChainCursor(requireNoArgs(), vd, vd.column(cd)));
 	}
-	
-	
-	private NamedColumn[] taggableVarargs(RequestContext context) {
-		return (NamedColumn[]) typeVarargs(context, JQueryType.NAMED_COLUMN);
-	}
 
-	private DBColumn[] columnVarargs(RequestContext context) {
-		return (DBColumn[]) typeVarargs(context, JQueryType.COLUMN);
-	}
-	
-	private DBOrder[] orderVarargs(RequestContext context) {
-		return (DBOrder[]) typeVarargs(context, JQueryType.ORDER);
-	}
-	
-	private DBFilter[] filterVarargs(RequestContext context) {
-		return (DBFilter[]) typeVarargs(context, JQueryType.FILTER);
-	}
-
-	private Object[] typeVarargs(RequestContext context, JavaType type) {
-		var c = type.getCorrespondingClass();
-		if(DBObject.class.isAssignableFrom(c)) { // JQuery types & !array
-			var ps = ofParameters(required(type), varargs(type));
-			return toArgs(context, null, ps, s-> (Object[]) newInstance(c, s));
-		}
-		throw new UnsupportedOperationException("cannot instantiate type " + c);
-	}
-	
-	private Object toOneArg(RequestContext context, JavaType type) {
-		return toArgs(context, null, ofParameters(required(type)))[0];
-	}
-	
 	private Object[] toArgs(RequestContext context, DBObject col, ParameterSet ps) {
-		return toArgs(context, col, ps, Object[]::new);
-	}
-	
-	private Object[] toArgs(RequestContext context, DBObject col, ParameterSet ps, IntFunction<Object[]> arrFn) {
 		int inc = isNull(col) ? 0 : 1;
-		var arr = arrFn.apply(isNull(args) ? inc : args.size() + inc);
+		var arr = new Object[isNull(args) ? inc : args.length + inc];
 		if(nonNull(col)) {
 			arr[0] = col;
 		}
 		try {
 			ps.eachParameter(arr.length, (p,i)-> {
 				if(i>=inc) { //arg0 already parsed
-					var e = args.get(i-inc);
+					var e = args[i-inc];
 					arr[i] = isNull(e.value) || e.text
 							? e.requireNoArgs().value 
 							: parse(e, context, p.types(arr));
@@ -413,7 +377,7 @@ final class EntryChain {
 		}
 		catch (Exception e) {
 			throw new EntrySyntaxException("bad entry arguments: " +
-					badArgumentsFormat(value, nonNull(args) ? args.toArray() : null), e);
+					badArgumentsFormat(value, nonNull(args) ? args : null), e);
 		}
 		return arr;
 	}
@@ -429,7 +393,7 @@ final class EntryChain {
 		if(isNull(args)) {
 			return this;
 		}
-		throw new EntrySyntaxException(format("unexpected entry args : %s[(%s)]", value, joinArray(", ", args.toArray())));
+		throw new EntrySyntaxException(format("unexpected entry args : %s[(%s)]", value, joinArray(", ", args)));
 	}
 
 	EntryChain requireNoNext() {
@@ -454,7 +418,7 @@ final class EntryChain {
 			s += text ? doubleQuote(value) : value;
 		}
 		if(nonNull(args)){
-			s += args.stream().map(EntryChain::toString).collect(joining(",", "(", ")"));
+			s += stream(args).map(EntryChain::toString).collect(joining(",", "(", ")"));
 		}
 		if(nonNull(next)) {
 			s += "." + next.toString();
@@ -462,9 +426,9 @@ final class EntryChain {
 		return isNull(tag) ? s : s + ":" + tag;
 	}
 
-	private static String[] toStringArray(List<EntryChain> entries) {
+	private static String[] toStringArray(EntryChain[] entries) {
 		if(!isEmpty(entries)) {
-			return entries.stream()
+			return stream(entries)
 			.map(e-> isNull(e.value) ? null : e.toString())
 			.toArray(String[]::new);
 		}
@@ -494,7 +458,7 @@ final class EntryChain {
 	}
 	
 	@AllArgsConstructor(access = AccessLevel.PRIVATE)
-	static final class EntyChainCursor {
+	final class EntyChainCursor {
 		
 		private final ViewDecorator vd;
 		private final CriteriaBuilder<DBFilter> viewCrt;

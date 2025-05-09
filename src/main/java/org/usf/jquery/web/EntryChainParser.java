@@ -29,16 +29,16 @@ public final class EntryChainParser {
 	}
 
 	public static EntryChain parseEntry(@NonNull String s) {
-		return new EntryChainParser(s).parseAllEntries(false).get(0);
+		return new EntryChainParser(s).parseAllEntries(false)[0];
 	}
 	
-	public static List<EntryChain> parseEntries(@NonNull String s) {
+	public static EntryChain[] parseEntries(@NonNull String s) {
 		return s.isEmpty() 
-				? emptyList() 
+				? new EntryChain[0]
 				: new EntryChainParser(s).parseAllEntries(true);
 	}
 	
-	private List<EntryChain> parseAllEntries(boolean multiple) {
+	private EntryChain[] parseAllEntries(boolean multiple) {
 		var res = parseEntries(multiple);
 		if(idx==size && c==0) {
 			return res;
@@ -46,7 +46,7 @@ public final class EntryChainParser {
 		throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
 	}
 	
-	private List<EntryChain> parseEntries(boolean multiple) {
+	private EntryChain[] parseEntries(boolean multiple) {
 		var entries = new ArrayList<EntryChain>();
 		entries.add(parseEntry());
 		if(multiple) {
@@ -55,13 +55,13 @@ public final class EntryChainParser {
 				entries.add(parseEntry());
 			}
 		}
-		return entries;
+		return entries.toArray(EntryChain[]::new);
 	}
 
 	private EntryChain parseEntry() {
 		if(legalLetter(c)) {
 			var value = nextWhile(EntryChainParser::legalVarChar);
-			List<EntryChain> args = null;
+			EntryChain[] args = null;
 			EntryChain next = null;
 			String tag = null;
 			if(c == '(') { //operator

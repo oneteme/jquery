@@ -1,5 +1,6 @@
 package org.usf.jquery.web;
 
+import static java.lang.reflect.Array.newInstance;
 import static java.util.Collections.addAll;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.JDBCType.BIGINT;
@@ -23,7 +24,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.JDBCType;
@@ -46,9 +46,19 @@ public class ArgumentParsers {
 	private static final JDBCType[] STD_TYPES = {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T[] parseAll(EntryChain[] entry, RequestContext context, JQueryType type) {
+		var prs = jqueryArgParser(type);
+		var arr = (Object[]) newInstance(type.getCorrespondingClass(), entry.length);
+		for(int i=0; i<entry.length; i++) {
+			arr[i] = prs.parseEntry(entry[i], context);
+		}
+		return (T[])arr;
+	}
 
 	public static Object parse(EntryChain entry, RequestContext context, JavaType... types) {
-		List<JavaType> list = new ArrayList<>();
+		var list = new ArrayList<JavaType>();
 		if(isEmpty(types) || Stream.of(types).anyMatch(JDBCType.class::isInstance)) {
 			list.add(COLUMN);
 			list.add(QUERY_COLUMN);

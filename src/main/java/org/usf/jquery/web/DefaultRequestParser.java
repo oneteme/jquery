@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
+import static java.util.Arrays.stream;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.web.ContextManager.currentContext;
@@ -44,7 +45,7 @@ public class DefaultRequestParser implements RequestParser {
 	protected void parseViews(RequestContext context, String[] values) {
 		if(!isEmpty(values)) {
 			Stream.of(values)
-			.flatMap(c-> parseEntries(c).stream())
+			.flatMap(c-> stream(parseEntries(c)))
 			.map(e-> currentContext().declareView(e.evalView(context)))
 			.forEach(v->{ //!ViewDecorator
 				if(v instanceof QueryDecorator qd) {
@@ -57,7 +58,7 @@ public class DefaultRequestParser implements RequestParser {
 	protected void parseColumns(RequestContext context, String[] values) {
 		if(!isEmpty(values)) {
 			Stream.of(values)
-			.flatMap(v-> parseEntries(v).stream())
+			.flatMap(v-> stream(parseEntries(v)))
 			.map(e-> (NamedColumn)e.evalColumn(context, true))
 			.forEach(context.getQuery()::columns);
 		}
@@ -69,7 +70,7 @@ public class DefaultRequestParser implements RequestParser {
 	protected void parseOrders(RequestContext context, String[] values) {
 		if(!isEmpty(values)) {
 			Stream.of(values)
-			.flatMap(c-> parseEntries(c).stream())
+			.flatMap(c-> stream(parseEntries(c)))
 			.forEach(e-> context.getQuery().orders(e.evalOrder(context)));
 		}
 	}
@@ -77,7 +78,7 @@ public class DefaultRequestParser implements RequestParser {
 	protected void parseJoins(RequestContext context, String[] values) {
 		if(!isEmpty(values)) {
 			Stream.of(values)
-			.flatMap(c-> parseEntries(c).stream())
+			.flatMap(c-> stream(parseEntries(c)))
 			.forEach(e-> context.getQuery().joins(e.evalJoin(context)));
 		}
 	}
