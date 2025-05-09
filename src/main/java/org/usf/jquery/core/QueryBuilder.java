@@ -205,7 +205,7 @@ public final class QueryBuilder {
 	}
 
 	public static QueryBuilder addWithValue() {
-		return create(null, emptyList(), emptyList(), emptyList(), null);
+		return create(null, emptyList(), emptyList(), null, null);
 	}
 
 	public static QueryBuilder addWithValue(String schema, Collection<QueryView> ctes, Collection<DBView> views, Map<DBView, QueryView> overview) {

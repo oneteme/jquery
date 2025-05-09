@@ -42,17 +42,16 @@ public class TypedOperator implements Operator {
 	public String id() {
 		return operator.id();
 	}
-	
 
-	public OperationColumn operation(Object... args) {
+	public DBColumn operation(Object... args) {
 		return this.operation(typeFn.apply(args), args);
 	}
 
 	@Override // do not delegate this
-	public OperationColumn operation(JDBCType type, Object... args) {
+	public DBColumn operation(JDBCType type, Object... args) {
 		return operator.is(CombinedOperator.class)
 				? operator.operation(type, parameterSet.assertArguments(args)) //no sql
-				: Operator.super.operation(type, args);
+				: Operator.super.operation(type, args); //TODO check that
 	}
 	
 	@Override

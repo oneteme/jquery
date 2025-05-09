@@ -127,253 +127,265 @@ public interface DBColumn extends DBObject, Typed {
 
 	// arithmetic operations
 	
-	default OperationColumn plus(Object o) {
+	default DBColumn plus(Object o) {
 		return Operator.plus().operation(this, o);
 	}
 
-	default OperationColumn minus(Object o) {
+	default DBColumn minus(Object o) {
 		return Operator.minus().operation(this, o);
 	}
 
-	default OperationColumn multiply(Object o) {
+	default DBColumn multiply(Object o) {
 		return Operator.multiply().operation(this, o);
 	}
 
-	default OperationColumn divide(Object o) {
+	default DBColumn divide(Object o) {
 		return Operator.divide().operation(this, o);
 	}
 	
 	//numeric functions
 	
-	default OperationColumn sqrt(Object o) {
-		return Operator.sqrt().operation(this, o);
+	default DBColumn sqrt() {
+		return Operator.sqrt().operation(this);
 	}
 	
-	default OperationColumn exp(Object o) {
-		return Operator.exp().operation(this, o);
+	default DBColumn exp() {
+		return Operator.exp().operation(this);
 	}
 	
-	default OperationColumn log(Object o) {
-		return Operator.log().operation(this, o);
-	}
-	
-	default OperationColumn abs(Object o) {
-		return Operator.abs().operation(this, o);
+	default DBColumn log() {
+		return Operator.log().operation(this);
 	}
 
-	default OperationColumn ceil(Object o) {
-		return Operator.ceil().operation(this, o);
+	default DBColumn log(int base) {
+		return Operator.log().operation(this, base);
+	}
+	
+	default DBColumn abs() {
+		return Operator.abs().operation(this);
 	}
 
-	default OperationColumn floor(Object o) {
-		return Operator.floor().operation(this, o);
+	default DBColumn ceil() {
+		return Operator.ceil().operation(this);
 	}
 
-	default OperationColumn trunc(Object o) {
-		return Operator.trunc().operation(this, o);
+	default DBColumn floor() {
+		return Operator.floor().operation(this);
+	}
+
+	default DBColumn trunc() {
+		return Operator.trunc().operation(this);
+	}
+
+	default DBColumn trunc(int digit) {
+		return Operator.trunc().operation(this, digit);
 	}
 	
-	default OperationColumn round(Object o) {
-		return Operator.round().operation(this, o);
+	default DBColumn round() {
+		return Operator.round().operation(this);
 	}
 	
-	default OperationColumn mod(Object o) {
-		return Operator.mod().operation(this, o);
+	default DBColumn round(int digit) {
+		return Operator.round().operation(this, digit);
 	}
 	
-	default OperationColumn pow(Object o) {
-		return Operator.pow().operation(this, o);
+	default DBColumn mod(int value) {
+		return Operator.mod().operation(this, value);
+	}
+	
+	default DBColumn pow(int value) {
+		return Operator.pow().operation(this, value);
 	}
 	
 	//string functions
 
-	default OperationColumn length() {
+	default DBColumn length() {
 		return Operator.length().operation(this);
 	}
 	
-	default OperationColumn trim() {
+	default DBColumn trim() {
 		return Operator.trim().operation(this);
 	}
 
-	default OperationColumn ltrim() {
+	default DBColumn ltrim() {
 		return Operator.ltrim().operation(this);
 	}
 
-	default OperationColumn rtrim() {
+	default DBColumn rtrim() {
 		return Operator.rtrim().operation(this);
 	}
 	
-	default OperationColumn upper() {
+	default DBColumn upper() {
 		return Operator.upper().operation(this);
 	}
 
-	default OperationColumn lower() {
+	default DBColumn lower() {
 		return Operator.lower().operation(this);
 	}
 	
-	default OperationColumn initcap() {
+	default DBColumn initcap() {
 		return Operator.initcap().operation(this);
 	}
 	
-	default OperationColumn reverse() {
+	default DBColumn reverse() {
 		return Operator.reverse().operation(this);
 	}
 	
-	default OperationColumn left(int n) {
+	default DBColumn left(int n) {
 		return Operator.left().operation(this, n);
 	}
 	
-	default OperationColumn right(int n) {
+	default DBColumn right(int n) {
 		return Operator.pow().operation(this, n);
 	}
 	
-	default OperationColumn replace(String oldValue, String newValue) {
+	default DBColumn replace(String oldValue, String newValue) {
 		return Operator.replace().operation(this, oldValue, newValue);
 	}
 	
-	default OperationColumn substring(int start, int end) {
+	default DBColumn substring(int start, int end) {
 		return Operator.substring().operation(this, start, end);
 	}
 	
-	default OperationColumn concat(Object... str) {
+	default DBColumn concat(Object... str) {
 		return Operator.concat().operation(appendFirst(str, this));
 	}
 	
-	default OperationColumn lpad(int n, String value) {
+	default DBColumn lpad(int n, String value) {
 		return Operator.lpad().operation(this, n, value);
 	}
 	
-	default OperationColumn rpad(int n, String value) {
+	default DBColumn rpad(int n, String value) {
 		return Operator.rpad().operation(this, n, value);
 	}
 
 	//temporal functions
 	
-	default OperationColumn year() {
+	default DBColumn year() {
 		return Operator.year().operation(this);
 	}
 	
-	default OperationColumn month() {
+	default DBColumn month() {
 		return Operator.month().operation(this);
 	}
 
-	default OperationColumn week() {
+	default DBColumn week() {
 		return Operator.week().operation(this);
 	}
 	
-	default OperationColumn day() {
+	default DBColumn day() {
 		return Operator.day().operation(this);
 	}
 	
-	default OperationColumn dow() {
+	default DBColumn dow() {
 		return Operator.dow().operation(this);
 	}
 	
-	default OperationColumn doy() {
+	default DBColumn doy() {
 		return Operator.doy().operation(this);
 	}
 
-	default OperationColumn hour() {
+	default DBColumn hour() {
 		return Operator.hour().operation(this);
 	}
 
-	default OperationColumn minute() {
+	default DBColumn minute() {
 		return Operator.minute().operation(this);
 	}
 	
-	default OperationColumn second() {
+	default DBColumn second() {
 		return Operator.second().operation(this);
 	}
 	
-	default OperationColumn epoch() {
+	default DBColumn epoch() {
 		return Operator.epoch().operation(this);
 	}
 	
-	default OperationColumn yearMonth() {
+	default DBColumn yearMonth() {
 		return Operator.yearMonth().operation(this);
 	}
 	
-	default OperationColumn yearWeek() {
+	default DBColumn yearWeek() {
 		return Operator.yearWeek().operation(this);
 	}
 	
-	default OperationColumn monthDay() {
+	default DBColumn monthDay() {
 		return Operator.monthDay().operation(this);
 	}
 	
-	default OperationColumn hourMinute() {
+	default DBColumn hourMinute() {
 		return Operator.hourMinute().operation(this);
 	}
 	
 	//cast functions
 
-	default OperationColumn varchar() {
+	default DBColumn varchar() {
 		return Operator.varchar().operation(this);
 	}
 	
-	default OperationColumn varchar(int size) {
+	default DBColumn varchar(int size) {
 		return Operator.varchar().operation(this, size);
 	}
 	
-	default OperationColumn date() {
+	default DBColumn date() {
 		return Operator.date().operation(this);
 	}
 	
-	default OperationColumn timestamp() {
+	default DBColumn timestamp() {
 		return Operator.timestamp().operation(this);
 	}
 	
-	default OperationColumn integer() {
+	default DBColumn integer() {
 		return Operator.integer().operation(this);
 	}
 	
-	default OperationColumn bigint() {
+	default DBColumn bigint() {
 		return Operator.bigint().operation(this);
 	}
 	
-	default OperationColumn decimal() {
+	default DBColumn decimal() {
 		return Operator.decimal().operation(this);
 	}
 	
-	default OperationColumn decimal(int digit, int precision) {
+	default DBColumn decimal(int digit, int precision) {
 		return Operator.decimal().operation(this, digit, precision);
 	}
 
 	//other functions
 	
-	default OperationColumn coalesce(Object o) {
+	default DBColumn coalesce(Object o) {
 		return Operator.coalesce().operation(this, o);
 	}
 	
 	//aggregate functions
 
-	default OperationColumn count() {
+	default DBColumn count() {
 		return Operator.count().operation(this);
 	}
 
-	default OperationColumn min() {
+	default DBColumn min() {
 		return Operator.min().operation(this);
 	}
 
-	default OperationColumn max() {
+	default DBColumn max() {
 		return Operator.max().operation(this);
 	}
 
-	default OperationColumn sum() {
+	default DBColumn sum() {
 		return Operator.sum().operation(this);
 	}
 	
-	default OperationColumn avg() {
+	default DBColumn avg() {
 		return Operator.avg().operation(this);
 	}
 
 	//pipe functions
 	
-	default OperationColumn over(DBColumn[] cols, DBOrder[] orders) {
+	default DBColumn over(DBColumn[] cols, DBOrder[] orders) {
 		return over(new Partition(cols, orders));
 	}
 	
-	default OperationColumn over(Partition part) {
+	default DBColumn over(Partition part) {
 		return Operator.over().operation(this, part);
 	}
 
@@ -401,33 +413,33 @@ public interface DBColumn extends DBObject, Typed {
 	
 	// constants
 	
-	static OperationColumn cdate() {
+	static DBColumn cdate() {
 		return Operator.cdate().operation();
 	}
 	
-	static OperationColumn ctime() {
+	static DBColumn ctime() {
 		return Operator.ctime().operation();
 	}
 	
-	static OperationColumn ctimestamp() {
+	static DBColumn ctimestamp() {
 		return Operator.ctimestamp().operation();
 	}
 
-	static OperationColumn countAll(DBView... view) {
+	static DBColumn countAll(DBView... view) {
 		return Operator.count().operation(allColumns(view));
 	}
 	
 	//window functions
 	
-	static OperationColumn rank() {
+	static DBColumn rank() {
 		return Operator.rank().operation();
 	}
 	
-	static OperationColumn rowNumber() {
+	static DBColumn rowNumber() {
 		return Operator.rowNumber().operation();
 	}
 	
-	static OperationColumn denseRank() {
+	static DBColumn denseRank() {
 		return Operator.denseRank().operation();
 	}
 	

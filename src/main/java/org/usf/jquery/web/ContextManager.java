@@ -46,7 +46,7 @@ public final class ContextManager {
 		}
 		if(CONTEXTS.size() == 1) { //default database
 			ctx = CONTEXTS.values().iterator().next();
-			return setCurrentContext(new ContextEnvironment(ctx));
+			return setCurrentContext(ctx);
 		}
 		throw CONTEXTS.isEmpty()
 			? new NoSuchElementException("no database configured")
@@ -56,7 +56,7 @@ public final class ContextManager {
 	public static ContextEnvironment context(String database){
 		var ctx = CONTEXTS.get(database);
 		if(nonNull(ctx)) {
-			return setCurrentContext(new ContextEnvironment(ctx));
+			return setCurrentContext(ctx);
 		}
 		throw noSuchResourceException(DATABASE, database);
 	}

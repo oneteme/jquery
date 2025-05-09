@@ -5,6 +5,7 @@ import static org.usf.jquery.core.DBProcessor.lookup;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.JDBCType.BIGINT;
+import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.INTEGER;
@@ -13,7 +14,10 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.COLUMN;
+import static org.usf.jquery.core.JQueryType.FILTER;
 import static org.usf.jquery.core.JQueryType.PARTITION;
+import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -21,7 +25,6 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 
 /**
  * 
@@ -37,7 +40,7 @@ public interface Operator extends DBProcessor {
 		throw new UnsupportedOperationException("compose operator");
 	}
 
-	default OperationColumn operation(JDBCType type, Object... args) {
+	default DBColumn operation(JDBCType type, Object... args) {
 		return new OperationColumn(this, args, type);
 	}
 	
@@ -255,6 +258,22 @@ public interface Operator extends DBProcessor {
 		};
 		return new TypedOperator(VARCHAR, op, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
+
+	static TypedOperator and() {
+		return chain(AND);
+	}
+
+	static TypedOperator or() {
+		return chain(OR);
+	}
+	
+	private static TypedOperator chain(LogicalOperator op) {
+		CombinedOperator co = args-> {
+			requireNArgs(2, args, op::name);
+			return ((DBFilter)args[0]).append(op, (DBFilter)args[1]);
+		};
+		return new TypedOperator(BOOLEAN, co, required(FILTER), required(FILTER));
+	}
 	
 	//cast functions
 
@@ -290,6 +309,10 @@ public interface Operator extends DBProcessor {
 	
 	static TypedOperator coalesce() {
 		return new TypedOperator(firstArgJdbcType(), function("COALESCE"), required(), required());
+	}
+	
+	static TypedOperator distinct() {
+		return new TypedOperator(firstArgJdbcType(), new DistinctOperator(), required(COLUMN), varargs(COLUMN));
 	}
 
 	//aggregate functions
@@ -337,7 +360,7 @@ public interface Operator extends DBProcessor {
 	static TypedOperator over() {
 		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), optional(PARTITION)); //optional !?
 	}
-
+	
 	// constant operators
 	
 	static TypedOperator cdate() {
@@ -385,10 +408,6 @@ public interface Operator extends DBProcessor {
 	}
 
 	static Optional<TypedOperator> lookupOperator(String op) {
-		return lookup(Operator.class, TypedOperator.class, op, null);
-	}
-
-	static Optional<TypedOperator> lookupOperator(String op, Predicate<TypedOperator> pre) {
-		return lookup(Operator.class, TypedOperator.class, op, pre);
+		return lookup(Operator.class, TypedOperator.class, op);
 	}
 }

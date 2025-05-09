@@ -1,8 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.util.stream.Collectors.groupingBy;
-import static org.usf.jquery.core.DBColumn.constant;
-import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.time.YearMonth;

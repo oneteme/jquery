@@ -10,7 +10,6 @@ import static org.usf.jquery.core.Parameter.varargs;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
-import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 
 /**
@@ -184,10 +183,6 @@ public interface Comparator extends DBProcessor {
 	}
 	
 	static Optional<TypedComparator> lookupComparator(String op) {
-		return lookup(Comparator.class, TypedComparator.class, op, null);
-	}
-	
-	static Optional<TypedComparator> lookupComparator(String op, Predicate<TypedComparator> pre) {
-		return lookup(Comparator.class, TypedComparator.class, op, pre);
+		return lookup(Comparator.class, TypedComparator.class, op);
 	}
 }

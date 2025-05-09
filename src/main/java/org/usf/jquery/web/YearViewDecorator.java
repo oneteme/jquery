@@ -12,7 +12,6 @@ import static org.usf.jquery.core.Utils.isBlank;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.RevisionIterator.monthFilter;
 import static org.usf.jquery.web.ViewDecorator.declaredColumns;
 import static org.usf.jquery.web.ViewDecorator.flatParameters;
 
@@ -27,7 +26,6 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.TableView;
 
 /**
@@ -63,14 +61,14 @@ public interface YearViewDecorator extends ViewDecorator {
 				? constant(INTEGER, (v, c)-> ((Entry<Integer, ?>)c).getKey()).as(cd.reference(this)) 
 				: ViewDecorator.super.column(column);
 	}
-	
-	@Override
-	default void parseFilters(QueryComposer query, Map<String, String[]> parameterMap) {
-		ofNullable(monthRevision()).map(this::column)
-		.ifPresent(c-> query.filters(monthFilter(c)));
-		query.repeat(RevisionIterator.iterator2(parseRevisions(parameterMap)));
-		ViewDecorator.super.parseFilters(query, parameterMap);
-	}
+//	
+//	@Override
+//	default void parseFilters(QueryComposer query, Map<String, String[]> parameterMap) {
+//		ofNullable(monthRevision()).map(this::column)
+//		.ifPresent(c-> query.filters(monthFilter(c)));
+//		query.repeat(RevisionIterator.iterator2(parseRevisions(parameterMap)));
+//		ViewDecorator.super.parseFilters(query, parameterMap);
+//	}
 
 	default YearMonth[] parseRevisions(Map<String, String[]> parameterMap) {
 		var arr = parameterMap.remove(REVISION_MODE);

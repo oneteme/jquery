@@ -47,7 +47,7 @@ public class ArgumentParsers {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
-	public static Object parse(RequestEntryChain entry, ViewDecorator td, JavaType... types) {
+	public static Object parse(EntryChain entry, RequestContext context, JavaType... types) {
 		List<JavaType> list = new ArrayList<>();
 		if(isEmpty(types) || Stream.of(types).anyMatch(JDBCType.class::isInstance)) {
 			list.add(COLUMN);
@@ -58,10 +58,10 @@ public class ArgumentParsers {
 		for(var type : list) {
 			try {
 				if(type instanceof JDBCType t) {
-					return jdbcArgParser(t).parseEntry(entry, td);
+					return jdbcArgParser(t).parseEntry(entry, context);
 				}
 				if(type instanceof JQueryType t) {
-					return jqueryArgParser(t).parseEntry(entry, td);
+					return jqueryArgParser(t).parseEntry(entry, context);
 				}
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
@@ -80,7 +80,7 @@ public class ArgumentParsers {
 	
 	public static JDBCArgumentParser jdbcArgParser(JDBCType type) {
 		switch (type) {
-		case BOOLEAN, BIT: 				return Boolean::parseBoolean;
+		case BOOLEAN, BIT: 				return ArgumentParsers::parseBoolean;
 		case TINYINT: 					return Byte::parseByte;
 		case SMALLINT:					return Short::parseShort;
 		case INTEGER: 					return Integer::parseInt;
@@ -100,19 +100,26 @@ public class ArgumentParsers {
 
 	public static JavaArgumentParser jqueryArgParser(JQueryType type) {
 		switch (type) {
-		case QUERY_COLUMN:	return RequestEntryChain::evalQueryColumn;
+		case QUERY_COLUMN:	return EntryChain::evalQueryColumn;
 		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, true); //separate query context 
 		case COLUMN:		return (e,v)-> e.evalColumn(v, false);
-		case FILTER: 		return RequestEntryChain::evalFilter;
-		case ORDER: 		return RequestEntryChain::evalOrder;
-		case QUERY: 		return RequestEntryChain::evalQuery;
-		case JOIN:			return RequestEntryChain::evalJoin;
-		case PARTITION:		return RequestEntryChain::evalPartition;
+		case FILTER: 		return EntryChain::evalFilter;
+		case ORDER: 		return EntryChain::evalOrder;
+		case QUERY: 		return EntryChain::evalQuery;
+		case JOIN:			return EntryChain::evalJoin;
+		case PARTITION:		return EntryChain::evalPartition;
 		default:			throw unsupportedTypeException(type);
 		}
 	}
 		
 	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {
 		return new UnsupportedOperationException("unsupported type " + type.toString());
+	}
+	
+	private static boolean parseBoolean(String v) {
+		if(requireNonNull(v).matches("true|false")) {
+			return Boolean.parseBoolean(v); //not thrown exception
+		}
+		throw new EntryParseException("cannot parse boolean " + v);
 	}
 }

@@ -1,7 +1,8 @@
 package org.usf.jquery.web;
 
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
-import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
+
+import java.util.Optional;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
@@ -34,12 +35,11 @@ final class QueryDecorator implements ViewDecorator {
 		return query;
 	}
 
-	public NamedColumn column(String id) {
+	public Optional<NamedColumn> column(String id) {
 		return query.getComposer().getColumns().stream() //do not use declaredColumn
 		.filter(c-> id.equals(c.getTag()))
 		.findAny()
-		.map(c-> new ViewColumn(doubleQuote(c.getTag()), query, c.getType(), null))
-		.orElseThrow(()-> undeclaredResouceException(id, identity()));
+		.map(c-> new ViewColumn(doubleQuote(c.getTag()), query, c.getType(), null));
 	}
 	
 	@Override

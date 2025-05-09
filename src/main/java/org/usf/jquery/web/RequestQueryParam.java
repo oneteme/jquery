@@ -20,6 +20,7 @@ public @interface RequestQueryParam {
 	
 	String database() default ""; //optional database identity
 	
+	@Deprecated(forRemoval = true, since = "4.0.0")
 	String[] defaultColumns() default {};
 	
 	String[] ignoreParameters() default {}; // will be not parsed 

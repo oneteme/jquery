@@ -84,7 +84,6 @@ public enum JDBCType implements JavaType {
 		return isNull(o) || valueMatcher.test(o);
 	}
 	
-	
 	private static boolean isBoolean(Object o) {
 		return o.getClass() == Boolean.class 
 				|| o.equals(0) || o.equals(1) 

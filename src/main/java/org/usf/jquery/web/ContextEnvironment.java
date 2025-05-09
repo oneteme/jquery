@@ -16,7 +16,6 @@ import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsEx
 import java.lang.reflect.Field;
 import java.sql.SQLException;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -27,12 +26,10 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.ColumnProxy;
 import org.usf.jquery.core.JQueryException;
-import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.QueryComposer;
 
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -42,6 +39,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @Getter
+@Builder()
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ContextEnvironment {
 	
@@ -56,31 +54,11 @@ public final class ContextEnvironment {
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
-	private final QueryComposer currentQuery;
-	
-	ContextEnvironment(ContextEnvironment ctx) {
-		this.database = ctx.database;
-		this.views = new HashMap<>(ctx.views); //modifiable
-		this.columns = ctx.columns;
-		this.dataSource = ctx.dataSource;
-		this.schema = ctx.schema;
-		this.metadata = ctx.metadata;
-		this.currentQuery = new QueryComposer(ctx.metadata.getType());
-	}
+	private final RequestParser parser; //custom parser
+	//operation, comparators, ..
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
 		return ofNullable(views.get(name));
-	}
-	
-	public Optional<ColumnDecorator> lookupRegisteredColumn(String name) {
-		return ofNullable(columns.get(name));
-	}
-
-	Optional<NamedColumn> lookupDeclaredColumn(String name) {
-		return currentQuery.getColumns().stream()
-				.filter(ColumnProxy.class::isInstance) //tagged column only
-				.filter(c-> name.equals(c.getTag()))
-				.findAny();
 	}
 
 	ViewDecorator declareView(ViewDecorator view) { //additional request views
@@ -131,7 +109,7 @@ public final class ContextEnvironment {
 		return new ContextEnvironment(database,
 				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), //preserve views order
 				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"),
-				ds, schema, new DatabaseMetadata(), null);
+				ds, schema, new DatabaseMetadata(), new DefaultRequestParser());
 	}
 	
 	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn, String msg){

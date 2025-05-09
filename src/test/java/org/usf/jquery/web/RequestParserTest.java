@@ -2,7 +2,7 @@ package org.usf.jquery.web;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
-import static org.usf.jquery.web.RequestParser.parseEntry;
+import static org.usf.jquery.web.EntryChainParser.parseEntry;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
