@@ -11,7 +11,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.BadArgumentException.badArgumentsFormat;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.Comparator.lookupComparator;
@@ -65,7 +64,6 @@ import lombok.Setter;
  * @author u$f
  *
  */
-@Getter
 @Setter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 final class EntryChain {
@@ -287,7 +285,7 @@ final class EntryChain {
 			var op = lookupOperator(e.value);
 			if(op.isPresent()) {
 				var fn = op.get();
-				r.col = fn.operation(e.toArgs(context, r.col, fn.getParameterSet())); 
+				r.col = fn.operation(e.parseArgs(context, r.col, fn.getParameterSet())); 
 			}
 			else {
 				var oc = lookupComparator(e.value);
@@ -297,7 +295,7 @@ final class EntryChain {
 						e = new EntryChain(e.value, outerArgs, null, null); //chain outerArgs
 						outerArgs = null; //flag outerArgs as consumed
 					}
-					r.col = cp.filter(e.toArgs(context, r.col, cp.getParameterSet()));
+					r.col = cp.filter(e.parseArgs(context, r.col, cp.getParameterSet()));
 				}
 				else {
 					break;
@@ -309,7 +307,7 @@ final class EntryChain {
 		if(!isEmpty(outerArgs)) {
 			var fn = outerArgs.length == 1 ? eq() : in();
 			e = new EntryChain(fn.id(), false, outerArgs, null, null); 
-			r.col = fn.filter(e.toArgs(context, r.col, fn.getParameterSet())); //no chain
+			r.col = fn.filter(e.parseArgs(context, r.col, fn.getParameterSet())); //no chain
 		}
 		return r;
 	}
@@ -339,7 +337,7 @@ final class EntryChain {
 	private Optional<EntyChainCursor> lookupViewOperation(RequestContext context, ViewDecorator vd, boolean prefixed) {
 		return lookupOperator(value).filter(prefixed ? TypedOperator::isCountFunction : ANY).map(fn-> {
 			var col = isEmpty(args) && fn.isCountFunction() ? allColumns(vd.view()) : null;
-			return fn.operation(toArgs(context, col, fn.getParameterSet()));
+			return fn.operation(parseArgs(context, col, fn.getParameterSet()));
 		}).map(oc-> new EntyChainCursor(this, vd, oc));
 	}
 
@@ -373,9 +371,7 @@ final class EntryChain {
 		});
 	}
 
-	
-	
-	private Object[] toArgs(RequestContext context, DBObject col, ParameterSet ps) {
+	Object[] parseArgs(RequestContext context, DBObject col, ParameterSet ps) {
 		int inc = isNull(col) ? 0 : 1;
 		var arr = new Object[isNull(args) ? inc : args.length + inc];
 		if(nonNull(col)) {
