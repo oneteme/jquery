@@ -1,11 +1,9 @@
 package org.usf.jquery.web;
 
-import static java.util.Collections.emptyList;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.web.EntryChainParser.CharPredicate.ANY;
 
 import java.util.ArrayList;
-import java.util.List;
 
 import lombok.NonNull;
 
@@ -43,7 +41,7 @@ public final class EntryChainParser {
 		if(idx==size && c==0) {
 			return res;
 		}
-		throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
+		throw unexpectedCharacterException(); //end
 	}
 	
 	private EntryChain[] parseEntries(boolean multiple) {
@@ -106,7 +104,7 @@ public final class EntryChainParser {
 		if(++idx < size) {
 			c = s.charAt(idx);
 			if(nonNull(pre) && !pre.test(c)) {
-				throw new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx); //end
+				throw unexpectedCharacterException(); //end
 			}
 		}
 		else if(idx == size) {
@@ -124,6 +122,10 @@ public final class EntryChainParser {
 		if(c != rc) {
 			throw new EntrySyntaxException("expected character '" + rc + "' at index=" + idx); // before ends
 		}
+	}
+	
+	private EntrySyntaxException unexpectedCharacterException() {
+		return new EntrySyntaxException("unexpected character '" + c + "' at index=" + idx);
 	}
 	
 	private static boolean legalValChar(char c) {
