@@ -41,11 +41,16 @@ public final class RequestParameterResolver {//spring connection bridge
 				? currentContext()
 				: context(ant.database());
 
-		var req = requestContext(ctx, ant.view()).parseQuery(parameterMap);
-		
-		log.trace("request parsed in {} ms", currentTimeMillis() - t);
-		if(!ant.aggregationOnly() || req.isAggregation()) {
-			return req;
+		try {
+			var req = requestContext(ctx, ant.view()).parseQuery(parameterMap);
+			
+			log.trace("request parsed in {} ms", currentTimeMillis() - t);
+			if(!ant.aggregationOnly() || req.isAggregation()) {
+				return req;
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			throw e;
 		}
 		throw new ResourceAccessException("non-aggregate query");
 		//do not release context before query execute

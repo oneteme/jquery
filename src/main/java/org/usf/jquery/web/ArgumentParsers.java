@@ -76,7 +76,7 @@ public class ArgumentParsers {
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
 				}
-			} catch (NoSuchResourceException | EntryParseException e) { //do not throw exception
+			} catch (WebException e) { //do not throw exception
 				exList.add(e);
 			}
 		}

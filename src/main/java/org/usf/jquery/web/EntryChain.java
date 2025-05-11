@@ -76,7 +76,7 @@ final class EntryChain {
 	
 	private final String value;
 	private final boolean text; //"string"
-	private final EntryChain[] args; //modifiable
+	private final EntryChain[] args;
 	private final EntryChain next;
 	private final String tag;
 
@@ -95,17 +95,17 @@ final class EntryChain {
 	//[view.]column[.expression]*
 	public DBColumn evalColumn(RequestContext td, boolean requireTag) {
 		try {
-			var r = chainResourceExpression(td);
-			if(r.entry.isLast()) {
-				if(nonNull(r.entry.tag)) {
-					return r.col.as(r.entry.tag);
+			var rsc = chainResourceExpression(td);
+			if(rsc.entry.isLast()) {
+				if(nonNull(rsc.entry.tag)) {
+					return rsc.col.as(rsc.entry.tag);
 				}
-				if(!requireTag || r.col instanceof NamedColumn) {
-					return r.col;
+				if(!requireTag || rsc.col instanceof NamedColumn) {
+					return rsc.col;
 				}
-				throw expectedEntryTagException(r.entry);
+				throw expectedEntryTagException(rsc.entry);
 			}
-			throw badEntrySyntaxException(r.entry.next.value, "expression");
+			throw badEntrySyntaxException(rsc.entry.next.value, "criteria|operator|comparator");
 		} catch (Exception e) {
 			throw cannotParseEntryException(this, COLUMN, e);
 		}
@@ -114,14 +114,14 @@ final class EntryChain {
 	//[view.]column[.operator]*[.order]
 	public DBOrder evalOrder(RequestContext td) {
 		try {
-			var r = chainResourceExpression(td);
-			if(r.entry.isLast()) { // default order
-				return r.col.order();
+			var rsc = chainResourceExpression(td);
+			if(rsc.entry.isLast()) { // default order
+				return rsc.col.order();
 			}
-			var nxt = r.entry.next;
+			var nxt = rsc.entry.next;
 			if(nxt.value.matches(ORDER_PATTERN)) { //check args & next only if order exists
 				var ord = nxt.requireNoArgs().requireNoNext().value.toUpperCase();
-				return r.col.order(OrderType.valueOf(ord));
+				return rsc.col.order(OrderType.valueOf(ord));
 			}
 			throw badEntrySyntaxException(nxt.value, ORDER_PATTERN);
 		} catch (Exception e) {
@@ -143,24 +143,39 @@ final class EntryChain {
 				}
 				throw new IllegalArgumentException(this + " is not a filter");
 			}
-			throw badEntrySyntaxException(rsc.entry.next.value, "expression");
+			throw badEntrySyntaxException(rsc.entry.next.value, "criteria|operator|comparator");
 		} catch (Exception e) {
 			throw cannotParseEntryException(this, FILTER, e);
 		}
 	}
 	
+	//[view.]join
+	public ViewJoin[] evalJoin(RequestContext context) {
+		return hasNext()
+				? context.lookupRegisteredView(value)
+						.map(vd-> requireNoArgs().next.evalJoin(vd))
+						.orElseThrow(()-> noSuchResourceException(JOIN, value))
+				: evalJoin(context.getDefaultView());
+	}
+	
+	private ViewJoin[] evalJoin(ViewDecorator vd) { 
+		var join = vd.join(value);
+		if(nonNull(join)) {
+			requireNoArgs().requireNoNext(); 
+			return requireNonNull(join.build(), vd.identity() + "." + value);
+		}
+		throw noSuchResourceException(JOIN, value, vd.identity());
+	}
+	
 	//[view.]partition | partition(*).order(*) | order(*).partition(*)
 	public Partition evalPartition(RequestContext context) {
-		if(hasNext()) {
-			var res = context.lookupRegisteredView(value)
-					.map(vd-> requireNoArgs().next.evalPartition(vd));
-			if(res.isPresent()) {
-				return res.get();
-			}
-		}
 		try {
-			return evalPartition(context.getDefaultView());
-		} catch (NoSuchResourceException e) {
+			 return hasNext()
+				? context.lookupRegisteredView(value)
+						.map(vd-> requireNoArgs().next.evalPartition(vd))
+						.orElseThrow(()-> noSuchResourceException(PARTITION, value))
+				: evalPartition(context.getDefaultView());
+		} catch (Exception e) {
 			return parsePartition(context);
 		}
 	}
@@ -183,24 +198,6 @@ final class EntryChain {
 	
 	public SingleQueryColumn evalQueryColumn(RequestContext td) {		
 		return parseQuery(td, false).getQuery().asColumn();
-	}
-	
-	//[view.]join
-	public ViewJoin[] evalJoin(RequestContext context) {
-		return hasNext()
-				? context.lookupRegisteredView(value)
-						.map(vd-> requireNoArgs().next.evalJoin(vd))
-						.orElseThrow(()-> noSuchResourceException(JOIN, value))
-				: evalJoin(context.getDefaultView());
-	}
-	
-	private ViewJoin[] evalJoin(ViewDecorator vd) { 
-		var join = vd.join(value);
-		if(nonNull(join)) {
-			requireNoArgs().requireNoNext(); 
-			return requireNonNull(join.build(), vd.identity() + "." + value);
-		}
-		throw noSuchResourceException(JOIN, value, vd.identity());
 	}
 
 	public ViewDecorator parseQuery(RequestContext td) {
@@ -260,7 +257,6 @@ final class EntryChain {
 		}
 		throw cannotParseEntryException(this, PARTITION, cause);
 	}
-	
 
 	private EntyChainCursor chainResourceExpression(RequestContext context) {
 		return chainResourceExpression(context, null);
@@ -388,16 +384,15 @@ final class EntryChain {
 		try {
 			ps.eachParameter(arr.length, (p,i)-> {
 				if(i>=inc) { //arg0 already parsed
-					var e = args[i-inc];
-					arr[i] = isNull(e.value) || e.text
-							? e.requireNoArgs().value 
-							: parse(e, context, p.types(arr));
+					var o = args[i-inc];
+					arr[i] = isNull(o.value) || o.text
+							? o.requireNoArgs().value 
+							: parse(o, context, p.types(arr));
 				}
 			});
 		}
 		catch (Exception e) {
-			throw new EntrySyntaxException("bad entry arguments: " +
-					badArgumentsFormat(value, nonNull(args) ? args : null), e);
+			throw cannotParseEntryException(this, "args", e);
 		}
 		return arr;
 	}
@@ -470,7 +465,7 @@ final class EntryChain {
 		return new EntrySyntaxException(format("incorrect syntax: [%s], expected: %s", value, expect));
 	}
 	
-	private static EntryParseException cannotParseEntryException(EntryChain entry, String type, Exception ex) {
+	static EntryParseException cannotParseEntryException(EntryChain entry, String type, Exception ex) {
 		return new EntryParseException(format("cannot parse %s : '%s'", type, entry.toString()), ex);
 	}
 	
