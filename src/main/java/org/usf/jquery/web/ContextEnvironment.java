@@ -55,6 +55,7 @@ public final class ContextEnvironment {
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
 	//operation, comparators, ..
+	//securityManager
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
 		return ofNullable(views.get(name));

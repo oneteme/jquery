@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import lombok.Getter;
@@ -24,13 +23,18 @@ public final class TypedComparator implements Comparator {
 	
 	@Override
 	public void build(QueryBuilder query, Object... args) {
-		try {
-			comparator.build(query, parameterSet.assertArguments(args));
-		} catch (BadArgumentException e) {
-			throw badArgumentsException("comparator", comparator.id(), args, e);
-		}
+		comparator.build(query, parameterSet.assertArguments(args)); //assertArguments because expression
 	}
-
+	
+	@Override
+	public ComparisonSingleExpression expression(Object... right) {
+		return Comparator.super.expression(right);  //cannot assertArguments because no left operand
+	}
+	
+	@Override
+	public ColumnSingleFilter filter(Object... args) {
+		return comparator.filter(parameterSet.assertArguments(args));
+	}
 	@Override
 	public String id() {
 		return comparator.id();
