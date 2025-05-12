@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import lombok.Getter;
@@ -30,12 +29,7 @@ public class TypedOperator implements Operator {
 	
 	@Override
 	public void build(QueryBuilder query, Object... args) {
-		try {
-			operator.build(query, parameterSet.assertArguments(args));
-		}
-		catch (BadArgumentException e) {
-			throw badArgumentsException("operator", operator.id(), args, e);
-		}
+		throw new UnsupportedOperationException(this.getClass()+"::build");
 	}
 	
 	@Override
@@ -49,9 +43,7 @@ public class TypedOperator implements Operator {
 
 	@Override // do not delegate this
 	public DBColumn operation(JDBCType type, Object... args) {
-		return operator.is(CombinedOperator.class)
-				? operator.operation(type, parameterSet.assertArguments(args)) //no sql
-				: Operator.super.operation(type, args); //TODO check that
+		return operator.operation(type, parameterSet.assertArguments(args));
 	}
 	
 	@Override

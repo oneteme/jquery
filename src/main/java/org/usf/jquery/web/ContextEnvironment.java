@@ -54,7 +54,6 @@ public final class ContextEnvironment {
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
-	private final RequestParser parser; //custom parser
 	//operation, comparators, ..
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
@@ -109,7 +108,7 @@ public final class ContextEnvironment {
 		return new ContextEnvironment(database,
 				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), //preserve views order
 				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"),
-				ds, schema, new DatabaseMetadata(), new DefaultRequestParser());
+				ds, schema, new DatabaseMetadata());
 	}
 	
 	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn, String msg){

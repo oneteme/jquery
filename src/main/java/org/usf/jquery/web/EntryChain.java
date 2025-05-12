@@ -13,9 +13,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
-import static org.usf.jquery.core.Comparator.lookupComparator;
 import static org.usf.jquery.core.DBColumn.allColumns;
-import static org.usf.jquery.core.Operator.lookupOperator;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.joinArray;
@@ -281,13 +279,13 @@ final class EntryChain {
 		}
 		var e = r.entry.next;
 		while(nonNull(e)) { //chain until [operator|comparator]
-			var op = lookupOperator(e.value);
+			var op = ctx.lookupOperator(e.value);
 			if(op.isPresent()) {
 				var fn = op.get();
 				r.col = fn.operation(e.parseArgs(ctx, r.col, fn.getParameterSet())); 
 			}
 			else {
-				var oc = lookupComparator(e.value);
+				var oc = ctx.lookupComparator(e.value);
 				if(oc.isPresent()) {
 					var cp = oc.get();
 					if(e.isLast() && isEmpty(e.args)) {
@@ -334,7 +332,7 @@ final class EntryChain {
 	
 	//operator|[view.]operator
 	private Optional<EntyChainCursor> lookupViewOperation(RequestContext ctx, ViewDecorator vd, boolean prefixed) {
-		return lookupOperator(value).filter(prefixed ? TypedOperator::isCountFunction : ANY).map(fn-> {
+		return ctx.lookupOperator(value).filter(prefixed ? TypedOperator::isCountFunction : ANY).map(fn-> {
 			var col = isEmpty(args) && fn.isCountFunction() ? allColumns(vd.view()) : null;
 			return fn.operation(parseArgs(ctx, col, fn.getParameterSet()));
 		}).map(oc-> new EntyChainCursor(this, vd, oc));

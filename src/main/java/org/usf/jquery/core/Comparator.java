@@ -2,13 +2,11 @@ package org.usf.jquery.core;
 
 import static java.util.Arrays.copyOfRange;
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
-import static org.usf.jquery.core.DBProcessor.lookup;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.UnaryOperator;
 
@@ -180,9 +178,5 @@ public interface Comparator extends DBProcessor {
 
 	static RangeComparator rangeComparator(final String name) {
 		return ()-> name;
-	}
-	
-	static Optional<TypedComparator> lookupComparator(String op) {
-		return lookup(Comparator.class, TypedComparator.class, op);
 	}
 }

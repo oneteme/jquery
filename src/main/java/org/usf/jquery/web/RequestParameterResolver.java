@@ -4,6 +4,7 @@ import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.ContextManager.context;
 import static org.usf.jquery.web.ContextManager.currentContext;
+import static org.usf.jquery.web.ContextManager.getRequestParser;
 import static org.usf.jquery.web.ContextManager.releaseContext;
 import static org.usf.jquery.web.Parameters.COLUMN;
 import static org.usf.jquery.web.RequestContext.requestContext;
@@ -42,7 +43,7 @@ public final class RequestParameterResolver {//spring connection bridge
 				: context(ant.database());
 
 		try {
-			var req = requestContext(ctx, ant.view()).parseQuery(parameterMap);
+			var req = getRequestParser().parse(requestContext(ctx, ant.view()), parameterMap);
 			
 			log.trace("request parsed in {} ms", currentTimeMillis() - t);
 			if(!ant.aggregationOnly() || req.isAggregation()) {

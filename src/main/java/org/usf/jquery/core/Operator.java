@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
-import static org.usf.jquery.core.DBProcessor.lookup;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.JDBCType.BIGINT;
@@ -15,6 +14,7 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.FILTER;
+import static org.usf.jquery.core.JQueryType.NAMED_COLUMN;
 import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
@@ -23,7 +23,6 @@ import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
-import java.util.Optional;
 import java.util.function.Consumer;
 
 /**
@@ -312,7 +311,7 @@ public interface Operator extends DBProcessor {
 	}
 	
 	static TypedOperator distinct() {
-		return new TypedOperator(firstArgJdbcType(), new DistinctOperator(), required(COLUMN), varargs(COLUMN));
+		return new TypedOperator(firstArgJdbcType(), new DistinctOperator(), required(NAMED_COLUMN), varargs(NAMED_COLUMN));
 	}
 
 	//aggregate functions
@@ -405,9 +404,5 @@ public interface Operator extends DBProcessor {
 
 	static ConstantOperator constant(String name) {
 		return ()-> name;
-	}
-
-	static Optional<TypedOperator> lookupOperator(String op) {
-		return lookup(Operator.class, TypedOperator.class, op);
 	}
 }

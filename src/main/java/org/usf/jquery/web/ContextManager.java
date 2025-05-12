@@ -12,6 +12,7 @@ import java.util.NoSuchElementException;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 
 /**
  * 
@@ -23,6 +24,7 @@ public final class ContextManager {
 
 	private static final Map<String, ContextEnvironment> CONTEXTS = new HashMap<>();
 	private static final ThreadLocal<ContextEnvironment> CURRENT  = new ThreadLocal<>();
+	private static RequestParser requestParser = new DefaultRequestParser();
 
 	public static void register(ContextEnvironment config) {
 		CONTEXTS.compute(config.getDatabase().identity(), (k,v)-> {
@@ -68,5 +70,13 @@ public final class ContextManager {
 
 	public static void releaseContext() {
 		CURRENT.remove();
+	}
+	
+	public static RequestParser getRequestParser() {
+		return requestParser;
+	}
+	
+	public static void setRequestParser(@NonNull RequestParser requestParser) {
+		ContextManager.requestParser = requestParser;
 	}
 }
