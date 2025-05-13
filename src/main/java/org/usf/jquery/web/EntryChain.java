@@ -337,10 +337,10 @@ final class EntryChain {
 	}
 
 	private Optional<EntyChainCursor> lookupViewResource(RequestContext ctx, ViewDecorator vd, boolean prefixed) { //do not change priority
-		return lookupViewOperation(ctx, vd, prefixed) //view.count only
-				.or(()-> lookupDeclaredColumn(ctx, vd, prefixed))
+		return lookupDeclaredColumn(ctx, vd, prefixed)//view.count only
 				.or(()-> lookupViewCriteria(vd))
-				.or(()-> lookupRegistredColumn(ctx, vd));
+				.or(()-> lookupRegistredColumn(ctx, vd))
+				.or(()-> lookupViewOperation(ctx, vd, prefixed));
 	}
 	
 	//operator|[view.]operator

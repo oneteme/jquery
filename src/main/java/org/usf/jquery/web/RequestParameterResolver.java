@@ -7,6 +7,7 @@ import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.ContextManager.getRequestParser;
 import static org.usf.jquery.web.ContextManager.releaseContext;
 import static org.usf.jquery.web.Parameters.COLUMN;
+import static org.usf.jquery.web.Parameters.DISTINCT;
 import static org.usf.jquery.web.RequestContext.requestContext;
 
 import java.util.LinkedHashMap;
@@ -31,6 +32,11 @@ public final class RequestParameterResolver {//spring connection bridge
 		var t = currentTimeMillis();
 		log.trace("parsing request...");
 		parameterMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
+		if(parameterMap.containsKey("column.distinct")) { //deprecated
+			log.warn("column.distinct is deprecated, use distinct=true instead");
+			parameterMap.put(DISTINCT, new String[] { "true" });
+			parameterMap.put(COLUMN, parameterMap.remove("column.distinct"));
+		}
 		parameterMap.computeIfAbsent(COLUMN, k-> ant.defaultColumns());
 		if(!isEmpty(ant.ignoreParameters())) {
 			for(var k : ant.ignoreParameters()) {

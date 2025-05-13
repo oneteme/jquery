@@ -2,11 +2,15 @@ package org.usf.jquery.web;
 
 import static java.lang.reflect.Modifier.isPrivate;
 import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.VIEW;
+import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Optional;
 
 import org.usf.jquery.core.ColumnProxy;
@@ -32,8 +36,18 @@ public final class RequestContext {
 	private final ContextEnvironment context;
 	private final ViewDecorator defaultView;
 	private final QueryComposer query;
+	private final Map<String, ViewDecorator> views = new LinkedHashMap<>();
 	
-	Optional<NamedColumn> lookupDeclaredColumn(String name) {
+	public ViewDecorator declareView(ViewDecorator view) { //additional request views
+		return views.compute(view.identity(), (k,v)-> {
+			if(isNull(v)){
+				return view;
+			}
+			throw resourceAlreadyExistsException(k);
+		});
+	}
+	
+	public Optional<NamedColumn> lookupDeclaredColumn(String name) {
 		return query.getColumns().stream()
 				.filter(ColumnProxy.class::isInstance) //tagged column only
 				.filter(c-> name.equals(c.getTag()))
@@ -41,7 +55,7 @@ public final class RequestContext {
 	}
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
-		return ofNullable(context.getViews().get(name));
+		return ofNullable(context.getViews().get(name)).or(()-> ofNullable(views.get(name)));
 	}
 	
 	public Optional<ColumnDecorator> lookupRegisteredColumn(String name) {

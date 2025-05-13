@@ -33,7 +33,6 @@ import org.usf.jquery.core.JavaType;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
-import lombok.experimental.var;
 import lombok.extern.slf4j.Slf4j;
 
 /**

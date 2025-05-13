@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Collections.unmodifiableMap;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
@@ -11,7 +10,6 @@ import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
-import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
@@ -59,15 +57,6 @@ public final class ContextEnvironment {
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
 		return ofNullable(views.get(name));
-	}
-
-	ViewDecorator declareView(ViewDecorator view) { //additional request views
-		return views.compute(view.identity(), (k,v)-> {
-			if(isNull(v)){
-				return view;
-			}
-			throw resourceAlreadyExistsException(k);
-		});
 	}
 
 	ViewMetadata computeTableMetadata(ViewDecorator vd, Function<Collection<ColumnDecorator>, ViewMetadata> fn) {

@@ -6,7 +6,6 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.web.ArgumentParsers.parseBoolean;
-import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryChainParser.parseEntries;
 import static org.usf.jquery.web.EntryChainParser.parseEntry;
 import static org.usf.jquery.web.Parameters.COLUMN;
@@ -73,7 +72,7 @@ public class DefaultRequestParser implements RequestParser {
 		if(!isEmpty(values)) {
 			Stream.of(values)
 			.flatMap(c-> stream(parseEntries(c)))
-			.map(e-> currentContext().declareView(e.evalView(context)))
+			.map(e-> context.declareView(e.evalView(context)))
 			.forEach(v->{ //!ViewDecorator
 				if(v instanceof QueryDecorator qd) {
 					context.getQuery().ctes(qd.getQuery());

@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.DOT;
-import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import java.util.function.Consumer;
 
@@ -23,7 +22,7 @@ public class ViewColumn implements NamedColumn, Driven<ViewColumn, String> {
 	private final Adjuster<String> adjsuter;
 	
 	ViewColumn(String name, DBView view, JDBCType type, String tag, Adjuster<String> adjsuter) {
-		this.name = requireLegalVariable(name);
+		this.name = name;
 		this.view = view;
 		this.type = type;
 		this.tag = tag;
