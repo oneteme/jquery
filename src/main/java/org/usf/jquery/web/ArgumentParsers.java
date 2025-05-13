@@ -85,9 +85,6 @@ public class ArgumentParsers {
 		if(exList.size() == 1) { //single type
 			throw exList.get(0);
 		}
-		for(int i=0; i<exList.size(); i++) {
-			log.trace("parsing '{}' as {} => {}", entry, list.get(i), exList.get(i).getMessage());
-		}
 		throw new EntryParseException(format("cannot parse entry '%s' as [%s]", 
 				entry, list.stream().map(Object::toString).collect(joining("|"))));
 	}
@@ -125,15 +122,15 @@ public class ArgumentParsers {
 		default:			throw unsupportedTypeException(type);
 		}
 	}
-		
-	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {
-		return new UnsupportedOperationException("unsupported type " + type.toString());
-	}
 	
 	static boolean parseBoolean(String v) {
 		if(requireNonNull(v).matches("true|false")) {
 			return Boolean.parseBoolean(v); //not thrown exception
 		}
 		throw new EntryParseException("cannot parse boolean " + v);
+	}
+		
+	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {
+		return new UnsupportedOperationException("unsupported type " + type.toString());
 	}
 }

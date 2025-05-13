@@ -35,7 +35,6 @@ import static org.usf.jquery.web.Parameters.QUERY;
 import static org.usf.jquery.web.Parameters.SELECT;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -79,6 +78,8 @@ final class EntryChain {
 	private final EntryChain next;
 	private final String tag;
 
+	private EntryChain prev;
+	
 	public EntryChain(String value) {
 		this(value, false, null, null, null);
 	}
@@ -89,6 +90,9 @@ final class EntryChain {
 	
 	public EntryChain(String value, EntryChain[] args, EntryChain next, String tag) {
 		this(value, false, args, next, tag);
+		if(nonNull(next)) {
+			next.prev = this; //two way chain
+		}
 	}
 	
 	//[view.]column[.expression]*
@@ -140,7 +144,7 @@ final class EntryChain {
 				if(rsc.col instanceof DBFilter f) {
 					return f;
 				}
-				throw new IllegalArgumentException(this + " is not a filter");
+				throw new EntrySyntaxException(this + " is not a filter");
 			}
 			throw badEntrySyntaxException(rsc.entry.next.value, "criteria|operator|comparator");
 		} catch (Exception e) {
@@ -394,7 +398,7 @@ final class EntryChain {
 			});
 		}
 		catch (Exception e) {
-			throw cannotParseEntryArgsException(this, col, e);
+			throw badEntryArgsSyntaxException(this, ps, e);
 		}
 		return arr;
 	}
@@ -427,9 +431,22 @@ final class EntryChain {
 	public boolean hasNext() {
 		return nonNull(next);
 	}
+
+	public EntryChain first() {
+		var e = this;
+		while(nonNull(e.prev)) {
+			e = e.prev;
+		}
+		return e;
+	}
+	
 	
 	@Override
 	public String toString() {
+		return toString(e-> false);
+	}
+	
+	public String toString(Predicate<EntryChain> until) {
 		var s = ""; // null == EMPTY
 		if(nonNull(value)) {
 			s += text ? doubleQuote(value) : value;
@@ -437,8 +454,8 @@ final class EntryChain {
 		if(nonNull(args)){
 			s += stream(args).map(EntryChain::toString).collect(joining(",", "(", ")"));
 		}
-		if(nonNull(next)) {
-			s += "." + next.toString();
+		if(nonNull(next) && !until.test(next)) {
+			s += "." + next.toString(until);
 		}
 		return isNull(tag) ? s : s + ":" + tag;
 	}
@@ -464,27 +481,27 @@ final class EntryChain {
 	}
 	
 	static EntrySyntaxException badEntrySyntaxException(String value, String expect) {
-		return new EntrySyntaxException(format("incorrect syntax: [%s], expected: %s", value, expect));
+		return new EntrySyntaxException(format("incorrect syntax: expected %s, but was %s", expect, value));
 	}
 
+	static EntrySyntaxException badEntryArgsSyntaxException(EntryChain entry, ParameterSet param, Exception ex) {
+		var arr = new ArrayList<Object>();
+		if(nonNull(entry.prev)) {
+			arr.add(entry.first().toString(e-> e == entry));
+		}
+		if(!isEmpty(entry.args)) {
+			addAll(arr, entry.args);
+		}
+		return new EntrySyntaxException(format("incorrect '%s' arguments: expected %s, but was %s", entry.value, param, arr), ex);
+	}
+	
 	static EntryParseException cannotParseEntryException(EntryChain entry, String type, Exception ex) {
 		return cannotParseEntryException(entry, type, null, ex);
 	}
 	
 	static EntryParseException cannotParseEntryException(EntryChain entry, String type, EntryChain[] outerArgs, Exception ex) {
-		var eq = isNull(outerArgs) ? "" : "=" + Arrays.stream(outerArgs).map(Object::toString).collect(joining(","));
+		var eq = isNull(outerArgs) ? "" : "=" + stream(outerArgs).map(Object::toString).collect(joining(","));
 		return new EntryParseException(format("cannot parse '%s' : %s", type, entry.toString()+eq), ex);
-	}
-	
-	static EntrySyntaxException cannotParseEntryArgsException(EntryChain entry, Object first, Exception ex) {
-		var args = new ArrayList<Object>();
-		if(nonNull(first)) {
-			args.add(first);
-		}
-		if(!isEmpty(entry.args)) {
-			addAll(args, entry.args);
-		}
-		return new EntrySyntaxException(format("cannot parse '%s' arguments : %s", entry.value, args), ex);
 	}
 	
 	@AllArgsConstructor(access = AccessLevel.PRIVATE)
