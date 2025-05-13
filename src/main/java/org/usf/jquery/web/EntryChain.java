@@ -35,6 +35,7 @@ import static org.usf.jquery.web.Parameters.QUERY;
 import static org.usf.jquery.web.Parameters.SELECT;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -143,7 +144,7 @@ final class EntryChain {
 			}
 			throw badEntrySyntaxException(rsc.entry.next.value, "criteria|operator|comparator");
 		} catch (Exception e) {
-			throw cannotParseEntryException(this, FILTER, e);
+			throw cannotParseEntryException(this, FILTER, outerArgs, e);
 		}
 	}
 	
@@ -393,7 +394,7 @@ final class EntryChain {
 			});
 		}
 		catch (Exception e) {
-			throw cannotParseEntryException(this, "args", e);
+			throw cannotParseEntryArgsException(this, col, e);
 		}
 		return arr;
 	}
@@ -465,9 +466,25 @@ final class EntryChain {
 	static EntrySyntaxException badEntrySyntaxException(String value, String expect) {
 		return new EntrySyntaxException(format("incorrect syntax: [%s], expected: %s", value, expect));
 	}
-	
+
 	static EntryParseException cannotParseEntryException(EntryChain entry, String type, Exception ex) {
-		return new EntryParseException(format("cannot parse %s : '%s'", type, entry.toString()), ex);
+		return cannotParseEntryException(entry, type, null, ex);
+	}
+	
+	static EntryParseException cannotParseEntryException(EntryChain entry, String type, EntryChain[] outerArgs, Exception ex) {
+		var eq = isNull(outerArgs) ? "" : "=" + Arrays.stream(outerArgs).map(Object::toString).collect(joining(","));
+		return new EntryParseException(format("cannot parse '%s' : %s", type, entry.toString()+eq), ex);
+	}
+	
+	static EntrySyntaxException cannotParseEntryArgsException(EntryChain entry, Object first, Exception ex) {
+		var args = new ArrayList<Object>();
+		if(nonNull(first)) {
+			args.add(first);
+		}
+		if(!isEmpty(entry.args)) {
+			addAll(args, entry.args);
+		}
+		return new EntrySyntaxException(format("cannot parse '%s' arguments : %s", entry.value, args), ex);
 	}
 	
 	@AllArgsConstructor(access = AccessLevel.PRIVATE)

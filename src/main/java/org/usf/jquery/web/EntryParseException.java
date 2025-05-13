@@ -18,6 +18,7 @@ public final class EntryParseException extends WebException {
 		super(message, cause);
 	}
 	
+	@Deprecated
 	static EntryParseException cannotParseEntryException(String type, EntryChain entry, Throwable cause) {
 		return new EntryParseException(format("cannot parse %s : '%s'", type, entry), cause);
 	}

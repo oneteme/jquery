@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
 import static java.util.Arrays.stream;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.web.ArgumentParsers.parseBoolean;
@@ -23,26 +24,43 @@ import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.QueryComposer;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
+@Slf4j
 @RequiredArgsConstructor
 public class DefaultRequestParser implements RequestParser {
 	
 	public final QueryComposer parse(RequestContext context, Map<String, String[]> parameterMap) {
-		parseViews(context, parameterMap.remove(VIEW));
-		parseColumns(context, parameterMap.remove(COLUMN));
-		parseOrders(context, parameterMap.remove(ORDER));
-		parseJoins(context, parameterMap.remove(JOIN));
-		parseLimit(context, parameterMap.remove(LIMIT));
-		parseOffset(context, parameterMap.remove(OFFSET));
-		parseDistinct(context, parameterMap.remove(DISTINCT));
-		//parse iterator
-		parseFilters(context, parameterMap); //remove all entries before parse filters
-		return context.getQuery();
+		try {
+			parseViews(context, parameterMap.remove(VIEW));
+			parseColumns(context, parameterMap.remove(COLUMN));
+			parseOrders(context, parameterMap.remove(ORDER));
+			parseJoins(context, parameterMap.remove(JOIN));
+			parseLimit(context, parameterMap.remove(LIMIT));
+			parseOffset(context, parameterMap.remove(OFFSET));
+			parseDistinct(context, parameterMap.remove(DISTINCT));
+			//parse iterator
+			parseFilters(context, parameterMap); //remove all entries before parse filters
+			return context.getQuery();
+		} catch (WebException e) {
+			log.trace(formatException(e));
+			var shift = 0;
+			Throwable ex = e.getCause();
+			while(nonNull(ex)){
+				log.trace("  ".repeat(++shift) + "~> " + formatException(ex));
+				ex = ex.getCause();
+			}
+			throw e;
+		}
+	}
+	
+	private static String formatException(Throwable e) {
+		return e.getClass().getSimpleName() + ": " + e.getMessage();
 	}
 
 	protected void parseDistinct(RequestContext context, String[] values) {

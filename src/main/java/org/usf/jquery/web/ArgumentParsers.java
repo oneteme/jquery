@@ -1,8 +1,10 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.format;
 import static java.lang.reflect.Array.newInstance;
 import static java.util.Collections.addAll;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -13,7 +15,6 @@ import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.QUERY_COLUMN;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -32,6 +33,7 @@ import org.usf.jquery.core.JavaType;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.experimental.var;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -42,8 +44,8 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ArgumentParsers {
-	
-	private static final JDBCType[] STD_TYPES = {
+
+	private static final JDBCType[] STD_TYPES = { 
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 	
@@ -64,7 +66,7 @@ public class ArgumentParsers {
 			list.add(QUERY_COLUMN);
 		}
 		addAll(list, isEmpty(types) ? STD_TYPES : types);
-		var exList = new ArrayList<Exception>();
+		var exList = new ArrayList<RuntimeException>();
 		for(var type : list) {
 			try {
 				if(type instanceof JDBCType t) {
@@ -80,12 +82,14 @@ public class ArgumentParsers {
 				exList.add(e);
 			}
 		}
-		if(exList.size() > 1) {
-			for(int i=0; i<exList.size(); i++) {
-				log.warn("parsing '{}' as {} => {}", entry, list.get(i), exList.get(i).getMessage());
-			}
+		if(exList.size() == 1) { //single type
+			throw exList.get(0);
 		}
-		throw cannotParseEntryException("entry", entry, exList.size() == 1 ? exList.get(0) : null);
+		for(int i=0; i<exList.size(); i++) {
+			log.trace("parsing '{}' as {} => {}", entry, list.get(i), exList.get(i).getMessage());
+		}
+		throw new EntryParseException(format("cannot parse entry '%s' as [%s]", 
+				entry, list.stream().map(Object::toString).collect(joining("|"))));
 	}
 	
 	public static JDBCArgumentParser jdbcArgParser(JDBCType type) {

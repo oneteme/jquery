@@ -1,13 +1,16 @@
 package org.usf.jquery.core;
 
 import static java.lang.Math.min;
+import static java.lang.String.format;
+import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.BadArgumentException.badArgumentCountException;
-import static org.usf.jquery.core.BadArgumentException.badArgumentTypeException;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Stream;
+
+import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -96,5 +99,15 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 			}
 		}
 		return "(" + s + ")";
+	}
+	
+	private static BadArgumentException badArgumentCountException(int count, int expect) {
+		return new BadArgumentException(format("expected %d arguments, but was %d", count, expect));
+	}
+
+	private static BadArgumentException badArgumentTypeException(Object obj, JavaType[] types) {
+		var par = isEmpty(types) ? "any" : stream(types).map(Object::toString).collect(joining("|"));
+		var arg = obj instanceof Typed t ? t.getType() : JDBCType.typeOf(obj).orElse(null);
+		return new BadArgumentException(format("expected argument of type %s, but was %s [%s]", par, obj, arg));
 	}
 }
