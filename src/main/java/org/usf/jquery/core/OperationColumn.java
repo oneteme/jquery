@@ -32,7 +32,7 @@ public final class OperationColumn implements DBColumn {
 		}
 		if(operator.is("OVER")) {
 			if(query.getRole() == FILTER) {
-				overColumn = query.overColumnView(new OperationColumn(operator, args, type), "over_" + hashCode());
+				overColumn = query.replaceColumnView(new OperationColumn(operator, args, type), "over_" + hashCode());
 				return overColumn.compose(query, groupKeys);
 			}
 			return resolveOverColumns(query, groupKeys);

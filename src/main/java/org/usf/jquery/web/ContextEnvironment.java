@@ -23,9 +23,10 @@ import java.util.stream.Stream;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.JQueryException;
+import org.usf.jquery.core.TypedComparator;
+import org.usf.jquery.core.TypedOperator;
 
 import lombok.AccessLevel;
-import lombok.Builder;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +36,6 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @Getter
-@Builder()
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ContextEnvironment {
 	
@@ -50,6 +50,9 @@ public final class ContextEnvironment {
 	private final DataSource dataSource; //optional
 	private final String schema; //optional
 	private final DatabaseMetadata metadata;
+	private final Map<String, TypedOperator> operators = null; //optional
+	private final Map<String, TypedComparator> comparators = null; //optional
+	
 	//operation, comparators, ..
 	//securityManager
 

@@ -166,24 +166,24 @@ public class QueryComposer {
 		return new QueryView(this);
 	}
 
-	public ViewColumn overColumnView(DBColumn column, String tag) {
-		var over = new QueryComposer().columns(column.as(tag), allColumns()).asView();
-		overView(over);
-		return new ViewColumn(tag, over, column.getType(), null);
+	public ViewColumn replaceColumnView(DBColumn column, String tag) {
+		var sub = new QueryComposer().columns(column.as(tag), allColumns()).asView();
+		replaceNestedView(sub);
+		return new ViewColumn(tag, sub, column.getType(), null);
 	}
 	
-	public QueryComposer overView(QueryView over) {
-		var subViews = over.getComposer().getViews();
+	public QueryComposer replaceNestedView(QueryView sub) {
+		var subViews = sub.getComposer().getViews(); 
 		if(subViews.size() == 1) {
-			var view = subViews.iterator().next();
-			return overView(view, over);
+			var view = subViews.iterator().next(); //auto view detect
+			return replaceView(view, sub);
 		} //else 
-		throw new IllegalStateException("view required");
+		throw new IllegalStateException("overview require only one view");
 	}
 
-	public QueryComposer overView(DBView view, QueryView over) {
-		overView.put(view, over);
-		return ctes(over);
+	public QueryComposer replaceView(DBView view, QueryView sub) {
+		overView.put(view, sub);
+		return ctes(sub);
 	}
 	
 	public Query compose(){
