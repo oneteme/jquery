@@ -102,12 +102,12 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 	}
 	
 	private static BadArgumentException badArgumentCountException(int count, int expect) {
-		return new BadArgumentException(format("expected %d arguments, but was %d", count, expect));
+		return new BadArgumentException(format("expected %d arguments, but was %d", expect, count));
 	}
 
 	private static BadArgumentException badArgumentTypeException(Object obj, JavaType[] types) {
-		var par = isEmpty(types) ? "any" : stream(types).map(Object::toString).collect(joining("|"));
+		var exp = isEmpty(types) ? "any" : stream(types).map(Object::toString).collect(joining("|"));
 		var arg = obj instanceof Typed t ? t.getType() : JDBCType.typeOf(obj).orElse(null);
-		return new BadArgumentException(format("expected argument of type %s, but was %s [%s]", par, obj, arg));
+		return new BadArgumentException(format("expected argument of type %s, but was %s [%s]", exp, obj, arg));
 	}
 }
