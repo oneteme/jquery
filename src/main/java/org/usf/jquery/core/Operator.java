@@ -12,7 +12,6 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
@@ -355,7 +354,7 @@ public interface Operator extends DBProcessor {
 	//pipe functions
 	
 	static TypedOperator over() {
-		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), optional(PARTITION)); //optional !?
+		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(), optional(PARTITION)); //optional !?
 	}
 	
 	// constant operators
