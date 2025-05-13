@@ -13,8 +13,6 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.COLUMN;
-import static org.usf.jquery.core.JQueryType.FILTER;
-import static org.usf.jquery.core.JQueryType.NAMED_COLUMN;
 import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
@@ -271,7 +269,7 @@ public interface Operator extends DBProcessor {
 			requireNArgs(2, args, op::name);
 			return ((DBFilter)args[0]).append(op, (DBFilter)args[1]);
 		};
-		return new TypedOperator(BOOLEAN, co, required(FILTER), required(FILTER));
+		return new TypedOperator(BOOLEAN, co, required(BOOLEAN), required(BOOLEAN));
 	}
 	
 	//cast functions
@@ -307,11 +305,11 @@ public interface Operator extends DBProcessor {
 	//other functions
 	
 	static TypedOperator coalesce() {
-		return new TypedOperator(firstArgJdbcType(), function("COALESCE"), required(), required());
+		return new TypedOperator(firstArgJdbcType(), function("COALESCE"), required(), required(firstArgJdbcType()));
 	}
 	
 	static TypedOperator distinct() {
-		return new TypedOperator(firstArgJdbcType(), new DistinctOperator(), required(NAMED_COLUMN), varargs(NAMED_COLUMN));
+		return new TypedOperator(firstArgJdbcType(), new DistinctOperator(), required());
 	}
 
 	//aggregate functions

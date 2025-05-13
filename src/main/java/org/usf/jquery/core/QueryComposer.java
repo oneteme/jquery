@@ -143,8 +143,8 @@ public class QueryComposer {
 		return this;
 	}
 	
-	public QueryComposer distinct() {
-		distinct = true;
+	public QueryComposer distinct(boolean distinct) {
+		this.distinct = distinct;
 		return this;
 	}
 	

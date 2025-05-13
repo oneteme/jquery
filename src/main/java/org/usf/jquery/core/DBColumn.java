@@ -353,6 +353,10 @@ public interface DBColumn extends DBObject, Typed {
 
 	//other functions
 	
+	default DBColumn distinct() {
+		return Operator.distinct().operation(this);
+	}
+	
 	default DBColumn coalesce(Object o) {
 		return Operator.coalesce().operation(this, o);
 	}

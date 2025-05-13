@@ -4,10 +4,12 @@ import static java.lang.Integer.parseInt;
 import static java.util.Arrays.stream;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
+import static org.usf.jquery.web.ArgumentParsers.parseBoolean;
 import static org.usf.jquery.web.ContextManager.currentContext;
 import static org.usf.jquery.web.EntryChainParser.parseEntries;
 import static org.usf.jquery.web.EntryChainParser.parseEntry;
 import static org.usf.jquery.web.Parameters.COLUMN;
+import static org.usf.jquery.web.Parameters.DISTINCT;
 import static org.usf.jquery.web.Parameters.JOIN;
 import static org.usf.jquery.web.Parameters.LIMIT;
 import static org.usf.jquery.web.Parameters.OFFSET;
@@ -37,9 +39,16 @@ public class DefaultRequestParser implements RequestParser {
 		parseJoins(context, parameterMap.remove(JOIN));
 		parseLimit(context, parameterMap.remove(LIMIT));
 		parseOffset(context, parameterMap.remove(OFFSET));
+		parseDistinct(context, parameterMap.remove(DISTINCT));
 		//parse iterator
 		parseFilters(context, parameterMap); //remove all entries before parse filters
 		return context.getQuery();
+	}
+
+	protected void parseDistinct(RequestContext context, String[] values) {
+		if(!isEmpty(values)) {
+			context.getQuery().distinct(parseBoolean(requireNArgs(1, values, ()-> DISTINCT)[0]));
+		}
 	}
 	
 	protected void parseViews(RequestContext context, String[] values) {

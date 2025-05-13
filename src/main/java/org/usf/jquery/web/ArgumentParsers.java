@@ -126,7 +126,7 @@ public class ArgumentParsers {
 		return new UnsupportedOperationException("unsupported type " + type.toString());
 	}
 	
-	private static boolean parseBoolean(String v) {
+	static boolean parseBoolean(String v) {
 		if(requireNonNull(v).matches("true|false")) {
 			return Boolean.parseBoolean(v); //not thrown exception
 		}

@@ -14,14 +14,17 @@ import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.DBColumn.allColumns;
+import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.joinArray;
 import static org.usf.jquery.core.Validation.requireNArgs;
+import static org.usf.jquery.web.ArgumentParsers.jdbcArgParser;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ArgumentParsers.parseAll;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.COLUMN;
+import static org.usf.jquery.web.Parameters.DISTINCT;
 import static org.usf.jquery.web.Parameters.FILTER;
 import static org.usf.jquery.web.Parameters.JOIN;
 import static org.usf.jquery.web.Parameters.LIMIT;
@@ -199,6 +202,10 @@ final class EntryChain {
 		return parseQuery(ctx, false);
 	}
 	
+	public boolean parseDistinct(RequestContext ctx) {
+		return (boolean) jdbcArgParser(BOOLEAN).parseEntry(requireNoArgs().requireNoNext(), ctx);
+	}
+	
 	//select[.filter|order|offset|fetch]*
 	QueryDecorator parseQuery(RequestContext ctx, boolean requireTag) { //sub context
 		Exception cause = null;
@@ -214,6 +221,7 @@ final class EntryChain {
 					case JOIN: q.joins(parseAll(e.args, ctx, JQueryType.JOIN)); break;
 					case LIMIT: q.limit(parseInt(requireNArgs(1, e.args, ()-> LIMIT)[0].value)); break;
 					case OFFSET: q.offset(parseInt(requireNArgs(1, e.args, ()-> OFFSET)[0].value)); break;
+					case DISTINCT: q.distinct(e.parseDistinct(ctx)); break;
 					default: throw badEntrySyntaxException(e.value, join("|", FILTER, ORDER, JOIN, LIMIT, OFFSET));
 					}
 				}

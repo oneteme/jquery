@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 /**
@@ -17,10 +18,10 @@ public final class DistinctOperator implements Operator {
 			query.appendParenthesis(()-> query.appendParameter(args[0]));
 		}
 		else {
-			query.appendParameters(",", args); //parenthesis PG !?
+			query.appendParameters(SCOMA, args); //parenthesis PG !?
 		}
 	}
-
+	
 	@Override
 	public String id() {
 		return "DISTINCT";
