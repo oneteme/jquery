@@ -47,12 +47,14 @@ public class DefaultRequestParser implements RequestParser {
 			parseFilters(context, parameterMap); //remove all entries before parse filters
 			return context.getQuery();
 		} catch (WebException e) {
-			log.trace(formatException(e));
-			var shift = 0;
-			Throwable ex = e.getCause();
-			while(nonNull(ex)){
-				log.trace("  ".repeat(++shift) + "~> " + formatException(ex));
-				ex = ex.getCause();
+			if(log.isTraceEnabled()) {
+				log.trace(formatException(e));
+				var shift = 0;
+				Throwable ex = e.getCause();
+				while(nonNull(ex)){
+					log.trace("  ".repeat(++shift) + "~> " + formatException(ex));
+					ex = ex.getCause();
+				}
 			}
 			throw e;
 		}

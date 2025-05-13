@@ -4,7 +4,6 @@ import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.ofNullable;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
@@ -16,7 +15,6 @@ import java.sql.SQLException;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collector;
@@ -54,10 +52,6 @@ public final class ContextEnvironment {
 	private final DatabaseMetadata metadata;
 	//operation, comparators, ..
 	//securityManager
-	
-	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
-		return ofNullable(views.get(name));
-	}
 
 	ViewMetadata computeTableMetadata(ViewDecorator vd, Function<Collection<ColumnDecorator>, ViewMetadata> fn) {
 		return metadata.getTables().computeIfAbsent(vd.identity(), key-> fn.apply(columns.values()));

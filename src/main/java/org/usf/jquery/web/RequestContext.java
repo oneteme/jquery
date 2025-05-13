@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import static java.lang.reflect.Modifier.isPrivate;
+import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
@@ -55,7 +55,8 @@ public final class RequestContext {
 	}
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
-		return ofNullable(context.getViews().get(name)).or(()-> ofNullable(views.get(name)));
+		return ofNullable(context.getViews().get(name))
+				.or(()-> ofNullable(views.get(name)));
 	}
 	
 	public Optional<ColumnDecorator> lookupRegisteredColumn(String name) {
@@ -69,21 +70,20 @@ public final class RequestContext {
 	public Optional<TypedComparator> lookupComparator(String op) {
 		return lookup(Comparator.class, TypedComparator.class, op);
 	}
+
+	public static RequestContext requestContext(ContextEnvironment context, String defaultView) {
+		return new RequestContext(context, 
+				ofNullable(context.getViews().get(defaultView)).orElseThrow(()-> noSuchResourceException(VIEW, defaultView)), 
+				new QueryComposer(context.getMetadata().getType()));
+	}
 	
 	static <T,U> Optional<U> lookup(Class<T> clazz, Class<U> type, String name) {
 		try {
 			var m = clazz.getMethod(name); //no parameter
-			if(m.getReturnType() == type && m.getParameterCount() == 0 && isStatic(m.getModifiers()) && !isPrivate(m.getModifiers())) {
+			if(m.getReturnType() == type && m.getParameterCount() == 0 && isStatic(m.getModifiers()) && isPublic(m.getModifiers())) {
 				return Optional.of(type.cast(m.invoke(null)));
 			}
 		} catch (Exception e) {/* do not throw exception */}
 		return empty();
 	}
-
-	public static RequestContext requestContext(ContextEnvironment context, String defaultView) {
-		return new RequestContext(context, 
-				context.lookupRegisteredView(defaultView).orElseThrow(()-> noSuchResourceException(VIEW, defaultView)), 
-				new QueryComposer(context.getMetadata().getType()));
-	}
-	
 }
