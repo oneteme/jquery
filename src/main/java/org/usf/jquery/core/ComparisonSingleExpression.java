@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.With;
 
 /**
  * 
@@ -19,6 +20,12 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	private final Comparator comparator;
 	private final Object[] right; //optional
+	@With
+	private final Adjuster<Object[]> adjuster; //optional
+
+	public ComparisonSingleExpression(Comparator comparator, Object[] right) {
+		this(comparator, right, null);
+	}	
 	
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
@@ -30,7 +37,7 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 		var param = new ArrayList<>();
 		param.add(left);
 		if(nonNull(right)) {
-			addAll(param, right);
+			addAll(param, nonNull(adjuster) ? adjuster.build(query, right) : right);
 		}
 		comparator.build(query, param.toArray());
 	}
@@ -44,5 +51,5 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	public String toString() {
 		var args = new Object[]{null}; //unknown type
 		return DBObject.toSQL(this, args);
-	}	
+	}
 }

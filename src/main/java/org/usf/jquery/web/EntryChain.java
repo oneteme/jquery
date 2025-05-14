@@ -156,16 +156,17 @@ final class EntryChain {
 	public ViewJoin[] evalJoin(RequestContext ctx) {
 		return hasNext()
 				? ctx.lookupRegisteredView(value)
-						.map(vd-> requireNoArgs().next.evalJoin(vd))
+						.map(vd-> requireNoArgs().next.evalJoin(ctx, vd))
 						.orElseThrow(()-> noSuchResourceException(JOIN, value))
-				: evalJoin(ctx.getDefaultView());
+				: evalJoin(ctx, ctx.getDefaultView());
 	}
 	
-	private ViewJoin[] evalJoin(ViewDecorator vd) { 
+	private ViewJoin[] evalJoin(RequestContext ctx, ViewDecorator vd) { 
 		var join = vd.join(value);
 		if(nonNull(join)) {
-			requireNoArgs().requireNoNext(); 
-			return requireNonNull(join.build(), vd.identity() + "." + value);
+			requireNoNext();
+			var strArr = isNull(args) ? null : toStringArray(args);
+			return requireNonNull(join.build(ctx, strArr), vd.identity() + "." + value);
 		}
 		throw noSuchResourceException(JOIN, value, vd.identity());
 	}
@@ -175,19 +176,20 @@ final class EntryChain {
 		try {
 			 return hasNext()
 				? ctx.lookupRegisteredView(value)
-						.map(vd-> requireNoArgs().next.evalPartition(vd))
+						.map(vd-> requireNoArgs().next.evalPartition(ctx, vd))
 						.orElseThrow(()-> noSuchResourceException(PARTITION, value))
-				: evalPartition(ctx.getDefaultView());
+				: evalPartition(ctx, ctx.getDefaultView());
 		} catch (Exception e) {
 			return parsePartition(ctx);
 		}
 	}
 	
-	private Partition evalPartition(ViewDecorator vd) { 
+	private Partition evalPartition(RequestContext ctx, ViewDecorator vd) { 
 		var par = vd.partition(value);
 		if(nonNull(par)) {
-			requireNoArgs().requireNoNext(); 
-			return requireNonNull(par.build(), vd.identity() + "." + value);
+			requireNoNext(); 
+			var strArr = isNull(args) ? null : toStringArray(args);
+			return requireNonNull(par.build(ctx, strArr), vd.identity() + "." + value);
 		}
 		throw noSuchResourceException(PARTITION, vd.identity(), value);
 	}
@@ -279,11 +281,13 @@ final class EntryChain {
 				outerArgs = null; //flag outerArgs as consumed
 			}
 			if(nonNull(r.viewCrt)) { //view criteria
-				r.col = requireNonNull(r.viewCrt.build(toStringArray(crArgs)), 
+				var strArr = isNull(args) ? null : toStringArray(crArgs);
+				r.col = requireNonNull(r.viewCrt.build(ctx, strArr), 
 						()-> format("%s[criteria=%s]", r.vd.identity(), r.entry.value));
 			}
 			else if(nonNull(r.colCrt) && nonNull(r.col)) { //column criteria
-				r.col = r.col.filter(requireNonNull(r.colCrt.build(toStringArray(crArgs)), 
+				var strArr = isNull(args) ? null : toStringArray(crArgs);
+				r.col = r.col.filter(requireNonNull(r.colCrt.build(ctx, strArr), 
 						()-> format("%s[criteria=%s]", r.vd.identity(), r.entry.value)));
 			}
 			else {

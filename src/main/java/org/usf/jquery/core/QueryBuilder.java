@@ -17,8 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
-import org.usf.jquery.core.Driven.Adjuster;
-
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -40,6 +38,7 @@ public final class QueryBuilder {
 	private final Map<QueryView, String> ctes;
 	private final Map<DBView, String> views;
 	private final List<TypedArg> args;
+	@Getter
 	private final Object currentModel;
 	
 	public QueryBuilder appendViewAlias(DBView view) {
@@ -57,12 +56,6 @@ public final class QueryBuilder {
 			}
 		} //else no alias
 		return this;
-	}
-	
-	public QueryBuilder append(String sql, Adjuster<String> adj) {
-		return append(nonNull(adj) 
-				? adj.adjust(sql, requireNonNull(currentModel, "currentModel is null")) 
-				: sql);
 	}
 	
 	public QueryBuilder append(String sql) {
@@ -103,12 +96,6 @@ public final class QueryBuilder {
 	
 	public QueryBuilder appendParameters(String delimiter, Object[] arr, int from, boolean parameterized) {
 		return runForeach(delimiter, arr, from, o-> appendParameter(o, parameterized));
-	}
-	
-	public QueryBuilder appendParameter(Object o, Adjuster<Object> adj) {
-		return appendParameter(nonNull(adj) 
-				? adj.adjust(o, requireNonNull(currentModel, "currentModel is null")) 
-				: o);
 	}
 	
 	public QueryBuilder appendParameter(Object o) {

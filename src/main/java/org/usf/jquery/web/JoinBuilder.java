@@ -10,5 +10,5 @@ import org.usf.jquery.core.ViewJoin;
 @FunctionalInterface
 public interface JoinBuilder {
 
-	ViewJoin[] build();
+	ViewJoin[] build(RequestContext ctx, String... args);
 }

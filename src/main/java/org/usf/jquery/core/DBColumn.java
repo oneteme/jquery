@@ -7,7 +7,6 @@ import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import org.usf.jquery.core.Driven.Adjuster;
 import org.usf.jquery.core.JavaType.Typed;
 
 /**
@@ -124,7 +123,7 @@ public interface DBColumn extends DBObject, Typed {
 	default ColumnSingleFilter filter(ComparisonExpression exp) {
 		return new ColumnSingleFilter(this, exp);
 	}
-
+	
 	// arithmetic operations
 	
 	default DBColumn plus(Object o) {
@@ -476,11 +475,7 @@ public interface DBColumn extends DBObject, Typed {
 	}
 
 	static ValueColumn constant(Object value, JDBCType type) {
-		return new ValueColumn(value, type, null);
-	}
-
-	static ValueColumn constant(Object value, JDBCType type, Adjuster<Object> adj) {
-		return new ValueColumn(value, type, adj);
+		return new ValueColumn(value, type);
 	}
 
 	static ValueColumn constant(JDBCType type, Adjuster<Object> adj) {

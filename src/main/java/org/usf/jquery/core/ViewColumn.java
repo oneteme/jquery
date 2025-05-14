@@ -6,6 +6,8 @@ import static org.usf.jquery.core.SqlStringBuilder.DOT;
 import java.util.function.Consumer;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+import lombok.With;
 
 /**
  * 
@@ -13,26 +15,20 @@ import lombok.Getter;
  *
  */
 @Getter
-public class ViewColumn implements NamedColumn, Driven<ViewColumn, String> {
+@RequiredArgsConstructor
+public class ViewColumn implements NamedColumn{
 
 	private final String name;
 	private final DBView view; //optional
 	private final JDBCType type; //optional
 	private final String tag;  //optional
-	private final Adjuster<String> adjsuter;
-	
-	ViewColumn(String name, DBView view, JDBCType type, String tag, Adjuster<String> adjsuter) {
-		this.name = name;
-		this.view = view;
-		this.type = type;
-		this.tag = tag;
-		this.adjsuter = adjsuter;
-	}
-	
+	@With
+	private final Adjuster<String> adjuster; //column name adjuster
+
 	public ViewColumn(String name, DBView view, JDBCType type, String tag) {
 		this(name, view, type, tag, null);
 	}
-
+	
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
 		if(nonNull(view)) {
@@ -47,12 +43,7 @@ public class ViewColumn implements NamedColumn, Driven<ViewColumn, String> {
 		if(nonNull(view)) {
 			query.appendViewAlias(view, DOT);
 		}
-		query.append(name, adjsuter);
-	}
-	
-	@Override
-	public ViewColumn adjuster(Adjuster<String> adjsuter) {
-		return new ViewColumn(name, view, type, tag, adjsuter);
+		query.append(nonNull(adjuster) ? adjuster.build(query, name) : null);
 	}
 	
 	@Override
