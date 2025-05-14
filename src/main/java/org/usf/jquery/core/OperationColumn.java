@@ -32,7 +32,7 @@ public final class OperationColumn implements DBColumn {
 		}
 		if(operator.is("OVER")) {
 			if(query.getRole() == FILTER) {
-				overColumn = query.replaceColumnView(new OperationColumn(operator, args, type), "over_" + hashCode());
+				overColumn = replaceNestedView(query);
 				return overColumn.compose(query, groupKeys);
 			}
 			return resolveOverColumns(query, groupKeys);
@@ -66,5 +66,16 @@ public final class OperationColumn implements DBColumn {
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this);
+	}
+	
+	ViewColumn replaceNestedView(QueryComposer query) {
+		var col = new OperationColumn(operator, args, type).as("over_" + hashCode());
+		var views = new QueryComposer().columns(col).getViews(); //scan column views
+		if(views.size() == 1) {
+			var sub = query.subQuery(views.iterator().next()); //get existing subQuery
+			sub.getComposer().columns(col); 
+			return new ViewColumn(col.getTag(), sub, col.getType(), null);
+		}
+		throw new UnsupportedOperationException("overview require only one view");
 	}
 }

@@ -4,6 +4,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
@@ -29,6 +30,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
+import java.util.function.Supplier;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -161,29 +163,20 @@ public class QueryComposer {
 		}
 		return this;
 	}
+
+	public QueryView subQuery(DBView view) {
+		return subQuery(view,
+				()-> new QueryComposer().columns(allColumns(view)).asView());
+	}
+	
+	public QueryView subQuery(DBView view, Supplier<QueryView> orElse) {
+		var sub = overView.computeIfAbsent(view, v-> requireNonNull(orElse.get(), "subQuery is null"));
+		ctes(sub);
+		return sub;
+	}
 	
 	public QueryView asView() {
 		return new QueryView(this);
-	}
-
-	public ViewColumn replaceColumnView(DBColumn column, String tag) {
-		var sub = new QueryComposer().columns(column.as(tag), allColumns()).asView();
-		replaceNestedView(sub);
-		return new ViewColumn(tag, sub, column.getType(), null);
-	}
-	
-	public QueryComposer replaceNestedView(QueryView sub) {
-		var subViews = sub.getComposer().getViews(); 
-		if(subViews.size() == 1) {
-			var view = subViews.iterator().next(); //auto view detect
-			return replaceView(view, sub);
-		} //else 
-		throw new IllegalStateException("overview require only one view");
-	}
-
-	public QueryComposer replaceView(DBView view, QueryView sub) {
-		overView.put(view, sub);
-		return ctes(sub);
 	}
 	
 	public Query compose(){
