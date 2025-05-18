@@ -2,13 +2,13 @@ package org.usf.jquery.web;
 
 import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.ContextManager.context;
-import static org.usf.jquery.web.ContextManager.currentContext;
-import static org.usf.jquery.web.ContextManager.getRequestParser;
-import static org.usf.jquery.web.ContextManager.releaseContext;
+import static org.usf.jquery.web.JQuery.currentContext;
+import static org.usf.jquery.web.JQuery.getRequestParser;
+import static org.usf.jquery.web.JQuery.lookupDatabase;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.COLUMN;
+import static org.usf.jquery.web.Parameters.DATABASE;
 import static org.usf.jquery.web.Parameters.DISTINCT;
-import static org.usf.jquery.web.RequestContext.requestContext;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -31,24 +31,23 @@ public final class RequestParameterResolver {//spring connection bridge
 	public QueryComposer requestQuery(@NonNull RequestQueryParam ant, @NonNull Map<String, String[]> parameterMap) {
 		var t = currentTimeMillis();
 		log.trace("parsing request...");
-		parameterMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
-		if(parameterMap.containsKey("column.distinct")) { //deprecated
+		var modifiableMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
+		if(modifiableMap.containsKey("column.distinct")) { //deprecated
 			log.warn("column.distinct is deprecated, use distinct=true instead");
-			parameterMap.put(DISTINCT, new String[] { "true" });
-			parameterMap.put(COLUMN, parameterMap.remove("column.distinct"));
+			modifiableMap.put(DISTINCT, new String[] { "true" });
+			modifiableMap.put(COLUMN, modifiableMap.remove("column.distinct"));
 		}
-		parameterMap.computeIfAbsent(COLUMN, k-> ant.defaultColumns());
+		modifiableMap.computeIfAbsent(COLUMN, k-> ant.defaultColumns());
 		if(!isEmpty(ant.ignoreParameters())) {
 			for(var k : ant.ignoreParameters()) {
-				parameterMap.remove(k);
+				modifiableMap.remove(k);
 			}
 		}
-		releaseContext(); //safety++
-		var ctx = ant.database().isEmpty() 
-				? currentContext()
-				: context(ant.database());
+		var db = ant.database().isEmpty() 
+				? lookupDatabase().orElseThrow(()-> new IllegalArgumentException("no default database"))
+				: lookupDatabase(ant.database()).orElseThrow(()-> noSuchResourceException(DATABASE, ant.database()));
 
-		var req = getRequestParser().parse(requestContext(ctx, ant.view()), parameterMap);
+		var req = db.query(ant.view(), qry-> getRequestParser().parse(currentContext(), modifiableMap));
 		
 		log.trace("request parsed in {} ms", currentTimeMillis() - t);
 		if(!ant.aggregationOnly() || req.isAggregation()) {

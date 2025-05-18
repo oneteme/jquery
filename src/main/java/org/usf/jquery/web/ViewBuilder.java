@@ -1,5 +1,7 @@
 package org.usf.jquery.web;
 
+import static org.usf.jquery.web.JQuery.currentContext;
+
 import org.usf.jquery.core.DBView;
 
 /**
@@ -10,5 +12,9 @@ import org.usf.jquery.core.DBView;
 @FunctionalInterface
 public interface ViewBuilder {
 
-	DBView build();
+	DBView build(DatabaseDecorator db);
+	
+	default DBView build() {
+		return build(currentContext().getEnvironment().getDatabase());
+	}
 }

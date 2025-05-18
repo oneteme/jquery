@@ -43,7 +43,7 @@ public class ViewMetadata {
 	
 	private static final Object LOG_LOCK = new Object();
 	
-	private final DBView view; //cache
+	private final ViewDecorator decorator; //cache
 	private final Map<String, ColumnMetadata> columns; //key=identity
 	@Getter
 	private Instant lastUpdate;
@@ -53,6 +53,7 @@ public class ViewMetadata {
 	}
 	
 	final ViewMetadata fetch(DatabaseMetaData metadata, String schema) throws SQLException {
+		var view = decorator.view();
 		if(!isEmpty(columns)) {
 			try {
 				var time = currentTimeMillis();
@@ -81,7 +82,7 @@ public class ViewMetadata {
 		schema = view.getSchemaOrElse(schema);
 		try(var tm = metadata.getTables(null, schema, view.getName(), null)) {
 			if(tm.next()) {
-				if("TABLE".equals(tm.getString("TABLE_TYPE"))) {
+				if("TABLE".equals(tm.getString("TABLE_TYPE"))) { //!view
 					try(var rs = metadata.getColumns(null, schema, view.getName(), null)){
 						if(rs.next()) {
 							var db = reverseMapKeys(); //reverse key
@@ -151,6 +152,6 @@ public class ViewMetadata {
 	}
 	
 	NoSuchElementException columnsNotFoundException(Set<String> columns) {
-		return new NoSuchElementException("column(s) [" + join(", ", columns) + "] not found in " + view);
+		return new NoSuchElementException("column(s) [" + join(", ", columns) + "] not found in " + decorator.view());
 	}
 }

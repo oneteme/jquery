@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.usf.jquery.core.DBView;
@@ -58,7 +59,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public ViewMetadata metadata() {
+	public ViewMetadata metadata(Map<String, ColumnMetadata> colMetadata) {
 		throw unsupportedOperationException("metadata");
 	}
 	

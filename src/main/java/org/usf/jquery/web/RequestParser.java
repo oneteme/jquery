@@ -11,6 +11,6 @@ import org.usf.jquery.core.QueryComposer;
  */
 public interface RequestParser {
 	
-	QueryComposer parse(RequestContext context, Map<String, String[]> parameterMap);
+	QueryComposer parse(QueryContext context, Map<String, String[]> parameterMap);
 
 }

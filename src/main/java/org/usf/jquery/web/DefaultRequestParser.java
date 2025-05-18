@@ -34,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DefaultRequestParser implements RequestParser {
 	
-	public final QueryComposer parse(RequestContext context, Map<String, String[]> parameterMap) {
+	public final QueryComposer parse(QueryContext context, Map<String, String[]> parameterMap) {
 		try {
 			parseViews(context, parameterMap.remove(VIEW));
 			parseColumns(context, parameterMap.remove(COLUMN));
@@ -45,7 +45,7 @@ public class DefaultRequestParser implements RequestParser {
 			parseDistinct(context, parameterMap.remove(DISTINCT));
 			//parse iterator
 			parseFilters(context, parameterMap); //remove all entries before parse filters
-			return context.getQuery();
+			return context.getMainQuery();
 		} catch (WebException e) {
 			if(log.isTraceEnabled()) {
 				log.trace(formatException(e));
@@ -64,72 +64,72 @@ public class DefaultRequestParser implements RequestParser {
 		return e.getClass().getSimpleName() + ": " + e.getMessage();
 	}
 
-	protected void parseDistinct(RequestContext context, String[] values) {
+	protected void parseDistinct(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getQuery().distinct(parseBoolean(requireNArgs(1, values, ()-> DISTINCT)[0]));
+			context.getMainQuery().distinct(parseBoolean(requireNArgs(1, values, ()-> DISTINCT)[0]));
 		}
 	}
 	
-	protected void parseViews(RequestContext context, String[] values) {
+	protected void parseViews(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
 			Stream.of(values)
 			.flatMap(c-> stream(parseEntries(c)))
 			.map(e-> context.declareView(e.evalView(context)))
 			.forEach(v->{ //!ViewDecorator
 				if(v instanceof QueryDecorator qd) {
-					context.getQuery().ctes(qd.getQuery());
+					context.getMainQuery().ctes(qd.getQuery());
 				}
 			});
 		}
 	}
 	
-	protected void parseColumns(RequestContext context, String[] values) {
+	protected void parseColumns(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
 			Stream.of(values)
 			.flatMap(v-> stream(parseEntries(v)))
 			.map(e-> (NamedColumn)e.evalColumn(context, true))
-			.forEach(context.getQuery()::columns);
+			.forEach(context.getMainQuery()::columns);
 		}
 		else {
 			throw new IllegalArgumentException("no columns specified");
 		}
 	}
 
-	protected void parseOrders(RequestContext context, String[] values) {
+	protected void parseOrders(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
 			Stream.of(values)
 			.flatMap(c-> stream(parseEntries(c)))
-			.forEach(e-> context.getQuery().orders(e.evalOrder(context)));
+			.forEach(e-> context.getMainQuery().orders(e.evalOrder(context)));
 		}
 	}
 	
-	protected void parseJoins(RequestContext context, String[] values) {
+	protected void parseJoins(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
 			Stream.of(values)
 			.flatMap(c-> stream(parseEntries(c)))
-			.forEach(e-> context.getQuery().joins(e.evalJoin(context)));
+			.forEach(e-> context.getMainQuery().joins(e.evalJoin(context)));
 		}
 	}
 
-	protected void parseLimit(RequestContext context, String[] values) {
+	protected void parseLimit(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getQuery().limit(requirePositiveInt(values, LIMIT));
+			context.getMainQuery().limit(requirePositiveInt(values, LIMIT));
 		}
 	}
 	
-	protected void parseOffset(RequestContext context, String[] values) {
+	protected void parseOffset(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getQuery().offset(requirePositiveInt(values, OFFSET));
+			context.getMainQuery().offset(requirePositiveInt(values, OFFSET));
 		}
 	}
 	
-	protected void parseFilters(RequestContext context, Map<String, String[]> parameters) {
+	protected void parseFilters(QueryContext context, Map<String, String[]> parameters) {
     	parameters.entrySet().stream()
     	.flatMap(e-> {
     		var ec = parseEntry(e.getKey());
     		return Stream.of(e.getValue()).map(v-> ec.evalFilter(context, parseEntries(v)));
     	})
-    	.forEach(context.getQuery()::filters);
+    	.forEach(context.getMainQuery()::filters);
 	}
 	
 	private static int requirePositiveInt(String[] values, String name) {

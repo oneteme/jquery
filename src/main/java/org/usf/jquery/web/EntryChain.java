@@ -96,7 +96,7 @@ final class EntryChain {
 	}
 	
 	//[view.]column[.expression]*
-	public DBColumn evalColumn(RequestContext ctx, boolean requireTag) {
+	public DBColumn evalColumn(QueryContext ctx, boolean requireTag) {
 		try {
 			var rsc = chainResourceExpression(ctx);
 			if(rsc.entry.isLast()) {
@@ -115,7 +115,7 @@ final class EntryChain {
 	}
 	
 	//[view.]column[.operator]*[.order]
-	public DBOrder evalOrder(RequestContext ctx) {
+	public DBOrder evalOrder(QueryContext ctx) {
 		try {
 			var rsc = chainResourceExpression(ctx);
 			if(rsc.entry.isLast()) { // default order
@@ -132,12 +132,12 @@ final class EntryChain {
 		}
 	}
 
-	public DBFilter evalFilter(RequestContext ctx) {
+	public DBFilter evalFilter(QueryContext ctx) {
 		return evalFilter(ctx, null); //null ==> inner filter
 	}
 
 	//[view.]criteria | [view.]column.criteria | [view.]column[.operator]*[.comparator][.and|or(comparator)]*
-	public DBFilter evalFilter(RequestContext ctx, EntryChain[] outerArgs) {
+	public DBFilter evalFilter(QueryContext ctx, EntryChain[] outerArgs) {
 		try {
 			var rsc = chainResourceExpression(ctx, outerArgs);
 			if(rsc.entry.isLast()) {
@@ -153,7 +153,7 @@ final class EntryChain {
 	}
 	
 	//[view.]join
-	public ViewJoin[] evalJoin(RequestContext ctx) {
+	public ViewJoin[] evalJoin(QueryContext ctx) {
 		return hasNext()
 				? ctx.lookupRegisteredView(value)
 						.map(vd-> requireNoArgs().next.evalJoin(ctx, vd))
@@ -161,18 +161,18 @@ final class EntryChain {
 				: evalJoin(ctx, ctx.getDefaultView());
 	}
 	
-	private ViewJoin[] evalJoin(RequestContext ctx, ViewDecorator vd) { 
+	private ViewJoin[] evalJoin(QueryContext ctx, ViewDecorator vd) { 
 		var join = vd.join(value);
 		if(nonNull(join)) {
 			requireNoNext();
 			var strArr = isNull(args) ? null : toStringArray(args);
-			return requireNonNull(join.build(ctx, strArr), vd.identity() + "." + value);
+			return requireNonNull(join.build(vd, ctx, strArr), vd.identity() + "." + value);
 		}
 		throw noSuchResourceException(JOIN, value, vd.identity());
 	}
 	
 	//[view.]partition | partition(*).order(*) | order(*).partition(*)
-	public Partition evalPartition(RequestContext ctx) {
+	public Partition evalPartition(QueryContext ctx) {
 		try {
 			 return hasNext()
 				? ctx.lookupRegisteredView(value)
@@ -184,37 +184,37 @@ final class EntryChain {
 		}
 	}
 	
-	private Partition evalPartition(RequestContext ctx, ViewDecorator vd) { 
+	private Partition evalPartition(QueryContext ctx, ViewDecorator vd) { 
 		var par = vd.partition(value);
 		if(nonNull(par)) {
 			requireNoNext(); 
 			var strArr = isNull(args) ? null : toStringArray(args);
-			return requireNonNull(par.build(ctx, strArr), vd.identity() + "." + value);
+			return requireNonNull(par.build(vd, ctx, strArr), vd.identity() + "." + value);
 		}
 		throw noSuchResourceException(PARTITION, vd.identity(), value);
 	}
 
 	// [view|query]:tag
-	public ViewDecorator evalView(RequestContext ctx) {
+	public ViewDecorator evalView(QueryContext ctx) {
 		return ctx.lookupRegisteredView(value) //check args & next only if view exists
 				.<ViewDecorator>map(v-> new ViewDecoratorWrapper(v, requireNoArgs().requireNoNext().requireTag()))
 				.orElseGet(()-> parseQuery(ctx, true));
 	}
 	
-	public SingleQueryColumn evalQueryColumn(RequestContext ctx) {		
+	public SingleQueryColumn evalQueryColumn(QueryContext ctx) {		
 		return parseQuery(ctx, false).getQuery().asColumn();
 	}
 
-	public ViewDecorator parseQuery(RequestContext ctx) {
+	public ViewDecorator parseQuery(QueryContext ctx) {
 		return parseQuery(ctx, false);
 	}
 	
-	public boolean parseDistinct(RequestContext ctx) {
+	public boolean parseDistinct(QueryContext ctx) {
 		return (boolean) jdbcArgParser(BOOLEAN).parseEntry(requireNoArgs().requireNoNext(), ctx);
 	}
 	
 	//select[.filter|order|offset|fetch]*
-	QueryDecorator parseQuery(RequestContext ctx, boolean requireTag) { //sub context
+	QueryDecorator parseQuery(QueryContext ctx, boolean requireTag) { //sub context
 		Exception cause = null;
 		if(SELECT.equals(value)) {
 			var e =	this;
@@ -242,7 +242,7 @@ final class EntryChain {
 	}
 	
 	//[partition(*).order(*)]*
-	public Partition parsePartition(RequestContext ctx) {
+	public Partition parsePartition(QueryContext ctx) {
 		Exception cause = null;
 		if(value.matches(PARTITION_PATTERN)) {
 			try {
@@ -268,11 +268,11 @@ final class EntryChain {
 		throw cannotParseEntryException(this, PARTITION, cause);
 	}
 
-	private EntyChainCursor chainResourceExpression(RequestContext ctx) {
+	private EntyChainCursor chainResourceExpression(QueryContext ctx) {
 		return chainResourceExpression(ctx, null);
 	}
 	
-	private EntyChainCursor chainResourceExpression(RequestContext ctx, EntryChain[] outerArgs) {
+	private EntyChainCursor chainResourceExpression(QueryContext ctx, EntryChain[] outerArgs) {
 		var r = lookupResource(ctx);
 		if(r.isCriteria()) {
 			var crArgs = r.entry.args;
@@ -282,13 +282,13 @@ final class EntryChain {
 			}
 			if(nonNull(r.viewCrt)) { //view criteria
 				var strArr = isNull(args) ? null : toStringArray(crArgs);
-				r.col = requireNonNull(r.viewCrt.build(ctx, strArr), 
-						()-> format("%s[criteria=%s]", r.vd.identity(), r.entry.value));
+				r.col = requireNonNull(r.viewCrt.build(r.vd, ctx, strArr), 
+						()-> format("%s[criteria=%s]", r.vd.identity(), r.entry.value)); //optional
 			}
 			else if(nonNull(r.colCrt) && nonNull(r.col)) { //column criteria
 				var strArr = isNull(args) ? null : toStringArray(crArgs);
-				r.col = r.col.filter(requireNonNull(r.colCrt.build(ctx, strArr), 
-						()-> format("%s[criteria=%s]", r.vd.identity(), r.entry.value)));
+				r.col = r.col.filter(requireNonNull(r.colCrt.build(r.vd, ctx, strArr), 
+						()-> format("%s[criteria=%s]", r.vd.identity(), r.entry.value))); //optional
 			}
 			else {
 				throw new IllegalStateException("invalid criteria state");
@@ -327,7 +327,7 @@ final class EntryChain {
 	}
 
 	//operator|[query|view.]resource
-	private EntyChainCursor lookupResource(RequestContext ctx) { //do not change priority
+	private EntyChainCursor lookupResource(QueryContext ctx) { //do not change priority
 		if(hasNext()) {
 			var res = ctx.lookupRegisteredView(value)
 					.flatMap(vd-> next.lookupViewResource(ctx, vd, true));
@@ -340,7 +340,7 @@ final class EntryChain {
 				.orElseThrow(()-> noSuchResourceException(value));
 	}
 
-	private Optional<EntyChainCursor> lookupViewResource(RequestContext ctx, ViewDecorator vd, boolean prefixed) { //do not change priority
+	private Optional<EntyChainCursor> lookupViewResource(QueryContext ctx, ViewDecorator vd, boolean prefixed) { //do not change priority
 		return lookupDeclaredColumn(ctx, vd, prefixed)//view.count only
 				.or(()-> lookupViewCriteria(vd))
 				.or(()-> lookupRegistredColumn(ctx, vd))
@@ -348,7 +348,7 @@ final class EntryChain {
 	}
 	
 	//operator|[view.]operator
-	private Optional<EntyChainCursor> lookupViewOperation(RequestContext ctx, ViewDecorator vd, boolean prefixed) {
+	private Optional<EntyChainCursor> lookupViewOperation(QueryContext ctx, ViewDecorator vd, boolean prefixed) {
 		return ctx.lookupOperator(value).filter(prefixed ? TypedOperator::isCountFunction : ANY).map(fn-> {
 			var col = isEmpty(args) && fn.isCountFunction() ? allColumns(vd.view()) : null;
 			return fn.operation(parseArgs(ctx, col, fn.getParameterSet()));
@@ -356,7 +356,7 @@ final class EntryChain {
 	}
 
 	//query.column|column
-	private Optional<EntyChainCursor> lookupDeclaredColumn(RequestContext ctx, ViewDecorator vd, boolean prefixed) {
+	private Optional<EntyChainCursor> lookupDeclaredColumn(QueryContext ctx, ViewDecorator vd, boolean prefixed) {
 		if(prefixed) {
 			return vd instanceof QueryDecorator qd
 					? qd.column(value).map(col-> new EntyChainCursor(requireNoArgs(), qd, col)) 
@@ -373,7 +373,7 @@ final class EntryChain {
 	}
 	
 	//view.column[.criteria]
-	private Optional<EntyChainCursor> lookupRegistredColumn(RequestContext ctx, ViewDecorator vd) {
+	private Optional<EntyChainCursor> lookupRegistredColumn(QueryContext ctx, ViewDecorator vd) {
 		return ctx.lookupRegisteredColumn(value).map(cd->{
 			if(hasNext()) {
 				var cr = cd.criteria(next.value);
@@ -385,7 +385,7 @@ final class EntryChain {
 		});
 	}
 
-	Object[] parseArgs(RequestContext ctx, DBObject col, ParameterSet ps) {
+	Object[] parseArgs(QueryContext ctx, DBObject col, ParameterSet ps) {
 		int inc = isNull(col) ? 0 : 1;
 		var arr = new Object[isNull(args) ? inc : args.length + inc];
 		if(nonNull(col)) {
@@ -512,8 +512,8 @@ final class EntryChain {
 	final class EntyChainCursor {
 		
 		private final ViewDecorator vd;
-		private final CriteriaBuilder<DBFilter> viewCrt;
-		private final CriteriaBuilder<ComparisonExpression> colCrt;
+		private final Builder<DBFilter> viewCrt;
+		private final Builder<ComparisonExpression> colCrt;
 		private EntryChain entry;
 		private DBColumn col;
 
@@ -521,11 +521,11 @@ final class EntryChain {
 			this(vd, null, null, entry, col); //[view.]column
 		}
 
-		public EntyChainCursor(EntryChain entry, ViewDecorator vd, DBColumn col, CriteriaBuilder<ComparisonExpression> colCrt) {
+		public EntyChainCursor(EntryChain entry, ViewDecorator vd, DBColumn col, Builder<ComparisonExpression> colCrt) {
 			this(vd, null, colCrt, entry, col); //[view.]colum.criteria
 		}
 
-		public EntyChainCursor(EntryChain entry, ViewDecorator vd, CriteriaBuilder<DBFilter> viewCrt) {
+		public EntyChainCursor(EntryChain entry, ViewDecorator vd, Builder<DBFilter> viewCrt) {
 			this(vd, viewCrt, null, entry, null); //[view.]criteria
 		}
 		

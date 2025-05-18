@@ -158,7 +158,7 @@ public class QueryComposer {
 	QueryComposer declare(@NonNull DBView... views) {
 		for(var v : views) {
 			if(this.views.add(v)) {
-				v.compose(this, DO_NOTHING); //
+				v.compose(this, DO_NOTHING); //look for nested ctes
 			}
 		}
 		return this;

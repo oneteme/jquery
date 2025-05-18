@@ -44,7 +44,7 @@ public final class ViewJoin implements DBObject {
 	@Override
 	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
-		query.append(joinType.name()).append(" JOIN ").append(view).appendAs().appendViewAlias(view);
+		query.append(joinType.name()).append(" JOIN ").append(view).appendSpace().appendViewAlias(view);
 		if(!isEmpty(filters)) {
 			query.append(" ON ").appendEach(AND.sql(), filters);
 		} //else cross join

@@ -1,6 +1,10 @@
 package org.usf.jquery.web;
 
+import static java.util.Objects.nonNull;
+import static org.usf.jquery.web.JQuery.currentContext;
+
 import org.usf.jquery.core.ComparisonExpression;
+import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.JDBCType;
 
 /**
@@ -19,14 +23,15 @@ public interface ColumnDecorator {
 	}
 	
 	default JDBCType type(ViewDecorator vd) {
-		return null; // auto type
+		var meta = currentContext().getEnvironment().getMetadata().columnMetadata(vd, this);
+		return nonNull(meta) ? meta.getType() : null;
 	}
 	
-	default ColumnBuilder builder(ViewDecorator vd) { //set type if null
+	default Builder<DBColumn> builder(ViewDecorator vd) { //set type if null
 		return null; // no builder by default
 	}
 	
-	default CriteriaBuilder<ComparisonExpression> criteria(String name) {
+	default Builder<ComparisonExpression> criteria(String name) {
 		return null; // no criteria by default
 	}
 

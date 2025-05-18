@@ -43,7 +43,7 @@ public class ViewColumn implements NamedColumn{
 		if(nonNull(view)) {
 			query.appendViewAlias(view, DOT);
 		}
-		query.append(nonNull(adjuster) ? adjuster.build(query, name) : null);
+		query.append(nonNull(adjuster) ? adjuster.build(query, name) : name);
 	}
 	
 	@Override

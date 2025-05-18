@@ -8,5 +8,5 @@ package org.usf.jquery.web;
 @FunctionalInterface
 public interface JavaArgumentParser {
 	
-	Object parseEntry(EntryChain entry, RequestContext context);
+	Object parseEntry(EntryChain entry, QueryContext context);
 }

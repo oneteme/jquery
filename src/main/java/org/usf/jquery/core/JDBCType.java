@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
 import java.math.BigDecimal;
@@ -96,16 +97,57 @@ public enum JDBCType implements JavaType {
 	}
 	
 	public static Optional<JDBCType> typeOf(Object o) {
-		return o instanceof Typed t 
-				? ofNullable(t.getType())
-				: ofNullable(o).flatMap(v-> findType(e-> e.type.isInstance(o)));
+		if(o instanceof Typed t) {
+			return ofNullable(t.getType());
+		}
+		if(o instanceof String || o instanceof Character) {
+			return Optional.of(VARCHAR);
+		}
+		if(o instanceof Number) {
+			return typeOfNumber(o);
+		}
+		if(o instanceof Timestamp) {
+			return Optional.of(TIMESTAMP);
+		}
+		if(o instanceof Time) {
+			return Optional.of(TIME);
+		}
+		if(o instanceof Date) {
+			return Optional.of(DATE);
+		}
+		if(o instanceof Boolean) {
+			return Optional.of(BOOLEAN);
+		}
+		return empty();
+	}
+	
+	public static Optional<JDBCType> typeOfNumber(Object o) {
+		var c = o.getClass();
+		if(c == Integer.class) {
+			return Optional.of(INTEGER);
+		}
+		if(c == Long.class) {
+			return Optional.of(BIGINT);
+		}
+		if(c == Double.class) {
+			return Optional.of(DOUBLE);
+		}
+		if(c == BigDecimal.class) {
+			return Optional.of(DECIMAL);
+		}
+		if(c == Float.class) {
+			return Optional.of(REAL);
+		}
+		if(c == Short.class) {
+			return Optional.of(SMALLINT);
+		}
+		if(c == Byte.class) {
+			return Optional.of(TINYINT);
+		}
+		return empty();
 	}
 	
 	public static Optional<JDBCType> fromDataType(int value) {
-		return findType(t-> t.value == value);
-	}
-	
-	public static Optional<JDBCType> findType(Predicate<JDBCType> pre) {
-		return stream(values()).filter(pre).findAny();
+		return stream(values()).filter(t-> t.value == value).findAny();
 	}
 }
