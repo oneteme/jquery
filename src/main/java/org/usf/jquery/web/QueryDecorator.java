@@ -49,7 +49,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public NamedColumn column(@NonNull ColumnDecorator cd) {
+	public NamedColumn column(@NonNull ColumnDecorator cd, String... args) {
 		throw unsupportedOperationException("column");
 	}
 	

@@ -38,21 +38,21 @@ public final class JQuery {
 		}
 	}
 
-	public static Optional<Environment> lookupDatabase(){
+	public static Optional<Environment> lookupEnvironment(){
 		return DATABASES.size() == 1
 				? Optional.of(DATABASES.values().iterator().next())
 				: empty();
 	}
 
-	public static Optional<Environment> lookupDatabase(@NonNull String database){
-		return ofNullable(DATABASES.get(database));
+	public static Optional<Environment> lookupEnvironment(@NonNull String env){
+		return ofNullable(DATABASES.get(env));
 	}
 
 	public static QueryContext currentContext() {
 		return requireNonNull(LOCAL_CONTEXT.get(), "currentContext");
 	}
 
-	static void setCurrentContext(QueryContext ctx) {
+	static void setContext(QueryContext ctx) {
 		LOCAL_CONTEXT.set(ctx);
 	}
 

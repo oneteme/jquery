@@ -24,29 +24,24 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public final class DatabaseMetadata {
 
-	private final Map<String, ViewMetadata> tables; //lazy loading
+	private final Map<String, ViewMetadata> views; //lazy loading
 	private Database type;
-	
-	public ViewMetadata viewMetadata(ViewDecorator view) {
-		return tables.get(view.identity());
-	}
 	
 	public ColumnMetadata columnMetadata(ViewDecorator view, ColumnDecorator cd) {
 		var tm = viewMetadata(view);
 		return isNull(tm) ? null : tm.columnMetadata(cd);
 	}
 	
-	public void fetch(DatabaseMetaData metadata, String schema) {
-		try {
-			type = Database.of(metadata.getDatabaseProductName()).orElse(null);
-			if(nonNull(tables)) {
-				for(var table : tables.values()) {
-					table.fetch(metadata, schema);
-				}
+	public ViewMetadata viewMetadata(ViewDecorator view) {
+		return views.get(view.identity());
+	}
+	
+	public void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
+		type = Database.of(metadata.getDatabaseProductName()).orElse(null);
+		if(nonNull(views)) {
+			for(var v : views.values()) {
+				v.fetch(metadata, schema);
 			}
-		}
-		catch (SQLException e) {
-			log.warn("error while scanning database metadata", e);
 		}
 	}
 }

@@ -15,7 +15,7 @@ import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
 import static org.usf.jquery.web.JQuery.releaseContext;
-import static org.usf.jquery.web.JQuery.setCurrentContext;
+import static org.usf.jquery.web.JQuery.setContext;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.VIEW;
 
@@ -71,21 +71,22 @@ public final class Environment {
 
 	public <T> T query(String defaultView, Function<QueryComposer, T> fn) {
 		var view = nonNull(defaultView)
-				? ofNullable(views.get(defaultView)).orElseThrow(() -> noSuchResourceException(VIEW, defaultView))
+				? ofNullable(views.get(defaultView))
+						.orElseThrow(() -> noSuchResourceException(VIEW, defaultView))
 				: null;
 		var query = new QueryComposer(metadata.getType());
-		setCurrentContext(new QueryContext(this, query, view));
+		setContext(new QueryContext(this, query, view));
 		try {
 			return fn.apply(query);
 		} finally {
-//			releaseContext();
+			releaseContext();
 		}
 	}
 
 	Environment bind() {
-		if (nonNull(dataSource)) {
-			setCurrentContext(new QueryContext(this, null, null));
-			metadata = new DatabaseMetadata(declaredViews());
+		if(nonNull(dataSource)) {
+			setContext(new QueryContext(this, null, null));
+			metadata = new DatabaseMetadata(toViewMetadata());
 			try (var cnx = dataSource.getConnection()) {
 				metadata.fetch(cnx.getMetaData(), schema);
 			} catch (SQLException e) {
@@ -99,16 +100,15 @@ public final class Environment {
 		return this;
 	}
 
-	Map<String, ViewMetadata> declaredViews() {
+	Map<String, ViewMetadata> toViewMetadata() {
 		return views.values().stream().collect(toLinkedMap(v -> v.identity(),
-				v -> requireNonNull(v.metadata(declaredColumns(v)), v.identity() + ".metadata")));
+				v -> requireNonNull(v.metadata(toColumnMetadata(v)), v.identity() + ".metadata")));
 	}
 
-	Map<String, ColumnMetadata> declaredColumns(ViewDecorator vd) {
+	Map<String, ColumnMetadata> toColumnMetadata(ViewDecorator vd) {
 		return columns.values().stream()
 				.<Entry<String, ColumnMetadata>>mapMulti((cd, acc) -> ofNullable(vd.columnName(cd))
-						.map(cn -> entry(cd.identity(), columnMetadata(cn, cd.type(vd)))).ifPresent(acc)) // view column
-																											// only
+						.map(cn -> entry(cd.identity(), columnMetadata(cn, cd.type(vd)))).ifPresent(acc)) // view column only
 				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue));
 	}
 
@@ -140,9 +140,8 @@ public final class Environment {
 
 	static <T, K, U> Collector<T, ?, Map<K, U>> toLinkedMap(Function<? super T, ? extends K> keyMapper,
 			Function<? super T, ? extends U> valueMapper) {
-		return toMap(keyMapper, valueMapper, (v1, v2) -> {
-			throw new IllegalStateException("!parallel");
-		}, LinkedHashMap::new);
+		return toMap(keyMapper, valueMapper, 
+				(v1, v2) -> { throw new IllegalStateException("!parallel");}, LinkedHashMap::new);
 	}
 
 	static String assertIdentity(String id) {

@@ -4,7 +4,7 @@ import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.currentContext;
 import static org.usf.jquery.web.JQuery.getRequestParser;
-import static org.usf.jquery.web.JQuery.lookupDatabase;
+import static org.usf.jquery.web.JQuery.lookupEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.COLUMN;
 import static org.usf.jquery.web.Parameters.DATABASE;
@@ -44,8 +44,8 @@ public final class RequestParameterResolver {//spring connection bridge
 			}
 		}
 		var db = ant.database().isEmpty() 
-				? lookupDatabase().orElseThrow(()-> new IllegalArgumentException("no default database"))
-				: lookupDatabase(ant.database()).orElseThrow(()-> noSuchResourceException(DATABASE, ant.database()));
+				? lookupEnvironment().orElseThrow(()-> new IllegalArgumentException("no default database"))
+				: lookupEnvironment(ant.database()).orElseThrow(()-> noSuchResourceException(DATABASE, ant.database()));
 
 		var req = db.query(ant.view(), qry-> getRequestParser().parse(currentContext(), modifiableMap));
 		

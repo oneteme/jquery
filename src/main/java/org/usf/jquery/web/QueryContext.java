@@ -3,6 +3,7 @@ package org.usf.jquery.web;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
@@ -49,10 +50,12 @@ public final class QueryContext {
 	}
 	
 	public Optional<NamedColumn> lookupDeclaredColumn(String name) {
-		return mainQuery.getColumns().stream()
-				.filter(ColumnProxy.class::isInstance) //tagged column only
-				.filter(c-> name.equals(c.getTag()))
-				.findAny();
+		return nonNull(mainQuery) 
+				? mainQuery.getColumns().stream()
+						.filter(ColumnProxy.class::isInstance) //tagged column only
+						.filter(c-> name.equals(c.getTag()))
+						.findAny()
+				: empty();
 	}
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
