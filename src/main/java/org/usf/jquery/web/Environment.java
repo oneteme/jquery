@@ -15,7 +15,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
-import static org.usf.jquery.web.JQuery.context;
+import static org.usf.jquery.web.JQuery.exec;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
@@ -26,9 +26,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
@@ -71,12 +71,12 @@ public final class Environment {
 //	private final Map<String, TypedComparator> comparators = null
 	// securityManager
 	
-	public QueryComposer query(UnaryOperator<QueryComposer> fn) {
+	public QueryComposer query(Consumer<QueryComposer> fn) {
 		var q = new QueryComposer(getMetadata().getType());
 		var list = stack.get();
 		if(list.add(q)) {
 			try {
-				return fn.apply(q);
+				fn.accept(q);
 			}
 			finally {
 				list.remove(q);
@@ -108,7 +108,7 @@ public final class Environment {
 	
 	public Environment bind() {
 		if(nonNull(dataSource)) {
-			context(this, ctx-> { //no query
+			exec(this, ctx-> { //no query
 				this.metadata = new DatabaseMetadata(toViewMetadata());
 				try (var cnx = dataSource.getConnection()) {
 					metadata.fetch(cnx.getMetaData(), schema);

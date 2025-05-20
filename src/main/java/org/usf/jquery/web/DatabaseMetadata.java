@@ -28,8 +28,8 @@ public final class DatabaseMetadata {
 	private Database type;
 	
 	public ColumnMetadata columnMetadata(ViewDecorator view, ColumnDecorator cd) {
-		var tm = viewMetadata(view);
-		return isNull(tm) ? null : tm.columnMetadata(cd);
+		var meta = viewMetadata(view);
+		return isNull(meta) ? null : meta.columnMetadata(cd);
 	}
 	
 	public ViewMetadata viewMetadata(ViewDecorator view) {

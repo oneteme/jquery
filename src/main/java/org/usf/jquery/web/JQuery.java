@@ -36,6 +36,11 @@ public final class JQuery {
 			env.bind(); // outer bind
 		}
 	}
+
+	public static Environment currentEnvironment() {
+		var env = LOCAL_ENV.get();
+		return nonNull(env) ? env : defaultEnvironment();
+	}
 	
 	public static Environment getEnvironment(String name) {
 		var env = DATABASES.get(name);
@@ -52,16 +57,11 @@ public final class JQuery {
 		throw noSuchResourceException("default environment");
 	}
 
-	public static Environment currentEnvironment() {
-		var env = LOCAL_ENV.get();
-		return nonNull(env) ? env : defaultEnvironment();
-	}
-
-	public static <T> T context(Function<Environment, T> fn) {
-		return context(defaultEnvironment(), fn);
+	public static <T> T exec(Function<Environment, T> fn) {
+		return exec(defaultEnvironment(), fn);
 	}
 	
-	public static <T> T context(Environment env, Function<Environment, T> fn) {	
+	public static <T> T exec(Environment env, Function<Environment, T> fn) {	
 		var cur = LOCAL_ENV.get();
 		if(isNull(cur)) {
 			LOCAL_ENV.set(env);

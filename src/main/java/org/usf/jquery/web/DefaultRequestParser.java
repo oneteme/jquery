@@ -50,7 +50,6 @@ public class DefaultRequestParser implements RequestParser {
 				parseDistinct(context, parameterMap.remove(DISTINCT));
 				//parse iterator
 				parseFilters(context, parameterMap); //remove all entries before parse filters
-				return context.getEnvironment().currentQuery();
 			} catch (WebException e) {
 				if(log.isTraceEnabled()) {
 					log.trace(formatException(e));

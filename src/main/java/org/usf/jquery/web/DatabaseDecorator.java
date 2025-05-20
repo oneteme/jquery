@@ -2,11 +2,11 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
-import static org.usf.jquery.web.JQuery.context;
+import static org.usf.jquery.web.JQuery.exec;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
-import java.util.function.UnaryOperator;
+import java.util.function.Consumer;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryComposer;
@@ -40,7 +40,7 @@ public interface DatabaseDecorator {
 		throw undeclaredResouceException(vd.identity(), identity());
 	}
 
-	default QueryComposer query(UnaryOperator<QueryComposer> fn) {
-		return context(getEnvironment(identity()), ctx-> ctx.query(fn));
+	default QueryComposer query(Consumer<QueryComposer> fn) {
+		return exec(getEnvironment(identity()), env-> env.query(fn));
 	}
 }
