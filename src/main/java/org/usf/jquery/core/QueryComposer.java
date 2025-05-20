@@ -25,6 +25,7 @@ import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsEx
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,7 @@ public class QueryComposer {
 	private final List<DBOrder> orders = new ArrayList<>();
 	private final Set<DBView> views = new LinkedHashSet<>(); //preserve order
 	private final List<QueryUnion> unions = new ArrayList<>();
+	private final Map<String, String[]> variables = new LinkedHashMap<>();
 	private boolean distinct;
 	private boolean aggregation;
 	private Integer limit;
@@ -72,6 +74,10 @@ public class QueryComposer {
 	
 	public QueryComposer(Database target) {
 		setCurrentDatabase(target);
+	}
+	
+	public String[] getVariables(String key){
+		return variables.get(key);
 	}
 	
 	public QueryComposer ctes(@NonNull QueryView... ctes) {
@@ -125,7 +131,6 @@ public class QueryComposer {
 		return this;
 	}
 	
-
 	public QueryComposer unions(@NonNull QueryUnion... unions) {
 		this.role = UNION;
 		for(var o : unions) {

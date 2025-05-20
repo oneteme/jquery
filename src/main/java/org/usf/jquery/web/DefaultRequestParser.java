@@ -36,20 +36,25 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DefaultRequestParser implements RequestParser {
 	
-	public final QueryComposer parse(Environment env, String defaultView, Map<String, String[]> parameterMap) {
-		var context = new QueryContext(env, ofNullable(env.getViews().get(defaultView))
+	public final QueryComposer parse(Environment env, String defaultView, String[] variables, Map<String, String[]> parameterMap) {
+		var ctx = new QueryContext(env, ofNullable(env.getViews().get(defaultView))
 				.orElseThrow(()-> noSuchResourceException(VIEW, defaultView)));
 		return env.query(q->{
 			try {
-				parseViews(context, parameterMap.remove(VIEW));
-				parseColumns(context, parameterMap.remove(COLUMN));
-				parseOrders(context, parameterMap.remove(ORDER));
-				parseJoins(context, parameterMap.remove(JOIN));
-				parseLimit(context, parameterMap.remove(LIMIT));
-				parseOffset(context, parameterMap.remove(OFFSET));
-				parseDistinct(context, parameterMap.remove(DISTINCT));
+				if(!isEmpty(variables)) {
+					for(var v : variables) {
+						q.getVariables().put(v, parameterMap.remove(v));
+					}
+				}
+				parseViews(ctx, parameterMap.remove(VIEW));
+				parseColumns(ctx, parameterMap.remove(COLUMN));
+				parseOrders(ctx, parameterMap.remove(ORDER));
+				parseJoins(ctx, parameterMap.remove(JOIN));
+				parseLimit(ctx, parameterMap.remove(LIMIT));
+				parseOffset(ctx, parameterMap.remove(OFFSET));
+				parseDistinct(ctx, parameterMap.remove(DISTINCT));
 				//parse iterator
-				parseFilters(context, parameterMap); //remove all entries before parse filters
+				parseFilters(ctx, parameterMap); //remove all entries before parse filters
 			} catch (WebException e) {
 				if(log.isTraceEnabled()) {
 					log.trace(formatException(e));
@@ -63,10 +68,6 @@ public class DefaultRequestParser implements RequestParser {
 				throw e;
 			}
 		});
-	}
-	
-	private static String formatException(Throwable e) {
-		return e.getClass().getSimpleName() + ": " + e.getMessage();
 	}
 
 	protected void parseDistinct(QueryContext context, String[] values) {
@@ -143,5 +144,9 @@ public class DefaultRequestParser implements RequestParser {
 			return v;
 		}
 		throw new IllegalArgumentException(name + " parameter cannot be negative");
+	}
+	
+	private static String formatException(Throwable e) {
+		return e.getClass().getSimpleName() + ": " + e.getMessage();
 	}
 }

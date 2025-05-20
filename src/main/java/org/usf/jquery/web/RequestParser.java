@@ -11,6 +11,6 @@ import org.usf.jquery.core.QueryComposer;
  */
 public interface RequestParser {
 	
-	QueryComposer parse(Environment env, String defaultView, Map<String, String[]> parameterMap);
+	QueryComposer parse(Environment env, String defaultView, String[] variables, Map<String, String[]> parameterMap);
 
 }

@@ -43,7 +43,7 @@ public final class RequestParameterResolver {//spring connection bridge
 			}
 		}
 		var env = ant.database().isEmpty() ? defaultEnvironment() : getEnvironment(ant.database());
-		var qry = exec(env, e-> getRequestParser().parse(e, ant.view(), modifiableMap));
+		var qry = exec(env, e-> getRequestParser().parse(e, ant.view(), ant.variables(), modifiableMap));
 		
 		log.trace("request parsed in {} ms", currentTimeMillis() - t);
 		if(!ant.aggregationOnly() || qry.isAggregation()) {

@@ -26,6 +26,7 @@ public @interface RequestQueryParam {
 	
 	boolean aggregationOnly() default false; // else throw IllegalDataAccessException
 	
+	String[] variables() default {};
 	//allowWorkView
 	
 	//allowJoinView

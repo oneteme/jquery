@@ -33,6 +33,7 @@ import lombok.Setter;
 @RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
 public final class QueryContext {
 	
+	@Getter
 	private final Environment environment;
 	private final ViewDecorator defaultView; //optional parse only
 	private final Map<String, ViewDecorator> views = new LinkedHashMap<>();

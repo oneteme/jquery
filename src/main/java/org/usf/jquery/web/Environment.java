@@ -63,9 +63,10 @@ public final class Environment {
 	private final Map<String, ColumnDecorator> columns;
 	private final DataSource dataSource; // optional
 	private final String schema; // optional
+	private DatabaseMetadata metadata = NO_META; // optional
+	//execution context
 	private final Map<String, DBView> viewRefCache = new LinkedHashMap<>();
 	private final ThreadLocal<List<QueryComposer>> stack = withInitial(ArrayList::new);
-	private DatabaseMetadata metadata = NO_META; // optional
 	
 //	private final Map<String, TypedOperator> operators = null
 //	private final Map<String, TypedComparator> comparators = null
@@ -102,7 +103,7 @@ public final class Environment {
 		throw new IllegalStateException("no query in context");
 	}
 	
-	//assume unique instance of DBView
+	/** assume unique instance of DBView */
 	DBView cacheView(String name, Supplier<DBView> orElse) {
 		return viewRefCache.computeIfAbsent(name, k-> orElse.get());
 	}
