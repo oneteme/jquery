@@ -13,7 +13,7 @@ public interface JDBCArgumentParser extends JavaArgumentParser {
 	Object nativeParse(String v);
 	
 	@Override
-	default Object parseEntry(EntryChain entry, QueryContext td) {
+	default Object parseEntry(EntryChain entry, ExecutionContext td) {
 		try {
 			return nativeParse(entry.toString()); //!value
 		}

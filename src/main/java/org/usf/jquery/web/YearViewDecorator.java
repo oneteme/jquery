@@ -59,7 +59,7 @@ public interface YearViewDecorator extends ViewDecorator {
     		var arr = isEmpty(args)
     				? stream(new YearMonth[] {now()}) 
     				: stream(args).map(YearViewDecorator::parseYearMonth);
-    		ctx.getMainQuery().repeat(from(arr));
+    		ctx.currentQuery().repeat(from(arr));
     		return nonNull(monthRevision()) //optional month column
     				? view.column(monthRevision()).filter(in().expression((m,v)-> 
     					((YearMonths) requireNonNull(m, REVISION)).months()))

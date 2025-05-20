@@ -2,12 +2,11 @@ package org.usf.jquery.web;
 
 import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.JQuery.currentContext;
+import static org.usf.jquery.web.JQuery.context;
+import static org.usf.jquery.web.JQuery.defaultEnvironment;
+import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.JQuery.getRequestParser;
-import static org.usf.jquery.web.JQuery.lookupEnvironment;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.COLUMN;
-import static org.usf.jquery.web.Parameters.DATABASE;
 import static org.usf.jquery.web.Parameters.DISTINCT;
 
 import java.util.LinkedHashMap;
@@ -43,15 +42,12 @@ public final class RequestParameterResolver {//spring connection bridge
 				modifiableMap.remove(k);
 			}
 		}
-		var db = ant.database().isEmpty() 
-				? lookupEnvironment().orElseThrow(()-> new IllegalArgumentException("no default database"))
-				: lookupEnvironment(ant.database()).orElseThrow(()-> noSuchResourceException(DATABASE, ant.database()));
-
-		var req = db.query(ant.view(), qry-> getRequestParser().parse(currentContext(), modifiableMap));
+		var env = ant.database().isEmpty() ? defaultEnvironment() : getEnvironment(ant.database());
+		var qry = context(env, ctx-> getRequestParser().parse(ctx, ant.view(), modifiableMap));
 		
 		log.trace("request parsed in {} ms", currentTimeMillis() - t);
-		if(!ant.aggregationOnly() || req.isAggregation()) {
-			return req;
+		if(!ant.aggregationOnly() || qry.isAggregation()) {
+			return qry;
 		}
 		throw new ResourceAccessException("non-aggregate query");
 		//do not release context before query execute

@@ -2,10 +2,9 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
-import static org.usf.jquery.web.JQuery.lookupEnvironment;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
+import static org.usf.jquery.web.JQuery.context;
+import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
-import static org.usf.jquery.web.Parameters.DATABASE;
 
 import java.util.function.UnaryOperator;
 
@@ -42,8 +41,6 @@ public interface DatabaseDecorator {
 	}
 
 	default QueryComposer query(UnaryOperator<QueryComposer> fn) {
-		return lookupEnvironment(identity())
-				.map(e-> e.query(fn))
-				.orElseThrow(() -> noSuchResourceException(DATABASE, identity()));
+		return context(getEnvironment(identity()), ctx-> ctx.query(fn));
 	}
 }

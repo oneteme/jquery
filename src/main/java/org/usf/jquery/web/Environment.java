@@ -14,10 +14,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
-import static org.usf.jquery.web.JQuery.releaseContext;
-import static org.usf.jquery.web.JQuery.setContext;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.Parameters.VIEW;
+import static org.usf.jquery.web.JQuery.context;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
@@ -33,7 +30,6 @@ import java.util.stream.Stream;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.JQueryException;
-import org.usf.jquery.core.QueryComposer;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -64,36 +60,18 @@ public final class Environment {
 //	private final Map<String, TypedOperator> operators = null
 //	private final Map<String, TypedComparator> comparators = null
 	// securityManager
-
-	public <T> T query(Function<QueryComposer, T> fn) {
-		return query(null, fn);
-	}
-
-	public <T> T query(String defaultView, Function<QueryComposer, T> fn) {
-		var view = nonNull(defaultView)
-				? ofNullable(views.get(defaultView))
-						.orElseThrow(() -> noSuchResourceException(VIEW, defaultView))
-				: null;
-		var query = new QueryComposer(metadata.getType());
-		setContext(new QueryContext(this, query, view));
-		try {
-			return fn.apply(query);
-		} finally {
-			releaseContext();
-		}
-	}
-
-	Environment bind() {
+	
+	public Environment bind() {
 		if(nonNull(dataSource)) {
-			setContext(new QueryContext(this, null, null));
-			metadata = new DatabaseMetadata(toViewMetadata());
-			try (var cnx = dataSource.getConnection()) {
-				metadata.fetch(cnx.getMetaData(), schema);
-			} catch (SQLException e) {
-				throw new JQueryException(e);
-			} finally {
-				releaseContext();
-			}
+			context(this, ctx-> {
+				this.metadata = new DatabaseMetadata(toViewMetadata());
+				try (var cnx = dataSource.getConnection()) {
+					metadata.fetch(cnx.getMetaData(), schema);
+					return metadata;
+				} catch (SQLException e) {
+					throw new JQueryException(e);
+				}
+			});
 		} else {
 			log.warn("no datasource configured, metadata not bound");
 		}
@@ -126,9 +104,7 @@ public final class Environment {
 			Collection<ColumnDecorator> columns, DataSource ds, String schema) {
 		assertIdentity(requireNonNull(database, "configuration.database").identity());
 		return new Environment(database,
-				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), // preserve
-																											// views
-																											// order
+				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), // preserve views order
 				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"), ds,
 				schema);
 	}
