@@ -71,7 +71,7 @@ public interface YearViewDecorator extends ViewDecorator {
     	return (view, env, args)-> {
     		var arr = isEmpty(args)
     				? new YearMonth[] {now()}
-    				: stream(args).map(YearViewDecorator::parseYearMonth).toArray(YearMonth[]::new);
+    				: flatParameters(args).map(YearViewDecorator::parseYearMonth).toArray(YearMonth[]::new);
     		var query = env.currentQuery();
     		query.repeat(from(revisionMode(query, arr)));
     		return nonNull(monthRevision()) //optional month column
@@ -192,4 +192,8 @@ public interface YearViewDecorator extends ViewDecorator {
     default String defaultRevisionMode() {
     	return "strict";
     }
+    
+	private static Stream<String> flatParameters(String... arr) { //number local separator
+		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
+	}	
 }

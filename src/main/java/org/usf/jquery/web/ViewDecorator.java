@@ -5,7 +5,6 @@ import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
 import java.util.Map;
-import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
@@ -65,7 +64,4 @@ public interface ViewDecorator {
 		return new ViewMetadata(this, colMetadata);
 	}
 	
-	static Stream<String> flatParameters(String... arr) { //number local separator
-		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
-	}	
 }

@@ -11,9 +11,9 @@ import java.lang.annotation.Target;
  * @author u$f
  *
  */
+@Documented
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-@Documented
 public @interface RequestQueryParam {
 
 	String view(); //view identity
@@ -26,8 +26,5 @@ public @interface RequestQueryParam {
 	
 	boolean aggregationOnly() default false; // else throw IllegalDataAccessException
 	
-	String[] variables() default {};
-	//allowWorkView
-	
-	//allowJoinView
+	String[] variables() default {}; //shared query variables
 }
