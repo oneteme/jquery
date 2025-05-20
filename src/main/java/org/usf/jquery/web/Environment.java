@@ -77,6 +77,7 @@ public final class Environment {
 		if(list.add(q)) {
 			try {
 				fn.accept(q);
+				return q;
 			}
 			finally {
 				list.remove(q);

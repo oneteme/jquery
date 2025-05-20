@@ -55,11 +55,11 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 
 	default Builder<DBFilter> revisionFilter() { //optional filter ! monthRevision
-    	return (view, ctx, args)-> {
+    	return (view, env, args)-> {
     		var arr = isEmpty(args)
     				? stream(new YearMonth[] {now()}) 
     				: stream(args).map(YearViewDecorator::parseYearMonth);
-    		ctx.currentQuery().repeat(from(arr));
+    		env.currentQuery().repeat(from(arr));
     		return nonNull(monthRevision()) //optional month column
     				? view.column(monthRevision()).filter(in().expression((m,v)-> 
     					((YearMonths) requireNonNull(m, REVISION)).months()))
@@ -68,7 +68,7 @@ public interface YearViewDecorator extends ViewDecorator {
     }
 	
 	static Builder<DBColumn> yearRevision() {
-		return (view, ctx, args)-> {
+		return (view, env, args)-> {
 			if(view instanceof YearViewDecorator) {
 				return constant(INTEGER, (m, v)-> ((YearMonths)m).year());
 			}

@@ -36,8 +36,7 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	@Override
 	public DBView view() {
 		if(isNull(viewRef)) { // do not use env.cache
-			var env = currentEnvironment();
-			viewRef = env.getDatabase().view(vd); 
+			viewRef = currentEnvironment().getDatabase().view(vd); 
 		}
 		return viewRef;
 	}
