@@ -1,7 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.JQuery.currentContext;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
 
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
@@ -23,7 +23,7 @@ public interface ColumnDecorator {
 	}
 	
 	default JDBCType type(ViewDecorator vd) {
-		var meta = currentContext().getEnvironment().getMetadata().columnMetadata(vd, this);
+		var meta = currentEnvironment().getMetadata().columnMetadata(vd, this);
 		return nonNull(meta) ? meta.getType() : null;
 	}
 	

@@ -49,7 +49,7 @@ public class ArgumentParsers {
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 	
 	@SuppressWarnings("unchecked")
-	public static <T> T[] parseAll(EntryChain[] entry, ExecutionContext context, JQueryType type) {
+	public static <T> T[] parseAll(EntryChain[] entry, QueryContext context, JQueryType type) {
 		var prs = jqueryArgParser(type);
 		var arr = (Object[]) newInstance(type.getCorrespondingClass(), entry.length);
 		for(int i=0; i<entry.length; i++) {
@@ -58,7 +58,7 @@ public class ArgumentParsers {
 		return (T[])arr;
 	}
 
-	public static Object parse(EntryChain entry, ExecutionContext context, JavaType... types) {
+	public static Object parse(EntryChain entry, QueryContext context, JavaType... types) {
 		var list = new ArrayList<JavaType>();
 		if(isEmpty(types) || Stream.of(types).anyMatch(JDBCType.class::isInstance)) {
 			list.add(COLUMN);

@@ -1,6 +1,10 @@
 package org.usf.jquery.web;
 
+import static java.util.Objects.isNull;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
+
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewJoin;
 
@@ -15,8 +19,9 @@ import lombok.RequiredArgsConstructor;
 final class ViewDecoratorWrapper implements ViewDecorator {
 
 	//do no use @Delegate
-	private final ViewDecorator view; 
+	private final ViewDecorator vd;
 	private final String id;
+	private DBView viewRef;
 		
 	@Override
 	public String identity() {
@@ -25,26 +30,30 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 
 	@Override
 	public String columnName(ColumnDecorator cd) {
-		return view.columnName(cd);
+		return vd.columnName(cd);
 	}
 	
-//	@Override
-//	public ViewBuilder builder() {
-//		return ()-> view.builder().build()::build; //different reference
-//	}
+	@Override
+	public DBView view() {
+		if(isNull(viewRef)) { // do not cache viewRef
+			var env = currentEnvironment();
+			viewRef = env.getDatabase().view(vd); 
+		}
+		return viewRef;
+	}
 	
 	@Override
 	public Builder<DBFilter> criteria(String name) {
-		return view.criteria(name);
+		return vd.criteria(name);
 	}
 	
 	@Override
 	public Builder<ViewJoin[]> join(String name) {
-		return view.join(name);
+		return vd.join(name);
 	}
 	
 	@Override
 	public Builder<Partition> partition(String name) {
-		return view.partition(name);
+		return vd.partition(name);
 	}
 }

@@ -7,21 +7,14 @@ import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
-import java.util.ArrayList;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.function.Supplier;
-import java.util.function.UnaryOperator;
 
 import org.usf.jquery.core.ColumnProxy;
 import org.usf.jquery.core.Comparator;
-import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Operator;
-import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 
@@ -38,42 +31,12 @@ import lombok.Setter;
 @Getter
 @Setter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
-public final class ExecutionContext {
+public final class QueryContext {
 	
 	private final Environment environment;
+	private final ViewDecorator defaultView; //optional parse only
 	private final Map<String, ViewDecorator> views = new LinkedHashMap<>();
-	private final Map<String, DBView> viewCache = new LinkedHashMap<>();
-	private final List<QueryComposer> queue = new ArrayList<>();
-	private ViewDecorator defaultView; //optional parse only
-	
-	public QueryComposer query(UnaryOperator<QueryComposer> fn) {
-		var q = new QueryComposer(environment.getMetadata().getType());
-		if(queue.add(q)) {
-			try {
-				return fn.apply(q);
-			}
-			finally {
-				queue.remove(q);
-			}
-		}
-		throw new IllegalStateException();
-	}
-	
-	public QueryComposer currentQuery() {
-		return queryQueue(List::getLast);
-	}
-	
-	public QueryComposer mainQuery() {
-		return queryQueue(List::getFirst);
-	}
-	
-	private QueryComposer queryQueue(Function<List<QueryComposer>, QueryComposer> fn) {
-		if(!queue.isEmpty()) {
-			return fn.apply(queue);
-		}
-		throw new IllegalStateException("no query in context");
-	}
-	
+
 	public ViewDecorator declareView(ViewDecorator view) { //additional request views
 		return views.compute(view.identity(), (k,v)-> {
 			if(isNull(v)){
@@ -84,7 +47,7 @@ public final class ExecutionContext {
 	}
 	
 	public Optional<NamedColumn> lookupDeclaredColumn(String name) {
-		var query = currentQuery();
+		var query = environment.currentQuery();
 		return query.getColumns().stream()
 				.filter(ColumnProxy.class::isInstance) //tagged column only
 				.filter(c-> name.equals(c.getTag()))
@@ -106,19 +69,6 @@ public final class ExecutionContext {
 	
 	public Optional<TypedComparator> lookupComparator(String cmp) {
 		return lookup(Comparator.class, TypedComparator.class, cmp);
-	}
-	
-	//assume unique instance of DBView
-	DBView cacheView(String name, Supplier<DBView> orElse) {
-		return viewCache.computeIfAbsent(name, k-> orElse.get());
-	}
-	
-	//see currentContext
-	void reset(ViewDecorator defaultView) {
-		this.defaultView = defaultView;
-		views.clear();
-		viewCache.clear();
-		queue.clear();
 	}
 	
 	static <T,U> Optional<U> lookup(Class<T> clazz, Class<U> type, String name) {

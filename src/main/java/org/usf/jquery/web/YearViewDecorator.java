@@ -10,7 +10,7 @@ import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.JQuery.currentContext;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.YearViewDecorator.YearMonths.from;
 
 import java.time.Year;
@@ -37,9 +37,9 @@ public interface YearViewDecorator extends ViewDecorator {
 	
 	@Override
 	default DBView view() {
-		var ctx = currentContext();
-		return ctx.cacheView(identity(), ()-> {
-			var view = ctx.getEnvironment().getDatabase().view(this);
+		var env = currentEnvironment();
+		return env.cacheView(identity(), ()-> {
+			var view = env.getDatabase().view(this);
 			if(view instanceof TableView t) {
 				return t.withAdjuster((m, v)-> v + "_" + ((YearMonths)m).year());
 			}

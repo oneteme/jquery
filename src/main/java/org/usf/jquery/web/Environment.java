@@ -1,5 +1,6 @@
 package org.usf.jquery.web;
 
+import static java.lang.ThreadLocal.withInitial;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
@@ -18,18 +19,24 @@ import static org.usf.jquery.web.JQuery.context;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collector;
 import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
+import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JQueryException;
+import org.usf.jquery.core.QueryComposer;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -56,14 +63,52 @@ public final class Environment {
 	private final Map<String, ColumnDecorator> columns;
 	private final DataSource dataSource; // optional
 	private final String schema; // optional
-	private DatabaseMetadata metadata = NO_META; // required
+	private final Map<String, DBView> viewRefCache = new LinkedHashMap<>();
+	private final ThreadLocal<List<QueryComposer>> stack = withInitial(ArrayList::new);
+	private DatabaseMetadata metadata = NO_META; // optional
+	
 //	private final Map<String, TypedOperator> operators = null
 //	private final Map<String, TypedComparator> comparators = null
 	// securityManager
 	
+	public QueryComposer query(UnaryOperator<QueryComposer> fn) {
+		var q = new QueryComposer(getMetadata().getType());
+		var list = stack.get();
+		if(list.add(q)) {
+			try {
+				return fn.apply(q);
+			}
+			finally {
+				list.remove(q);
+			}
+		}
+		throw new IllegalStateException();
+	}
+
+	public QueryComposer currentQuery() {
+		return getQuery(List::getLast);
+	}
+	
+	public QueryComposer mainQuery() {
+		return getQuery(List::getFirst);
+	}
+	
+	private QueryComposer getQuery(Function<List<QueryComposer>, QueryComposer> fn) {
+		var list = stack.get();
+		if(!list.isEmpty()) {
+			return fn.apply(list);
+		}
+		throw new IllegalStateException("no query in context");
+	}
+	
+	//assume unique instance of DBView
+	DBView cacheView(String name, Supplier<DBView> orElse) {
+		return viewRefCache.computeIfAbsent(name, k-> orElse.get());
+	}
+	
 	public Environment bind() {
 		if(nonNull(dataSource)) {
-			context(this, ctx-> {
+			context(this, ctx-> { //no query
 				this.metadata = new DatabaseMetadata(toViewMetadata());
 				try (var cnx = dataSource.getConnection()) {
 					metadata.fetch(cnx.getMetaData(), schema);

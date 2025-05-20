@@ -1,7 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.JQuery.currentContext;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
 import java.util.Map;
@@ -44,9 +44,9 @@ public interface ViewDecorator {
 	}
 	
 	default DBView view() {
-		var ctx = currentContext();
-		return ctx.cacheView(identity(), 
-				()-> ctx.getEnvironment().getDatabase().view(this));
+		var env = currentEnvironment();
+		return env.cacheView(identity(), 
+				()-> env.getDatabase().view(this));
 	}
 	
 	default NamedColumn column(@NonNull ColumnDecorator cd, String... args) {//final
@@ -56,7 +56,7 @@ public interface ViewDecorator {
 		}
 		var b = cd.builder(this);
 		if(nonNull(b)) {
-			return b.build(this, currentContext(), args).as(cd.reference(this), cd.type(this));
+			return b.build(this, currentEnvironment(), args).as(cd.reference(this), cd.type(this));
 		}
 		throw undeclaredResouceException(cd.identity(), identity());
 	}

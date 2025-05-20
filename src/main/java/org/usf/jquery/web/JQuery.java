@@ -21,7 +21,7 @@ import lombok.NonNull;
 public final class JQuery {
 
 	private static final Map<String, Environment> DATABASES = new HashMap<>();
-	private static final ThreadLocal<ExecutionContext> LOCAL_CONTEXT = new ThreadLocal<>();
+	private static final ThreadLocal<Environment> LOCAL_ENV = new ThreadLocal<>();
 	
 	private static RequestParser requestParser = new DefaultRequestParser();
 
@@ -52,30 +52,27 @@ public final class JQuery {
 		throw noSuchResourceException("default environment");
 	}
 
-	public static ExecutionContext currentContext() {
-		var ctx = LOCAL_CONTEXT.get();
-		return nonNull(ctx)
-				? ctx
-				: new ExecutionContext(defaultEnvironment());
+	public static Environment currentEnvironment() {
+		var env = LOCAL_ENV.get();
+		return nonNull(env) ? env : defaultEnvironment();
 	}
 
-	public static <T> T context(Function<ExecutionContext, T> fn) {
+	public static <T> T context(Function<Environment, T> fn) {
 		return context(defaultEnvironment(), fn);
 	}
 	
-	public static <T> T context(Environment env, Function<ExecutionContext, T> fn) {
-		var ctx = LOCAL_CONTEXT.get();
-		if(isNull(ctx)) {
-			ctx = new ExecutionContext(env);
-			LOCAL_CONTEXT.set(ctx);
+	public static <T> T context(Environment env, Function<Environment, T> fn) {	
+		var cur = LOCAL_ENV.get();
+		if(isNull(cur)) {
+			LOCAL_ENV.set(env);
 			try {
-				return fn.apply(ctx);
+				return fn.apply(env);
 			} finally {
-				LOCAL_CONTEXT.remove();
+				LOCAL_ENV.remove();
 			}
 		}
-		else if(ctx.getEnvironment().getDatabase() == env.getDatabase()) {
-			return fn.apply(ctx);
+		else if(cur.getDatabase() == env.getDatabase()) {
+			return fn.apply(cur);
 		}
 		throw new UnsupportedOperationException("cannot use different environment in the same thread");
 	}

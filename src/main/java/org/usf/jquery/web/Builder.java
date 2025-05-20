@@ -3,7 +3,7 @@ package org.usf.jquery.web;
 import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
-import static org.usf.jquery.web.JQuery.currentContext;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
 
 import java.util.stream.Stream;
 
@@ -17,11 +17,11 @@ import org.usf.jquery.core.LogicalOperator;
  */
 public interface Builder<T> {
 	
-	T build(ViewDecorator vd, ExecutionContext ctx, String... args);
+	T build(ViewDecorator vd, Environment ctx, String... args);
 
 	@Deprecated
 	default T build(ViewDecorator vd, String... args) {
-		return build(vd, currentContext(), args);
+		return build(vd, currentEnvironment(), args);
 	}
 	
 	static <T extends Chainable<T>> Builder<T> singleArgCriteria(ChainableCriteria<T> cr){
