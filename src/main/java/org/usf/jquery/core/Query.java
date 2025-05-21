@@ -68,4 +68,9 @@ public final class Query {
 			}
 		}
 	}
+	
+	@Override
+	public String toString() {
+		return sql;
+	}
 }

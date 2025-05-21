@@ -63,5 +63,4 @@ public interface ViewDecorator {
 	default ViewMetadata metadata(Map<String, ColumnMetadata> colMetadata) {
 		return new ViewMetadata(this, colMetadata);
 	}
-	
 }

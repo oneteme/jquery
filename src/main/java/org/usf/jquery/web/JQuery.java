@@ -72,7 +72,7 @@ public final class JQuery {
 			}
 		}
 		else if(cur.getDatabase() == env.getDatabase()) {
-			return fn.apply(cur);
+			return fn.apply(cur); //existing current env
 		}
 		throw new UnsupportedOperationException("cannot use different environment in the same thread");
 	}
