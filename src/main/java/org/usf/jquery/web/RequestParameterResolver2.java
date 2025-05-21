@@ -56,8 +56,6 @@ public final class RequestParameterResolver2 {// spring connection bridge
 				illegalArgumentIf(splittedFilter[0].length()<=0 || splittedFilter[0].contains("=") || (splittedFilter.length>1 && splittedFilter[1].contains("=")), ()-> "Incorrect filter format => " + filter);
 				generateFilterField(mutableMap, splittedFilter);
 			} 
-			//mutableMap.put(COLUMN,ant.filters()); //key=[value] | key= | key | key=val1,=val3 | =key
-			//merge filters not overwrite
 		}
 		if (!isEmpty(ant.ignoreParameters())) {
 			for (var k : ant.ignoreParameters()) {
