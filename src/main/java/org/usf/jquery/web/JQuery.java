@@ -57,11 +57,11 @@ public final class JQuery {
 		throw noSuchResourceException("default environment");
 	}
 
-	public static <T> T exec(Function<Environment, T> fn) {
-		return exec(defaultEnvironment(), fn);
+	public static <T> T apply(Function<Environment, T> fn) {
+		return apply(defaultEnvironment(), fn);
 	}
 	
-	public static <T> T exec(Environment env, Function<Environment, T> fn) {	
+	public static <T> T apply(Environment env, Function<Environment, T> fn) {	
 		var cur = LOCAL_ENV.get();
 		if(isNull(cur)) {
 			LOCAL_ENV.set(env);

@@ -23,16 +23,15 @@ import static org.usf.jquery.web.ArgumentParsers.jdbcArgParser;
 import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ArgumentParsers.parseAll;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.Parameters.COLUMN;
-import static org.usf.jquery.web.Parameters.DISTINCT;
-import static org.usf.jquery.web.Parameters.FILTER;
-import static org.usf.jquery.web.Parameters.JOIN;
-import static org.usf.jquery.web.Parameters.LIMIT;
-import static org.usf.jquery.web.Parameters.OFFSET;
-import static org.usf.jquery.web.Parameters.ORDER;
-import static org.usf.jquery.web.Parameters.PARTITION;
-import static org.usf.jquery.web.Parameters.QUERY;
-import static org.usf.jquery.web.Parameters.SELECT;
+import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
+import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
+import static org.usf.jquery.web.Parameters.FILTER_OPR;
+import static org.usf.jquery.web.Parameters.JOIN_PARAM;
+import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
+import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
+import static org.usf.jquery.web.Parameters.ORDER_PARAM;
+import static org.usf.jquery.web.Parameters.PARTITION_OPR;
+import static org.usf.jquery.web.Parameters.SELECT_OPR;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -69,7 +68,7 @@ import lombok.Setter;
 final class EntryChain {
 
 	private static final String ORDER_PATTERN = enumPattern(OrderType.class); 
-	private static final String PARTITION_PATTERN = join("|", PARTITION, ORDER);
+	private static final String PARTITION_PATTERN = join("|", PARTITION_OPR, ORDER_PARAM);
 	private static final Predicate<Object> ANY = o-> true;
 	
 	private final String value;
@@ -110,7 +109,7 @@ final class EntryChain {
 			}
 			throw badEntrySyntaxException(rsc.entry.next.value, "criteria|operator|comparator");
 		} catch (Exception e) {
-			throw cannotParseEntryException(this, COLUMN, e);
+			throw cannotParseEntryException(this, COLUMN_PARAM, e);
 		}
 	}
 	
@@ -128,7 +127,7 @@ final class EntryChain {
 			}
 			throw badEntrySyntaxException(nxt.value, ORDER_PATTERN);
 		} catch (Exception e) {
-			throw cannotParseEntryException(this, ORDER, e);
+			throw cannotParseEntryException(this, ORDER_PARAM, e);
 		}
 	}
 
@@ -148,7 +147,7 @@ final class EntryChain {
 			}
 			throw badEntrySyntaxException(rsc.entry.next.value, "criteria|operator|comparator");
 		} catch (Exception e) {
-			throw cannotParseEntryException(this, FILTER, outerArgs, e);
+			throw cannotParseEntryException(this, FILTER_OPR, outerArgs, e);
 		}
 	}
 	
@@ -157,7 +156,7 @@ final class EntryChain {
 		return hasNext()
 				? ctx.lookupRegisteredView(value)
 						.map(vd-> requireNoArgs().next.evalJoin(ctx, vd))
-						.orElseThrow(()-> noSuchResourceException(JOIN, value))
+						.orElseThrow(()-> noSuchResourceException(JOIN_PARAM, value))
 				: evalJoin(ctx, ctx.getDefaultView());
 	}
 	
@@ -165,10 +164,10 @@ final class EntryChain {
 		var join = vd.join(value);
 		if(nonNull(join)) {
 			requireNoNext();
-			var strArr = isNull(args) ? null : toStringArray(args);
+			var strArr = toStringArray(args);
 			return requireNonNull(join.build(vd, ctx.getEnvironment(), strArr), vd.identity() + "." + value);
 		}
-		throw noSuchResourceException(JOIN, value, vd.identity());
+		throw noSuchResourceException(JOIN_PARAM, value, vd.identity());
 	}
 	
 	//[view.]partition | partition(*).order(*) | order(*).partition(*)
@@ -177,7 +176,7 @@ final class EntryChain {
 			 return hasNext()
 				? ctx.lookupRegisteredView(value)
 						.map(vd-> requireNoArgs().next.evalPartition(ctx, vd))
-						.orElseThrow(()-> noSuchResourceException(PARTITION, value))
+						.orElseThrow(()-> noSuchResourceException(PARTITION_OPR, value))
 				: evalPartition(ctx, ctx.getDefaultView());
 		} catch (Exception e) {
 			return parsePartition(ctx);
@@ -188,10 +187,10 @@ final class EntryChain {
 		var par = vd.partition(value);
 		if(nonNull(par)) {
 			requireNoNext(); 
-			var strArr = isNull(args) ? null : toStringArray(args);
+			var strArr = toStringArray(args);
 			return requireNonNull(par.build(vd, ctx.getEnvironment(), strArr), vd.identity() + "." + value);
 		}
-		throw noSuchResourceException(PARTITION, vd.identity(), value);
+		throw noSuchResourceException(PARTITION_OPR, vd.identity(), value);
 	}
 
 	// [view|query]:tag
@@ -216,20 +215,20 @@ final class EntryChain {
 	//select[.filter|order|offset|fetch]*
 	QueryDecorator parseQuery(QueryContext ctx, boolean requireTag) { //sub context
 		Exception cause = null;
-		if(SELECT.equals(value)) {
+		if(SELECT_OPR.equals(value)) {
 			var e =	this;
 			try {
 				var q = new QueryComposer().columns(parseAll(args, ctx, JQueryType.NAMED_COLUMN));
 				while(e.hasNext()) {
 					e = e.next;
 					switch(e.value) {//column not allowed 
-					case FILTER: q.filters(parseAll(e.args, ctx, JQueryType.FILTER)); break;
-					case ORDER: q.orders(parseAll(e.args, ctx, JQueryType.ORDER)); break;
-					case JOIN: q.joins(parseAll(e.args, ctx, JQueryType.JOIN)); break;
-					case LIMIT: q.limit(parseInt(requireNArgs(1, e.args, ()-> LIMIT)[0].value)); break;
-					case OFFSET: q.offset(parseInt(requireNArgs(1, e.args, ()-> OFFSET)[0].value)); break;
-					case DISTINCT: q.distinct(e.parseDistinct(ctx)); break;
-					default: throw badEntrySyntaxException(e.value, join("|", FILTER, ORDER, JOIN, LIMIT, OFFSET));
+					case FILTER_OPR: q.filters(parseAll(e.args, ctx, JQueryType.FILTER)); break;
+					case ORDER_PARAM: q.orders(parseAll(e.args, ctx, JQueryType.ORDER)); break;
+					case JOIN_PARAM: q.joins(parseAll(e.args, ctx, JQueryType.JOIN)); break;
+					case LIMIT_PARAM: q.limit(parseInt(requireNArgs(1, e.args, ()-> LIMIT_PARAM)[0].value)); break;
+					case OFFSET_PARAM: q.offset(parseInt(requireNArgs(1, e.args, ()-> OFFSET_PARAM)[0].value)); break;
+					case DISTINCT_PARAM: q.distinct(e.parseDistinct(ctx)); break;
+					default: throw badEntrySyntaxException(e.value, join("|", FILTER_OPR, ORDER_PARAM, JOIN_PARAM, LIMIT_PARAM, OFFSET_PARAM));
 					}
 				}
 				return new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView());
@@ -238,7 +237,7 @@ final class EntryChain {
 				cause = ex;
 			}
 		}
-		throw cannotParseEntryException(this, QUERY, cause);
+		throw cannotParseEntryException(this, "query", cause);
 	}
 	
 	//[partition(*).order(*)]*
@@ -251,8 +250,8 @@ final class EntryChain {
 				var e = this;
 				do {
 					switch (e.value) {
-					case PARTITION: addAll(cols, parseAll(e.args, ctx, JQueryType.COLUMN)); break;
-					case ORDER: addAll(ords, parseAll(e.args, ctx, JQueryType.ORDER)); break;
+					case PARTITION_OPR: addAll(cols, parseAll(e.args, ctx, JQueryType.COLUMN)); break;
+					case ORDER_PARAM: addAll(ords, parseAll(e.args, ctx, JQueryType.ORDER)); break;
 					default: throw badEntrySyntaxException(e.value, PARTITION_PATTERN);
 					}
 					e = e.next;
@@ -265,7 +264,7 @@ final class EntryChain {
 				cause = ex; //with cause
 			}
 		}
-		throw cannotParseEntryException(this, PARTITION, cause);
+		throw cannotParseEntryException(this, PARTITION_OPR, cause);
 	}
 
 	private EntyChainCursor chainResourceExpression(QueryContext ctx) {
@@ -281,12 +280,12 @@ final class EntryChain {
 				outerArgs = null; //flag outerArgs as consumed
 			}
 			if(nonNull(r.viewCrt)) { //view criteria
-				var strArr = isNull(args) ? null : toStringArray(crArgs);
+				var strArr = toStringArray(crArgs);
 				r.col = requireNonNull(r.viewCrt.build(r.vd, ctx.getEnvironment(), strArr), 
 						()-> format("%s[criteria=%s]", r.vd.identity(), r.entry.value)); //optional
 			}
 			else if(nonNull(r.colCrt) && nonNull(r.col)) { //column criteria
-				var strArr = isNull(args) ? null : toStringArray(crArgs);
+				var strArr = toStringArray(crArgs);
 				r.col = r.col.filter(requireNonNull(r.colCrt.build(r.vd, ctx.getEnvironment(), strArr), 
 						()-> format("%s[criteria=%s]", r.vd.identity(), r.entry.value))); //optional
 			}
@@ -378,10 +377,11 @@ final class EntryChain {
 			if(hasNext()) {
 				var cr = cd.criteria(next.value);
 				if(nonNull(cr)) {
-					return new EntyChainCursor(requireNoArgs().next, vd, vd.column(cd), cr);
+					return new EntyChainCursor(next, vd, vd.column(cd), cr); //column criteria takes args
 				}
 			}
-			return new EntyChainCursor(requireNoArgs(), vd, vd.column(cd));
+			var strArr = toStringArray(args);
+			return new EntyChainCursor(requireNoArgs(), vd, vd.column(cd, strArr));
 		});
 	}
 
@@ -444,7 +444,6 @@ final class EntryChain {
 		return e;
 	}
 	
-	
 	@Override
 	public String toString() {
 		return toString(e-> false);
@@ -470,7 +469,7 @@ final class EntryChain {
 			.map(e-> isNull(e.value) ? null : e.toString())
 			.toArray(String[]::new);
 		}
-		return new String[0];
+		return null;
 	}
 	
 	static String enumPattern(Class<? extends Enum<?>> c) {

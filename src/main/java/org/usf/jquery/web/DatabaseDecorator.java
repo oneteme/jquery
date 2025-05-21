@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
-import static org.usf.jquery.web.JQuery.exec;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
@@ -41,6 +40,6 @@ public interface DatabaseDecorator {
 	}
 
 	default QueryComposer query(Consumer<QueryComposer> fn) {
-		return exec(getEnvironment(identity()), env-> env.query(fn));
+		return getEnvironment(identity()).query(fn);
 	}
 }

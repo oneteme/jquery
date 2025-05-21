@@ -15,7 +15,8 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
-import static org.usf.jquery.web.JQuery.exec;
+import static org.usf.jquery.web.JQuery.apply;
+import static org.usf.jquery.web.JQuery.getRequestParser;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
@@ -72,19 +73,25 @@ public final class Environment {
 //	private final Map<String, TypedComparator> comparators = null
 	// securityManager
 	
+	public QueryComposer parse(String defaultView, String[] variables, Map<String, String[]> parameterMap) {
+		return getRequestParser().parse(this, defaultView, variables, parameterMap);
+	}
+	
 	public QueryComposer query(Consumer<QueryComposer> fn) {
-		var q = new QueryComposer(getMetadata().getType());
-		var list = stack.get();
-		if(list.add(q)) {
-			try {
-				fn.accept(q);
-				return q;
+		return apply(this, ctx-> { //no query
+			var q = new QueryComposer(getMetadata().getType());
+			var list = stack.get();
+			if(list.add(q)) {
+				try {
+					fn.accept(q);
+					return q;
+				}
+				finally {
+					list.remove(q);
+				}
 			}
-			finally {
-				list.remove(q);
-			}
-		}
-		throw new IllegalStateException();
+			throw new IllegalStateException();
+		});
 	}
 
 	public QueryComposer currentQuery() {
@@ -110,7 +117,7 @@ public final class Environment {
 	
 	public Environment bind() {
 		if(nonNull(dataSource)) {
-			exec(this, ctx-> { //no query
+			apply(this, ctx-> { //no query
 				this.metadata = new DatabaseMetadata(toViewMetadata());
 				try (var cnx = dataSource.getConnection()) {
 					metadata.fetch(cnx.getMetaData(), schema);

@@ -24,7 +24,9 @@ public interface Builder<T> {
 	}
 	
 	static <T extends Chainable<T>> Builder<T> singleArgCriteria(ChainableCriteria<T> crt){
-		return (view, env, args)-> crt.criteria(isEmpty(args) ? null : requireNArgs(1, args, ()-> "single arg criteria")[0]);
+		return (view, env, args)-> crt.criteria(isEmpty(args) 
+				? null 
+				: requireNArgs(1, args, ()-> "single arg criteria")[0]);
 	}
 
 	static <T extends Chainable<T>> Builder<T> multiArgsCriteria(ChainableCriteria<T> crt){

@@ -10,13 +10,13 @@ import static org.usf.jquery.web.ArgumentParsers.parseBoolean;
 import static org.usf.jquery.web.EntryChainParser.parseEntries;
 import static org.usf.jquery.web.EntryChainParser.parseEntry;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.Parameters.COLUMN;
-import static org.usf.jquery.web.Parameters.DISTINCT;
-import static org.usf.jquery.web.Parameters.JOIN;
-import static org.usf.jquery.web.Parameters.LIMIT;
-import static org.usf.jquery.web.Parameters.OFFSET;
-import static org.usf.jquery.web.Parameters.ORDER;
-import static org.usf.jquery.web.Parameters.VIEW;
+import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
+import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
+import static org.usf.jquery.web.Parameters.JOIN_PARAM;
+import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
+import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
+import static org.usf.jquery.web.Parameters.ORDER_PARAM;
+import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 
 import java.util.Map;
 import java.util.stream.Stream;
@@ -38,21 +38,21 @@ public class DefaultRequestParser implements RequestParser {
 	
 	public final QueryComposer parse(Environment env, String defaultView, String[] variables, Map<String, String[]> parameterMap) {
 		var ctx = new QueryContext(env, ofNullable(env.getViews().get(defaultView))
-				.orElseThrow(()-> noSuchResourceException(VIEW, defaultView)));
+				.orElseThrow(()-> noSuchResourceException(VIEW_PARAM, defaultView)));
 		return env.query(q->{
 			try {
 				if(!isEmpty(variables)) {
 					for(var v : variables) {
-						q.getVariables().put(v, parameterMap.remove(v));
+						q.variable(v, parameterMap.remove(v));
 					}
 				}
-				parseViews(ctx, parameterMap.remove(VIEW));
-				parseColumns(ctx, parameterMap.remove(COLUMN));
-				parseOrders(ctx, parameterMap.remove(ORDER));
-				parseJoins(ctx, parameterMap.remove(JOIN));
-				parseLimit(ctx, parameterMap.remove(LIMIT));
-				parseOffset(ctx, parameterMap.remove(OFFSET));
-				parseDistinct(ctx, parameterMap.remove(DISTINCT));
+				parseViews(ctx, parameterMap.remove(VIEW_PARAM));
+				parseColumns(ctx, parameterMap.remove(COLUMN_PARAM));
+				parseDistinct(ctx, parameterMap.remove(DISTINCT_PARAM));
+				parseOrders(ctx, parameterMap.remove(ORDER_PARAM));
+				parseJoins(ctx, parameterMap.remove(JOIN_PARAM));
+				parseLimit(ctx, parameterMap.remove(LIMIT_PARAM));
+				parseOffset(ctx, parameterMap.remove(OFFSET_PARAM));
 				//parse iterator
 				parseFilters(ctx, parameterMap); //remove all entries before parse filters
 			} catch (WebException e) {
@@ -72,7 +72,7 @@ public class DefaultRequestParser implements RequestParser {
 
 	protected void parseDistinct(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getEnvironment().currentQuery().distinct(parseBoolean(requireNArgs(1, values, ()-> DISTINCT)[0]));
+			context.getEnvironment().currentQuery().distinct(parseBoolean(requireNArgs(1, values, ()-> DISTINCT_PARAM)[0]));
 		}
 	}
 	
@@ -119,13 +119,13 @@ public class DefaultRequestParser implements RequestParser {
 
 	protected void parseLimit(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getEnvironment().currentQuery().limit(requirePositiveInt(values, LIMIT));
+			context.getEnvironment().currentQuery().limit(requirePositiveInt(values, LIMIT_PARAM));
 		}
 	}
 	
 	protected void parseOffset(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getEnvironment().currentQuery().offset(requirePositiveInt(values, OFFSET));
+			context.getEnvironment().currentQuery().offset(requirePositiveInt(values, OFFSET_PARAM));
 		}
 	}
 	

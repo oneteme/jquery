@@ -77,7 +77,7 @@ public interface YearViewDecorator extends ViewDecorator {
     		return nonNull(monthRevision()) //optional month column
     				? view.column(monthRevision()).filter(in().expression((m,v)-> 
     					((YearMonths) requireNonNull(m, REVISION)).months()))
-    				: null;
+    				: constant(1).eq(1); //avoid returning null
     	};
     }
 	
@@ -113,7 +113,7 @@ public interface YearViewDecorator extends ViewDecorator {
     
     //revision.mode
 
-    @Deprecated(since = "v4")
+    @Deprecated(since = "v4", forRemoval = true)
     default YearMonth[] revisionMode(QueryComposer query, YearMonth[] arr) {
     	var args = query.getVariables(REVISION_MODE);
     	if(isEmpty(args)) {

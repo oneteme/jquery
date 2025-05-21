@@ -18,7 +18,7 @@ public final class DistinctOperator implements Operator {
 			query.appendParenthesis(()-> query.appendParameter(args[0]));
 		}
 		else {
-			query.appendParameters(SCOMA, args); //parenthesis PG !?
+			query.appendParameters(SCOMA, args); //parenthesis PG !? global distinct !?
 		}
 	}
 	

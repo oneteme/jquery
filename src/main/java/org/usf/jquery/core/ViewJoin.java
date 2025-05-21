@@ -80,4 +80,8 @@ public final class ViewJoin implements DBObject {
 	public static ViewJoin crossJoin(DBView view, DBFilter... filters) {
 		return new ViewJoin(CROSS, view, filters);
 	}
+
+	public static ViewJoin join(JoinType joinType, DBView view, DBFilter... filters) {
+		return new ViewJoin(joinType, view, filters);
+	}
 }

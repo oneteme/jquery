@@ -141,6 +141,16 @@ public class QueryComposer {
 		return this;
 	}
 	
+	public QueryComposer variable(@NonNull String key, String... values) {
+		variables.compute(key, (k,v)-> {
+			if(isNull(v)) {
+				return values;
+			}
+			throw resourceAlreadyExistsException(key);
+		});
+		return this;
+	}
+	
 	public QueryComposer limit(Integer limit) {
 		this.limit = limit;
 		return this;
@@ -341,6 +351,6 @@ public class QueryComposer {
 	
 	@Override
 	public String toString() {
-		return compose().getSql();
+		return compose(null, false).getSql();
 	}
 }
