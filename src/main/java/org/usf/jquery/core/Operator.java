@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
+import static org.usf.jquery.core.Database.H2;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.JDBCType.BIGINT;
@@ -106,6 +107,32 @@ public interface Operator extends DBProcessor {
 	
 	static TypedOperator pow() {
 		return new TypedOperator(DOUBLE, function("POW"), required(DOUBLE), required(DOUBLE));
+	}
+
+	//bitwise functions
+	
+	static TypedOperator bitAnd() {
+		return currentDatabase() == TERADATA || currentDatabase() == H2
+				? new TypedOperator(BIGINT, function("BITAND"), required(BIGINT), required(BIGINT))
+				: new TypedOperator(BIGINT, operator("&"), required(BIGINT), required(BIGINT));
+	}
+	
+	static TypedOperator bitOr() {
+		return currentDatabase() == TERADATA || currentDatabase() == H2
+				? new TypedOperator(BIGINT, function("BITOR"), required(BIGINT), required(BIGINT))
+				: new TypedOperator(BIGINT, operator("|"), required(BIGINT), required(BIGINT));
+	}
+	
+	static TypedOperator bitXor() {
+		return currentDatabase() == TERADATA || currentDatabase() == H2
+				? new TypedOperator(BIGINT, function("BITXOR"), required(BIGINT), required(BIGINT))
+				: new TypedOperator(BIGINT, operator("^"), required(BIGINT), required(BIGINT));
+	}
+	
+	static TypedOperator bitNot() {
+		return currentDatabase() == TERADATA || currentDatabase() == H2
+				? new TypedOperator(BIGINT, function("BITNOT"), required(BIGINT))
+				: new TypedOperator(BIGINT, operator("~"), required(BIGINT));
 	}
 	
 	//string functions
