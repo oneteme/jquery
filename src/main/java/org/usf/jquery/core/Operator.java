@@ -112,27 +112,41 @@ public interface Operator extends DBProcessor {
 	//bitwise functions
 	
 	static TypedOperator bitAnd() {
-		return currentDatabase() == TERADATA || currentDatabase() == H2
-				? new TypedOperator(BIGINT, function("BITAND"), required(BIGINT), required(BIGINT))
-				: new TypedOperator(BIGINT, operator("&"), required(BIGINT), required(BIGINT));
+		var id = currentDatabase() == TERADATA || currentDatabase() == H2 ? "BITAND" : "&";
+		return new TypedOperator(BIGINT, operator(id), required(BIGINT), required(BIGINT));
 	}
 	
 	static TypedOperator bitOr() {
-		return currentDatabase() == TERADATA || currentDatabase() == H2
-				? new TypedOperator(BIGINT, function("BITOR"), required(BIGINT), required(BIGINT))
-				: new TypedOperator(BIGINT, operator("|"), required(BIGINT), required(BIGINT));
+		var id = currentDatabase() == TERADATA || currentDatabase() == H2 ? "BITOR" : "|";
+		return new TypedOperator(BIGINT, operator(id), required(BIGINT), required(BIGINT));
 	}
 	
 	static TypedOperator bitXor() {
-		return currentDatabase() == TERADATA || currentDatabase() == H2
-				? new TypedOperator(BIGINT, function("BITXOR"), required(BIGINT), required(BIGINT))
-				: new TypedOperator(BIGINT, operator("^"), required(BIGINT), required(BIGINT));
+		var id = currentDatabase() == TERADATA || currentDatabase() == H2 ? "BITXOR" : "^";
+		return new TypedOperator(BIGINT, operator(id), required(BIGINT), required(BIGINT));
 	}
 	
 	static TypedOperator bitNot() {
-		return currentDatabase() == TERADATA || currentDatabase() == H2
-				? new TypedOperator(BIGINT, function("BITNOT"), required(BIGINT))
-				: new TypedOperator(BIGINT, operator("~"), required(BIGINT));
+		var id = currentDatabase() == TERADATA || currentDatabase() == H2 ? "BITNOT" : "~";
+		return new TypedOperator(BIGINT, operator(id), required(BIGINT));
+	}
+	
+	static TypedOperator bitShiftLeft() {
+		var id = switch (currentDatabase()) {
+			case TERADATA -> "SHIFTRIGHT";
+			case H2 -> "LSHIFT";
+			default -> "<<";
+		};
+		return new TypedOperator(BIGINT, operator(id), required(BIGINT), required(INTEGER));
+	}
+	
+	static TypedOperator bitShiftRight() {
+		var id = switch (currentDatabase()) {
+			case TERADATA -> "SHIFTRIGHT";
+			case H2 -> "RSHIFT";
+			default -> ">>";
+		};
+		return new TypedOperator(BIGINT, operator(id), required(BIGINT), required(INTEGER));
 	}
 	
 	//string functions
