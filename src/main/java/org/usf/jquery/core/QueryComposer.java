@@ -260,7 +260,7 @@ public class QueryComposer {
 	}
 	
 	void from(QueryBuilder query) {
-		var from = views;
+		var from = new HashSet<>(views);
 		if(!joins.isEmpty()) {
 			joins.stream() //exclude join views
 			.map(ViewJoin::getView)
