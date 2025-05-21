@@ -10,6 +10,7 @@ import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.QueryBuilder.addWithValue;
 import static org.usf.jquery.core.QueryBuilder.parameterized;
 import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Role.FILTER;
@@ -185,10 +186,10 @@ public class QueryComposer {
 	}
 	
 	public Query compose(){
-		return compose(null);
+		return compose(null, true);
 	}
 
-	public Query compose(String schema) {
+	public Query compose(String schema, boolean parameterized) {
 		log.trace("building query...");
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
@@ -198,7 +199,9 @@ public class QueryComposer {
 				log.trace("{} => {}", v, o);
 			}
 		});
-		var builder = parameterized(schema, ctes, views, overView);
+		var builder = parameterized 
+				? parameterized(schema, ctes, views, overView)
+				: addWithValue(schema, ctes, views, overView);	
 		with(builder); //before build
 		build(builder);
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
