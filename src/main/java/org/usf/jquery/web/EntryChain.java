@@ -15,6 +15,11 @@ import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
+import static org.usf.jquery.core.JQueryType.COLUMN;
+import static org.usf.jquery.core.JQueryType.FILTER;
+import static org.usf.jquery.core.JQueryType.JOIN;
+import static org.usf.jquery.core.JQueryType.NAMED_COLUMN;
+import static org.usf.jquery.core.JQueryType.ORDER;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
@@ -43,12 +48,10 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.DBOrder;
-import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.core.ViewJoin;
@@ -217,25 +220,28 @@ final class EntryChain {
 	}
 	
 	//select[.filter|order|offset|fetch]*
-	QueryDecorator parseQuery(QueryContext ctx, boolean requireTag) { //sub context
+	QueryDecorator parseQuery(QueryContext ctx, boolean requireTag) {
 		Exception cause = null;
 		if(SELECT_OPR.equals(value)) {
-			var e =	this;
 			try {
-				var q = new QueryComposer().columns(parseAll(args, ctx, JQueryType.NAMED_COLUMN));
-				while(e.hasNext()) {
-					e = e.next;
-					switch(e.value) {//column not allowed 
-					case FILTER_OPR: q.filters(parseAll(e.args, ctx, JQueryType.FILTER)); break;
-					case ORDER_PARAM: q.orders(parseAll(e.args, ctx, JQueryType.ORDER)); break;
-					case JOIN_PARAM: q.joins(parseAll(e.args, ctx, JQueryType.JOIN)); break;
-					case LIMIT_PARAM: q.limit(parseInt(requireNArgs(1, e.args, ()-> LIMIT_PARAM)[0].value)); break;
-					case OFFSET_PARAM: q.offset(parseInt(requireNArgs(1, e.args, ()-> OFFSET_PARAM)[0].value)); break;
-					case DISTINCT_PARAM: q.distinct(e.parseDistinct(ctx)); break;
-					default: throw badEntryChainException(e, join("|", FILTER_OPR, ORDER_PARAM, JOIN_PARAM, LIMIT_PARAM, OFFSET_PARAM));
+				var e = new EntryChain[] {this}; //mutable reference
+				var qry = currentEnvironment().query(q->{
+					var subCtx = new QueryContext(ctx.getDefaultView());
+					q.columns(parseAll(args, subCtx, NAMED_COLUMN)); //context isolation
+					while(e[0].hasNext()) {
+						e[0] = e[0].next;
+						switch(e[0].value) {//column not allowed 
+						case FILTER_OPR: q.filters(parseAll(e[0].args, subCtx, FILTER)); break;
+						case ORDER_PARAM: q.orders(parseAll(e[0].args, subCtx, ORDER)); break;
+						case JOIN_PARAM: q.joins(parseAll(e[0].args, subCtx, JOIN)); break;
+						case LIMIT_PARAM: q.limit(parseInt(requireNArgs(1, e[0].args, ()-> LIMIT_PARAM)[0].value)); break;
+						case OFFSET_PARAM: q.offset(parseInt(requireNArgs(1, e[0].args, ()-> OFFSET_PARAM)[0].value)); break;
+						case DISTINCT_PARAM: q.distinct(e[0].parseDistinct(subCtx)); break;
+						default: throw badEntryChainException(e[0], join("|", FILTER_OPR, ORDER_PARAM, JOIN_PARAM, LIMIT_PARAM, OFFSET_PARAM, DISTINCT_PARAM));
+						}
 					}
-				}
-				return new QueryDecorator(requireTag ? e.requireTag() : e.tag, q.asView());
+				});
+				return new QueryDecorator(requireTag ? e[0].requireTag() : e[0].tag, qry.asView());
 			}
 			catch (Exception ex) {
 				cause = ex;
@@ -253,8 +259,8 @@ final class EntryChain {
 				var e = this;
 				do {
 					switch (e.value) {
-					case PARTITION_OPR: addAll(cols, parseAll(e.args, ctx, JQueryType.COLUMN)); break;
-					case ORDER_PARAM: addAll(ords, parseAll(e.args, ctx, JQueryType.ORDER)); break;
+					case PARTITION_OPR: addAll(cols, parseAll(e.args, ctx, COLUMN)); break;
+					case ORDER_PARAM: addAll(ords, parseAll(e.args, ctx, ORDER)); break;
 					default: throw badEntryChainException(e, PARTITION_PATTERN);
 					}
 					e = e.next;
@@ -371,7 +377,7 @@ final class EntryChain {
 	//view.criteria
 	private Optional<EntryChainCursor> lookupViewCriteria(ViewDecorator vd) {
 		return ofNullable(vd.criteria(value))
-				.map(cr-> new EntryChainCursor(requireNoArgs(), vd, cr));
+				.map(cr-> new EntryChainCursor(requireNoArgs(), vd, cr)); //view criteria takes no args
 	}
 	
 	//view.column[.criteria]
@@ -383,8 +389,7 @@ final class EntryChain {
 					return new EntryChainCursor(next, vd, vd.column(cd), cr); //column criteria takes args
 				}
 			}
-			var strArr = toStringArray(args);
-			return new EntryChainCursor(requireNoArgs(), vd, vd.column(cd, strArr));
+			return new EntryChainCursor(this, vd, vd.column(cd, toStringArray(args)));
 		});
 	}
 
@@ -428,7 +433,7 @@ final class EntryChain {
 		if(isLast()) {
 			return this;
 		}
-		throw new EntrySyntaxException(format("unexpected entry chain : %s.[%s]", value, next.value));
+		throw badEntryChainException(this);
 	}
 	
 	public boolean isLast() {
@@ -439,20 +444,8 @@ final class EntryChain {
 		return nonNull(next);
 	}
 
-	public EntryChain first() {
-		var e = this;
-		while(nonNull(e.prev)) {
-			e = e.prev;
-		}
-		return e;
-	}
-	
 	@Override
 	public String toString() {
-		return toString(e-> false);
-	}
-	
-	public String toString(Predicate<EntryChain> until) {
 		var s = ""; // null == EMPTY
 		if(nonNull(value)) {
 			s += text ? doubleQuote(value) : value;
@@ -460,8 +453,8 @@ final class EntryChain {
 		if(nonNull(args)){
 			s += stream(args).map(EntryChain::toString).collect(joining(",", "(", ")"));
 		}
-		if(nonNull(next) && !until.test(next)) {
-			s += "." + next.toString(until);
+		if(hasNext()) {
+			s += "." + next.toString();
 		}
 		return isNull(tag) ? s : s + ":" + tag;
 	}
@@ -484,6 +477,10 @@ final class EntryChain {
 
 	static EntrySyntaxException badEntryTagException(EntryChain e) {
 		return new EntrySyntaxException(format("incorrect syntax: expected %s[:tag]", e.toString()));
+	}
+
+	static EntrySyntaxException badEntryChainException(EntryChain e) {
+		return new EntrySyntaxException(format("incorrect syntax: unexpected entry chain %s[.%s]", e.value, e.next.value));
 	}
 	
 	static EntrySyntaxException badEntryChainException(EntryChain e, String expect) {

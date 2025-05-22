@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Validation.requireNoArgs;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
@@ -51,6 +52,7 @@ public interface ViewDecorator {
 	default NamedColumn column(@NonNull ColumnDecorator cd, String... args) {//final
 		var name = columnName(cd);
 		if(nonNull(name)) {
+			requireNoArgs(args, ()-> "ViewColumn does not take arguments");
 			return new ViewColumn(name, view(), cd.type(this), cd.reference(this));
 		}
 		var b = cd.builder();
