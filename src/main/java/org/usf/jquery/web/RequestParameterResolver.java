@@ -4,6 +4,7 @@ import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.defaultEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
+import static org.usf.jquery.web.JQuery.getRequestParser;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 
@@ -40,7 +41,7 @@ public final class RequestParameterResolver {//spring connection bridge
 			modifiableMap.put(COLUMN_PARAM, modifiableMap.remove("column.distinct"));
 		}
 		var env = ant.database().isEmpty() ? defaultEnvironment() : getEnvironment(ant.database());
-		var qry = env.parse(ant.view(), ant.variables(), modifiableMap);
+		var qry = getRequestParser().parse(env, ant.view(), ant.variables(), modifiableMap);
 		if(!ant.aggregationOnly() || qry.isAggregation()) {
 			log.trace("request parsed in {} ms", currentTimeMillis() - t);
 			return qry;

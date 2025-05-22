@@ -15,27 +15,27 @@ import org.usf.jquery.core.LogicalOperator;
  * @author u$f
  *
  */
-public interface Builder<T> {
+public interface Builder<T,V> {
 	
-	T build(ViewDecorator vd, Environment env, String... args);
-
-	default T build(ViewDecorator vd, String... args) {
-		return build(vd, currentEnvironment(), args);
+	V build(T parent, Environment env, String... args);
+	
+	default V build(T parent, String... args) {
+		return build(parent, currentEnvironment(), args);
 	}
 	
-	static <T extends Chainable<T>> Builder<T> singleArgCriteria(ChainableCriteria<T> crt){
+	static <T extends Chainable<T>> Builder<ViewDecorator, T> singleArgCriteria(ChainableCriteria<T> crt){
 		return (view, env, args)-> crt.criteria(isEmpty(args) 
 				? null 
 				: requireNArgs(1, args, ()-> "single arg criteria")[0]);
 	}
 
-	static <T extends Chainable<T>> Builder<T> multiArgsCriteria(ChainableCriteria<T> crt){
+	static <T extends Chainable<T>> Builder<ViewDecorator, T> multiArgsCriteria(ChainableCriteria<T> crt){
 		return multiArgsCriteria(OR, crt);
 	}
 
-	static <T extends Chainable<T>> Builder<T> multiArgsCriteria(LogicalOperator op, ChainableCriteria<T> crt){
+	static <T extends Chainable<T>> Builder<ViewDecorator, T> multiArgsCriteria(LogicalOperator op, ChainableCriteria<T> crt){
 		return (view, env, args)-> isEmpty(args) 
 				? crt.criteria(null)
 				: Stream.of(args).map(crt::criteria).reduce(op::combine).orElseThrow();
-	}	
+	}
 }

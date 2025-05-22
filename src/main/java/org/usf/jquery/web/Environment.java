@@ -16,7 +16,6 @@ import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
 import static org.usf.jquery.web.JQuery.apply;
-import static org.usf.jquery.web.JQuery.getRequestParser;
 
 import java.lang.reflect.Field;
 import java.sql.SQLException;
@@ -72,9 +71,21 @@ public final class Environment {
 //	private final Map<String, TypedOperator> operators = null
 //	private final Map<String, TypedComparator> comparators = null
 	// securityManager
+
+	public QueryComposer currentQuery() {
+		return getQuery(List::getLast);
+	}
 	
-	public QueryComposer parse(String defaultView, String[] variables, Map<String, String[]> parameterMap) {
-		return getRequestParser().parse(this, defaultView, variables, parameterMap);
+	public QueryComposer mainQuery() {
+		return getQuery(List::getFirst);
+	}
+	
+	private QueryComposer getQuery(Function<List<QueryComposer>, QueryComposer> fn) {
+		var list = stack.get();
+		if(!list.isEmpty()) {
+			return fn.apply(list);
+		}
+		throw new IllegalStateException("no query in context");
 	}
 	
 	public QueryComposer query(Consumer<QueryComposer> fn) {
@@ -93,31 +104,10 @@ public final class Environment {
 			throw new IllegalStateException();
 		});
 	}
-
-	public QueryComposer currentQuery() {
-		return getQuery(List::getLast);
-	}
 	
-	public QueryComposer mainQuery() {
-		return getQuery(List::getFirst);
-	}
-	
-	private QueryComposer getQuery(Function<List<QueryComposer>, QueryComposer> fn) {
-		var list = stack.get();
-		if(!list.isEmpty()) {
-			return fn.apply(list);
-		}
-		throw new IllegalStateException("no query in context");
-	}
-	
-	/** assume unique instance of DBView */
-	DBView cacheView(String name, Supplier<DBView> orElse) {
-		return viewRefCache.computeIfAbsent(name, k-> orElse.get());
-	}
-	
-	public Environment bind() {
+	public void bind() {
 		if(nonNull(dataSource)) {
-			apply(this, ctx-> { //no query
+			apply(this, env-> { //no query
 				this.metadata = new DatabaseMetadata(toViewMetadata());
 				try (var cnx = dataSource.getConnection()) {
 					metadata.fetch(cnx.getMetaData(), schema);
@@ -129,7 +119,11 @@ public final class Environment {
 		} else {
 			log.warn("no datasource configured, metadata not bound");
 		}
-		return this;
+	}
+
+	/** assume unique instance of DBView */
+	DBView cacheView(String name, Supplier<DBView> orElse) {
+		return viewRefCache.computeIfAbsent(name, k-> orElse.get());
 	}
 
 	Map<String, ViewMetadata> toViewMetadata() {

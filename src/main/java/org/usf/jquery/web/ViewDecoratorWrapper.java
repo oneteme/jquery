@@ -42,17 +42,17 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	}
 	
 	@Override
-	public Builder<DBFilter> criteria(String name) {
+	public Builder<ViewDecorator, DBFilter> criteria(String name) {
 		return vd.criteria(name);
 	}
 	
 	@Override
-	public Builder<ViewJoin[]> join(String name) {
+	public Builder<ViewDecorator, ViewJoin[]> join(String name) {
 		return vd.join(name);
 	}
 	
 	@Override
-	public Builder<Partition> partition(String name) {
+	public Builder<ViewDecorator, Partition> partition(String name) {
 		return vd.partition(name);
 	}
 }

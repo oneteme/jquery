@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
@@ -9,6 +10,7 @@ import java.util.function.Consumer;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryComposer;
+import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.TableView;
 
 /**
@@ -34,12 +36,17 @@ public interface DatabaseDecorator {
 		}
 		var b = vd.builder();
 		if(nonNull(b)) {
-			return b.build(this);
+			return b.build(this, currentEnvironment());
 		}
 		throw undeclaredResouceException(vd.identity(), identity());
 	}
 
 	default QueryComposer query(Consumer<QueryComposer> fn) {
 		return getEnvironment(identity()).query(fn);
+	}
+	
+	//TODO add web access
+	default Builder<DatabaseDecorator, QueryView> query(String name) {
+		return null;
 	}
 }

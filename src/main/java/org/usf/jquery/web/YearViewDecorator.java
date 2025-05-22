@@ -55,7 +55,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 	
 	@Override
-	default Builder<DBFilter> criteria(String name) {
+	default Builder<ViewDecorator, DBFilter> criteria(String name) {
 		return REVISION.equals(name) 
 				? revisionFilter()
 				: ViewDecorator.super.criteria(name);
@@ -67,7 +67,7 @@ public interface YearViewDecorator extends ViewDecorator {
 		return new YearTableMetadata(this, nonNull(mc) ? columnName(mc) : null, colMetadata);
 	}
 
-	default Builder<DBFilter> revisionFilter() { //optional filter ! monthRevision
+	default Builder<ViewDecorator, DBFilter> revisionFilter() { //optional filter ! monthRevision
     	return (view, env, args)-> {
     		var arr = isEmpty(args)
     				? new YearMonth[] {now()}
@@ -81,7 +81,7 @@ public interface YearViewDecorator extends ViewDecorator {
     	};
     }
 	
-	static Builder<DBColumn> yearRevision() {
+	static Builder<ViewDecorator, DBColumn> yearRevision() {
 		return (view, env, args)-> {
 			if(view instanceof YearViewDecorator) {
 				return constant(INTEGER, (m, v)-> ((YearMonths)m).year());

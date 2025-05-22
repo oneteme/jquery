@@ -27,11 +27,11 @@ public interface ColumnDecorator {
 		return nonNull(meta) ? meta.getType() : null;
 	}
 	
-	default Builder<DBColumn> builder(ViewDecorator vd) { //set type if null
+	default Builder<ViewDecorator, DBColumn> builder() {
 		return null; // no builder by default
 	}
 	
-	default Builder<ComparisonExpression> criteria(String name) {
+	default Builder<ViewDecorator, ComparisonExpression> criteria(String name) {
 		return null; // no criteria by default
 	}
 

@@ -5,6 +5,7 @@ import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
 
 import java.util.LinkedHashMap;
@@ -33,11 +34,9 @@ import lombok.Setter;
 @RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
 public final class QueryContext {
 	
-	@Getter
-	private final Environment environment;
 	private final ViewDecorator defaultView; //optional parse only
 	private final Map<String, ViewDecorator> views = new LinkedHashMap<>();
-
+	
 	public ViewDecorator declareView(ViewDecorator view) { //additional request views
 		return views.compute(view.identity(), (k,v)-> {
 			if(isNull(v)){
@@ -48,7 +47,7 @@ public final class QueryContext {
 	}
 	
 	public Optional<NamedColumn> lookupDeclaredColumn(String name) {
-		var query = environment.currentQuery();
+		var query = currentEnvironment().currentQuery();
 		return query.getColumns().stream()
 				.filter(ColumnProxy.class::isInstance) //tagged column only
 				.filter(c-> name.equals(c.getTag()))
@@ -56,12 +55,12 @@ public final class QueryContext {
 	}
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared
-		return ofNullable(environment.getViews().get(name))
+		return ofNullable(currentEnvironment().getViews().get(name))
 				.or(()-> ofNullable(views.get(name)));
 	}
 	
 	public Optional<ColumnDecorator> lookupRegisteredColumn(String name) {
-		return ofNullable(environment.getColumns().get(name));
+		return ofNullable(currentEnvironment().getColumns().get(name));
 	}
 
 	public Optional<TypedOperator> lookupOperator(String op) {

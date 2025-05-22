@@ -30,15 +30,15 @@ public interface ViewDecorator {
 		return null; //no builder by default
 	}
 
-	default Builder<DBFilter> criteria(String name) { 
+	default Builder<ViewDecorator, DBFilter> criteria(String name) { 
 		return null; //no criteria by default
 	}
 	
-	default Builder<Partition> partition(String name) {
+	default Builder<ViewDecorator, Partition> partition(String name) {
 		return null; //no partition by default
 	}
 	
-	default Builder<ViewJoin[]> join(String name) {
+	default Builder<ViewDecorator, ViewJoin[]> join(String name) {
 		return null; //no join by default
 	}
 	
@@ -53,7 +53,7 @@ public interface ViewDecorator {
 		if(nonNull(name)) {
 			return new ViewColumn(name, view(), cd.type(this), cd.reference(this));
 		}
-		var b = cd.builder(this);
+		var b = cd.builder();
 		if(nonNull(b)) {
 			return b.build(this, currentEnvironment(), args).as(cd.reference(this), cd.type(this));
 		}

@@ -9,6 +9,7 @@ import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.web.ArgumentParsers.parseBoolean;
 import static org.usf.jquery.web.EntryChainParser.parseEntries;
 import static org.usf.jquery.web.EntryChainParser.parseEntry;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
@@ -37,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 public class DefaultRequestParser implements RequestParser {
 	
 	public final QueryComposer parse(Environment env, String defaultView, String[] variables, Map<String, String[]> parameterMap) {
-		var ctx = new QueryContext(env, ofNullable(env.getViews().get(defaultView))
+		var ctx = new QueryContext(ofNullable(env.getViews().get(defaultView))
 				.orElseThrow(()-> noSuchResourceException(VIEW_PARAM, defaultView)));
 		return env.query(q->{
 			try {
@@ -53,7 +54,6 @@ public class DefaultRequestParser implements RequestParser {
 				parseJoins(ctx, parameterMap.remove(JOIN_PARAM));
 				parseLimit(ctx, parameterMap.remove(LIMIT_PARAM));
 				parseOffset(ctx, parameterMap.remove(OFFSET_PARAM));
-				//parse iterator
 				parseFilters(ctx, parameterMap); //remove all entries before parse filters
 			} catch (WebException e) {
 				if(log.isTraceEnabled()) {
@@ -72,7 +72,7 @@ public class DefaultRequestParser implements RequestParser {
 
 	protected void parseDistinct(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getEnvironment().currentQuery().distinct(parseBoolean(requireNArgs(1, values, ()-> DISTINCT_PARAM)[0]));
+			currentEnvironment().currentQuery().distinct(parseBoolean(requireNArgs(1, values, ()-> DISTINCT_PARAM)[0]));
 		}
 	}
 	
@@ -83,7 +83,7 @@ public class DefaultRequestParser implements RequestParser {
 			.map(e-> context.declareView(e.evalView(context)))
 			.forEach(v->{ //!ViewDecorator
 				if(v instanceof QueryDecorator qd) {
-					context.getEnvironment().currentQuery().ctes(qd.getQuery());
+					currentEnvironment().currentQuery().ctes(qd.getQuery());
 				}
 			});
 		}
@@ -94,7 +94,7 @@ public class DefaultRequestParser implements RequestParser {
 			Stream.of(values)
 			.flatMap(v-> stream(parseEntries(v)))
 			.map(e-> (NamedColumn)e.evalColumn(context, true))
-			.forEach(context.getEnvironment().currentQuery()::columns);
+			.forEach(currentEnvironment().currentQuery()::columns);
 		}
 		else {
 			throw new IllegalArgumentException("no columns specified");
@@ -105,7 +105,7 @@ public class DefaultRequestParser implements RequestParser {
 		if(!isEmpty(values)) {
 			Stream.of(values)
 			.flatMap(c-> stream(parseEntries(c)))
-			.forEach(e-> context.getEnvironment().currentQuery().orders(e.evalOrder(context)));
+			.forEach(e-> currentEnvironment().currentQuery().orders(e.evalOrder(context)));
 		}
 	}
 	
@@ -113,19 +113,19 @@ public class DefaultRequestParser implements RequestParser {
 		if(!isEmpty(values)) {
 			Stream.of(values)
 			.flatMap(c-> stream(parseEntries(c)))
-			.forEach(e-> context.getEnvironment().currentQuery().joins(e.evalJoin(context)));
+			.forEach(e-> currentEnvironment().currentQuery().joins(e.evalJoin(context)));
 		}
 	}
 
 	protected void parseLimit(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getEnvironment().currentQuery().limit(requirePositiveInt(values, LIMIT_PARAM));
+			currentEnvironment().currentQuery().limit(requirePositiveInt(values, LIMIT_PARAM));
 		}
 	}
 	
 	protected void parseOffset(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			context.getEnvironment().currentQuery().offset(requirePositiveInt(values, OFFSET_PARAM));
+			currentEnvironment().currentQuery().offset(requirePositiveInt(values, OFFSET_PARAM));
 		}
 	}
 	
@@ -135,7 +135,7 @@ public class DefaultRequestParser implements RequestParser {
     		var ec = parseEntry(e.getKey());
     		return Stream.of(e.getValue()).map(v-> ec.evalFilter(context, parseEntries(v)));
     	})
-    	.forEach(context.getEnvironment().currentQuery()::filters);
+    	.forEach(currentEnvironment().currentQuery()::filters);
 	}
 	
 	private static int requirePositiveInt(String[] values, String name) {
