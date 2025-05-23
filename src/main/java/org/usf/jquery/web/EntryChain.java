@@ -40,7 +40,6 @@ import static org.usf.jquery.web.Parameters.SELECT_OPR;
 
 import java.util.ArrayList;
 import java.util.Optional;
-import java.util.function.Predicate;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.ComparisonExpression;
@@ -72,7 +71,6 @@ final class EntryChain {
 
 	private static final String ORDER_PATTERN = enumPattern(OrderType.class); 
 	private static final String PARTITION_PATTERN = join("|", PARTITION_OPR, ORDER_PARAM);
-	private static final Predicate<Object> ANY = o-> true;
 	
 	private final String value;
 	private final boolean text; //"string"
@@ -357,7 +355,7 @@ final class EntryChain {
 	
 	//operator|[view.]operator
 	private Optional<EntryChainCursor> lookupViewOperation(QueryContext ctx, ViewDecorator vd, boolean prefixed) {
-		return ctx.lookupOperator(value).filter(prefixed ? TypedOperator::isCountFunction : ANY).map(fn-> {
+		return ctx.lookupOperator(value).filter(prefixed ? TypedOperator::isCountFunction : o-> true).map(fn-> {
 			var col = isEmpty(args) && fn.isCountFunction() ? allColumns(vd.view()) : null;
 			return fn.operation(parseArgs(ctx, col, fn.getParameterSet()));
 		}).map(oc-> new EntryChainCursor(this, vd, oc));

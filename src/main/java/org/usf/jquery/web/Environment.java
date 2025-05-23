@@ -73,11 +73,11 @@ public final class Environment {
 	// securityManager
 
 	public QueryComposer currentQuery() {
-		return getQuery(List::getLast);
+		return getQuery(c-> c.get(0));
 	}
 	
 	public QueryComposer mainQuery() {
-		return getQuery(List::getFirst);
+		return getQuery(c-> c.get(c.size()-1));
 	}
 	
 	private QueryComposer getQuery(Function<List<QueryComposer>, QueryComposer> fn) {
@@ -89,7 +89,7 @@ public final class Environment {
 	}
 	
 	public QueryComposer query(Consumer<QueryComposer> fn) {
-		return apply(this, ctx-> { //no query
+		return apply(this, env-> { //no query
 			var q = new QueryComposer(getMetadata().getType());
 			var list = stack.get();
 			if(list.add(q)) {
@@ -101,7 +101,7 @@ public final class Environment {
 					list.remove(q);
 				}
 			}
-			throw new IllegalStateException();
+			throw new IllegalStateException("cannot nest queries");
 		});
 	}
 	

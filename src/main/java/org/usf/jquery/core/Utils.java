@@ -2,10 +2,13 @@ package org.usf.jquery.core;
 
 import static java.lang.System.arraycopy;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.function.BiFunction;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -63,4 +66,20 @@ public final class Utils {
 		arraycopy(arr, 0, res, 1, arr.length);
 		return res;
 	}
+	
+	public static <K,V> BiFunction<K, V, V> computeIfAbsentElseThrow(V o, Supplier<String> msg) {
+		return (k,v)-> {
+			if(nonNull(v)) {
+				return o;
+			}
+			throw new IllegalArgumentException(msg.get());
+		};
+	}
+	
+    public static <T, E extends Throwable> T requireNonNullElseThrow(T obj, Supplier<E> exceptionSupplier) throws E {
+        if(nonNull(obj)) {
+			return obj;
+		}
+		throw exceptionSupplier.get();
+    }
 }

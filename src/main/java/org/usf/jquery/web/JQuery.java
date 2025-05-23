@@ -1,7 +1,9 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNullElseGet;
+import static org.usf.jquery.core.Utils.computeIfAbsentElseThrow;
+import static org.usf.jquery.core.Utils.requireNonNullElseThrow;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 
 import java.util.HashMap;
@@ -27,27 +29,20 @@ public final class JQuery {
 
 	public static void register(@NonNull Environment... envs) {
 		for(var env : envs) {
-			DATABASES.compute(env.getDatabase().identity(), (k,v)-> {
-				if(isNull(v)) {
-					return env;
-				}
-				throw new IllegalArgumentException("environment already registered: " + k);
-			});
-			env.bind(); // outer bind
+			var id = env.getDatabase().identity();
+			DATABASES.compute(id, 
+					computeIfAbsentElseThrow(env, ()-> "environment already registered: " + id))
+			.bind(); // bind the environment to the database after put
 		}
 	}
 
 	public static Environment currentEnvironment() {
-		var env = LOCAL_ENV.get();
-		return nonNull(env) ? env : defaultEnvironment();
+		return requireNonNullElseGet(LOCAL_ENV.get(), JQuery::defaultEnvironment);
 	}
 	
 	public static Environment getEnvironment(String name) {
-		var env = DATABASES.get(name);
-		if(nonNull(env)) {
-			return env;
-		}
-		throw noSuchResourceException("environment", name);
+		return requireNonNullElseThrow(DATABASES.get(name), 
+				()-> noSuchResourceException("environment", name));
 	}
 
 	public static Environment defaultEnvironment(){
