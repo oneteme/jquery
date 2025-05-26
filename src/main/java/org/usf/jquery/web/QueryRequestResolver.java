@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.lang.String.format;
-import static java.util.Objects.isNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.defaultEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
@@ -12,10 +11,8 @@ import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.core.Utils;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
