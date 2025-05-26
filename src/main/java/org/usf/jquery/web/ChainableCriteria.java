@@ -10,5 +10,5 @@ import org.usf.jquery.core.Chainable;
 @FunctionalInterface
 public interface ChainableCriteria<T extends Chainable<T>> {
 
-	T criteria(ViewDecorator parent, Environment env, String arg);
+	T criteria(ViewDecorator view, Environment env, String arg);
 }

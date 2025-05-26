@@ -12,7 +12,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
@@ -143,9 +143,13 @@ public final class QueryBuilder {
 		return new QueryBuilder(schema, prefix, query, ctes, views, args, model);
 	}
 	
-	public QueryBuilder subQuery(Collection<DBView> views) { //inherit schema, prefix, args but not views
+	public QueryBuilder subQuery(Collection<DBView> views, Map<DBView, QueryView> overview) { //inherit schema, prefix, args but not views
 		var s = prefix + "_s";
-		return new QueryBuilder(schema, s, query, ctes, viewAlias(s, views), args, currentModel);
+		var vMap = viewAlias(s, views);
+		if(!isEmpty(overview)) {
+			overview.forEach((k,v)-> vMap.put(k, ctes.get(v))); //override or add
+		}
+		return new QueryBuilder(schema, s, query, ctes, vMap, args, currentModel);
 	}
 	
 	public Query build() {
@@ -213,7 +217,7 @@ public final class QueryBuilder {
 	}
 		
 	private static <T> Map<T, String> viewAlias(String prefix, Collection<T> views){
-		var map = new HashMap<T, String>();
+		var map = new LinkedHashMap<T, String>(); //preserve order
 		if(!isEmpty(views) && nonNull(prefix)) {
 			int i=0;
 			for(var v : views) {

@@ -5,6 +5,8 @@ import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
@@ -34,6 +36,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -50,7 +53,7 @@ public class QueryComposer {
 	
 	static final Consumer<DBColumn> DO_NOTHING = o->{};
 	
-	private final List<QueryView> ctes = new ArrayList<>();
+	private final Set<QueryView> ctes = new LinkedHashSet<>();
 	private final List<NamedColumn> columns = new ArrayList<>();
 	private final Set<DBColumn> group = new HashSet<>(); 
 	private final List<DBFilter> where = new ArrayList<>(); 
@@ -181,9 +184,12 @@ public class QueryComposer {
 	}
 	
 	public QueryView subQuery(DBView view, Supplier<QueryView> orElse) {
-		var sub = overView.computeIfAbsent(view, v-> requireNonNull(orElse.get(), "subQuery is null"));
-		ctes(sub);
-		return sub;
+		return overView.computeIfAbsent(view, v->{
+			var sub = requireNonNull(orElse.get(), "subQuery is null");
+			sub.compose(this, DO_NOTHING);
+			ctes(sub);
+			return sub;
+		});
 	}
 	
 	public QueryView asView() {
@@ -198,12 +204,6 @@ public class QueryComposer {
 		log.trace("building query...");
     	requireNonEmpty(columns, "columns");
 		var bg = currentTimeMillis();
-		overView.forEach((v,o)->{
-			if(views.remove(v)) { 
-				views.add(o);
-				log.trace("{} => {}", v, o);
-			}
-		});
 		var builder = parameterized 
 				? parameterized(schema, ctes, views, overView)
 				: addWithValue(schema, ctes, views, overView);	
@@ -268,7 +268,7 @@ public class QueryComposer {
 	}
 	
 	void from(QueryBuilder query) {
-		var from = new HashSet<>(views);
+		var from = views.stream().map(v-> overView.containsKey(v) ? overView.get(v) : v).collect(toSet()); //views.stream().filter(not(overView::containsKey)).collect(toSet()); //exclude ctes
 		if(!joins.isEmpty()) {
 			joins.stream() //exclude join views
 			.map(ViewJoin::getView)

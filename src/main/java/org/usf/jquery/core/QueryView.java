@@ -18,12 +18,6 @@ import lombok.RequiredArgsConstructor;
 public final class QueryView implements DBView {
 
 	private final QueryComposer composer;
-	
-	@Override
-	public void build(QueryBuilder query) {
-		var sub = query.subQuery(composer.getViews());
-		sub.appendParenthesis(()-> composer.build(sub));
-	}
 
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
@@ -32,6 +26,12 @@ public final class QueryView implements DBView {
 			query.ctes(ctes.toArray(QueryView[]::new));  //cte propagation
 		}
 		return -1; //no column
+	}
+	
+	@Override
+	public void build(QueryBuilder query) {
+		var sub = query.subQuery(composer.getViews(), composer.getOverView());
+		sub.appendParenthesis(()-> composer.build(sub));
 	}
 
 	public SingleQueryColumn asColumn(){ 
