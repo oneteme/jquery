@@ -132,7 +132,7 @@ public interface YearViewDecorator extends ViewDecorator {
 			return revs;
 		}
 		throw noSuchResourceException(REVISION, 
-				Stream.of(revs).map(YearMonth::toString).collect(joining(", "))); //require available revisions
+				Stream.of(revs).map(YearMonth::toString).collect(joining(", ")), identity()); //require available revisions
     }
 
 	default YearMonth[] strictRevisions(YearMonth[] values) {

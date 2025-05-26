@@ -1,8 +1,7 @@
 package org.usf.jquery.web;
 
-import static java.lang.String.format;
-
 /**
+ * Signals that cannot be parse entry.
  * 
  * @author u$f
  *
@@ -16,10 +15,5 @@ public final class EntryParseException extends WebException {
 	
 	public EntryParseException(String message, Throwable cause) {
 		super(message, cause);
-	}
-	
-	@Deprecated
-	static EntryParseException cannotParseEntryException(String type, EntryChain entry, Throwable cause) {
-		return new EntryParseException(format("cannot parse %s : '%s'", type, entry), cause);
 	}
 }

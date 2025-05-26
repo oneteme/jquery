@@ -67,12 +67,12 @@ public final class Utils {
 		return res;
 	}
 	
-	public static <K,V> BiFunction<K, V, V> computeIfAbsentElseThrow(V o, Supplier<String> msg) {
+	public static <K, V> BiFunction<K, V, V> computeIfAbsentElseThrow(V o, Supplier<String> exceptionSupplier) {
 		return (k,v)-> {
 			if(nonNull(v)) {
 				return o;
 			}
-			throw new IllegalArgumentException(msg.get());
+			throw new IllegalArgumentException(exceptionSupplier.get());
 		};
 	}
 	

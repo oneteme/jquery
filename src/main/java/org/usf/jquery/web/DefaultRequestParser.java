@@ -39,7 +39,7 @@ public class DefaultRequestParser implements RequestParser {
 	
 	public final QueryComposer parse(Environment env, String defaultView, String[] variables, Map<String, String[]> parameterMap) {
 		var ctx = new QueryContext(ofNullable(env.getViews().get(defaultView))
-				.orElseThrow(()-> noSuchResourceException(VIEW_PARAM, defaultView)));
+				.orElseThrow(()-> noSuchResourceException(VIEW_PARAM, defaultView, env.getDatabase().identity())));
 		return env.query(q->{
 			try {
 				if(!isEmpty(variables)) {

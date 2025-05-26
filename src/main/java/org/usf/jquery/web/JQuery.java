@@ -4,6 +4,7 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNullElseGet;
 import static org.usf.jquery.core.Utils.computeIfAbsentElseThrow;
 import static org.usf.jquery.core.Utils.requireNonNullElseThrow;
+import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 
 import java.util.HashMap;
@@ -29,9 +30,8 @@ public final class JQuery {
 
 	public static void register(@NonNull Environment... envs) {
 		for(var env : envs) {
-			var id = env.getDatabase().identity();
-			DATABASES.compute(id, 
-					computeIfAbsentElseThrow(env, ()-> "environment already registered: " + id))
+			DATABASES.compute(env.getDatabase().identity(), 
+					computeIfAbsentElseThrow(env, ()-> resourceAlreadyExistsMessage("environment", env.getDatabase().identity())))
 			.bind(); // bind the environment to the database after put
 		}
 	}

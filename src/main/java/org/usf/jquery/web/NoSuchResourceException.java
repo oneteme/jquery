@@ -18,15 +18,11 @@ public final class NoSuchResourceException extends WebException {
 		return new NoSuchResourceException(format("no such resource '%s'", resource));
 	}
 	
-	static NoSuchResourceException noSuchResourceException(String type, String resource) {
-		return noSuchResourceException(type, resource, "");
+	static NoSuchResourceException noSuchResourceException(String type, String name) {
+		return noSuchResourceException(type, name, "");
 	}
 	
-	static NoSuchResourceException noSuchResourceException(String name, String resource, String parent) {
-		return new NoSuchResourceException(format("no such resource %s[%s='%s']", name, parent, resource));
-	}
-
-	static NoSuchResourceException undeclaredResouceException(String child, String parent) {
-		return new NoSuchResourceException(format("'%s' is not member of '%s'", child, parent));
+	static NoSuchResourceException noSuchResourceException(String type, String name, String parent) {
+		return new NoSuchResourceException(format("no such resource %s[%s='%s']", parent, type, name));
 	}
 }

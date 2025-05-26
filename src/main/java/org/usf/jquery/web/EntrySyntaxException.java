@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 /**
+ * Signals that a entry syntax is invalid.
  * 
  * @author u$f
  *

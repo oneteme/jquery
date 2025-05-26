@@ -1,6 +1,4 @@
 package org.usf.jquery.web;
-
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.sql.DatabaseMetaData;
@@ -9,27 +7,26 @@ import java.util.Map;
 
 import org.usf.jquery.core.Database;
 
-import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
-@Slf4j
-@Getter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor
 public final class DatabaseMetadata {
 
 	private final Map<String, ViewMetadata> views; //lazy loading
 	private Database type;
 	
+	public Database getType() {
+		return type;
+	}
+	
 	public ColumnMetadata columnMetadata(ViewDecorator view, ColumnDecorator cd) {
 		var meta = viewMetadata(view);
-		return isNull(meta) ? null : meta.columnMetadata(cd);
+		return nonNull(meta) ? meta.columnMetadata(cd) : null;
 	}
 	
 	public ViewMetadata viewMetadata(ViewDecorator view) {

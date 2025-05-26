@@ -2,11 +2,11 @@ package org.usf.jquery.web;
 
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
-import static java.util.Objects.isNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
+import static org.usf.jquery.core.Utils.computeIfAbsentElseThrow;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
-import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
+import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -38,12 +38,8 @@ public final class QueryContext {
 	private final Map<String, ViewDecorator> views = new LinkedHashMap<>();
 	
 	public ViewDecorator declareView(ViewDecorator view) { //additional request views
-		return views.compute(view.identity(), (k,v)-> {
-			if(isNull(v)){
-				return view;
-			}
-			throw resourceAlreadyExistsException(k);
-		});
+		return views.compute(view.identity(), 
+				computeIfAbsentElseThrow(view, ()-> resourceAlreadyExistsMessage("view", view.identity())));
 	}
 	
 	public Optional<NamedColumn> lookupDeclaredColumn(String name) {

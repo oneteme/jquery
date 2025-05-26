@@ -63,7 +63,7 @@ public final class Query {
 		        	return mapper.map(rs);
 		        }
 				catch(SQLException e) {
-					throw new MappingException("error while mapping results", e);
+					throw new MappingException("error mapping results for query: " + sql, e);
 				}
 			}
 		}

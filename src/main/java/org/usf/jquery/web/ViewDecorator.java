@@ -1,9 +1,9 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Validation.requireNoArgs;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
-import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
+import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 
 import java.util.Map;
 
@@ -45,21 +45,19 @@ public interface ViewDecorator {
 	
 	default DBView view() {
 		var env = currentEnvironment();
-		return env.cacheView(identity(), 
-				()-> env.getDatabase().view(this));
+		return env.cacheView(identity(), ()-> env.getDatabase().view(this));
 	}
 	
 	default NamedColumn column(@NonNull ColumnDecorator cd, String... args) {//final
 		var name = columnName(cd);
 		if(nonNull(name)) {
-			requireNoArgs(args, ()-> "ViewColumn does not take arguments");
 			return new ViewColumn(name, view(), cd.type(this), cd.reference(this));
 		}
 		var b = cd.builder();
 		if(nonNull(b)) {
 			return b.build(this, currentEnvironment(), args).as(cd.reference(this), cd.type(this));
 		}
-		throw undeclaredResouceException(cd.identity(), identity());
+		throw noSuchResourceException(COLUMN_PARAM, cd.identity(), identity());
 	}
 	
 	default ViewMetadata metadata(Map<String, ColumnMetadata> colMetadata) {

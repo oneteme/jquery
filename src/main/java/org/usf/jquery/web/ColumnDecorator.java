@@ -34,20 +34,4 @@ public interface ColumnDecorator {
 	default Builder<ViewDecorator, ComparisonExpression> criteria(String name) {
 		return null; // no criteria by default
 	}
-
-	default JDBCArgumentParser parser(ViewDecorator vd) {
-		throw new UnsupportedOperationException("not impl."); // override parser | format | local | validation
-	}
-	
-	default String pattern(ViewDecorator td) {
-		throw new UnsupportedOperationException("not impl."); //improve API security and performance
-	}
-
-	default boolean canSelect(ViewDecorator td) {
-		throw new UnsupportedOperationException("not impl."); //authorization inject
-	}
-
-	default boolean canFilter(ViewDecorator td) {
-		throw new UnsupportedOperationException("not impl."); //authorization inject
-	}
 }

@@ -113,7 +113,7 @@ public final class Environment {
 					metadata.fetch(cnx.getMetaData(), schema);
 					return metadata;
 				} catch (SQLException e) {
-					throw new JQueryException(e);
+					throw new JQueryException("cannot bind metadata", e);
 				}
 			});
 		} else {

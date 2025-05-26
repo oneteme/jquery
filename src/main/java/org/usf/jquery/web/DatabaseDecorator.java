@@ -4,13 +4,13 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
-import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
+import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
+import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 
 import java.util.function.Consumer;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.TableView;
 
 /**
@@ -27,26 +27,21 @@ public interface DatabaseDecorator {
 	default DBView view(ViewDecorator vd) {
 		var tn = viewName(vd);
 		if(nonNull(tn)){
-			var idx = tn.indexOf('.');
-			return idx == -1
-					? new TableView(requireLegalVariable(tn), null, identity()) 
-					: new TableView(
-							requireLegalVariable(tn.substring(idx+1, tn.length())),
-							requireLegalVariable(tn.substring(0, idx)), identity());
+		var idx = tn.indexOf('.');
+		return idx == -1
+				? new TableView(requireLegalVariable(tn), null, identity()) 
+				: new TableView(
+							requireLegalVariable(tn.substring(idx+1, tn.length())), //schema
+							requireLegalVariable(tn.substring(0, idx)), identity()); //view
 		}
 		var b = vd.builder();
 		if(nonNull(b)) {
 			return b.build(this, currentEnvironment());
 		}
-		throw undeclaredResouceException(vd.identity(), identity());
+		throw noSuchResourceException(VIEW_PARAM, vd.identity(), identity());
 	}
 
 	default QueryComposer query(Consumer<QueryComposer> fn) {
 		return getEnvironment(identity()).query(fn);
-	}
-	
-	//TODO add web access
-	default Builder<DatabaseDecorator, QueryView> query(String name) {
-		return null;
 	}
 }
