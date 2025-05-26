@@ -15,7 +15,7 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 class RequestParameterResolver2Test {
 	
-	final QueryFilterRequestParamResolver res = new QueryFilterRequestParamResolver();
+	final QueryRequestFilterResolver res = new QueryRequestFilterResolver();
 	final String key = "dummy";
 	
 	// test bool params

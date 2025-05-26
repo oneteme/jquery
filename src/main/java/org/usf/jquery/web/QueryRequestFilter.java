@@ -9,7 +9,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface QueryFilterRequestParam {
+public @interface QueryRequestFilter {
 
 	String view(); //view identity
 	

@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.PARAMETER)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface QueryRequestParam {
+public @interface QueryRequest {
 
 	String view(); //view identity
 	

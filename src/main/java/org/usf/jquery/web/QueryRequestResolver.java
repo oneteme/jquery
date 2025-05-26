@@ -23,9 +23,9 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-public final class QueryRequestParameterResolver {//spring connection bridge
+public final class QueryRequestResolver {//spring connection bridge
 	
-	public QueryComposer requestQuery(@NonNull QueryRequestParam ant, @NonNull Map<String, String[]> parameterMap) {
+	public QueryComposer requestQuery(@NonNull QueryRequest ant, @NonNull Map<String, String[]> parameterMap) {
 		var t = currentTimeMillis();
 		log.trace("parsing request...");
 		var modifiableMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
