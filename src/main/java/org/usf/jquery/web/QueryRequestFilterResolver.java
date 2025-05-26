@@ -41,7 +41,7 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 		appendParam(modifiableMap, JOIN_PARAM, ant.join());
 		appendParam(modifiableMap, ORDER_PARAM, ant.order());
 		appendParam(modifiableMap, LIMIT_PARAM, ant.limit());
-		appendParam(modifiableMap, ORDER_PARAM, ant.offset());
+		appendParam(modifiableMap, OFFSET_PARAM, ant.offset());
 		appendParams(modifiableMap, ant.filters());
 		if (!isEmpty(ant.ignoreParameters())) {
 			for (var k : ant.ignoreParameters()) {
