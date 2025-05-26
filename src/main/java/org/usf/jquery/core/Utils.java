@@ -69,7 +69,7 @@ public final class Utils {
 	
 	public static <K, V> BiFunction<K, V, V> computeIfAbsentElseThrow(V o, Supplier<String> exceptionSupplier) {
 		return (k,v)-> {
-			if(nonNull(v)) {
+			if(isNull(v)) {
 				return o;
 			}
 			throw new IllegalArgumentException(exceptionSupplier.get());
