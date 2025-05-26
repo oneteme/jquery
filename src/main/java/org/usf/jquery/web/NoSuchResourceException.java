@@ -8,7 +8,7 @@ import static java.lang.String.format;
  *
  */
 @SuppressWarnings("serial")
-public final class NoSuchResourceException extends WebException {
+public final class NoSuchResourceException extends RuntimeException {
 
 	public NoSuchResourceException(String s) {
 		super(s);

@@ -7,7 +7,7 @@ package org.usf.jquery.web;
  *
  */
 @SuppressWarnings("serial")
-public final class EntrySyntaxException extends WebException {
+public final class EntrySyntaxException extends RuntimeException {
 
 	public EntrySyntaxException(String message) {
 		super(message);

@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.lang.Integer.parseInt;
+import static java.lang.System.currentTimeMillis;
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -41,6 +42,8 @@ public class DefaultRequestParser implements RequestParser {
 		var ctx = new QueryContext(ofNullable(env.getViews().get(defaultView))
 				.orElseThrow(()-> noSuchResourceException(VIEW_PARAM, defaultView, env.getDatabase().identity())));
 		return env.query(q->{
+			var t = currentTimeMillis();
+			log.trace("parsing request...");
 			try {
 				if(!isEmpty(variables)) {
 					for(var v : variables) {
@@ -55,12 +58,13 @@ public class DefaultRequestParser implements RequestParser {
 				parseLimit(ctx, parameterMap.remove(LIMIT_PARAM));
 				parseOffset(ctx, parameterMap.remove(OFFSET_PARAM));
 				parseFilters(ctx, parameterMap); //remove all entries before parse filters
-			} catch (WebException e) {
+				log.trace("request parsed in {} ms", currentTimeMillis() - t);
+			} catch (Exception e) {
 				if(log.isTraceEnabled()) {
 					log.trace(formatException(e));
 					var shift = 0;
 					Throwable ex = e.getCause();
-					while(nonNull(ex)){
+					while(hasSpecificCause(ex, EntrySyntaxException.class, EntryParseException.class)) {
 						log.trace("  ".repeat(++shift) + "~> " + formatException(ex));
 						ex = ex.getCause();
 					}
@@ -148,5 +152,17 @@ public class DefaultRequestParser implements RequestParser {
 	
 	private static String formatException(Throwable e) {
 		return e.getClass().getSimpleName() + ": " + e.getMessage();
+	}
+	
+	static boolean hasSpecificCause(Throwable e, Class<?>... classes) {
+		var ex = e.getCause();
+		if(nonNull(ex)) {
+			for(var c : classes) {
+				if(ex.getClass() == c) {
+					return true;
+				}
+			}
+		}
+		return false;
 	}
 }

@@ -7,7 +7,7 @@ package org.usf.jquery.web;
  *
  */
 @SuppressWarnings("serial")
-public final class EntryParseException extends WebException {
+public final class EntryParseException extends RuntimeException {
 
 	public EntryParseException(String message) {
 		super(message);

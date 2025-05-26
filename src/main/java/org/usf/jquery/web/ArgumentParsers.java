@@ -65,7 +65,7 @@ public class ArgumentParsers {
 			list.add(QUERY_COLUMN);
 		}
 		addAll(list, isEmpty(types) ? STD_TYPES : types);
-		var exList = new ArrayList<RuntimeException>();
+		EntryParseException lastEx = null;
 		for(var type : list) {
 			try {
 				if(type instanceof JDBCType t) {
@@ -77,12 +77,15 @@ public class ArgumentParsers {
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
 				}
-			} catch (WebException e) { //do not throw exception
-				exList.add(e);
+			} catch (EntryParseException  e) { //do not throw exception
+				if(e.getCause() instanceof EntrySyntaxException) {
+					throw e; //rethrow only if syntax exception, ignore other exceptions
+				}
+				lastEx = e;
 			}
 		}
-		if(exList.size() == 1) { //single type
-			throw exList.get(0);
+		if(list.size() == 1) { //single type
+			throw lastEx;
 		}
 		throw new EntryParseException(format("cannot parse entry '%s' as [%s]", 
 				entry, list.stream().map(Object::toString).collect(joining("|"))));

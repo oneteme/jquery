@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.lang.String.valueOf;
-import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
 import static org.usf.jquery.web.JQuery.defaultEnvironment;
@@ -22,22 +21,18 @@ import org.usf.jquery.core.QueryComposer;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
-@Slf4j
 @RequiredArgsConstructor
 public final class QueryRequestFilterResolver {// spring connection bridge
 
 	private static final Set<String> KEYWORDS = Set.of(COLUMN_PARAM, DISTINCT_PARAM, JOIN_PARAM, OFFSET_PARAM, LIMIT_PARAM, ORDER_PARAM);
 
 	public QueryComposer requestQueryCheck(@NonNull QueryRequestFilter ant, @NonNull Map<String, String[]> parameterMap) {
-		var t = currentTimeMillis();
-		log.trace("parsing request...");
 		for (var s : KEYWORDS) {
 			illegalArgumentIf(parameterMap.containsKey(s), () -> s + " argument not allowed");
 		}
@@ -55,9 +50,7 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 			}
 		}
 		var env = ant.database().isEmpty() ? defaultEnvironment() : getEnvironment(ant.database());
-		var qry = getRequestParser().parse(env, ant.view(), ant.variables(), mutableMap);
-		log.trace("request parsed in {} ms", currentTimeMillis() - t);
-		return qry;
+		return getRequestParser().parse(env, ant.view(), ant.variables(), mutableMap);
 	}
 
 	void appendParam(Map<String, String[]> params, String key, int value) {

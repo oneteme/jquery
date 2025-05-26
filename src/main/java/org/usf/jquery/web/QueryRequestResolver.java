@@ -1,6 +1,5 @@
 package org.usf.jquery.web;
 
-import static java.lang.System.currentTimeMillis;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.defaultEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
@@ -26,8 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 public final class QueryRequestResolver {//spring connection bridge
 	
 	public QueryComposer requestQuery(@NonNull QueryRequest ant, @NonNull Map<String, String[]> parameterMap) {
-		var t = currentTimeMillis();
-		log.trace("parsing request...");
 		var modifiableMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
 		if(!isEmpty(ant.ignoreParameters())) {
 			log.trace("ignoring parameters: {}", Arrays.toString(ant.ignoreParameters()));
@@ -43,7 +40,6 @@ public final class QueryRequestResolver {//spring connection bridge
 		var env = ant.database().isEmpty() ? defaultEnvironment() : getEnvironment(ant.database());
 		var qry = getRequestParser().parse(env, ant.view(), ant.variables(), modifiableMap);
 		if(!ant.aggregationOnly() || qry.isAggregation()) {
-			log.trace("request parsed in {} ms", currentTimeMillis() - t);
 			return qry;
 		}
 		throw new ResourceAccessException("query is not aggregation");
