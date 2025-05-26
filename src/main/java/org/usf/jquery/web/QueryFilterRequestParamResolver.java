@@ -31,11 +31,11 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor
-public final class StrictRequestParameterResolver {// spring connection bridge
+public final class QueryFilterRequestParamResolver {// spring connection bridge
 
 	private static final Set<String> KEYWORDS = Set.of(COLUMN_PARAM, DISTINCT_PARAM, JOIN_PARAM, OFFSET_PARAM, LIMIT_PARAM, ORDER_PARAM);
 
-	public QueryComposer requestQueryCheck(@NonNull RequestQueryParam2 ant, @NonNull Map<String, String[]> parameterMap) {
+	public QueryComposer requestQueryCheck(@NonNull QueryFilterRequestParam ant, @NonNull Map<String, String[]> parameterMap) {
 		var t = currentTimeMillis();
 		log.trace("parsing request...");
 		for (var s : KEYWORDS) {
