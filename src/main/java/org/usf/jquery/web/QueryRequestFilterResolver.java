@@ -34,7 +34,7 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 
 	public QueryComposer requestQueryCheck(@NonNull QueryRequestFilter ant, @NonNull Map<String, String[]> parameterMap) {
 		for (var s : KEYWORDS) {
-			illegalArgumentIf(parameterMap.containsKey(s), () -> s + " argument not allowed");
+			illegalArgumentIf(parameterMap.containsKey(s), ()-> s + " argument not allowed");
 		}
 		var mutableMap = new LinkedHashMap<>(parameterMap); // modifiable map + preserve order
 		appendParam(mutableMap, COLUMN_PARAM, ant.column());

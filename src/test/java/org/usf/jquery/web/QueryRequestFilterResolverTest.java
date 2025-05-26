@@ -84,7 +84,7 @@ class QueryRequestFilterResolverTest {
 
 	@ParameterizedTest
 	@MethodSource("testAppendFilters_success")
-	void testAppendFilters_success(String[] params, String key,String expectedValue) {
+	void testAppendFilters_success(String[] params, String key, String expectedValue) {
 		var map = new HashMap<String, String[]>();
 		res.appendParams(map, params);
 		assertArrayEquals(expectedValue != null ? new String[]{expectedValue}:null, map.get(key));
@@ -99,8 +99,7 @@ class QueryRequestFilterResolverTest {
 				arguments(new String[] {"=x=y"}, incorrectFilter + "'=x=y'"),
 				arguments(new String[] {"x=y,z="}, incorrectFilter + "'x=y,z='"),
 				arguments(new String[] {"x=val1,val2=,val3"}, incorrectFilter + "'x=val1,val2=,val3'"),
-				arguments(new String[] {"=x"}, nullFilterKey + "'=x'")
-				);
+				arguments(new String[] {"=x"}, nullFilterKey + "'=x'"));
 	}
 	
 	@ParameterizedTest
