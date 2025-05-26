@@ -33,24 +33,23 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 	private static final Set<String> KEYWORDS = Set.of(COLUMN_PARAM, DISTINCT_PARAM, JOIN_PARAM, OFFSET_PARAM, LIMIT_PARAM, ORDER_PARAM);
 
 	public QueryComposer requestQueryCheck(@NonNull QueryRequestFilter ant, @NonNull Map<String, String[]> parameterMap) {
-		for (var s : KEYWORDS) {
-			illegalArgumentIf(parameterMap.containsKey(s), ()-> s + " argument not allowed");
-		}
-		var mutableMap = new LinkedHashMap<>(parameterMap); // modifiable map + preserve order
-		appendParam(mutableMap, COLUMN_PARAM, ant.column());
-		appendParam(mutableMap, DISTINCT_PARAM, ant.distinct());
-		appendParam(mutableMap, JOIN_PARAM, ant.join());
-		appendParam(mutableMap, OFFSET_PARAM, ant.order());
-		appendParam(mutableMap, LIMIT_PARAM, ant.limit());
-		appendParam(mutableMap, ORDER_PARAM, ant.offset());
-		appendParams(parameterMap, ant.filters());
+		parameterMap.keySet().forEach(k-> 
+			illegalArgumentIf(KEYWORDS.contains(k), ()-> k + " argument not allowed"));
+		var modifiableMap = new LinkedHashMap<>(parameterMap); // modifiable map + preserve order
+		appendParam(modifiableMap, COLUMN_PARAM, ant.column());
+		appendParam(modifiableMap, DISTINCT_PARAM, ant.distinct());
+		appendParam(modifiableMap, JOIN_PARAM, ant.join());
+		appendParam(modifiableMap, OFFSET_PARAM, ant.order());
+		appendParam(modifiableMap, LIMIT_PARAM, ant.limit());
+		appendParam(modifiableMap, ORDER_PARAM, ant.offset());
+		appendParams(modifiableMap, ant.filters());
 		if (!isEmpty(ant.ignoreParameters())) {
 			for (var k : ant.ignoreParameters()) {
-				mutableMap.remove(k);
+				modifiableMap.remove(k);
 			}
 		}
 		var env = ant.database().isEmpty() ? defaultEnvironment() : getEnvironment(ant.database());
-		return getRequestParser().parse(env, ant.view(), ant.variables(), mutableMap);
+		return getRequestParser().parse(env, ant.view(), ant.variables(), modifiableMap);
 	}
 
 	void appendParam(Map<String, String[]> params, String key, int value) {
