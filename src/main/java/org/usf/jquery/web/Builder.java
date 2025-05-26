@@ -24,7 +24,7 @@ public interface Builder<T,V> {
 	}
 	
 	static <T extends Chainable<T>> Builder<ViewDecorator, T> singleArgCriteria(ChainableCriteria<T> crt){
-		return (view, env, args)-> crt.criteria(isEmpty(args) 
+		return (view, env, args)-> crt.criteria(view, env, isEmpty(args) 
 				? null 
 				: requireNArgs(1, args, ()-> "single arg criteria")[0]);
 	}
@@ -35,7 +35,7 @@ public interface Builder<T,V> {
 
 	static <T extends Chainable<T>> Builder<ViewDecorator, T> multiArgsCriteria(LogicalOperator op, ChainableCriteria<T> crt){
 		return (view, env, args)-> isEmpty(args) 
-				? crt.criteria(null)
-				: Stream.of(args).map(crt::criteria).reduce(op::combine).orElseThrow();
+				? crt.criteria(view, env, null)
+				: Stream.of(args).map(o-> crt.criteria(view, env, o)).reduce(op::combine).orElseThrow();
 	}
 }
