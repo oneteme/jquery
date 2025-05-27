@@ -33,8 +33,7 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 	private static final Set<String> KEYWORDS = Set.of(COLUMN_PARAM, DISTINCT_PARAM, JOIN_PARAM, OFFSET_PARAM, LIMIT_PARAM, ORDER_PARAM);
 
 	public QueryComposer requestQueryCheck(@NonNull QueryRequestFilter ant, @NonNull Map<String, String[]> parameterMap) {
-		parameterMap.keySet().forEach(k-> 
-			illegalArgumentIf(KEYWORDS.contains(k), ()-> k + " argument not allowed"));
+		parameterMap.keySet().forEach(k-> illegalArgumentIf(KEYWORDS.contains(k), ()-> k + " argument not allowed"));
 		var modifiableMap = new LinkedHashMap<>(parameterMap); // modifiable map + preserve order
 		appendParam(modifiableMap, COLUMN_PARAM, ant.column());
 		appendParam(modifiableMap, DISTINCT_PARAM, ant.distinct());

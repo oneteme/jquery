@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNullElseGet;
+import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Utils.computeIfAbsentElseThrow;
 import static org.usf.jquery.core.Utils.requireNonNullElseThrow;
 import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage;
@@ -59,11 +60,13 @@ public final class JQuery {
 	public static <T> T apply(Environment env, Function<Environment, T> fn) {	
 		var cur = LOCAL_ENV.get();
 		if(isNull(cur)) {
+			currentDatabase(env.getMetadata().getType());
 			LOCAL_ENV.set(env);
 			try {
 				return fn.apply(env);
 			} finally {
 				LOCAL_ENV.remove();
+				currentDatabase(null);
 			}
 		}
 		else if(cur.getDatabase() == env.getDatabase()) {

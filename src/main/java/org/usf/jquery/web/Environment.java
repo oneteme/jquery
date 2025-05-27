@@ -12,7 +12,6 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Collectors.toUnmodifiableMap;
-import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNonEmpty;
 import static org.usf.jquery.web.ColumnMetadata.columnMetadata;
@@ -91,7 +90,6 @@ public final class Environment {
 	
 	public QueryComposer query(Consumer<QueryComposer> fn) {
 		return apply(this, env-> { //no query
-			currentDatabase(metadata.getType());
 			var q = new QueryComposer();
 			var list = stack.get();
 			if(list.add(q)) {
@@ -101,7 +99,6 @@ public final class Environment {
 				}
 				finally {
 					list.remove(q);
-					currentDatabase(null);
 				}
 			}
 			throw new IllegalStateException("cannot nest queries");
