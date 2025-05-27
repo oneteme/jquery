@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
-import static org.usf.jquery.core.Database.setCurrentDatabase;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
 import static org.usf.jquery.core.QueryBuilder.parameterized;
@@ -69,15 +68,8 @@ public class QueryComposer {
 	private Role role;
 	
 	private final Map<DBView, QueryView> overView = new HashMap<>();
-	
-	public QueryComposer() {
-		this(null);
-	}
-	
-	public QueryComposer(Database target) {
-		setCurrentDatabase(target);
-	}
-	
+
+
 	public String[] getVariables(String key){
 		return variables.get(key);
 	}
@@ -180,7 +172,7 @@ public class QueryComposer {
 	}
 
 	public QueryView subQuery(DBView view) {
-		return subQuery(view, ()-> new QueryComposer(currentDatabase()).columns(allColumns(view)).asView());
+		return subQuery(view, ()-> new QueryComposer().columns(allColumns(view)).asView());
 	}
 	
 	public QueryView subQuery(DBView view, Supplier<QueryView> orElse) {

@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
@@ -71,7 +70,7 @@ public final class OperationColumn implements DBColumn {
 	
 	ViewColumn replaceNestedView(QueryComposer query) {
 		var col = new OperationColumn(operator, args, type).as("over_" + hashCode());
-		var views = new QueryComposer(currentDatabase()).columns(col).getViews(); //scan column views
+		var views = new QueryComposer().columns(col).getViews(); //scan column views
 		if(views.size() == 1) {
 			var sub = query.subQuery(views.iterator().next()); //get existing subQuery
 			sub.getComposer().columns(col); 

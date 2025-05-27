@@ -20,7 +20,7 @@ public enum Database {
 		return local.get();
 	}
 
-	static void setCurrentDatabase(Database db) {
+	public static void currentDatabase(Database db) {
 		if(nonNull(db)) {
 			local.set(db);
 		}
