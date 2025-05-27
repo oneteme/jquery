@@ -40,6 +40,10 @@ public interface DatabaseDecorator {
 		}
 		throw noSuchResourceException(VIEW_PARAM, vd.identity(), identity());
 	}
+	
+	default QueryComposer query() { //out of context
+		return getEnvironment(identity()).query(q-> {});
+	}
 
 	default QueryComposer query(Consumer<QueryComposer> fn) {
 		return getEnvironment(identity()).query(fn);
