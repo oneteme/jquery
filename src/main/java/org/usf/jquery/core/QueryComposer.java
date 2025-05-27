@@ -180,7 +180,7 @@ public class QueryComposer {
 	}
 
 	public QueryView subQuery(DBView view) {
-		return subQuery(view, ()-> new QueryComposer().columns(allColumns(view)).asView());
+		return subQuery(view, ()-> new QueryComposer(currentDatabase()).columns(allColumns(view)).asView());
 	}
 	
 	public QueryView subQuery(DBView view, Supplier<QueryView> orElse) {
