@@ -11,7 +11,6 @@ import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 
 import lombok.NonNull;
@@ -51,7 +50,7 @@ public interface ViewDecorator {
 	default NamedColumn column(@NonNull ColumnDecorator cd, String... args) {//final
 		var name = columnName(cd);
 		if(nonNull(name)) {
-			return new ViewColumn(name, view(), cd.type(this), cd.reference(this));
+			return view().column(name, cd.type(this), cd.reference(this));
 		}
 		var b = cd.builder();
 		if(nonNull(b)) {

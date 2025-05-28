@@ -267,23 +267,15 @@ public class QueryComposer {
 		}
 		if(!from.isEmpty()) {
 			query.append(" FROM ").appendEach(SCOMA, from, v-> {
-				if(!ctes.contains(v)) {
-					query.append(v).appendSpace();
-				}
-				query.appendViewAlias(v);
+				var res = v.resolveView(query);
+				query.append(res).appendSpace().appendViewAlias(res);
 			});
 		}
 	}
 	
 	void join(QueryBuilder builder) {
 		if(!joins.isEmpty()) {
-			builder.appendSpace().appendEach(SPACE, joins, v-> {
-				if(overView.containsKey(v.getView())) {
-					var cte = overView.get(v.getView()); 
-					v = v.map(c-> c.appendViewAlias(cte));
-				}
-				v.build(builder);
-			});
+			builder.appendSpace().appendEach(SPACE, joins);
 		}
 	}
 

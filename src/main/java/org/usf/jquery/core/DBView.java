@@ -28,6 +28,17 @@ public interface DBView extends DBObject {
 		build(query);
 	}
 	
+	default DBView resolveView(QueryBuilder query) {
+		var sub = query.subView(this);
+		if(sub.isPresent()) {
+			return sub.get().asReference();
+		}
+		else if(query.isCte(this)) {
+			return asReference(); 
+		}
+		return this; //no mapping
+	}
+	
 	default ViewColumn column(String name) {
 		return new ViewColumn(name, this, null, null);
 	}
@@ -38,5 +49,9 @@ public interface DBView extends DBObject {
 	
 	default ViewColumn column(String name, JDBCType type, String tag) {
 		return new ViewColumn(name, this, type, tag);
+	}
+	
+	default ViewRef asReference() {
+		return new ViewRef(this);
 	}
 }

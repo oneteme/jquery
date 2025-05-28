@@ -10,7 +10,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.Objects;
 import java.util.function.Consumer;
 
 import lombok.Getter;
@@ -44,16 +43,11 @@ public final class ViewJoin implements DBObject {
 	@Override
 	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
-		query.append(joinType.name()).append(" JOIN ").append(view).appendSpace().appendViewAlias(view);
+		var res = view.resolveView(query);
+		query.append(joinType.name()).append(" JOIN ").append(res).appendSpace().appendViewAlias(res);
 		if(!isEmpty(filters)) {
 			query.append(" ON ").appendEach(AND.sql(), filters);
 		} //else cross join
-	}
-	
-	public ViewJoin map(DBView view) {
-		return Objects.equals(this.view, view) 
-				? this 
-				: new ViewJoin(joinType, view, filters); 
 	}
 	
 	@Override

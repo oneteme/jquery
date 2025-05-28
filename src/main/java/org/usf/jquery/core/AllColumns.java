@@ -45,9 +45,9 @@ public final class AllColumns implements NamedColumn {
 		return null;
 	}
 	
-	@Override
+	@Override //!important: it does not takes tag
 	public String getTag() {
-		return null;
+		return null; 
 	}
 	
 	@Override

@@ -4,6 +4,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
@@ -15,6 +16,7 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 import lombok.AccessLevel;
@@ -38,8 +40,17 @@ public final class QueryBuilder {
 	private final Map<QueryView, String> ctes;
 	private final Map<DBView, String> views;
 	private final List<TypedArg> args;
+	private final Map<DBView, QueryView> overViews;
 	@Getter
 	private final Object currentModel;
+
+	Optional<QueryView> subView(DBView view) {
+		return ofNullable(overViews).map(map -> map.get(view));
+	}
+	
+	public boolean isCte(DBView view) {
+		return view instanceof QueryView q && ctes.containsKey(q);
+	}
 	
 	public QueryBuilder appendViewAlias(DBView view) {
 		return appendViewAlias(view, "");
@@ -136,11 +147,11 @@ public final class QueryBuilder {
 	}
 
 	public QueryBuilder withValue() { //inherit schema, prefix, args but not views
-		return new QueryBuilder(schema, prefix, query, ctes, views, null, currentModel); //no args
+		return new QueryBuilder(schema, prefix, query, ctes, views, null, overViews, currentModel); //no args
 	}
 
 	public QueryBuilder withModel(Object model) { //overwrite model only
-		return new QueryBuilder(schema, prefix, query, ctes, views, args, model);
+		return new QueryBuilder(schema, prefix, query, ctes, views, args, overViews, model);
 	}
 	
 	public QueryBuilder subQuery(Collection<DBView> views, Map<DBView, QueryView> overview) { //inherit schema, prefix, args but not views
@@ -149,7 +160,7 @@ public final class QueryBuilder {
 		if(!isEmpty(overview)) {
 			overview.forEach((k,v)-> vMap.put(k, ctes.get(v))); //override or add
 		}
-		return new QueryBuilder(schema, s, query, ctes, vMap, args, currentModel);
+		return new QueryBuilder(schema, s, query, ctes, vMap, args, overview, currentModel);
 	}
 	
 	public Query build() {
@@ -213,7 +224,7 @@ public final class QueryBuilder {
 		if(!isEmpty(overview)) {
 			overview.forEach((k,v)-> vMap.put(k, cMap.get(v))); //override or add
 		}
-		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args, null);
+		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args, overview, null);
 	}
 		
 	private static <T> Map<T, String> viewAlias(String prefix, Collection<T> views){
