@@ -31,5 +31,7 @@ public @interface QueryRequestFilter {
 	
 	String[] ignoreParameters() default {}; // will be not parsed
 	
+	String[] allowParameters() default {}; // will be allowed in url
+	
 	String[] variables() default {}; // URL variable
 }
