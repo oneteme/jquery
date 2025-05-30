@@ -152,12 +152,10 @@ public class DefaultRequestParser implements RequestParser {
 		if(log.isTraceEnabled()) {
 			log.trace(formatException(e));
 			var shift = 0;
-			Throwable ex = e.getCause();
-			if(nonNull(ex)) {
-				do {
-					log.trace("  ".repeat(++shift) + "~> " + formatException(ex));
-					ex = ex.getCause();
-				} while(hasSpecificCause(ex, EntrySyntaxException.class, EntryParseException.class));
+			Throwable ex = e;
+			while(hasSpecificCause(ex, EntrySyntaxException.class, EntryParseException.class)) {
+				log.trace("  ".repeat(++shift) + "~> " + formatException(ex));
+				ex = ex.getCause();
 			}
 		}
 	}

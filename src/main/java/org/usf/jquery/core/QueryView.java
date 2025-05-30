@@ -18,6 +18,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -52,6 +53,14 @@ public final class QueryView implements DBView {
 	private Integer offset;
 	private Object[] drivenModel;
 	private Map<DBView, QueryView> overView;
+	
+	@Override
+	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+		if(!isEmpty(ctes)) {
+			composer.ctes(ctes);
+		}
+		return -1;
+	}
 
 	@Override
 	public void build(QueryBuilder query) {
@@ -63,7 +72,7 @@ public final class QueryView implements DBView {
 	public Query build(String schema, boolean parameterized) {
 		log.trace("building query...");
 		var bg = currentTimeMillis();
-		var flatCTE = flatCte().toArray(QueryView[]::new);
+		var flatCTE = flatCte().distinct().toArray(QueryView[]::new);
 		var builder = parameterized 
 				? parameterized(schema, flatCTE, views, unmodifiableMap(overView))
 				: addWithValue(schema, flatCTE, views, unmodifiableMap(overView));
