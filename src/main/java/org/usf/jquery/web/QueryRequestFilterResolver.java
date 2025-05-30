@@ -13,12 +13,14 @@ import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
 
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 
 import org.usf.jquery.core.QueryComposer;
+import org.usf.jquery.core.Utils;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -48,7 +50,7 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 		appendParam(modifiableMap, OFFSET_PARAM, ant.offset()); // if allow override anno. offset
 		appendParams(modifiableMap, ant.filters());
 		
-		ignoreParams(modifiableMap,ant.ignoreParameters());
+		ignoreParams(modifiableMap, ant.ignoreParameters());
 		
 		var env = ant.database().isEmpty() ? defaultEnvironment() : getEnvironment(ant.database());
 		return getRequestParser().parse(env, ant.view(), ant.variables(), modifiableMap);
@@ -61,7 +63,7 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 			}
 		}
 	}
-	void ignoreParams(Map<String, String[]> params,String[] ignoredParams) {
+	void ignoreParams(Map<String, String[]> params, String[] ignoredParams) {
 		if (!isEmpty(ignoredParams)) {
 			for (var k : ignoredParams) {
 				params.remove(k);
@@ -81,9 +83,19 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 		}
 	}
 
-	void appendParam(Map<String, String[]> params, String key, String[] value) {
+	void appendParam(Map<String, String[]> params, String key, String[] value, String[] allowedParams) {
 		if (!isEmpty(value)) {
+			if(checkForMerge(params, key, allowedParams)) {
+				var urlVal = params.get(key);
+				for (String val : value) {
+					if (!Arrays.asList(urlVal).contains(val)) {		
+						Utils.append(urlVal, val);
+					}
+				}
+				value = urlVal;
+			}				
 			params.putIfAbsent(key, value);
+			
 		}
 	}
 
@@ -97,5 +109,12 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 				params.put(arr[0], arr.length > 1 ? new String[] { arr[1] } : null);
 			}
 		}
+	}
+	boolean checkForMerge(Map<String, String[]> params, String key, String[] allowedParams) {
+		return Arrays.asList(allowedParams).contains(key) && params.get(key) != null;
+	}
+	
+	boolean checkForMerge(Map<String, String[]> params, String key) {
+		return params.get(key) != null;
 	}
 }
