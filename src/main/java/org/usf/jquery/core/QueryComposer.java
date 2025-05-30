@@ -1,38 +1,32 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
-import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.toSet;
+import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.DBColumn.allColumns;
-import static org.usf.jquery.core.Database.TERADATA;
-import static org.usf.jquery.core.Database.currentDatabase;
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryBuilder.addWithValue;
-import static org.usf.jquery.core.QueryBuilder.parameterized;
 import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Role.JOIN;
 import static org.usf.jquery.core.Role.ORDER;
 import static org.usf.jquery.core.Role.UNION;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.computeIfAbsentElseThrow;
-import static org.usf.jquery.core.Validation.requireNonEmpty;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
+import java.util.function.IntFunction;
+import java.util.function.Predicate;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -51,12 +45,12 @@ public class QueryComposer {
 	
 	private final Set<QueryView> ctes = new LinkedHashSet<>();
 	private final List<NamedColumn> columns = new ArrayList<>();
+	private final Set<DBView> views = new LinkedHashSet<>(); //preserve order
+	private final List<ViewJoin> joins = new ArrayList<>(); 
 	private final Set<DBColumn> group = new HashSet<>(); 
 	private final List<DBFilter> where = new ArrayList<>(); 
 	private final List<DBFilter> having = new ArrayList<>();
-	private final List<ViewJoin> joins = new ArrayList<>(); 
 	private final List<DBOrder> orders = new ArrayList<>();
-	private final Set<DBView> views = new LinkedHashSet<>(); //preserve order
 	private final List<QueryUnion> unions = new ArrayList<>();
 	private final Map<String, String[]> variables = new LinkedHashMap<>();
 	private boolean distinct;
@@ -65,10 +59,11 @@ public class QueryComposer {
 	private Integer offset;
 	private Object[] drivenModel;
 	
+	private final Map<DBView, QueryComposer> overView = new HashMap<>();
+	
 	private Role role;
 	
-	private final Map<DBView, QueryView> overView = new HashMap<>();
-
+	private QueryView queryView = new QueryView(); //assume unique reference
 
 	public String[] getVariables(String key){
 		return variables.get(key);
@@ -76,7 +71,6 @@ public class QueryComposer {
 	
 	public QueryComposer ctes(@NonNull QueryView... ctes) {
 		for(var c : ctes) {
-			c.compose(this, DO_NOTHING);
 			this.ctes.add(c);
 		}
 		return this;
@@ -91,14 +85,6 @@ public class QueryComposer {
 				throw new IllegalArgumentException(resourceAlreadyExistsMessage("column", col.getTag()));
 			}
 			aggregation |= this.columns.add(col) && col.compose(this, group::add) > 0;
-		}
-		return this;
-	}
-	
-	public QueryComposer orders(@NonNull DBOrder... orders) {
-		this.role = ORDER;
-		for(var o : orders) {
-			aggregation |= this.orders.add(o) && o.compose(this, group::add) > 0;
 		}
 		return this;
 	}
@@ -124,6 +110,14 @@ public class QueryComposer {
 		for(var j : joins) {
 			j.compose(this, DO_NOTHING); //declare views only, no aggregation
 			this.joins.add(j);
+		}
+		return this;
+	}
+	
+	public QueryComposer orders(@NonNull DBOrder... orders) {
+		this.role = ORDER;
+		for(var o : orders) {
+			aggregation |= this.orders.add(o) && o.compose(this, group::add) > 0;
 		}
 		return this;
 	}
@@ -170,165 +164,81 @@ public class QueryComposer {
 		}
 		return this;
 	}
-
-	public QueryView subQuery(DBView view) {
-		return subQuery(view, ()-> new QueryComposer().columns(allColumns(view)).asView());
-	}
 	
-	public QueryView subQuery(DBView view, Supplier<QueryView> orElse) {
-		return overView.computeIfAbsent(view, v->{
-			var sub = requireNonNull(orElse.get(), "subQuery is null");
-			ctes(sub);
+	public QueryView getSubView(DBView view) {
+		var sub = overView.get(view);
+		return nonNull(sub) ? sub.getQueryView() : null;
+	}
+
+	public QueryComposer subQuery(DBView view, Consumer<QueryComposer> consumer) {
+		return subQuery(view, true, consumer);
+	}
+
+	public QueryComposer subQuery(DBView view, boolean allColumn, Consumer<QueryComposer> consumer) {
+		var q = overView.computeIfAbsent(view, k-> {
+			var sub = new QueryComposer();
+			if(allColumn) {
+				sub.columns(allColumns(k));
+			}
+			ctes(sub.getQueryView());
 			return sub;
 		});
+		consumer.accept(q);
+		q.compose(); //!important compose sub query each time after change
+		return this;
 	}
 	
-	public QueryView asView() {
-		return new QueryView(this);
+	@Deprecated(forRemoval = true, since = "v4")
+	public Query build(){
+		return compose().build(null, true);
 	}
 	
-	public Query compose(){
-		return compose(null, true);
-	}
-
-	public Query compose(String schema, boolean parameterized) {
-		log.trace("building query...");
-    	requireNonEmpty(columns, "columns");
+	public QueryView compose() { //TD check this[clause].length = QueryView[clause].length
+		log.trace("composing query...");
 		var bg = currentTimeMillis();
-		var builder = parameterized 
-				? parameterized(schema, ctes, views, overView)
-				: addWithValue(schema, ctes, views, overView);	
-		with(builder); //before build
-		build(builder);
-		log.trace("query built in {} ms", currentTimeMillis() - bg);
-		return builder.build();
-	}
-	
-	public final void build(QueryBuilder builder){
-		if(isNull(drivenModel)) {
-			internalBuild(builder);
+		if(!isEmpty(columns)) {
+			acceptArray(columns, NamedColumn[]::new, queryView::setColumns);
 		}
 		else {
-			builder.appendEach(" UNION ALL ", drivenModel, o-> internalBuild(builder.withModel(o)));
+			throw new IllegalArgumentException("no columns defined in query");
 		}
-	}
-	
-	private void internalBuild(QueryBuilder builder) {
-		select(builder);
-		from(builder);
-		join(builder);
-    	where(builder);
-    	groupBy(builder);
-    	having(builder);
-    	orderBy(builder);
-    	fetch(builder);
-    	union(builder);
-	}
-	
-	void with(QueryBuilder builder) {
-		if(!ctes.isEmpty()) {
-			builder.append("WITH ")
-			.appendEach(SCOMA, ctes, v-> builder.appendViewAlias(v).appendAs().append(v)) //query parenthesis
-			.appendSpace();
+		acceptArray(ctes, QueryView[]::new, queryView::setCtes);
+		acceptArray(views, DBView[]::new, queryView::setViews);
+		acceptArray(joins, ViewJoin[]::new, queryView::setJoins);
+		acceptArray(where, DBFilter[]::new, queryView::setWhere);
+		acceptArray(group, DBColumn[]::new, queryView::setGroup);
+		acceptArray(having, DBFilter[]::new, queryView::setHaving);
+		acceptArray(orders, DBOrder[]::new, queryView::setOrders);
+		acceptArray(unions, QueryUnion[]::new, queryView::setUnions);
+		acceptObject(limit, Objects::nonNull, queryView::setLimit);
+		acceptObject(offset, Objects::nonNull, queryView::setOffset);
+		acceptObject(drivenModel, Objects::nonNull, queryView::setDrivenModel);
+		if(isDistinct()) {
+			queryView.setDistinct(true);
 		}
+		if(isAggregation()) {
+			queryView.setAggregation(true);
+		}
+		queryView.setOverView(overView.entrySet().stream()
+				.collect(toMap(Entry::getKey, v-> v.getValue().getQueryView()))); 
+		log.trace("query composed in {} ms", currentTimeMillis() - bg);
+		return queryView;
 	}
 
-	void select(QueryBuilder builder){
-		if(currentDatabase() == TERADATA) {
-			if(nonNull(offset)) {
-				throw new UnsupportedOperationException("");
-			}
-			if(distinct && nonNull(limit)) {
-				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
-			}
-		}
-		builder.append("SELECT ");
-		if(distinct) {
-			builder.append("DISTINCT ");
-		}
-    	if(nonNull(limit) && currentDatabase() == TERADATA){
-    		builder.append("TOP " + limit);
-    	}
-    	builder.appendEach(SCOMA, columns, o-> {
-    		builder.append(o);
-    		var tag = o.getTag();
-    		if(nonNull(tag)) {
-    			builder.appendAs().append(doubleQuote(tag));
-    		}
-    	});
-	}
-	
-	void from(QueryBuilder query) {
-		var from = views.stream().map(v-> overView.containsKey(v) ? overView.get(v) : v).collect(toSet());
-		if(!joins.isEmpty()) {
-			joins.stream() //exclude join views
-			.map(ViewJoin::getView)
-			.forEach(v-> from.remove(overView.containsKey(v) ? overView.get(v) : v));
-		}
-		if(!from.isEmpty()) {
-			query.append(" FROM ").appendEach(SCOMA, from, v-> {
-				var res = v.resolveView(query);
-				query.append(res).appendSpace().appendViewAlias(res);
-			});
-		}
-	}
-	
-	void join(QueryBuilder builder) {
-		if(!joins.isEmpty()) {
-			builder.appendSpace().appendEach(SPACE, joins);
-		}
-	}
-
-	void where(QueryBuilder builder){
-		if(!where.isEmpty()) {
-    		builder.append(" WHERE ").appendEach(AND.sql(), where);
-		}
-	}
-	
-	void groupBy(QueryBuilder builder){
-		if(aggregation && !group.isEmpty()) {
-    		builder.append(" GROUP BY ").appendEach(SCOMA, group, c-> {
-    			if(!(c instanceof ViewColumn) && columns.contains(c)) {
-    				builder.append(((NamedColumn)c).getTag());
-    			}
-    			else {
-    				 c.build(builder);
-    			}
-    		});
-		}
-	}
-	
-	void having(QueryBuilder builder){
-		if(!having.isEmpty()) {
-    		builder.append(" HAVING ").appendEach(AND.sql(), having);
-		}
-	}
-	
-	void orderBy(QueryBuilder builder) {
-    	if(!orders.isEmpty()) {
-    		builder.append(" ORDER BY ").appendEach(SCOMA, orders);
-    	}
-	}
-	
-	void fetch(QueryBuilder builder) {
-		if(currentDatabase() != TERADATA) { // TOP n
-			if(nonNull(limit)) {
-				builder.append(" LIMIT " + limit);
-			}
-			if(nonNull(offset)) {
-				builder.append(" OFFSET " + offset);
-			}
-		}
-	}
-
-	void union(QueryBuilder builder) {
-    	if(!unions.isEmpty()) {
-    		builder.appendSpace().appendEach(SPACE, unions);
-    	}
-	}
-	
 	@Override
 	public String toString() {
-		return compose(null, false).getSql();
+		return compose().toString();
+	}
+	
+	static <T> void acceptArray(Collection<T> arr, IntFunction<T[]> generator, Consumer<T[]> consumer) {
+		if(!isEmpty(arr)) {
+			consumer.accept(arr.stream().toArray(generator));
+		}
+	}
+
+	static <T> void acceptObject(T o, Predicate<T> pre, Consumer<T> consumer) {
+		if(pre.test(o)) {
+			consumer.accept(o);
+		}
 	}
 }

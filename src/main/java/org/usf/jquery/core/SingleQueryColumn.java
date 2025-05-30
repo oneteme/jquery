@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.function.Consumer;
@@ -17,12 +18,9 @@ public final class SingleQueryColumn implements DBObject, Typed {
 	private final JDBCType type;
 
 	SingleQueryColumn(QueryView view) {
-		var cols = view.getComposer().getColumns(); 
-		if(cols.size() != 1) {
-			throw new IllegalArgumentException("require only one column");
-		}
+		var cols = requireNArgs(1, view.getColumns(), SingleQueryColumn.class::getSimpleName);
 		this.view = view;
-		this.type = cols.get(0).getType();
+		this.type = cols[0].getType();
 	}
 
 	@Override

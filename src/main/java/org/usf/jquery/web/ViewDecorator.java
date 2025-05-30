@@ -46,6 +46,8 @@ public interface ViewDecorator {
 		var env = currentEnvironment();
 		return env.cacheView(identity(), ()-> env.getDatabase().view(this));
 	}
+
+//	default NamedColumn column(@NonNull String id, String... args) //final
 	
 	default NamedColumn column(@NonNull ColumnDecorator cd, String... args) {//final
 		var name = columnName(cd);

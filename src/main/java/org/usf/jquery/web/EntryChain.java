@@ -206,7 +206,7 @@ final class EntryChain {
 	}
 	
 	public SingleQueryColumn evalQueryColumn(QueryContext ctx) {		
-		return parseQuery(ctx, false).getQuery().asColumn();
+		return parseQuery(ctx, false).view().asColumn();
 	}
 
 	public ViewDecorator parseQuery(QueryContext ctx) {
@@ -239,7 +239,7 @@ final class EntryChain {
 						}
 					}
 				});
-				return new QueryDecorator(requireTag ? e[0].requireTag() : e[0].tag, qry.asView());
+				return new QueryDecorator(requireTag ? e[0].requireTag() : e[0].tag, qry.compose());
 			}
 			catch (Exception ex) {
 				cause = ex;

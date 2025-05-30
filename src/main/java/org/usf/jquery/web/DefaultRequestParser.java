@@ -60,15 +60,7 @@ public class DefaultRequestParser implements RequestParser {
 				parseFilters(ctx, parameterMap); //remove all entries before parse filters
 				log.trace("request parsed in {} ms", currentTimeMillis() - t);
 			} catch (Exception e) {
-				if(log.isTraceEnabled()) {
-					log.trace(formatException(e));
-					var shift = 0;
-					Throwable ex = e.getCause();
-					while(hasSpecificCause(ex, EntrySyntaxException.class, EntryParseException.class)) {
-						log.trace("  ".repeat(++shift) + "~> " + formatException(ex));
-						ex = ex.getCause();
-					}
-				}
+				logJQueryExceptionStack(e);
 				throw e;
 			}
 		});
@@ -76,12 +68,14 @@ public class DefaultRequestParser implements RequestParser {
 
 	protected void parseDistinct(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			currentEnvironment().currentQuery().distinct(parseBoolean(requireNArgs(1, values, ()-> DISTINCT_PARAM)[0]));
+			var v = parseBoolean(requireNArgs(1, values, ()-> DISTINCT_PARAM)[0]);
+			currentEnvironment().currentQuery().distinct(v);
 		}
 	}
 	
 	protected void parseViews(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
+			log.warn("The 'view' parameter is deprecated and will no longer affect query processing");
 			Stream.of(values)
 			.flatMap(c-> stream(parseEntries(c)))
 			.map(e-> context.declareView(e.evalView(context)))
@@ -152,6 +146,20 @@ public class DefaultRequestParser implements RequestParser {
 	
 	private static String formatException(Throwable e) {
 		return e.getClass().getSimpleName() + ": " + e.getMessage();
+	}
+	
+	static void logJQueryExceptionStack(Throwable e) {
+		if(log.isTraceEnabled()) {
+			log.trace(formatException(e));
+			var shift = 0;
+			Throwable ex = e.getCause();
+			if(nonNull(ex)) {
+				do {
+					log.trace("  ".repeat(++shift) + "~> " + formatException(ex));
+					ex = ex.getCause();
+				} while(hasSpecificCause(ex, EntrySyntaxException.class, EntryParseException.class));
+			}
+		}
 	}
 	
 	static boolean hasSpecificCause(Throwable e, Class<?>... classes) {

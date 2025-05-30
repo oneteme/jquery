@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -12,7 +12,6 @@ import static org.usf.jquery.core.TypedArg.arg;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,10 +29,10 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
+@Getter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryBuilder {
 	
-	@Getter
 	private final String schema;
 	private final String prefix;
 	private final StringBuilder query;
@@ -41,11 +40,10 @@ public final class QueryBuilder {
 	private final Map<DBView, String> views;
 	private final List<TypedArg> args;
 	private final Map<DBView, QueryView> overViews;
-	@Getter
 	private final Object currentModel;
 
 	Optional<QueryView> subView(DBView view) {
-		return ofNullable(overViews).map(map -> map.get(view));
+		return ofNullable(overViews.get(view));
 	}
 	
 	public boolean isCte(DBView view) {
@@ -62,7 +60,7 @@ public final class QueryBuilder {
 			if(nonNull(v)) {
 				append(v).append(after); //view.
 			}
-			else {
+			else if(view.getClass() != ViewRef.class) {
 				log.warn("alias not found for view=" + view);
 			}
 		} //else no alias
@@ -137,14 +135,6 @@ public final class QueryBuilder {
 	public <T> QueryBuilder appendEach(String delimiter, T[] arr, Consumer<T> cons) {
 		return runForeach(delimiter, arr, 0, cons);
 	}
-	
-	public QueryBuilder appendEach(String delimiter, Collection<? extends DBObject> it) {
-		return runForeach(delimiter, it, o-> o.build(this));
-	}
-	
-	public <T> QueryBuilder appendEach(String delimiter, Collection<T> it, Consumer<T> cons) {
-		return runForeach(delimiter, it, cons);
-	}
 
 	public QueryBuilder withValue() { //inherit schema, prefix, args but not views
 		return new QueryBuilder(schema, prefix, query, ctes, views, null, overViews, currentModel); //no args
@@ -154,7 +144,7 @@ public final class QueryBuilder {
 		return new QueryBuilder(schema, prefix, query, ctes, views, args, overViews, model);
 	}
 	
-	public QueryBuilder subQuery(Collection<DBView> views, Map<DBView, QueryView> overview) { //inherit schema, prefix, args but not views
+	public QueryBuilder subQuery(DBView[] views, Map<DBView, QueryView> overview) { //inherit schema, prefix, args but not views
 		var s = prefix + "_s";
 		var vMap = viewAlias(s, views);
 		if(!isEmpty(overview)) {
@@ -189,45 +179,34 @@ public final class QueryBuilder {
 		return this;
 	}
 
-	private <T> QueryBuilder runForeach(String delimiter, Collection<T> c, Consumer<T> cons) {
-		if(!isEmpty(c)) {
-			var it = c.iterator();
-			cons.accept(it.next());
-			while(it.hasNext()) {
-				query.append(delimiter);
-				cons.accept(it.next());
-			}
-		} 
-		return this;
-	}
-
 	@Override
 	public String toString() {
 		return query.toString();
 	}
 
 	public static QueryBuilder addWithValue() {
-		return create(null, emptyList(), emptyList(), null, null);
+		return create(null, null, null, null, null);
 	}
 
-	public static QueryBuilder addWithValue(String schema, Collection<QueryView> ctes, Collection<DBView> views, Map<DBView, QueryView> overview) {
+	public static QueryBuilder addWithValue(String schema, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
 		return create(schema, ctes, views, null, overview);
 	}
 
-	public static QueryBuilder parameterized(String schema, Collection<QueryView> ctes, Collection<DBView> views, Map<DBView, QueryView> overview) {
+	public static QueryBuilder parameterized(String schema, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
 		return create(schema, ctes, views, new ArrayList<>(), overview);
 	}
 	
-	private static QueryBuilder create(String schema, Collection<QueryView> ctes, Collection<DBView> views, List<TypedArg> args, Map<DBView, QueryView> overview) {
+	private static QueryBuilder create(String schema, QueryView[] ctes, DBView[] views, List<TypedArg> args, Map<DBView, QueryView> overview) {
 		var cMap = viewAlias("g", ctes);
 		var vMap = viewAlias("v", views);
 		if(!isEmpty(overview)) {
 			overview.forEach((k,v)-> vMap.put(k, cMap.get(v))); //override or add
 		}
+		overview = nonNull(overview) ? overview : emptyMap();
 		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args, overview, null);
 	}
 		
-	private static <T> Map<T, String> viewAlias(String prefix, Collection<T> views){
+	private static <T> Map<T, String> viewAlias(String prefix, T[] views){
 		var map = new LinkedHashMap<T, String>(); //preserve order
 		if(!isEmpty(views) && nonNull(prefix)) {
 			int i=0;
