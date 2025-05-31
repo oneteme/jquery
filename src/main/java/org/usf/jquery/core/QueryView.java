@@ -56,7 +56,7 @@ public final class QueryView implements DBView {
 	
 	@Override
 	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
-		if(!isEmpty(ctes)) {
+		if(!isEmpty(ctes)) { // subQuery
 			composer.ctes(ctes);
 		}
 		return -1;
@@ -66,7 +66,7 @@ public final class QueryView implements DBView {
 	public void build(QueryBuilder query) {
 		var ovr = query.isCte(this) ? overView : assign(query.getOverViews(), overView);
 		var sub = query.subQuery(views, unmodifiableMap(ovr));
-		sub.appendParenthesis(()-> intenalBuild(sub));
+		sub.appendParenthesis(()-> internalBuild(sub));
 	}
 
 	public Query build(String schema, boolean parameterized) {
@@ -81,21 +81,21 @@ public final class QueryView implements DBView {
 			.appendEach(SCOMA, flatCTE, v-> builder.appendViewAlias(v).appendAs().append(v)) 
 			.appendSpace();
 		}
-		intenalBuild(builder);
+		internalBuild(builder);
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
 		return builder.build();
 	}
 	
-	public final void intenalBuild(QueryBuilder builder){
+	public void internalBuild(QueryBuilder builder){
 		if(isNull(drivenModel)) {
-			internalBuild(builder);
+			buildSqlClauses(builder);
 		}
 		else {
-			builder.appendEach(" UNION ALL ", drivenModel, o-> internalBuild(builder.withModel(o)));
+			builder.appendEach(" UNION ALL ", drivenModel, o-> buildSqlClauses(builder.withModel(o)));
 		}
 	}
 	
-	private void internalBuild(QueryBuilder builder) {
+	private void buildSqlClauses(QueryBuilder builder) {
 		select(builder);
 		from(builder);
 		join(builder);
@@ -105,15 +105,6 @@ public final class QueryView implements DBView {
     	orderBy(builder);
     	fetch(builder);
     	union(builder);
-	}
-	
-	void with(QueryBuilder builder) {
-		var flat = flatCte().toArray(QueryView[]::new);
-		if(!isEmpty(flat)) {
-			builder.append("WITH ") // do not resolveView => ViewRef
-			.appendEach(SCOMA, flat, v-> builder.appendViewAlias(v).appendAs().append(v)) 
-			.appendSpace();
-		}
 	}
 
 	void select(QueryBuilder builder){

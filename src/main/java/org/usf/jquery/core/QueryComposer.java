@@ -39,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public class QueryComposer {
+public final class QueryComposer {
 	
 	static final Consumer<DBColumn> DO_NOTHING = o->{};
 	
@@ -71,7 +71,7 @@ public class QueryComposer {
 	
 	public QueryComposer ctes(@NonNull QueryView... ctes) {
 		for(var c : ctes) {
-			this.ctes.add(c);
+			this.ctes.add(c); //unessesary ycompose
 		}
 		return this;
 	}
