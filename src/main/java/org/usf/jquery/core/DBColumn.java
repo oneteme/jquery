@@ -195,6 +195,32 @@ public interface DBColumn extends DBObject, Typed {
 	default DBColumn pow(int value) {
 		return Operator.pow().operation(this, value);
 	}
+
+	//bitwise functions
+	
+	default DBColumn bitAnd(int value) {
+		return Operator.bitAnd().operation(this, value);
+	}
+	
+	default DBColumn bitOr(int value) {
+		return Operator.bitOr().operation(this, value);
+	}
+	
+	default DBColumn bitXor(int value) {
+		return Operator.bitXor().operation(this, value);
+	}
+	
+	default DBColumn bitNot(int value) {
+		return Operator.bitNot().operation(this, value);
+	}
+	
+	default DBColumn bitShiftLeft(int value) {
+		return Operator.bitShiftLeft().operation(this, value);
+	}
+	
+	default DBColumn bitShiftRight(int value) {
+		return Operator.bitShiftRight().operation(this, value);
+	}
 	
 	//string functions
 
