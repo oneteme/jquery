@@ -436,8 +436,12 @@ public interface DBColumn extends DBObject, Typed {
 		return new DBOrder(this, order);
 	}
 	
-	default SingleCaseColumnBuilder beginCase() {
-		return new SingleCaseColumnBuilder(this);
+	default CaseColumnBuilder toCase() {
+		return new CaseColumnBuilder(this);
+	}
+	
+	static CaseColumnBuilder beginCase() {
+		return new CaseColumnBuilder(); //no column, append filter only
 	}
 	
 	// constants
