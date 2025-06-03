@@ -73,7 +73,7 @@ public final class OperationColumn implements DBColumn {
 		var views = new QueryComposer().columns(col).getViews(); //scan column views
 		if(views.size() == 1) {
 			var view = views.iterator().next();
-			return query.subQuery(view, sub-> sub.columns(col))
+			return query.subViewQuery(view, sub-> sub.columns(col))
 					.getSubView(view).column(col.getTag(), col.getType());
 		}
 		throw new UnsupportedOperationException("overview require only one view");

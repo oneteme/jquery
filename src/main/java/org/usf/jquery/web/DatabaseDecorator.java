@@ -1,16 +1,20 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Mappers.keyValue;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 
+import java.util.List;
 import java.util.function.Consumer;
 
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.DynamicModel;
 import org.usf.jquery.core.QueryComposer;
+import org.usf.jquery.core.ResultSetMapper;
 import org.usf.jquery.core.TableView;
 
 /**
@@ -40,12 +44,24 @@ public interface DatabaseDecorator {
 		}
 		throw noSuchResourceException(VIEW_PARAM, vd.identity(), identity());
 	}
-	
-	default QueryComposer query() { //out of context
-		return getEnvironment(identity()).query(q-> {});
+
+	default List<DynamicModel> execute(Consumer<QueryComposer> fn) {
+		return execute(compose(fn), keyValue());
 	}
 
-	default QueryComposer query(Consumer<QueryComposer> fn) {
+	default <T> T execute(Consumer<QueryComposer> fn, ResultSetMapper<T> rsm) {
+		return execute(compose(fn), rsm);
+	}
+	
+	default List<DynamicModel> execute(QueryComposer query) {
+		return execute(query, keyValue());
+	}
+	
+	default <T> T execute(QueryComposer query, ResultSetMapper<T> rsm) {
+		return getEnvironment(identity()).exec(query, rsm);
+	}
+	
+	default QueryComposer compose(Consumer<QueryComposer> fn) {
 		return getEnvironment(identity()).query(fn);
 	}
 }

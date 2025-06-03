@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 
 import org.usf.jquery.core.ComparisonExpression;
@@ -31,7 +32,12 @@ public interface ColumnDecorator {
 		return null; // no builder by default
 	}
 	
-	default Builder<ViewDecorator, ComparisonExpression> criteria(String name) {
+	default Builder<ViewDecorator, ComparisonExpression> criteriaBuilder(String name) {
 		return null; // no criteria by default
+	}
+	
+	default ComparisonExpression criteria(String name, ViewDecorator vd, String... args) {
+		return requireNonNull(criteriaBuilder(name), "criteriaBuilder")
+				.build(vd, currentEnvironment(), args);
 	}
 }

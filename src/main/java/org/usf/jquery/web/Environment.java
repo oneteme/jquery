@@ -37,6 +37,7 @@ import javax.sql.DataSource;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JQueryException;
 import org.usf.jquery.core.QueryComposer;
+import org.usf.jquery.core.ResultSetMapper;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -86,6 +87,15 @@ public final class Environment {
 			return fn.apply(list);
 		}
 		throw new IllegalStateException("no query in context");
+	}
+
+	public <T> T exec(QueryComposer query, ResultSetMapper<T> rsm) {
+		try {
+			return apply(this, env-> query.compose().build(schema, true))
+					.execute(dataSource, rsm); //outside context
+		} catch (SQLException e) {
+			throw new JQueryException("cannot execute query", e);
+		}
 	}
 	
 	public QueryComposer query(Consumer<QueryComposer> fn) {

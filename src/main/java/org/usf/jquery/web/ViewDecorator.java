@@ -1,6 +1,7 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
@@ -30,19 +31,19 @@ public interface ViewDecorator {
 		return null; //no builder by default
 	}
 
-	default Builder<ViewDecorator, DBFilter> criteria(String name) { 
+	default Builder<ViewDecorator, DBFilter> criteriaBuilder(String name) { 
 		return null; //no criteria by default
 	}
 	
-	default Builder<ViewDecorator, Partition> partition(String name) {
-		return null; //no partition by default
-	}
-	
-	default Builder<ViewDecorator, ViewJoin[]> join(String name) {
+	default Builder<ViewDecorator, ViewJoin[]> joinBuilder(String name) {
 		return null; //no join by default
 	}
 	
-	default DBView view() {
+	default Builder<ViewDecorator, Partition> partitionBuilder(String name) {
+		return null; //no partition by default
+	}
+	
+	default DBView view() { //takes no args : single instance !?
 		var env = currentEnvironment();
 		return env.cacheView(identity(), ()-> env.getDatabase().view(this));
 	}
@@ -59,6 +60,21 @@ public interface ViewDecorator {
 			return b.build(this, currentEnvironment(), args).as(cd.reference(this), cd.type(this));
 		}
 		throw noSuchResourceException(COLUMN_PARAM, cd.identity(), identity());
+	}
+	
+	default DBFilter criteria(String name, String...args) {
+		return requireNonNull(criteriaBuilder(name), "criteriaBuilder")
+				.build(this, currentEnvironment(), args);
+	}
+
+	default ViewJoin[] join(String name, String...args) {
+		return requireNonNull(joinBuilder(name), "joinBuilder")
+				.build(this, currentEnvironment(), args);
+	}
+	
+	default Partition partition(String name, String...args) {
+		return requireNonNull(partitionBuilder(name), "partitionBuilder")
+				.build(this, currentEnvironment(), args);
 	}
 	
 	default ViewMetadata metadata(Map<String, ColumnMetadata> colMetadata) {

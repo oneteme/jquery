@@ -69,6 +69,10 @@ public final class QueryView implements DBView {
 		sub.appendParenthesis(()-> internalBuild(sub));
 	}
 
+	public Query build() {
+		return build(null, true);
+	}
+	
 	public Query build(String schema, boolean parameterized) {
 		log.trace("building query...");
 		var bg = currentTimeMillis();

@@ -166,7 +166,7 @@ final class EntryChain {
 	}
 	
 	private ViewJoin[] evalJoin(ViewDecorator vd) { 
-		var join = vd.join(value);
+		var join = vd.joinBuilder(value);
 		if(nonNull(join)) {
 			return build(JOIN_PARAM, join, vd, requireNoNext()); //takes args but not next
 		}
@@ -191,7 +191,7 @@ final class EntryChain {
 	}
 	
 	private Partition evalPartition(ViewDecorator vd) { 
-		var par = vd.partition(value);
+		var par = vd.partitionBuilder(value);
 		if(nonNull(par)) {
 			return build(PARTITION_OPR, par, vd, requireNoNext()); //takes args but not next
 		}
@@ -374,7 +374,7 @@ final class EntryChain {
 	
 	//view.criteria
 	private Optional<EntryChainCursor> lookupViewCriteria(ViewDecorator vd) {
-		return ofNullable(vd.criteria(value))
+		return ofNullable(vd.criteriaBuilder(value))
 				.map(cr-> new EntryChainCursor(requireNoArgs(), vd, cr)); //view criteria takes no args
 	}
 	
@@ -382,7 +382,7 @@ final class EntryChain {
 	private Optional<EntryChainCursor> lookupRegistredColumn(QueryContext ctx, ViewDecorator vd) {
 		return ctx.lookupRegisteredColumn(value).map(cd->{
 			if(hasNext()) {
-				var cr = cd.criteria(next.value);
+				var cr = cd.criteriaBuilder(next.value);
 				if(nonNull(cr)) {
 					return new EntryChainCursor(next, vd, vd.column(cd), cr); //column criteria takes args
 				}

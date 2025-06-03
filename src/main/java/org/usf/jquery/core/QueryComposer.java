@@ -63,7 +63,7 @@ public final class QueryComposer {
 	
 	private Role role;
 	
-	private QueryView queryView = new QueryView(); //assume unique reference
+	private final QueryView queryView = new QueryView(); //assume unique reference
 
 	public String[] getVariables(String key){
 		return variables.get(key);
@@ -71,7 +71,7 @@ public final class QueryComposer {
 	
 	public QueryComposer ctes(@NonNull QueryView... ctes) {
 		for(var c : ctes) {
-			this.ctes.add(c); //unessesary ycompose
+			this.ctes.add(c); //unnecessary compose
 		}
 		return this;
 	}
@@ -170,11 +170,11 @@ public final class QueryComposer {
 		return nonNull(sub) ? sub.getQueryView() : null;
 	}
 
-	public QueryComposer subQuery(DBView view, Consumer<QueryComposer> consumer) {
-		return subQuery(view, true, consumer);
+	public QueryComposer subViewQuery(DBView view, Consumer<QueryComposer> consumer) {
+		return subViewQuery(view, true, consumer);
 	}
 
-	public QueryComposer subQuery(DBView view, boolean allColumn, Consumer<QueryComposer> consumer) {
+	public QueryComposer subViewQuery(DBView view, boolean allColumn, Consumer<QueryComposer> consumer) {
 		var q = overView.computeIfAbsent(view, k-> {
 			var sub = new QueryComposer();
 			if(allColumn) {

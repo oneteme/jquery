@@ -55,10 +55,10 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 	
 	@Override
-	default Builder<ViewDecorator, DBFilter> criteria(String name) {
+	default Builder<ViewDecorator, DBFilter> criteriaBuilder(String name) {
 		return REVISION.equals(name) 
 				? revisionFilter()
-				: ViewDecorator.super.criteria(name);
+				: ViewDecorator.super.criteriaBuilder(name);
 	}
 	
 	@Override
