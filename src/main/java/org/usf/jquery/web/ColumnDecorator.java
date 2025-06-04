@@ -38,6 +38,6 @@ public interface ColumnDecorator {
 	
 	default ComparisonExpression criteria(String name, ViewDecorator vd, String... args) {
 		return requireNonNull(criteriaBuilder(name), "criteriaBuilder")
-				.build(vd, currentEnvironment(), args);
+				.build(vd, args);
 	}
 }

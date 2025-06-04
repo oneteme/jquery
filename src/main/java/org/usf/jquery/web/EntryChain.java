@@ -323,12 +323,12 @@ final class EntryChain {
 	}
 	
 	private static <V> V buildCriteria(Builder<ViewDecorator, V> builder, EntryChainCursor cur, EntryChain... args) {
-		return requireNonNull(builder.build(cur.vd, currentEnvironment(), toStringArray(args)),
+		return requireNonNull(builder.build(cur.vd, toStringArray(args)),
 				()-> format("%s[criteria=%s]", nonNull(cur.col) ? "" : cur.vd.identity(), cur.entry.value));
 	}
 	
 	private static <T> T build(String type, Builder<ViewDecorator, T> builder, ViewDecorator vd, EntryChain e) {
-		return requireNonNull(builder.build(vd, currentEnvironment(), toStringArray(e.args)), 
+		return requireNonNull(builder.build(vd, toStringArray(e.args)), 
 				()->  format("%s[%s=%s]", vd.identity(), type, e.value));
 	}
 

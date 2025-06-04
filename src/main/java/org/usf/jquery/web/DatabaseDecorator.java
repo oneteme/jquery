@@ -3,7 +3,6 @@ package org.usf.jquery.web;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Mappers.keyValue;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
-import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
 import static org.usf.jquery.web.Parameters.VIEW_PARAM;
@@ -40,7 +39,7 @@ public interface DatabaseDecorator {
 		}
 		var b = vd.builder();
 		if(nonNull(b)) {
-			return b.build(this, currentEnvironment());
+			return b.build(this);
 		}
 		throw noSuchResourceException(VIEW_PARAM, vd.identity(), identity());
 	}

@@ -57,24 +57,24 @@ public interface ViewDecorator {
 		}
 		var b = cd.builder();
 		if(nonNull(b)) {
-			return b.build(this, currentEnvironment(), args).as(cd.reference(this), cd.type(this));
+			return b.build(this, args).as(cd.reference(this), cd.type(this));
 		}
 		throw noSuchResourceException(COLUMN_PARAM, cd.identity(), identity());
 	}
 	
 	default DBFilter criteria(String name, String...args) {
 		return requireNonNull(criteriaBuilder(name), "criteriaBuilder")
-				.build(this, currentEnvironment(), args);
+				.build(this, args);
 	}
 
 	default ViewJoin[] join(String name, String...args) {
 		return requireNonNull(joinBuilder(name), "joinBuilder")
-				.build(this, currentEnvironment(), args);
+				.build(this, args);
 	}
 	
 	default Partition partition(String name, String...args) {
 		return requireNonNull(partitionBuilder(name), "partitionBuilder")
-				.build(this, currentEnvironment(), args);
+				.build(this, args);
 	}
 	
 	default ViewMetadata metadata(Map<String, ColumnMetadata> colMetadata) {
