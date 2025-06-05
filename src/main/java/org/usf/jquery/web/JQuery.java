@@ -31,8 +31,8 @@ public final class JQuery {
 
 	public static void register(@NonNull Environment... envs) {
 		for(var env : envs) {
-			DATABASES.compute(env.getDatabase().identity(), 
-					computeIfAbsentElseThrow(env, ()-> resourceAlreadyExistsMessage("environment", env.getDatabase().identity())))
+			DATABASES.compute(env.getDatabase().identity(), computeIfAbsentElseThrow(env, 
+					()-> resourceAlreadyExistsMessage("environment", env.getDatabase().identity())))
 			.bind(); // bind the environment to the database after put
 		}
 	}

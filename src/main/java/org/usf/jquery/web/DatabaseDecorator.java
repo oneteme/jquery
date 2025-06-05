@@ -44,23 +44,23 @@ public interface DatabaseDecorator {
 		throw noSuchResourceException(VIEW_PARAM, vd.identity(), identity());
 	}
 
-	default List<DynamicModel> execute(Consumer<QueryComposer> fn) {
-		return execute(compose(fn), keyValue());
+	default List<DynamicModel> execute(Consumer<QueryComposer> cons) {
+		return execute(compose(cons), keyValue());
 	}
 
-	default <T> T execute(Consumer<QueryComposer> fn, ResultSetMapper<T> rsm) {
-		return execute(compose(fn), rsm);
+	default <T> T execute(Consumer<QueryComposer> cons, ResultSetMapper<T> mapper) {
+		return execute(compose(cons), mapper);
 	}
 	
 	default List<DynamicModel> execute(QueryComposer query) {
 		return execute(query, keyValue());
 	}
 	
-	default <T> T execute(QueryComposer query, ResultSetMapper<T> rsm) {
-		return getEnvironment(identity()).exec(query, rsm);
+	default <T> T execute(QueryComposer query, ResultSetMapper<T> mapper) {
+		return getEnvironment(identity()).exec(query, mapper);
 	}
 	
-	default QueryComposer compose(Consumer<QueryComposer> fn) {
-		return getEnvironment(identity()).query(fn);
+	default QueryComposer compose(Consumer<QueryComposer> cons) {
+		return getEnvironment(identity()).query(cons);
 	}
 }

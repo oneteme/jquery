@@ -90,9 +90,9 @@ public final class Environment {
 	}
 
 	public <T> T exec(QueryComposer query, ResultSetMapper<T> rsm) {
+		var qry = apply(this, env-> query.compose().buildQuery(schema, true, query.getDrivenModel()));
 		try {
-			return apply(this, env-> query.compose().buildQuery(schema, true, query.getDrivenModel()))
-					.execute(dataSource, rsm); //outside context
+			return qry.execute(dataSource, rsm); //outside context
 		} catch (SQLException e) {
 			throw new JQueryException("cannot execute query", e);
 		}
