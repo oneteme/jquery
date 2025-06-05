@@ -84,7 +84,7 @@ public final class QueryView implements DBView {
 			.appendEach(SCOMA, flatCTE, v-> builder.appendViewAlias(v).appendAs().append(v)) 
 			.appendSpace();
 		}
-		if(isNull(drivenModel)) {
+		if(isEmpty(drivenModel)) {
 			buildClauses(builder);
 		}
 		else {
