@@ -51,7 +51,6 @@ public final class QueryView implements DBView {
 	private boolean aggregation;
 	private Integer limit;
 	private Integer offset;
-	private Object[] drivenModel;
 	private Map<DBView, QueryView> overView;
 	
 	@Override
@@ -66,14 +65,14 @@ public final class QueryView implements DBView {
 	public void build(QueryBuilder query) {
 		var ovr = query.isCte(this) ? overView : assign(query.getOverViews(), overView);
 		var sub = query.subQuery(views, unmodifiableMap(ovr));
-		sub.appendParenthesis(()-> internalBuild(sub));
+		sub.appendParenthesis(()-> buildClauses(sub));
 	}
 
 	public Query build() {
-		return build(null, true);
+		return buildQuery(null, true);
 	}
 	
-	public Query build(String schema, boolean parameterized) {
+	public Query buildQuery(String schema, boolean parameterized, Object... drivenModel) {
 		log.trace("building query...");
 		var bg = currentTimeMillis();
 		var flatCTE = flatCte().distinct().toArray(QueryView[]::new);
@@ -85,21 +84,17 @@ public final class QueryView implements DBView {
 			.appendEach(SCOMA, flatCTE, v-> builder.appendViewAlias(v).appendAs().append(v)) 
 			.appendSpace();
 		}
-		internalBuild(builder);
+		if(isNull(drivenModel)) {
+			buildClauses(builder);
+		}
+		else {
+			builder.appendEach(" UNION ALL ", drivenModel, o-> buildClauses(builder.withModel(o)));
+		}
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
 		return builder.build();
 	}
 	
-	public void internalBuild(QueryBuilder builder){
-		if(isNull(drivenModel)) {
-			buildSqlClauses(builder);
-		}
-		else {
-			builder.appendEach(" UNION ALL ", drivenModel, o-> buildSqlClauses(builder.withModel(o)));
-		}
-	}
-	
-	private void buildSqlClauses(QueryBuilder builder) {
+	private void buildClauses(QueryBuilder builder) {
 		select(builder);
 		from(builder);
 		join(builder);

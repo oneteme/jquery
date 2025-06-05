@@ -190,7 +190,7 @@ public final class QueryComposer {
 	
 	@Deprecated(forRemoval = true, since = "v4")
 	public Query build(){
-		return compose().build(null, true);
+		return compose().buildQuery(null, true, drivenModel);
 	}
 	
 	public QueryView compose() { //TD check this[clause].length = QueryView[clause].length
@@ -212,7 +212,6 @@ public final class QueryComposer {
 		acceptArray(unions, QueryUnion[]::new, queryView::setUnions);
 		acceptObject(limit, Objects::nonNull, queryView::setLimit);
 		acceptObject(offset, Objects::nonNull, queryView::setOffset);
-		acceptObject(drivenModel, Objects::nonNull, queryView::setDrivenModel);
 		if(isDistinct()) {
 			queryView.setDistinct(true);
 		}

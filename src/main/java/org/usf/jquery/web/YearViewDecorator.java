@@ -47,8 +47,11 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 	
 	default DBFilter monthFilter() {
-		return column(monthRevision())
-				.filter(in().expression((m,v)-> ((YearMonths) requireNonNull(m, "revision")).months()));
+		var mc = monthRevision();
+		return nonNull(mc) 
+				? column(mc).filter(in()
+						.expression((m,v)-> ((YearMonths) requireNonNull(m, "revision")).months()))
+				: null;
 	}
 
 	static Builder<ViewDecorator, DBColumn> yearRevision() {
