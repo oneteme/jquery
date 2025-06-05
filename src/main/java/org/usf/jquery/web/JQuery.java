@@ -66,7 +66,7 @@ public final class JQuery {
 				return fn.apply(env);
 			} finally {
 				LOCAL_ENV.remove();
-//				currentDatabase(null);
+				currentDatabase(null);
 			}
 		}
 		else if(cur.getDatabase() == env.getDatabase()) {

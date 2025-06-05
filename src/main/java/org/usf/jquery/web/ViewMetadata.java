@@ -52,7 +52,7 @@ public class ViewMetadata {
 		return columns.get(cd.identity());
 	}
 	
-	final ViewMetadata fetch(DatabaseMetaData metadata, String schema) throws SQLException {
+	protected void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
 		var view = decorator.view();
 		if(!isEmpty(columns)) {
 			try {
@@ -65,17 +65,16 @@ public class ViewMetadata {
 					fetch(metadata, view, schema);
 				}
 				lastUpdate = now();
-				log.trace("'{}' metadata scanned in {} ms", view, currentTimeMillis() - time);
 				printViewColumnMap();
+				log.trace("'{}' metadata scanned in {} ms", view, currentTimeMillis() - time);
 			}
 			catch(Exception e) {
-				log.error("error while scanning '{}' metadata", view.toString(), e);
+				log.error("error while scanning '{}' metadata", view, e);
 			}
 		}
 		else {
 			log.warn("'{}' has no declared columns", view);
 		}
-		return this;
 	}
 	
 	void fetchView(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {

@@ -1,31 +1,25 @@
 package org.usf.jquery.web;
 
-import static java.time.Month.DECEMBER;
-import static java.time.YearMonth.now;
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.DBColumn.constant;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
-import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.YearViewDecorator.YearMonths.from;
 
-import java.time.Year;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
-import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.TableView;
 
 /**
@@ -36,8 +30,6 @@ import org.usf.jquery.core.TableView;
 //@Deprecated(since = "4.0.0", forRemoval = true)
 public interface YearViewDecorator extends ViewDecorator {
 
-	static final String REVISION = "revision";
-	static final String REVISION_MODE = "revision.mode";
 	static final YearMonth[] EMPTY_REVISION = new YearMonth[0];
 	
 	ColumnDecorator monthRevision(); //optional
@@ -48,95 +40,37 @@ public interface YearViewDecorator extends ViewDecorator {
 		return env.cacheView(identity(), ()-> {
 			var view = env.getDatabase().view(this);
 			if(view instanceof TableView t) {
-				return t.withAdjuster((m, v)-> v + "_" + ((YearMonths)m).year());
+				return t.withAdjuster((m, v)-> nonNull(m) ? v + "_" + ((YearMonths)m).year() : v); //avoid NullPointerEx on toString call
 			}
 			throw new UnsupportedOperationException(requireNonNull(view).getClass().getSimpleName());
 		});
 	}
 	
-	@Override
-	default Builder<ViewDecorator, DBFilter> criteriaBuilder(String name) {
-		return REVISION.equals(name) 
-				? revisionFilter()
-				: ViewDecorator.super.criteriaBuilder(name);
-	}
-	
-	@Override
-	default ViewMetadata metadata(Map<String, ColumnMetadata> colMetadata) {
-		var mc = monthRevision();
-		return new YearTableMetadata(this, nonNull(mc) ? columnName(mc) : null, colMetadata);
+	default DBFilter monthFilter() {
+		return column(monthRevision())
+				.filter(in().expression((m,v)-> ((YearMonths) requireNonNull(m, "revision")).months()));
 	}
 
-	default Builder<ViewDecorator, DBFilter> revisionFilter() { //optional filter ! monthRevision
-    	return (view, args)-> {
-    		var arr = isEmpty(args)
-    				? new YearMonth[] {now()}
-    				: flatParameters(args).map(YearViewDecorator::parseYearMonth).toArray(YearMonth[]::new);
-    		var query = currentEnvironment().currentQuery();
-    		query.repeat(from(revisionMode(query, arr)));
-    		return nonNull(monthRevision()) //optional month column
-    				? view.column(monthRevision()).filter(in().expression((m,v)-> 
-    					((YearMonths) requireNonNull(m, REVISION)).months()))
-    				: constant(1).eq(1); //avoid returning null
-    	};
-    }
-	
 	static Builder<ViewDecorator, DBColumn> yearRevision() {
 		return (view, args)-> {
 			if(view instanceof YearViewDecorator) {
-				return constant(INTEGER, (m, v)-> ((YearMonths)m).year());
+				return constant(INTEGER, (m, v)-> nonNull(m) ? ((YearMonths)m).year() : null);
 			}
 			throw new IllegalStateException(view.getClass().getSimpleName() + " is not a YearView");
 		};
 	}
-    
-    static YearMonth parseYearMonth(String revision) {
-    	if(revision.matches("^\\d{4}$")) {
-    		return Year.parse(revision).atMonth(DECEMBER);
-    	}
-    	try {
-    		return YearMonth.parse(revision);
-    	}
-    	catch (Exception e) {
-    		throw new IllegalArgumentException("cannot parse revision " + revision, e);
-		}
-    }
-    
-    final record YearMonths(int year, Integer[] months) {
-    	
-    	static YearMonths[] from(YearMonth[] arr) {
-    		return stream(arr).collect(groupingBy(YearMonth::getYear)).entrySet()
-    				.stream().map(e-> new YearMonths(e.getKey(), e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)))
-    				.toArray(YearMonths[]::new);
+	
+    default UnaryOperator<YearMonth[]> revisionMode(String mode) {
+    	switch(mode) {
+		case "strict" 		: return this::strictRevisions;
+		case "preceding"	: return this::precedingRevisions;
+		case "succeeding"	: return this::succeedingRevisions;
+    	default 			: throw new IllegalArgumentException("cannot parse revision mode " + mode);
     	}
     }
     
-    //revision.mode
-
-    @Deprecated(since = "v4", forRemoval = true)
-    default YearMonth[] revisionMode(QueryComposer query, YearMonth[] arr) {
-    	var args = query.getVariables(REVISION_MODE);
-    	if(isEmpty(args)) {
-    		args = new String[] {defaultRevisionMode()};
-    	}
-    	else if(args.length > 1) {
-    		throw new IllegalArgumentException("too many " + REVISION_MODE + " " + String.join(", ", args)); //multiple values
-    	}
-    	var revs = switch(args[0]) {
-		case "strict" 		-> strictRevisions(arr);
-		case "preceding"	-> precedingRevisions(arr);
-		case "succeeding"	-> succeedingRevisions(arr);
-    	default 			-> throw new IllegalArgumentException("cannot parse revision mode " + args[0]);
-    	};
-		if(!isEmpty(revs)) {
-			return revs;
-		}
-		throw noSuchResourceException(REVISION, 
-				Stream.of(revs).map(YearMonth::toString).collect(joining(", ")), identity()); //require available revisions
-    }
-
 	default YearMonth[] strictRevisions(YearMonth[] values) {
-		var revs = availableRevisions();
+		var revs = metadata().getRevisions();
 		return isEmpty(revs) || isEmpty(values) 
 				? EMPTY_REVISION 
 				: Stream.of(values)
@@ -145,7 +79,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 	
 	default YearMonth[] precedingRevisions(YearMonth[] values) {
-		var revs = availableRevisions();
+		var revs = metadata().getRevisions();
 		if(isEmpty(revs)) {
 			return EMPTY_REVISION;
 		}
@@ -165,7 +99,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	}
 	
 	default YearMonth[] succeedingRevisions(YearMonth[] values) {
-		var revs = availableRevisions();
+		var revs = metadata().getRevisions();
 		if(isEmpty(revs)) {
 			return EMPTY_REVISION;
 		}
@@ -184,16 +118,27 @@ public interface YearViewDecorator extends ViewDecorator {
 		return list.isEmpty() ? EMPTY_REVISION : list.toArray(YearMonth[]::new);
 	}
 
-    default YearMonth[] availableRevisions() {//cache
-    	var meta = currentEnvironment().getMetadata().viewMetadata(this);
-    	return ((YearTableMetadata)meta).getRevisions(); 
-    }
-
     default String defaultRevisionMode() {
     	return "strict";
     }
-    
-	private static Stream<String> flatParameters(String... arr) { //number local separator
-		return Stream.of(arr).flatMap(v-> Stream.of(v.split(",")));
-	}	
+	
+	@Override
+	default YearTableMetadata metadata(Map<String, ColumnMetadata> colMetadata) {
+		var mc = monthRevision();
+		return new YearTableMetadata(this, nonNull(mc) ? columnName(mc) : null, colMetadata);
+	}
+	
+	@Override
+	default YearTableMetadata metadata() {
+		return (YearTableMetadata) ViewDecorator.super.metadata();
+	}
+	
+    final record YearMonths(int year, Integer[] months) {
+    	
+    	static YearMonths[] groupByYear(YearMonth[] arr) {
+    		return stream(arr).collect(groupingBy(YearMonth::getYear)).entrySet()
+    				.stream().map(e-> new YearMonths(e.getKey(), e.getValue().stream().map(YearMonth::getMonthValue).toArray(Integer[]::new)))
+    				.toArray(YearMonths[]::new);
+    	}
+    }
 }

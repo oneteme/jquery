@@ -23,10 +23,6 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	@With
 	private final Adjuster<Object[]> adjuster; //optional
 
-	public ComparisonSingleExpression(Comparator comparator, Object[] right) {
-		this(comparator, right, null);
-	}	
-	
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
 		return DBObject.tryComposeNested(query, groupKeys, right);
@@ -36,8 +32,11 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	public void build(QueryBuilder query, Object left) {
 		var param = new ArrayList<>();
 		param.add(left);
-		if(nonNull(right)) {
-			addAll(param, nonNull(adjuster) ? adjuster.build(query, right) : right);
+		if(nonNull(adjuster)) {
+			addAll(param, adjuster.build(query, right)); //right as initial value
+		}
+		else if(nonNull(right)) {
+			addAll(param, right);
 		}
 		comparator.build(query, param.toArray());
 	}

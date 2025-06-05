@@ -19,10 +19,8 @@ import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 
-import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 
 /**
  * 
@@ -30,7 +28,6 @@ import lombok.Setter;
  *
  */
 @Getter
-@Setter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
 public final class QueryContext {
 	

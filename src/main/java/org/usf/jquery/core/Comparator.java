@@ -33,12 +33,12 @@ public interface Comparator extends DBProcessor {
 		return type.isInstance(this);
 	}
 
-	default ComparisonSingleExpression expression(Adjuster<Object[]> adj) {
-		return new ComparisonSingleExpression(this, null, adj);
+	default ComparisonSingleExpression expression(Adjuster<Object[]> adj, Object... initalValue) {
+		return new ComparisonSingleExpression(this, initalValue, adj);
 	}
 
 	default ComparisonSingleExpression expression(Object... right) {
-		return new ComparisonSingleExpression(this, right);
+		return new ComparisonSingleExpression(this, right, null);
 	}
 
 	//basic comparator
