@@ -15,17 +15,12 @@ import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
 
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
-import java.util.function.BiPredicate;
-import java.util.stream.Stream;
 
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.core.Utils;
 
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
@@ -42,16 +37,20 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 
 	public QueryComposer requestQueryCheck(@NonNull QueryRequestFilter ant, @NonNull Map<String, String[]> parameterMap) {
 		
+		var illegalKeys = new HashSet<>(KEYWORDS);
+		for(var k : ant.mergeParameters()) {
+			illegalKeys.remove(k.getValue()); // override annotation clauses
+		}
 		parameterMap.keySet().forEach(k-> 
-		illegalArgumentIf(KEYWORDS.contains(k) && !contains(ant.mergeParameters(),k, (e,v)-> e.name().toLowerCase().equals(v)), ()-> k + " argument not allowed"));
+			illegalArgumentIf(illegalKeys.contains(k), ()-> k + " argument not allowed"));
 		
-		var modifiableMap = new LinkedHashMap<>(parameterMap); // modifiable map + preserve order
+		var modifiableMap = new LinkedHashMap<>(parameterMap);
 		appendParam(modifiableMap, COLUMN_PARAM, ant.column());
-		appendParam(modifiableMap, DISTINCT_PARAM, ant.distinct()); // if allow override anno. distinct
+		appendParam(modifiableMap, DISTINCT_PARAM, ant.distinct());
 		appendParam(modifiableMap, JOIN_PARAM, ant.join());
 		appendParam(modifiableMap, ORDER_PARAM, ant.order());
-		appendParam(modifiableMap, LIMIT_PARAM, ant.limit()); // if allow override anno. limit
-		appendParam(modifiableMap, OFFSET_PARAM, ant.offset()); // if allow override anno. offset
+		appendParam(modifiableMap, LIMIT_PARAM, ant.limit());
+		appendParam(modifiableMap, OFFSET_PARAM, ant.offset());
 		appendParams(modifiableMap, ant.filters());
 		ignoreParams(modifiableMap, ant.ignoreParameters()); //order important !
 		
@@ -59,21 +58,6 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 		return getRequestParser().parse(env, ant.view(), ant.variables(), modifiableMap);
 	}
 
-	void allowParams(Set<String> keywords, String[] allowedParams) {
-		if (!isEmpty(allowedParams)) {
-			for (var k : allowedParams) {
-				keywords.remove(k);
-			}
-		}
-	}
-	void ignoreParams(Map<String, String[]> params, String[] ignoredParams) {
-		if (!isEmpty(ignoredParams)) {
-			for (var k : ignoredParams) {
-				params.remove(k);
-			}
-		}
-	}
-	
 	void appendParam(Map<String, String[]> params, String key, int value) {
 		if (value > -1) {
 			params.putIfAbsent(key, new String[] { valueOf(value) });
@@ -85,14 +69,12 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 			params.putIfAbsent(key, new String[] { valueOf(value) });
 		}
 	}
-	// ant(value) : column = id,contact
-	// url(params) : column = id,country
-	// result -> url : id,country,contact
+
 	void appendParam(Map<String, String[]> params, String key, String[] value) {
 		if (!isEmpty(value)) {
 			params.compute(key, (k,v)-> isEmpty(v)
 					? value // no URL param 
-					: concat(stream(v), stream(value)).distinct().toArray(String[]::new));
+					: concat(stream(value), stream(v)).distinct().toArray(String[]::new)); //merge same key values
 		}
 	}
 
@@ -107,26 +89,12 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 			}
 		}
 	}
-	<T,U> boolean contains(T[] arr, U element, BiPredicate<T,U> pre) {
-		for (T o : arr) {
-			if(pre.test(o, element)) {
-				return true;
+	
+	void ignoreParams(Map<String, String[]> params, String[] ignoredParams) {
+		if (!isEmpty(ignoredParams)) {
+			for (var k : ignoredParams) {
+				params.remove(k);
 			}
 		}
-		return false;
-	}
-	
-	boolean checkForMerge(Map<String, String[]> params, String key, String[] allowedParams) {
-		return Arrays.asList(allowedParams).contains(key) && params.get(key) != null;
-	}
-	
-	boolean checkForMerge(Map<String, String[]> params, String key) {
-		return params.get(key) != null;
-	}
-	
-	public static void main(String[] args) {
-		var x = "amine";
-		var y = "AMINE".toLowerCase(); 
-		System.out.println( x.equals(y));
 	}
 }

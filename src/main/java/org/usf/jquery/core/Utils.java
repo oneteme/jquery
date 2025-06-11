@@ -67,13 +67,6 @@ public final class Utils {
 		return res;
 	}
 	
-	public static Object[] append(Object[] arr, Object o) {
-		var res = new Object[arr.length+1];
-		arraycopy(arr, 0, res, 0, arr.length);
-		res[arr.length] = o;
-		return res;
-	}
-	
 	public static <K, V> BiFunction<K, V, V> computeIfAbsentElseThrow(V o, Supplier<String> exceptionSupplier) {
 		return (k,v)-> {
 			if(isNull(v)) {
