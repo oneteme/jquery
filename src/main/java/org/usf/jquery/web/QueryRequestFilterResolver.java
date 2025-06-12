@@ -2,6 +2,7 @@ package org.usf.jquery.web;
 
 import static java.lang.String.valueOf;
 import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.illegalArgumentIf;
@@ -33,7 +34,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class QueryRequestFilterResolver {// spring connection bridge
 	
-	private static final Set<String> KEYWORDS = Set.of(COLUMN_PARAM, DISTINCT_PARAM, JOIN_PARAM, OFFSET_PARAM, LIMIT_PARAM, ORDER_PARAM);
+	private static final Set<String> KEYWORDS = stream(Keyword.values()).map(Keyword::getValue).collect(toSet());
 
 	public QueryComposer requestQueryCheck(@NonNull QueryRequestFilter ant, @NonNull Map<String, String[]> parameterMap) {
 		
