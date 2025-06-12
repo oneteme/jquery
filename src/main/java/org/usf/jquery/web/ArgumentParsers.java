@@ -105,7 +105,7 @@ public class ArgumentParsers {
 		case DATE: 						return v-> Date.valueOf(LocalDate.parse(v));
 		case TIME: 						return v-> Time.valueOf(LocalTime.parse(v));
 		case TIMESTAMP: 				return v-> Timestamp.from(Instant.parse(v));
-		case TIMESTAMP_WITH_TIMEZONE:	return v-> Timestamp.from(ZonedDateTime.parse(v).toInstant());
+		case TIMESTAMP_WITH_TIMEZONE:	return v-> Timestamp.from(ZonedDateTime.parse(v).toInstant()); //supports instant 
 		case OTHER:
 		default: 						throw unsupportedTypeException(type);
 		}
