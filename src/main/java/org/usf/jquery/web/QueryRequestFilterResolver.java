@@ -92,7 +92,8 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 	
 	void ignoreParams(Map<String, String[]> params, String[] ignoredParams) {
 		if (!isEmpty(ignoredParams)) {
-			for (var k : ignoredParams) {
+			for(var k : ignoredParams) {
+				illegalArgumentIf(KEYWORDS.contains(k), () -> "cannot ignore parameter: " + k);
 				params.remove(k);
 			}
 		}
