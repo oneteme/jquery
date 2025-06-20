@@ -22,13 +22,13 @@ public final class ColumnProxy implements NamedColumn {
 	private final String tag; //optional
 	
 	@Override
-	public String getTag() {
-		return tag;
+	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
+		return column.compose(query, cons);
 	}
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		column.sql(sb, ctx);
+	public void build(QueryBuilder query) {
+		query.append(column);
 	}
 	
 	@Override
@@ -37,15 +37,10 @@ public final class ColumnProxy implements NamedColumn {
 	}
 
 	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> cons) {
-		return column.columns(builder, cons);
+	public String getTag() {
+		return tag;
 	}
 
-	@Override
-	public void views(Consumer<DBView> cons) {
-		column.views(cons);
-	}
-	
 	@Override // do not delegate this
 	public ColumnProxy as(String name) { 
 		return NamedColumn.super.as(name);

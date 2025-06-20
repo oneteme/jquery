@@ -1,6 +1,11 @@
 package org.usf.jquery.web;
 
+import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
+import static org.usf.jquery.web.JQuery.currentEnvironment;
+
 import org.usf.jquery.core.ComparisonExpression;
+import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.JDBCType;
 
 /**
@@ -19,30 +24,20 @@ public interface ColumnDecorator {
 	}
 	
 	default JDBCType type(ViewDecorator vd) {
-		return null; // auto type
+		var meta = currentEnvironment().getMetadata().columnMetadata(vd, this);
+		return nonNull(meta) ? meta.getType() : null;
 	}
 	
-	default ColumnBuilder builder(ViewDecorator vd) { //set type if null
+	default Builder<ViewDecorator, DBColumn> builder() {
 		return null; // no builder by default
 	}
 	
-	default CriteriaBuilder<ComparisonExpression> criteria(String name) {
+	default Builder<ViewDecorator, ComparisonExpression> criteriaBuilder(String name) {
 		return null; // no criteria by default
 	}
-
-	default JDBCArgumentParser parser(ViewDecorator vd) {
-		throw new UnsupportedOperationException("not impl."); // override parser | format | local | validation
-	}
 	
-	default String pattern(ViewDecorator td) {
-		throw new UnsupportedOperationException("not impl."); //improve API security and performance
-	}
-
-	default boolean canSelect(ViewDecorator td) {
-		throw new UnsupportedOperationException("not impl."); //authorization inject
-	}
-
-	default boolean canFilter(ViewDecorator td) {
-		throw new UnsupportedOperationException("not impl."); //authorization inject
+	default ComparisonExpression criteria(String name, ViewDecorator vd, String... args) {
+		return requireNonNull(criteriaBuilder(name), "criteriaBuilder")
+				.build(vd, args);
 	}
 }

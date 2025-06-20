@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.BadArgumentException.badArgumentsException;
 import static org.usf.jquery.core.ParameterSet.ofParameters;
 
 import lombok.Getter;
@@ -29,30 +28,22 @@ public class TypedOperator implements Operator {
 	}
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
-		try {
-			operator.sql(sb, ctx, parameterSet.assertArguments(args));
-		}
-		catch (BadArgumentException e) {
-			throw badArgumentsException("operator", operator.id(), args, e);
-		}
+	public void build(QueryBuilder query, Object... args) {
+		throw new UnsupportedOperationException(this.getClass()+"::build");
 	}
 	
 	@Override
 	public String id() {
 		return operator.id();
 	}
-	
 
-	public OperationColumn operation(Object... args) {
+	public DBColumn operation(Object... args) {
 		return this.operation(typeFn.apply(args), args);
 	}
 
 	@Override // do not delegate this
-	public OperationColumn operation(JDBCType type, Object... args) {
-		return operator.is(CombinedOperator.class)
-				? operator.operation(type, parameterSet.assertArguments(args)) //no sql
-				: Operator.super.operation(type, args);
+	public DBColumn operation(JDBCType type, Object... args) {
+		return operator.operation(type, parameterSet.assertArguments(args));
 	}
 	
 	@Override

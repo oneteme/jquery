@@ -1,36 +1,44 @@
 package org.usf.jquery.web;
-
-import static java.util.Collections.synchronizedMap;
+import static java.util.Objects.nonNull;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.usf.jquery.core.Database;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 
  * @author u$f
  *
  */
-@Slf4j
-@Getter(AccessLevel.PACKAGE)
+@RequiredArgsConstructor
 public final class DatabaseMetadata {
 
-	private final Map<String, ViewMetadata> tables = synchronizedMap(new LinkedHashMap<>()); //lazy loading
+	private final Map<String, ViewMetadata> views; //lazy loading
 	private Database type;
 	
-	public void fetch(DatabaseMetaData metadata) {
-		try {
-			type = Database.of(metadata.getDatabaseProductName()).orElse(null);
-		}
-		catch (SQLException e) {
-			log.warn("error while scanning database metadata", e);
+	public Database getType() {
+		return type;
+	}
+	
+	public ColumnMetadata columnMetadata(ViewDecorator view, ColumnDecorator cd) {
+		var meta = viewMetadata(view);
+		return nonNull(meta) ? meta.columnMetadata(cd) : null;
+	}
+	
+	public ViewMetadata viewMetadata(ViewDecorator view) {
+		return views.get(view.identity());
+	}
+	
+	public void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
+		type = Database.of(metadata.getDatabaseProductName()).orElse(null);
+		if(nonNull(views)) {
+			for(var v : views.values()) {
+				v.fetch(metadata, schema);
+			}
 		}
 	}
 }

@@ -1,9 +1,8 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryContext.formatValue;
+import static java.util.Objects.nonNull;
 
 import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 import lombok.RequiredArgsConstructor;
 
@@ -12,30 +11,30 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
 public class ValueColumn implements DBColumn {
 	
+	private final Object value;
 	private final JDBCType type;
-	private final Supplier<Object> supp;
+	private final Adjuster<Object> adjuster; //value adjuster
 
-	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.append(formatValue(supp.get()));
+	public ValueColumn(Object value, JDBCType type) {
+		this(value, type, null);
 	}
 
+	@Override
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return -1;
+	}
+	
+	@Override
+	public void build(QueryBuilder query) {
+		query.appendParameter(nonNull(adjuster) ? adjuster.build(query, value) : value);
+	}
+	
 	@Override
 	public JDBCType getType() {
 		return type;
-	}
-
-	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return -1;
-	}
-
-	@Override
-	public void views(Consumer<DBView> cons) {
-		//no views
 	}
 
 	@Override

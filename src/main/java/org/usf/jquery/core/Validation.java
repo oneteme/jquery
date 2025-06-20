@@ -18,10 +18,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Validation {
 
-	public static final String VAR_PATTERN = "[a-zA-Z]\\w*";
-
 	public static String requireLegalVariable(String s) {
-		illegalArgumentIf(isNull(s) || !s.matches(VAR_PATTERN), ()-> "illegal variable name: " + s);
+		illegalArgumentIf(isNull(s) || !s.matches("[a-zA-Z]\\w*"), ()-> "illegal variable name: " + s);
 		return s;
 	}
 

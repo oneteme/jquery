@@ -16,20 +16,15 @@ public class ColumnSingleFilter implements DBFilter {
 	private final ComparisonExpression expression;
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		expression.sql(sb, ctx, left);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return DBObject.tryComposeNested(query, groupKeys, left, expression);
+	}
+	
+	@Override
+	public void build(QueryBuilder query) {
+		expression.build(query, left);
 	}
 
-	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return Nested.tryResolveColumn(builder, groupKeys, left, expression);
-	}
-	
-	@Override
-	public void views(Consumer<DBView> cons) {
-		Nested.tryResolveViews(cons, left, expression);
-	}
-	
 	@Override
 	public ColumnFilterGroup append(LogicalOperator op, DBFilter filter) {
 		return new ColumnFilterGroup(op, this, filter);

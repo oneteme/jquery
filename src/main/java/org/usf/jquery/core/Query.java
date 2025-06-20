@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.isNull;
+import static org.usf.jquery.core.TypedArg.values;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.Connection;
@@ -24,12 +25,11 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @RequiredArgsConstructor
-public final class RequestQuery {
+public final class Query {
 	
 	@NonNull
-	private final String query;
-	private final Object[] args;
-	private final int[] argTypes;
+	private final String sql;
+	private final TypedArg[] args;
 	
 	public List<DynamicModel> execute(DataSource ds) throws SQLException {
 		return execute(ds, new KeyValueMapper());
@@ -42,16 +42,16 @@ public final class RequestQuery {
 	}
 	
 	public <T> T execute(Connection cn, ResultSetMapper<T> mapper) throws SQLException {
-		log.debug("preparing statement : {}", query);
-		log.debug("using arguments : {}", Arrays.toString(args)); //before prepare
-		try(var ps = cn.prepareStatement(query)){
+		log.debug("preparing statement : {}", sql);
+		try(var ps = cn.prepareStatement(sql)){
 			if(!isEmpty(args)) {
+				log.debug("using arguments : {}", Arrays.toString(values(args)));
 				for(var i=0; i<args.length; i++) {
-					if(isNull(args[i])) {
-						ps.setNull(i+1, argTypes[i]);
+					if(isNull(args[i].value())) {
+						ps.setNull(i+1, args[i].type());
 					}
 					else {
-						ps.setObject(i+1, args[i], argTypes[i]);
+						ps.setObject(i+1, args[i].value(), args[i].type());
 					}
 				}						
 			}
@@ -63,9 +63,14 @@ public final class RequestQuery {
 		        	return mapper.map(rs);
 		        }
 				catch(SQLException e) {
-					throw new MappingException("error while mapping results", e);
+					throw new MappingException("error mapping results for query: " + sql, e);
 				}
 			}
 		}
+	}
+	
+	@Override
+	public String toString() {
+		return sql;
 	}
 }

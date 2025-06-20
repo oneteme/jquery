@@ -1,12 +1,13 @@
 package org.usf.jquery.web;
 
+import static java.util.Arrays.stream;
 import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
-import static org.usf.jquery.web.NoSuchResourceException.undeclaredResouceException;
 
-import org.usf.jquery.core.DBView;
+import java.util.Map;
+import java.util.Optional;
+
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.QueryView;
-import org.usf.jquery.core.ViewColumn;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -17,12 +18,12 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@Getter
 @RequiredArgsConstructor
 final class QueryDecorator implements ViewDecorator {
 	
 	private final String id;
-	private final QueryView query;
+	@Getter
+	private final QueryView query; //unmodifiable
 
 	@Override
 	public String identity() {	
@@ -30,16 +31,15 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public DBView view() {
-		return query;
+	public QueryView view() {
+		return query; //do not use env cache
 	}
 
-	public NamedColumn column(String id) {
-		return query.getBuilder().getColumns().stream() //do not use declaredColumn
+	public Optional<NamedColumn> column(String id) {
+		return stream(query.getColumns()) //do not use declaredColumn
 		.filter(c-> id.equals(c.getTag()))
 		.findAny()
-		.map(c-> new ViewColumn(doubleQuote(c.getTag()), query, c.getType(), null))
-		.orElseThrow(()-> undeclaredResouceException(id, identity()));
+		.map(c-> view().column(doubleQuote(c.getTag()), c.getType(), null));
 	}
 	
 	@Override
@@ -48,7 +48,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public NamedColumn column(@NonNull ColumnDecorator cd) {
+	public NamedColumn column(@NonNull ColumnDecorator cd, String... args) {
 		throw unsupportedOperationException("column");
 	}
 	
@@ -58,7 +58,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public ViewMetadata metadata() {
+	public ViewMetadata metadata(Map<String, ColumnMetadata> colMetadata) {
 		throw unsupportedOperationException("metadata");
 	}
 	

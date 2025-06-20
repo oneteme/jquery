@@ -1,34 +1,26 @@
 package org.usf.jquery.core;
 
-import static java.lang.System.currentTimeMillis;
-import static java.util.Collections.addAll;
-import static java.util.Objects.isNull;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
-import static java.util.function.Predicate.not;
-import static org.usf.jquery.core.Clause.COLUMN;
-import static org.usf.jquery.core.Clause.FILTER;
-import static org.usf.jquery.core.Clause.ORDER;
-import static org.usf.jquery.core.DBColumn.allColumns;
-import static org.usf.jquery.core.Database.TERADATA;
-import static org.usf.jquery.core.Database.currentDatabase;
-import static org.usf.jquery.core.Database.setCurrentDatabase;
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.QueryContext.parameterized;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static java.util.Objects.requireNonNull;
+import static java.util.Optional.ofNullable;
+import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.Validation.requireNonEmpty;
-import static org.usf.jquery.web.ResourceAccessException.resourceAlreadyExistsException;
+import static org.usf.jquery.core.SqlStringBuilder.quote;
+import static org.usf.jquery.core.TypedArg.arg;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
-import java.util.function.Supplier;
+import java.util.Optional;
+import java.util.function.Consumer;
 
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -37,233 +29,191 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-@Getter
-public class QueryBuilder {
+@Getter(value = AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+public final class QueryBuilder {
 	
-	private final Collection<QueryView> ctes = new ArrayList<>();
-	private final Collection<NamedColumn> columns = new ArrayList<>();
-	private final Collection<DBColumn> group = new HashSet<>(); 
-	private final Collection<DBFilter> where = new ArrayList<>(); 
-	private final Collection<DBFilter> having = new ArrayList<>();
-	private final Collection<ViewJoin> joins = new ArrayList<>(); 
-	private final Collection<DBOrder> orders = new ArrayList<>();
-	private final Map<DBView, QueryView> overView = new HashMap<>();
-	private boolean distinct;
-	private boolean aggregation;
-	private Integer limit;
-	private Integer offset;
-	private Iterator<?> it;
-	private Clause clause;
-	
-	public QueryBuilder() {
-		this(null);
-	}
-	
-	public QueryBuilder(Database target) {
-		setCurrentDatabase(target);
-	}
+	private final String schema;
+	private final String prefix;
+	private final StringBuilder query;
+	private final Map<QueryView, String> ctes;
+	private final Map<DBView, String> views;
+	private final List<TypedArg> args;
+	private final Map<DBView, QueryView> overViews;
+	private final Object currentModel;
 
-	public QueryView overView(DBView view) {
-		return overView(view, ()-> new QueryBuilder(currentDatabase()).columns(allColumns(view)).asView());
+	Optional<QueryView> subView(DBView view) {
+		return ofNullable(overViews.get(view));
 	}
 	
-	public QueryView overView(DBView view, Supplier<QueryView> supp) {
-		return overView.computeIfAbsent(view, k-> supp.get());
+	public boolean isCte(DBView view) {
+		return view instanceof QueryView q && ctes.containsKey(q);
 	}
 	
-	public QueryBuilder ctes(@NonNull QueryView... ctes) {
-		addAll(this.ctes, ctes);
-		return this;
+	public QueryBuilder appendViewAlias(DBView view) {
+		return appendViewAlias(view, "");
 	}
 	
-	public QueryBuilder columns(@NonNull NamedColumn... columns) {
-		this.clause = COLUMN;
-		for(var col : columns) { //optional tag
-			if(nonNull(col.getTag()) && this.columns.stream()
-					.filter(c-> nonNull(c.getTag()))
-					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) {
-				throw resourceAlreadyExistsException(col.getTag());
+	public QueryBuilder appendViewAlias(DBView view, String after) {
+		if(!ctes.isEmpty() || !views.isEmpty()) {
+			var v = ctes.containsKey(view) ? ctes.get(view) : views.get(view);
+			if(nonNull(v)) {
+				append(v).append(after); //view.
 			}
-			aggregation |= this.columns.add(col) && col.columns(this, group::add) > 0;
-		}
-		return this;
-	}
-	
-	public QueryBuilder orders(@NonNull DBOrder... orders) {
-		this.clause = ORDER;
-		for(var o : orders) {
-			aggregation |= this.orders.add(o) && o.columns(this, group::add) > 0;
-		}
-		return this;
-	}
-
-	public QueryBuilder filters(@NonNull DBFilter... filters){
-		this.clause = FILTER;
-		for(var f : filters) {
-			var arr = new ArrayList<DBColumn>();
-			var lvl = f.columns(this, arr::add);
-			if(lvl > 0) {
-				aggregation |= having.add(f);
-				group.addAll(arr);
+			else if(view.getClass() != ViewRef.class) {
+				log.warn("alias not found for view=" + view);
 			}
-			else {
-				where.add(f);
-			}
+		} //else no alias
+		return this;
+	}
+	
+	public QueryBuilder append(String sql) {
+		query.append(sql);
+		return this;
+	}
+	
+	public QueryBuilder append(DBObject o) {
+		o.build(this);
+		return this;
+	}
+	
+	public QueryBuilder appendSpace() {
+		return append(SPACE);
+	}
+	
+	public QueryBuilder appendAs() {
+		return append(" AS ");
+	}
+	
+	public QueryBuilder appendParenthesis(Runnable exec) {
+		append("(");
+		exec.run();
+		return append(")");
+	}
+
+	public QueryBuilder appendParameters(String delimiter, Object[] arr) {
+		return appendParameters(delimiter, arr, 0, false);
+	}
+	
+	public QueryBuilder appendParameters(String delimiter, Object[] arr, boolean parameterized) {
+		return appendParameters(delimiter, arr, 0, parameterized);
+	}
+	
+	public QueryBuilder appendParameters(String delimiter, Object[] arr, int from) {
+		return appendParameters(delimiter, arr, from, false);
+	}
+	
+	public QueryBuilder appendParameters(String delimiter, Object[] arr, int from, boolean parameterized) {
+		return runForeach(delimiter, arr, from, o-> appendParameter(o, parameterized));
+	}
+	
+	public QueryBuilder appendParameter(Object o) {
+		return appendParameter(o, false);
+	}
+
+	public QueryBuilder appendParameter(Object o, boolean parameterized) { //comparators
+		if(o instanceof DBObject jo) {
+			return append(jo);
 		}
-		return this;
-	}
-
-	public QueryBuilder joins(@NonNull ViewJoin... joins) {
-		addAll(this.joins, joins);
-		return this;
-	}
-	
-	public QueryBuilder limit(Integer limit) {
-		this.limit = limit;
-		return this;
-	}
-	
-	public QueryBuilder offset(Integer offset) {
-		this.offset = offset;
-		return this;
-	}
-	
-	public QueryBuilder distinct() {
-		distinct = true;
-		return this;
-	}
-	
-	public QueryBuilder repeat(@NonNull Iterator<?> it) {
-		this.it = it;
-		return this;
-	}
-	
-	public QueryView asView() {
-		return new QueryView(this);
-	}
-
-	public RequestQuery build(){
-		return build(null);
-	}
-
-	public RequestQuery build(String schema) {
-		log.trace("building query...");
-    	requireNonEmpty(columns, "columns");
-		var bg = currentTimeMillis();
-		var pb = parameterized(schema, ctes, overView); //over clause
-		var sb = new SqlStringBuilder(1000); //avg
-		if(isNull(it)) {
-			build(sb, pb);
-		}
-		else {
-			sb.runForeach(it, " UNION ALL ", o-> build(sb, pb));
-		}
-		log.trace("query built in {} ms", currentTimeMillis() - bg);
-		return new RequestQuery(sb.toString(), pb.args(), pb.argTypes());
-	}
-
-	public final void build(SqlStringBuilder sb, QueryContext ctx){
-		with(sb, ctx); //before build
-    	select(sb, ctx);
-    	var sub = new SqlStringBuilder(500);
-    	var frk = ctx.fork();
-		join(sub, frk);
-    	where(sub, frk);
-    	groupBy(sub, frk);
-    	having(sub, frk);
-    	orderBy(sub, frk);
-    	fetch(sub);
-		from(sb, ctx); //enumerate all views before from clause
-		ctx.join(frk);
-		sb.append(sub.toString());
-	}
-	
-	void with(SqlStringBuilder sb, QueryContext ctx) {
-		if(!ctes.isEmpty()) {
-			sb.append("WITH ")
-			.runForeach(ctes.iterator(), SCOMA, v->{
-				ctx.appendView(sb, v);
-				v.sql(sb.as(), ctx); //query parenthesis
-			})
-			.space();
-		}
-	}
-
-	void select(SqlStringBuilder sb, QueryContext ctx){
-		if(currentDatabase() == TERADATA) {
-			if(nonNull(offset)) {
-				throw new UnsupportedOperationException("");
-			}
-			if(distinct && nonNull(limit)) {
-				throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
+		if(parameterized && isParameterized()) {
+			var t = typeOf(o);
+			if(t.isPresent()) {
+				args.add(arg(o, t.get().getValue()));
+				return append("?");
 			}
 		}
-		sb.append("SELECT")
-    	.appendIf(distinct, " DISTINCT")
-    	.appendIf(nonNull(limit) && currentDatabase() == TERADATA, ()-> " TOP " + limit) //???????
-    	.space()
-    	.runForeach(columns.iterator(), SCOMA, o-> o.sqlUsingTag(sb, ctx));
-	}
-	
-	void from(SqlStringBuilder sb, QueryContext ctx) {
-		var views = ctx.views();
-		if(!joins.isEmpty()) {
-			var exp = joins.stream().map(ViewJoin::getView).map(v-> overView.containsKey(v) ? overView.get(v) : v).toList();
-			views = views.stream().filter(not(exp::contains)).toList();
-		}
-		if(!views.isEmpty()) {
-			sb.append(" FROM ").runForeach(views.iterator(), SCOMA, v-> ctx.appendView(sb, v));
-		}
-	}
-	
-	void join(SqlStringBuilder sb, QueryContext ctx) {
-		if(!joins.isEmpty()) {
-			sb.space().runForeach(joins.iterator(), SPACE, v-> v.sql(sb, ctx));
-		}
+		if(o instanceof Number){
+			return append(o.toString());
+		} 
+		return append(nonNull(o) ? quote(o.toString()) : "null");   //TD : stringify value using db default pattern
 	}
 
-	void where(SqlStringBuilder sb, QueryContext ctx){
-		if(!where.isEmpty()) {
-    		sb.append(" WHERE ").runForeach(where.iterator(), AND.sql(), f-> f.sql(sb, ctx));
-		}
+	public QueryBuilder appendEach(String delimiter, DBObject[] arr) {
+		return runForeach(delimiter, arr, 0, o-> o.build(this));
 	}
 	
-	void groupBy(SqlStringBuilder sb, QueryContext ctx){
-		if(aggregation && !group.isEmpty()) {
-    		sb.append(" GROUP BY ").runForeach(group.iterator(), SCOMA, c-> {
-    			if(!(c instanceof ViewColumn) && columns.contains(c)) {
-    				sb.append(((NamedColumn)c).getTag());
-    			}
-    			else {
-    				 c.sql(sb, ctx);
-    			}
-    		});
-		}
+	public <T> QueryBuilder appendEach(String delimiter, T[] arr, Consumer<T> cons) {
+		return runForeach(delimiter, arr, 0, cons);
+	}
+
+	public QueryBuilder withValue() { //inherit schema, prefix, args but not views
+		return new QueryBuilder(schema, prefix, query, ctes, views, null, overViews, currentModel); //no args
+	}
+
+	public QueryBuilder withModel(Object model) { //overwrite model only
+		return new QueryBuilder(schema, prefix, query, ctes, views, args, overViews, model);
 	}
 	
-	void having(SqlStringBuilder sb, QueryContext ctx){
-		if(!having.isEmpty()) {
-    		sb.append(" HAVING ")
-    		.runForeach(having.iterator(), AND.sql(), f-> f.sql(sb, ctx));
+	public QueryBuilder subQuery(DBView[] views, Map<DBView, QueryView> overview) { //inherit schema, prefix, args but not views
+		var s = prefix + "_s";
+		var vMap = viewAlias(s, views);
+		if(!isEmpty(overview)) {
+			overview.forEach((k,v)-> vMap.put(k, ctes.get(v))); //override or add
 		}
+		return new QueryBuilder(schema, s, query, ctes, vMap, args, overview, currentModel);
 	}
 	
-	void orderBy(SqlStringBuilder sb, QueryContext ctx) {
-    	if(!orders.isEmpty()) {
-    		sb.append(" ORDER BY ")
-    		.runForeach(orders.iterator(), SCOMA, o-> o.sql(sb, ctx));
-    	}
+	public Query build() {
+		return new Query(query.toString(), isParameterized() ? args.toArray(TypedArg[]::new) : null);
+	}
+
+	private boolean isParameterized() {
+		return nonNull(args);
 	}
 	
-	void fetch(SqlStringBuilder sb) {
-		if(currentDatabase() != TERADATA) { // TOP n
-			sb.appendIfNonNull(limit,  v-> " LIMIT " + v);
-			sb.appendIfNonNull(offset, v-> " OFFSET " + v);
+	private <T> QueryBuilder runForeach(String delimiter, T[] arr, int idx, Consumer<T> fn) {
+		requireNonNull(arr, "arr connot be null");
+		if(idx < arr.length) {
+			if(!isEmpty(arr)) {
+				var i=idx;
+				fn.accept(arr[i]);
+				for(++i; i<arr.length; i++) {
+					query.append(delimiter);
+					fn.accept(arr[i]);
+				}
+			}
 		}
+		else if(idx > arr.length) {
+			throw new IndexOutOfBoundsException(idx);
+		}// idx == arr.length 
+		return this;
 	}
 
 	@Override
 	public String toString() {
-		return build().getQuery();
+		return query.toString();
+	}
+
+	public static QueryBuilder addWithValue() {
+		return create(null, null, null, null, null);
+	}
+
+	public static QueryBuilder addWithValue(String schema, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
+		return create(schema, ctes, views, null, overview);
+	}
+
+	public static QueryBuilder parameterized(String schema, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
+		return create(schema, ctes, views, new ArrayList<>(), overview);
+	}
+	
+	private static QueryBuilder create(String schema, QueryView[] ctes, DBView[] views, List<TypedArg> args, Map<DBView, QueryView> overview) {
+		var cMap = viewAlias("g", ctes);
+		var vMap = viewAlias("v", views);
+		if(!isEmpty(overview)) {
+			overview.forEach((k,v)-> vMap.put(k, cMap.get(v))); //override or add
+		}
+		overview = nonNull(overview) ? overview : emptyMap();
+		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args, overview, null);
+	}
+		
+	private static <T> Map<T, String> viewAlias(String prefix, T[] views){
+		var map = new LinkedHashMap<T, String>(); //preserve order
+		if(!isEmpty(views) && nonNull(prefix)) {
+			int i=0;
+			for(var v : views) {
+				map.put(v, prefix+i++);
+			}
+		}
+		return map;
 	}
 }

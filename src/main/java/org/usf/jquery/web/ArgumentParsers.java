@@ -1,7 +1,10 @@
 package org.usf.jquery.web;
 
+import static java.lang.String.format;
+import static java.lang.reflect.Array.newInstance;
 import static java.util.Collections.addAll;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -12,7 +15,6 @@ import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.QUERY_COLUMN;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -23,7 +25,6 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.JDBCType;
@@ -42,45 +43,57 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class ArgumentParsers {
-	
-	private static final JDBCType[] STD_TYPES = {
+
+	private static final JDBCType[] STD_TYPES = { 
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T[] parseAll(EntryChain[] entry, QueryContext context, JQueryType type) {
+		var prs = jqueryArgParser(type);
+		var arr = (Object[]) newInstance(type.getCorrespondingClass(), entry.length);
+		for(int i=0; i<entry.length; i++) {
+			arr[i] = prs.parseEntry(entry[i], context);
+		}
+		return (T[])arr;
+	}
 
-	public static Object parse(RequestEntryChain entry, ViewDecorator td, JavaType... types) {
-		List<JavaType> list = new ArrayList<>();
+	public static Object parse(EntryChain entry, QueryContext context, JavaType... types) {
+		var list = new ArrayList<JavaType>();
 		if(isEmpty(types) || Stream.of(types).anyMatch(JDBCType.class::isInstance)) {
 			list.add(COLUMN);
 			list.add(QUERY_COLUMN);
 		}
 		addAll(list, isEmpty(types) ? STD_TYPES : types);
-		var exList = new ArrayList<Exception>();
+		EntryParseException lastEx = null;
 		for(var type : list) {
 			try {
 				if(type instanceof JDBCType t) {
-					return jdbcArgParser(t).parseEntry(entry, td);
+					return jdbcArgParser(t).parseEntry(entry, context);
 				}
 				if(type instanceof JQueryType t) {
-					return jqueryArgParser(t).parseEntry(entry, td);
+					return jqueryArgParser(t).parseEntry(entry, context);
 				}
 				else {
 					throw new UnsupportedOperationException(requireNonNull(type, "type is null").toString());
 				}
-			} catch (NoSuchResourceException | EntryParseException e) { //do not throw exception
-				exList.add(e);
+			} catch (EntryParseException  e) { //do not throw exception
+				if(e.getCause() instanceof EntrySyntaxException) {
+					throw e; //rethrow only if syntax exception, ignore other exceptions
+				}
+				lastEx = e;
 			}
 		}
-		if(exList.size() > 1) {
-			for(int i=0; i<exList.size(); i++) {
-				log.warn("parsing '{}' as {} => {}", entry, list.get(i), exList.get(i).getMessage());
-			}
+		if(list.size() == 1) { //single type
+			throw lastEx;
 		}
-		throw cannotParseEntryException("entry", entry, exList.size() == 1 ? exList.get(0) : null);
+		throw new EntryParseException(format("cannot parse entry '%s' as [%s]", 
+				entry, list.stream().map(Object::toString).collect(joining("|"))));
 	}
 	
 	public static JDBCArgumentParser jdbcArgParser(JDBCType type) {
 		switch (type) {
-		case BOOLEAN, BIT: 				return Boolean::parseBoolean;
+		case BOOLEAN, BIT: 				return ArgumentParsers::parseBoolean;
 		case TINYINT: 					return Byte::parseByte;
 		case SMALLINT:					return Short::parseShort;
 		case INTEGER: 					return Integer::parseInt;
@@ -92,7 +105,7 @@ public class ArgumentParsers {
 		case DATE: 						return v-> Date.valueOf(LocalDate.parse(v));
 		case TIME: 						return v-> Time.valueOf(LocalTime.parse(v));
 		case TIMESTAMP: 				return v-> Timestamp.from(Instant.parse(v));
-		case TIMESTAMP_WITH_TIMEZONE:	return v-> Timestamp.from(ZonedDateTime.parse(v).toInstant());
+		case TIMESTAMP_WITH_TIMEZONE:	return v-> Timestamp.from(ZonedDateTime.parse(v).toInstant()); //supports instant 
 		case OTHER:
 		default: 						throw unsupportedTypeException(type);
 		}
@@ -100,16 +113,23 @@ public class ArgumentParsers {
 
 	public static JavaArgumentParser jqueryArgParser(JQueryType type) {
 		switch (type) {
-		case QUERY_COLUMN:	return RequestEntryChain::evalQueryColumn;
-		case NAMED_COLUMN:	return (e,v)-> e.evalColumn(v, true); //separate query context 
-		case COLUMN:		return (e,v)-> e.evalColumn(v, false);
-		case FILTER: 		return RequestEntryChain::evalFilter;
-		case ORDER: 		return RequestEntryChain::evalOrder;
-		case QUERY: 		return RequestEntryChain::evalQuery;
-		case JOIN:			return RequestEntryChain::evalJoin;
-		case PARTITION:		return RequestEntryChain::evalPartition;
+		case QUERY_COLUMN:	return EntryChain::evalQueryColumn;
+		case NAMED_COLUMN:	return (e,c)-> e.evalColumn(c, true); //separate query context 
+		case COLUMN:		return (e,c)-> e.evalColumn(c, false);
+		case FILTER: 		return EntryChain::evalFilter;
+		case ORDER: 		return EntryChain::evalOrder;
+		case QUERY: 		return EntryChain::parseQuery;
+		case JOIN:			return EntryChain::evalJoin;
+		case PARTITION:		return EntryChain::evalPartition;
 		default:			throw unsupportedTypeException(type);
 		}
+	}
+	
+	static boolean parseBoolean(String v) {
+		if(requireNonNull(v).matches("true|false")) {
+			return Boolean.parseBoolean(v); //not thrown exception
+		}
+		throw new EntryParseException("cannot parse boolean " + v);
 	}
 		
 	private static UnsupportedOperationException unsupportedTypeException(JavaType type) {

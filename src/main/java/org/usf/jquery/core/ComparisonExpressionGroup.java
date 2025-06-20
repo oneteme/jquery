@@ -21,21 +21,15 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 		this.operator = operator;
 		this.expressions = chain(operator, requireAtLeastNArgs(1, expressions, ComparisonExpressionGroup.class::getSimpleName));
 	}
+	
+	@Override
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return DBObject.composeNested(query, groupKeys, expressions);
+	}
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object operand) {
-		sb.parenthesis(()-> 
-			sb.runForeach(expressions, operator.sql(), o-> o.sql(sb, ctx, operand)));
-	}
-	
-	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return Nested.resolveColumn(builder, groupKeys, expressions);
-	}
-	
-	@Override
-	public void views(Consumer<DBView> cons) {
-		Nested.resolveViews(cons, expressions);
+	public void build(QueryBuilder query, Object operand) {
+		query.appendParenthesis(()-> query.appendEach(operator.sql(), expressions, e-> e.build(query, operand)));
 	}
 	
 	@Override
@@ -47,7 +41,6 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	public String toString() {
 		return DBObject.toSQL(this, "<left>");
 	}
-	
 
 	static ComparisonExpression[] chain(LogicalOperator op, ComparisonExpression... filters) {
 		var res = new ArrayList<ComparisonExpression>(filters.length);

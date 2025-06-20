@@ -8,6 +8,7 @@ import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.With;
 
 /**
  * 
@@ -19,25 +20,25 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 
 	private final Comparator comparator;
 	private final Object[] right; //optional
+	@With
+	private final Adjuster<Object[]> adjuster; //optional
+
+	@Override
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return DBObject.tryComposeNested(query, groupKeys, right);
+	}
 	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object left) {
+	public void build(QueryBuilder query, Object left) {
 		var param = new ArrayList<>();
 		param.add(left);
-		if(nonNull(right)) {
+		if(nonNull(adjuster)) {
+			addAll(param, adjuster.build(query, right)); //right as initial value
+		}
+		else if(nonNull(right)) {
 			addAll(param, right);
 		}
-		comparator.sql(sb, ctx, param.toArray());
-	}
-	
-	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return Nested.tryResolveColumn(builder, groupKeys, right);
-	}
-	
-	@Override
-	public void views(Consumer<DBView> cons) {
-		Nested.tryResolveViews(cons, right);
+		comparator.build(query, param.toArray());
 	}
 
 	@Override
@@ -49,5 +50,5 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 	public String toString() {
 		var args = new Object[]{null}; //unknown type
 		return DBObject.toSQL(this, args);
-	}	
+	}
 }

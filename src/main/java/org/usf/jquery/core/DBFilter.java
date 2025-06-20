@@ -1,19 +1,16 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Validation.requireNoArgs;
-
 /**
  * 
  * @author u$f
  *
  */
-public interface DBFilter extends DBObject, Nested, Chainable<DBFilter> {
+public interface DBFilter extends DBColumn, Chainable<DBFilter> {
 	
-	void sql(SqlStringBuilder sb, QueryContext ctx);
-
+	void build(QueryBuilder query);
+	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
-		requireNoArgs(args, DBFilter.class::getSimpleName);
-		sql(sb, ctx);
+	default JDBCType getType() {
+		return JDBCType.BOOLEAN;
 	}
 }

@@ -5,9 +5,11 @@ package org.usf.jquery.core;
  * @author u$f
  *
  */
-public enum Clause {
+public enum Role {
 	
 	COLUMN,
 	FILTER,
-	ORDER;
+	ORDER,
+	JOIN,
+	UNION;
 }

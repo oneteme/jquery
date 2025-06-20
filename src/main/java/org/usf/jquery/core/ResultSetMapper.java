@@ -66,7 +66,7 @@ public interface ResultSetMapper<T> {
 		@Override
 		public void writeLine(String s) throws IOException {
 			writer.accept(sb.append(s).toString());
-			this.sb.delete(0, sb.length()); //clear
+			this.sb.setLength(0); //clear
 		}
 	}
 }

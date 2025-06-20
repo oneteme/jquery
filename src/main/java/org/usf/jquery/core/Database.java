@@ -5,11 +5,14 @@ import static java.util.Objects.nonNull;
 import java.util.Optional;
 import java.util.stream.Stream;
 
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * 
  * @author u$f
  * 
  */
+@Slf4j
 public enum Database {
 
 	MYSQL, POSTGRESQL, ORACLE, SQLSERVER, TERADATA, H2;
@@ -20,8 +23,9 @@ public enum Database {
 		return local.get();
 	}
 
-	static void setCurrentDatabase(Database db) {
+	public static void currentDatabase(Database db) {
 		if(nonNull(db)) {
+			log.trace("setting current database to '{}'", db);
 			local.set(db);
 		}
 		else {

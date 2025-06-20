@@ -1,10 +1,9 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.isNull;
+import static java.util.Arrays.stream;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.joinArray;
-
-import java.util.stream.Stream;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -26,23 +25,23 @@ public final class Parameter {
 
 	public boolean accept(int idx, Object[] args) {
 		var arr = types(args);
-		return isEmpty(arr) || Stream.of(arr).anyMatch(t-> t.accept(args[idx]));
+		return isEmpty(arr) || stream(arr).anyMatch(t-> t.accept(args[idx]));
 	}
 	
 	public JavaType[] types(Object[] args) {
-		if(isNull(typeRef)) {
-			return types;
+		if(nonNull(typeRef)) {
+			var t = typeRef.apply(args); //nullable
+			return nonNull(t) ? new JavaType[] {t} : null;
 		}
-		var t = typeRef.apply(args); //nullable
-		return isNull(t) ? null : new JavaType[] {t};
+		return types;
 	}
 	
 	@Override
 	public String toString() {
-		if(isNull(typeRef)) {
-			return isEmpty(types) ? "ANY" : joinArray("|", types);
+		if(nonNull(typeRef)) {
+			return typeRef.toString();
 		}
-		return typeRef.toString();
+		return isEmpty(types) ? "ANY" : joinArray("|", types);
 	}
 	
 	public static Parameter required(JavaType... types) {

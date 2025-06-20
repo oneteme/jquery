@@ -52,7 +52,7 @@ public final class YearTableMetadata extends ViewMetadata {
 	@Getter
 	private YearMonth[] revisions;
 	
-	YearTableMetadata(DBView view, String revisionColumn, Map<String, ColumnMetadata> columns) {
+	YearTableMetadata(ViewDecorator view, String revisionColumn, Map<String, ColumnMetadata> columns) {
 		super(view, columns);
 		this.revisionColumn = revisionColumn;
 		this.revisions = EMPTY_REVISION;  //by default avoid NullPointerException
@@ -60,6 +60,12 @@ public final class YearTableMetadata extends ViewMetadata {
 	
 	public Optional<YearMonth> latestRevision() {
 		return isEmpty(revisions) ? empty() : Optional.of(revisions[0]);
+	}
+	
+	@Override
+	protected void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
+		super.fetch(metadata, schema);
+		fetchRevisions(metadata.getConnection());
 	}
 		
 	@Override

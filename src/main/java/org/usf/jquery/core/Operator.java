@@ -1,10 +1,11 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
-import static org.usf.jquery.core.DBProcessor.lookup;
+import static org.usf.jquery.core.Database.H2;
 import static org.usf.jquery.core.Database.TERADATA;
 import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.JDBCType.BIGINT;
+import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.INTEGER;
@@ -12,15 +13,15 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.PARTITION;
+import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
-import java.util.Optional;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 /**
  * 
@@ -31,7 +32,12 @@ public interface Operator extends DBProcessor {
 	
 	String id(); //nullable
 
-	default OperationColumn operation(JDBCType type, Object... args) {
+	@Override
+	default int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+		throw new UnsupportedOperationException("compose operator");
+	}
+
+	default DBColumn operation(JDBCType type, Object... args) {
 		return new OperationColumn(this, args, type);
 	}
 	
@@ -101,6 +107,48 @@ public interface Operator extends DBProcessor {
 	
 	static TypedOperator pow() {
 		return new TypedOperator(DOUBLE, function("POW"), required(DOUBLE), required(DOUBLE));
+	}
+
+	//bitwise functions
+	
+	static TypedOperator bitAnd() {
+		var op = currentDatabase() == TERADATA || currentDatabase() == H2 ? function("BITAND") : operator("&");
+		return new TypedOperator(BIGINT, op, required(BIGINT), required(BIGINT));
+	}
+	
+	static TypedOperator bitOr() {
+		var op = currentDatabase() == TERADATA || currentDatabase() == H2 ? function("BITOR") : operator("|");
+		return new TypedOperator(BIGINT, op, required(BIGINT), required(BIGINT));
+	}
+	
+	static TypedOperator bitXor() {
+		var op = currentDatabase() == TERADATA || currentDatabase() == H2 ? function("BITXOR") : operator("^");
+		return new TypedOperator(BIGINT, op, required(BIGINT), required(BIGINT));
+	}
+	
+	static TypedOperator bitNot() {
+		var op = currentDatabase() == TERADATA || currentDatabase() == H2 ? function("BITNOT") : operator("~");
+		return new TypedOperator(BIGINT, op, required(BIGINT));
+	}
+	
+	static TypedOperator bitShiftLeft() {
+		if(currentDatabase() == H2) {
+			return new TypedOperator(BIGINT, function("LSHIFT"), required(BIGINT), required(INTEGER));
+		}
+		if(currentDatabase() == TERADATA) {
+			return new TypedOperator(BIGINT, function("SHIFTLEFT"), required(BIGINT), required(INTEGER));
+		}
+		return new TypedOperator(BIGINT, operator("<<"), required(BIGINT), required(INTEGER));
+	}
+	
+	static TypedOperator bitShiftRight() {
+		if(currentDatabase() == H2) {
+			return new TypedOperator(BIGINT, function("SHIFTRIGHT"), required(BIGINT), required(INTEGER));
+		}
+		if(currentDatabase() == TERADATA) {
+			return new TypedOperator(BIGINT, function("RSHIFT"), required(BIGINT), required(INTEGER));
+		}
+		return new TypedOperator(BIGINT, operator(">>"), required(BIGINT), required(INTEGER));
 	}
 	
 	//string functions
@@ -249,6 +297,22 @@ public interface Operator extends DBProcessor {
 		};
 		return new TypedOperator(VARCHAR, op, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
+
+	static TypedOperator and() {
+		return chain(AND);
+	}
+
+	static TypedOperator or() {
+		return chain(OR);
+	}
+	
+	private static TypedOperator chain(LogicalOperator op) {
+		CombinedOperator co = args-> {
+			requireNArgs(2, args, op::name);
+			return ((DBFilter)args[0]).append(op, (DBFilter)args[1]);
+		};
+		return new TypedOperator(BOOLEAN, co, required(BOOLEAN), required(BOOLEAN));
+	}
 	
 	//cast functions
 
@@ -283,7 +347,11 @@ public interface Operator extends DBProcessor {
 	//other functions
 	
 	static TypedOperator coalesce() {
-		return new TypedOperator(firstArgJdbcType(), function("COALESCE"), required(), required());
+		return new TypedOperator(firstArgJdbcType(), function("COALESCE"), required(), required(firstArgJdbcType()));
+	}
+	
+	static TypedOperator distinct() {
+		return new TypedOperator(firstArgJdbcType(), new DistinctOperator(), required());
 	}
 
 	//aggregate functions
@@ -329,9 +397,9 @@ public interface Operator extends DBProcessor {
 	//pipe functions
 	
 	static TypedOperator over() {
-		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(COLUMN), optional(PARTITION)); //optional !?
+		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(), optional(PARTITION)); //optional !?
 	}
-
+	
 	// constant operators
 	
 	static TypedOperator cdate() {
@@ -376,13 +444,5 @@ public interface Operator extends DBProcessor {
 
 	static ConstantOperator constant(String name) {
 		return ()-> name;
-	}
-
-	static Optional<TypedOperator> lookupOperator(String op) {
-		return lookup(Operator.class, TypedOperator.class, op, null);
-	}
-
-	static Optional<TypedOperator> lookupOperator(String op, Predicate<TypedOperator> pre) {
-		return lookup(Operator.class, TypedOperator.class, op, pre);
 	}
 }

@@ -1,14 +1,13 @@
 package org.usf.jquery.web;
 
-import static java.lang.String.format;
-
 /**
+ * Signals that cannot be parse entry.
  * 
  * @author u$f
  *
  */
 @SuppressWarnings("serial")
-public final class EntryParseException extends WebException {
+public final class EntryParseException extends RuntimeException {
 
 	public EntryParseException(String message) {
 		super(message);
@@ -16,13 +15,5 @@ public final class EntryParseException extends WebException {
 	
 	public EntryParseException(String message, Throwable cause) {
 		super(message, cause);
-	}
-	
-	static EntryParseException cannotParseEntryException(String type, RequestEntryChain entry) {
-		return cannotParseEntryException(type, entry, null);
-	}
-
-	static EntryParseException cannotParseEntryException(String type, RequestEntryChain entry, Throwable cause) {
-		return new EntryParseException(format("cannot parse %s : '%s'", type, entry), cause);
 	}
 }

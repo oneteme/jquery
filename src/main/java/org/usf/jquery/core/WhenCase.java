@@ -16,27 +16,23 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-final class WhenCase implements DBObject, Typed, Nested {
+final class WhenCase implements DBObject, Typed {
 	
 	private final DBFilter filter; //optional
 	private final Object value; //then|else
 
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
-		requireNoArgs(args, WhenCase.class::getSimpleName);
-		sql(sb, ctx);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		return DBObject.tryComposeNested(query, groupKeys, filter, value);
 	}
 	
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		if(nonNull(filter)) {
-			sb.append("WHEN ");
-			filter.sql(sb, ctx);
-			sb.append(" THEN ");
-		}
-		else {
-			sb.append("ELSE ");
-		}
-		ctx.appendLiteral(sb, value);
+	@Override
+	public void build(QueryBuilder query, Object... args) {
+		requireNoArgs(args, WhenCase.class::getSimpleName);
+		(nonNull(filter) 
+				? query.append("WHEN ").append(filter).append(" THEN ") 
+				: query.append("ELSE "))
+		.appendParameter(value);
 	}
 	
 	@Override
@@ -44,16 +40,6 @@ final class WhenCase implements DBObject, Typed, Nested {
 		return typeOf(value).orElse(null);
 	}
 	
-	@Override
-	public int columns(QueryBuilder builder, Consumer<? super DBColumn> groupKeys) {
-		return Nested.tryResolveColumn(builder, groupKeys, filter, value);
-	}
-	
-	@Override
-	public void views(Consumer<DBView> cons) {
-		Nested.tryResolveViews(cons, filter, value);
-	}
-
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this);

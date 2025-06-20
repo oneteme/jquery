@@ -3,6 +3,8 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.ResultSetMapper.DataWriter.usingRowWriter;
 
 import java.io.Writer;
+import java.util.List;
+import java.util.function.IntFunction;
 
 import org.usf.jquery.core.ResultSetMapper.DataWriter;
 
@@ -19,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Mappers {
 	
-	public KeyValueMapper keyValue() {
+	public static KeyValueMapper keyValue() {
 		return new KeyValueMapper();
 	}
 	
@@ -41,5 +43,13 @@ public final class Mappers {
 	
 	public static CsvResultMapper csv(DataWriter out) {
 		return new CsvResultMapper(out);
+	}
+	
+	public static <T> ResultSetMapper<T[]> toArray(RowMapper<T> mapper, IntFunction<T[]> fn) {
+		return rs-> mapper.map(rs).toArray(fn);
+	}
+	
+	public static <T> ResultSetMapper<List<T>> toList(RowMapper<T> mapper) {
+		return mapper;
 	}
 }

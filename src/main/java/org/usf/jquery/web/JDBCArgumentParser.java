@@ -1,6 +1,6 @@
 package org.usf.jquery.web;
 
-import static org.usf.jquery.web.EntryParseException.cannotParseEntryException;
+import static org.usf.jquery.web.EntryChain.cannotParseEntryException;
 
 /**
  * 
@@ -13,14 +13,12 @@ public interface JDBCArgumentParser extends JavaArgumentParser {
 	Object nativeParse(String v);
 	
 	@Override
-	default Object parseEntry(RequestEntryChain entry, ViewDecorator td) {
-		Object v = null;
+	default Object parseEntry(EntryChain entry, QueryContext td) {
 		try {
-			v = nativeParse(entry.toString()); //!value
+			return nativeParse(entry.toString()); //!value
 		}
 		catch(Exception e) {
-			throw cannotParseEntryException("value", entry, e);
+			throw cannotParseEntryException(entry, "", e);
 		}
-		return v;
 	}
 }

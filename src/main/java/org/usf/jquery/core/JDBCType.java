@@ -1,6 +1,8 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
 import java.math.BigDecimal;
@@ -10,7 +12,6 @@ import java.sql.Timestamp;
 import java.sql.Types;
 import java.util.Optional;
 import java.util.function.Predicate;
-import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
 
@@ -35,7 +36,7 @@ public enum JDBCType implements JavaType {
 	DOUBLE(Types.DOUBLE, Double.class, Number.class),
 	NUMERIC(Types.NUMERIC, BigDecimal.class, Number.class),
 	DECIMAL(Types.DECIMAL, BigDecimal.class, Number.class),
-	CHAR(Types.CHAR, String.class, JDBCType::isString), //teradata !char
+	CHAR(Types.CHAR, String.class, JDBCType::isString),
 	VARCHAR(Types.VARCHAR, String.class, JDBCType::isString),
 	NVARCHAR(Types.NVARCHAR, String.class, JDBCType::isString),
 	LONGNVARCHAR(Types.LONGNVARCHAR, String.class, JDBCType::isString),
@@ -79,11 +80,10 @@ public enum JDBCType implements JavaType {
 	public boolean accept(Object o) {
 		if(o instanceof Typed v) {
 			var t = v.getType();
-			return t == this || isNull(t) || typeMatcher.test(t.getCorrespondingClass());
+			return t == this || isNull(t) || typeMatcher.test(t.type);
 		}
 		return isNull(o) || valueMatcher.test(o);
 	}
-	
 	
 	private static boolean isBoolean(Object o) {
 		return o.getClass() == Boolean.class 
@@ -97,16 +97,57 @@ public enum JDBCType implements JavaType {
 	}
 	
 	public static Optional<JDBCType> typeOf(Object o) {
-		return o instanceof Typed t 
-				? ofNullable(t.getType())
-				: ofNullable(o).flatMap(v-> findType(e-> e.getCorrespondingClass().isInstance(o)));
+		if(o instanceof Typed t) {
+			return ofNullable(t.getType());
+		}
+		if(o instanceof String || o instanceof Character) {
+			return Optional.of(VARCHAR);
+		}
+		if(o instanceof Number) {
+			return typeOfNumber(o);
+		}
+		if(o instanceof Timestamp) {
+			return Optional.of(TIMESTAMP);
+		}
+		if(o instanceof Time) {
+			return Optional.of(TIME);
+		}
+		if(o instanceof Date) {
+			return Optional.of(DATE);
+		}
+		if(o instanceof Boolean) {
+			return Optional.of(BOOLEAN);
+		}
+		return empty();
+	}
+	
+	public static Optional<JDBCType> typeOfNumber(Object o) {
+		var c = o.getClass();
+		if(c == Integer.class) {
+			return Optional.of(INTEGER);
+		}
+		if(c == Long.class) {
+			return Optional.of(BIGINT);
+		}
+		if(c == Double.class) {
+			return Optional.of(DOUBLE);
+		}
+		if(c == BigDecimal.class) {
+			return Optional.of(DECIMAL);
+		}
+		if(c == Float.class) {
+			return Optional.of(REAL);
+		}
+		if(c == Short.class) {
+			return Optional.of(SMALLINT);
+		}
+		if(c == Byte.class) {
+			return Optional.of(TINYINT);
+		}
+		return empty();
 	}
 	
 	public static Optional<JDBCType> fromDataType(int value) {
-		return findType(t-> t.value == value);
-	}
-	
-	public static Optional<JDBCType> findType(Predicate<JDBCType> pre) {
-		return Stream.of(values()).filter(pre).findAny();
+		return stream(values()).filter(t-> t.value == value).findAny();
 	}
 }

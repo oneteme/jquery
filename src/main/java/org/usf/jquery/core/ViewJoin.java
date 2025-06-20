@@ -10,6 +10,8 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
+import java.util.function.Consumer;
+
 import lombok.Getter;
 
 /**
@@ -23,27 +25,28 @@ public final class ViewJoin implements DBObject {
 	private final JoinType joinType;
 	private final DBView view;
 	private final DBFilter[] filters;
-	//join results !?
 	
-	public ViewJoin(JoinType joinType, DBView view, DBFilter[] filters) {
+	ViewJoin(JoinType joinType, DBView view, DBFilter[] filters) {
 		this.joinType = joinType;
 		this.view = view;
 		this.filters = joinType == CROSS 
 				? filters 
 				: requireAtLeastNArgs(1, filters, ViewJoin.class::getSimpleName);
 	}
-
+	
 	@Override
-	public void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) {
-		requireNoArgs(args, ViewJoin.class::getSimpleName);
-		sql(sb, ctx);
+	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+		query.declare(view); //if filters is null
+		return DBObject.composeNested(query, groupKeys, filters);
 	}
 
-	public void sql(SqlStringBuilder sb, QueryContext ctx) {
-		sb.append(joinType + " JOIN ");
-		ctx.appendView(sb, view);
+	@Override
+	public void build(QueryBuilder query, Object... args) {
+		requireNoArgs(args, ViewJoin.class::getSimpleName);
+		var res = view.resolveView(query);
+		query.append(joinType.name()).append(" JOIN ").append(res).appendSpace().appendViewAlias(res);
 		if(!isEmpty(filters)) {
-			sb.append(" ON ").runForeach(filters, AND.sql(), f-> f.sql(sb, ctx));
+			query.append(" ON ").appendEach(AND.sql(), filters);
 		} //else cross join
 	}
 	
@@ -70,5 +73,9 @@ public final class ViewJoin implements DBObject {
 
 	public static ViewJoin crossJoin(DBView view, DBFilter... filters) {
 		return new ViewJoin(CROSS, view, filters);
+	}
+
+	public static ViewJoin join(JoinType joinType, DBView view, DBFilter... filters) {
+		return new ViewJoin(joinType, view, filters);
 	}
 }

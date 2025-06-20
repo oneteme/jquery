@@ -8,11 +8,11 @@ package org.usf.jquery.core;
 @FunctionalInterface
 public interface CombinedOperator extends Operator {
 	
-	OperationColumn args(Object... args);
+	DBColumn combine(Object... args);
 	
 	@Override
-	default OperationColumn operation(JDBCType type, Object... args) {
-		var c = args(args);
+	default DBColumn operation(JDBCType type, Object... args) {
+		var c = combine(args);
 		if(type == c.getType()) {
 			return c;
 		}
@@ -25,7 +25,7 @@ public interface CombinedOperator extends Operator {
 	}
 	
 	@Override
-	default void sql(SqlStringBuilder sb, QueryContext ctx, Object[] args) { //no SQL
+	default void build(QueryBuilder query, Object... args) { //no SQL
 		throw new UnsupportedOperationException("CombinedOperator::sql");
 	}
 }
