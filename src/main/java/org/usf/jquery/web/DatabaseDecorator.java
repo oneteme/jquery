@@ -1,7 +1,8 @@
 package org.usf.jquery.web;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Mappers.keyValue;
+import static org.usf.jquery.core.Mappers.keyValueMapper;
+import static org.usf.jquery.core.Mappers.toListMapper;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
@@ -13,7 +14,10 @@ import java.util.function.Consumer;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.DynamicModel;
 import org.usf.jquery.core.QueryComposer;
+import org.usf.jquery.core.QueryExecutor;
 import org.usf.jquery.core.ResultSetMapper;
+import org.usf.jquery.core.RowMapper;
+import org.usf.jquery.core.SimpleQueryExecutor;
 import org.usf.jquery.core.TableView;
 
 /**
@@ -45,7 +49,11 @@ public interface DatabaseDecorator {
 	}
 
 	default List<DynamicModel> execute(Consumer<QueryComposer> cons) {
-		return execute(compose(cons), keyValue());
+		return execute(compose(cons), keyValueMapper());
+	}
+	
+	default <T> List<T> execute(Consumer<QueryComposer> cons, RowMapper<T> mapper) {
+		return execute(compose(cons), toListMapper(mapper));
 	}
 
 	default <T> T execute(Consumer<QueryComposer> cons, ResultSetMapper<T> mapper) {
@@ -53,11 +61,19 @@ public interface DatabaseDecorator {
 	}
 	
 	default List<DynamicModel> execute(QueryComposer query) {
-		return execute(query, keyValue());
+		return execute(query, keyValueMapper());
+	}
+	
+	default <T> List<T> execute(QueryComposer query, RowMapper<T> mapper) {
+		return execute(query, toListMapper(mapper));
 	}
 	
 	default <T> T execute(QueryComposer query, ResultSetMapper<T> mapper) {
-		return getEnvironment(identity()).exec(query, mapper);
+		return execute(query, new SimpleQueryExecutor<>(mapper));
+	}
+		
+	default <T> T execute(QueryComposer query, QueryExecutor<T> executor) {
+		return getEnvironment(identity()).exec(query, executor);
 	}
 	
 	default QueryComposer compose(Consumer<QueryComposer> cons) {

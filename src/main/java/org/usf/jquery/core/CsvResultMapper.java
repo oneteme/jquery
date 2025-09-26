@@ -27,14 +27,14 @@ public final class CsvResultMapper implements ResultSetMapper<Void> {
 		var bg = currentTimeMillis();
         var rw = 0;
         try {
-        	var columnNames = declaredColumns(rs);
-            for(String c : columnNames) {
+        	var cs = ResultSetMapper.columnNames(rs);
+            for(String c : cs) {
             	writer.write(c);
             	writer.write(SEMIC);
             }
             writer.writeLine();
             while(rs.next()) {
-                for(var i=0; i<columnNames.length; i++) {
+                for(var i=0; i<cs.length; i++) {
                 	writer.write(String.valueOf(rs.getObject(i+1)));
                 	writer.write(SEMIC);
                 }
