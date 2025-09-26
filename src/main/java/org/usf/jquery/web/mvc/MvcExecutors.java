@@ -1,13 +1,14 @@
-package org.usf.jquery.web.view;
+package org.usf.jquery.web.mvc;
 
 import static java.util.Collections.synchronizedMap;
 import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.Mappers.keyValueMapper;
-import static org.usf.jquery.web.view.MvcMappers.asciiResponseWriter;
-import static org.usf.jquery.web.view.MvcMappers.csvResponseWriter;
-import static org.usf.jquery.web.view.MvcMappers.viewResponseWriter;
+import static org.usf.jquery.web.mvc.ResponseMappers.asciiResponseWriter;
+import static org.usf.jquery.web.mvc.ResponseMappers.csvResponseWriter;
+import static org.usf.jquery.web.mvc.ResponseMappers.mvcModelMapper;
+import static org.usf.jquery.web.mvc.ResponseMappers.mvcViewBinder;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -46,7 +47,7 @@ public final class MvcExecutors {
 		case "json" -> new SimpleQueryExecutor<>(keyValueMapper());
 		case "csv" -> new SimpleQueryExecutor<>(csvResponseWriter(res));
 		case "ascii" -> new SimpleQueryExecutor<>(asciiResponseWriter(res));
-		case "google.v1"-> deferredExecutor(viewResponseWriter(res, "static/google.v1.html")); 
+		case "google.v1"-> deferredExecutor(mvcViewBinder(res, "static/google.v1.html")); 
 		default -> throw new UnsupportedOperationException("view="+view);
 		};
 	}
@@ -54,13 +55,14 @@ public final class MvcExecutors {
 	public static <T> QueryExecutor<T> deferredExecutor(ViewBinder<T> binder) {
 		return (qry, ds)->{
 			var id = randomUUID().toString();
+			var res = binder.bind(id);
 			queryQueue.put(id, new ResponseEntity(qry, ds));
-			return binder.bind(id);
+			return res;
 		};
 	}
 	
-	public static List<DynamicModel> callback(String id){
-		return callback(id, keyValueMapper());
+	public static List<DynamicModel> callback(String id, HttpServletResponse res){
+		return callback(id, mvcModelMapper(res));
 	}
 	
 	public static <T> T callback(String id, ResultSetMapper<T> mapper){

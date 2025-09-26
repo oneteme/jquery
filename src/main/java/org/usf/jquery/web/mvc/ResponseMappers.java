@@ -1,4 +1,4 @@
-package org.usf.jquery.web.view;
+package org.usf.jquery.web.mvc;
 
 import static java.lang.String.join;
 import static java.nio.file.Files.readString;
@@ -34,7 +34,7 @@ import lombok.NoArgsConstructor;
  *
  */
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class MvcMappers {
+public final class ResponseMappers {
 		
 	public static AsciiResultMapper asciiResponseWriter(HttpServletResponse res) {
 		return asciiResponseWriter(res, empty());
@@ -54,12 +54,12 @@ public final class MvcMappers {
 		return csvWriter(responseWriter(res));  //text/csv => force download
 	}
 	
-	public static ViewBinder<Void> viewResponseWriter(HttpServletResponse res, String filename) {
+	public static ViewBinder<Void> mvcViewBinder(HttpServletResponse res, String filename) {
 		headers(res, "text/html; charset=utf-8", empty());
 		return id->{
 			try {
 				var writer = res.getWriter();
-				var path = Paths.get(MvcMappers.class.getClassLoader().getResource(filename).toURI());
+				var path = Paths.get(ResponseMappers.class.getClassLoader().getResource(filename).toURI());
 				writer.write(readString(path).replace("[[${callback}]]", "/callback/"+id));
 				return null;
 			} catch (IOException | URISyntaxException e) {
@@ -68,7 +68,7 @@ public final class MvcMappers {
 		};
 	}
 
-	public static ResultSetMapper<List<DynamicModel>> responseEntityMapper(HttpServletResponse res) {
+	public static ResultSetMapper<List<DynamicModel>> mvcModelMapper(HttpServletResponse res) {
 		return rs->{
 			var md = rs.getMetaData();
 			var map = new LinkedHashMap<String, String>(); 
