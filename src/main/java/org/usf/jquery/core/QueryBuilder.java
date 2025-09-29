@@ -5,6 +5,7 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
+import static org.usf.jquery.core.Environment.NO_ENV;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
@@ -33,7 +34,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryBuilder {
 	
-	private final String schema;
+	private final Environment environment;
 	private final String prefix;
 	private final StringBuilder query;
 	private final Map<QueryView, String> ctes;
@@ -137,11 +138,11 @@ public final class QueryBuilder {
 	}
 
 	public QueryBuilder withValue() { //inherit schema, prefix, args but not views
-		return new QueryBuilder(schema, prefix, query, ctes, views, null, overViews, currentModel); //no args
+		return new QueryBuilder(environment, prefix, query, ctes, views, null, overViews, currentModel); //no args
 	}
 
 	public QueryBuilder withModel(Object model) { //overwrite model only
-		return new QueryBuilder(schema, prefix, query, ctes, views, args, overViews, model);
+		return new QueryBuilder(environment, prefix, query, ctes, views, args, overViews, model);
 	}
 	
 	public QueryBuilder subQuery(DBView[] views, Map<DBView, QueryView> overview) { //inherit schema, prefix, args but not views
@@ -150,11 +151,15 @@ public final class QueryBuilder {
 		if(!isEmpty(overview)) {
 			overview.forEach((k,v)-> vMap.put(k, ctes.get(v))); //override or add
 		}
-		return new QueryBuilder(schema, s, query, ctes, vMap, args, overview, currentModel);
+		return new QueryBuilder(environment, s, query, ctes, vMap, args, overview, currentModel);
 	}
 	
 	public Query build() {
-		return new Query(query.toString(), isParameterized() ? args.toArray(TypedArg[]::new) : null);
+		return build(NO_ENV);
+	}
+	
+	public Query build(Environment env) {
+		return new Query(env, query.toString(), isParameterized() ? args.toArray(TypedArg[]::new) : null);
 	}
 
 	private boolean isParameterized() {
@@ -185,25 +190,25 @@ public final class QueryBuilder {
 	}
 
 	public static QueryBuilder addWithValue() {
-		return create(null, null, null, null, null);
+		return create(NO_ENV, null, null, null, null);
 	}
 
-	public static QueryBuilder addWithValue(String schema, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
-		return create(schema, ctes, views, null, overview);
+	public static QueryBuilder addWithValue(Environment environment, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
+		return create(environment, ctes, views, null, overview);
 	}
 
-	public static QueryBuilder parameterized(String schema, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
-		return create(schema, ctes, views, new ArrayList<>(), overview);
+	public static QueryBuilder parameterized(Environment environment, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
+		return create(environment, ctes, views, new ArrayList<>(), overview);
 	}
 	
-	private static QueryBuilder create(String schema, QueryView[] ctes, DBView[] views, List<TypedArg> args, Map<DBView, QueryView> overview) {
+	private static QueryBuilder create(Environment environment, QueryView[] ctes, DBView[] views, List<TypedArg> args, Map<DBView, QueryView> overview) {
 		var cMap = viewAlias("g", ctes);
 		var vMap = viewAlias("v", views);
 		if(!isEmpty(overview)) {
 			overview.forEach((k,v)-> vMap.put(k, cMap.get(v))); //override or add
 		}
 		overview = nonNull(overview) ? overview : emptyMap();
-		return new QueryBuilder(schema, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args, overview, null);
+		return new QueryBuilder(environment, "v", new StringBuilder(), unmodifiableMap(cMap), unmodifiableMap(vMap), args, overview, null);
 	}
 		
 	private static <T> Map<T, String> viewAlias(String prefix, T[] views){

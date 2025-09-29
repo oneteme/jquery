@@ -35,7 +35,9 @@ import java.util.stream.Stream;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.Environment;
 import org.usf.jquery.core.JQueryException;
+import org.usf.jquery.core.Product;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryExecutor;
 
@@ -52,7 +54,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class Environment {
+public final class WebEnvironment implements Environment {
 
 	private static final DatabaseMetadata NO_META = new DatabaseMetadata(emptyMap());
 
@@ -90,8 +92,8 @@ public final class Environment {
 	}
 
 	public <T> T exec(QueryComposer query, QueryExecutor<T> executor) {
-		var qry = apply(this, env-> query.compose().buildQuery(schema, true, query.getDrivenModel()));
-		return executor.execute(qry, dataSource); //outside context
+		var qry = apply(this, env-> query.compose().buildQuery(this, true, query.getDrivenModel()));
+		return executor.execute(qry); //outside context
 	}
 	
 	public QueryComposer query(Consumer<QueryComposer> fn) {
@@ -144,20 +146,20 @@ public final class Environment {
 				.collect(toUnmodifiableMap(Entry::getKey, Entry::getValue));
 	}
 
-	public static Environment of(DatabaseDecorator database, Collection<ViewDecorator> views,
+	public static WebEnvironment of(DatabaseDecorator database, Collection<ViewDecorator> views,
 			Collection<ColumnDecorator> columns) {
 		return of(database, views, columns, null, null);
 	}
 
-	public static Environment of(DatabaseDecorator database, Collection<ViewDecorator> views,
+	public static WebEnvironment of(DatabaseDecorator database, Collection<ViewDecorator> views,
 			Collection<ColumnDecorator> columns, DataSource ds) {
 		return of(database, views, columns, ds, null);
 	}
 
-	public static Environment of(DatabaseDecorator database, Collection<ViewDecorator> views,
+	public static WebEnvironment of(DatabaseDecorator database, Collection<ViewDecorator> views,
 			Collection<ColumnDecorator> columns, DataSource ds, String schema) {
 		assertIdentity(requireNonNull(database, "configuration.database").identity());
-		return new Environment(database,
+		return new WebEnvironment(database,
 				unmodifiableIdentityMap(views, ViewDecorator::identity, database.identity() + ".views"), // preserve views order
 				unmodifiableIdentityMap(columns, ColumnDecorator::identity, database.identity() + ".columns"), ds,
 				schema);
@@ -165,7 +167,7 @@ public final class Environment {
 
 	static <T> Map<String, T> unmodifiableIdentityMap(Collection<T> c, Function<T, String> fn, String msg) {
 		return unmodifiableMap(requireNonEmpty(c, msg).stream()
-				.collect(toLinkedMap(fn.andThen(Environment::assertIdentity), identity())));
+				.collect(toLinkedMap(fn.andThen(WebEnvironment::assertIdentity), identity())));
 	}
 
 	static <T, K, U> Collector<T, ?, Map<K, U>> toLinkedMap(Function<? super T, ? extends K> keyMapper,
@@ -179,5 +181,20 @@ public final class Environment {
 			return id;
 		}
 		throw new IllegalArgumentException("reserved word cannot be used as an identifier: " + id);
+	}
+
+	@Override
+	public DataSource getDataSource() {
+		return dataSource;
+	}
+
+	@Override
+	public Product getProduct() {
+		return metadata.getType();
+	}
+
+	@Override
+	public String getSchema() {
+		return schema;
 	}
 }

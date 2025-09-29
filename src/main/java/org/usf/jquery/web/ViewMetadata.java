@@ -20,8 +20,8 @@ import java.util.NoSuchElementException;
 import java.util.Set;
 
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.Environment.SimpleEnvironment;
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.core.SimpleQueryExecutor;
 import org.usf.jquery.core.TableView;
 
 import lombok.AccessLevel;
@@ -115,7 +115,7 @@ public class ViewMetadata {
 
 	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
 		var query = new QueryComposer().columns(allColumns(qr)).filters(constant(1).eq(constant(0))); //no data
-		new SimpleQueryExecutor<>(rs->{
+		query.compose().buildQuery(new SimpleEnvironment(null, null, schema), true).execute(rs->{
 			var db = reverseMapKeys();
 			var meta = rs.getMetaData();
 			for(var i=1; i<=meta.getColumnCount(); i++) {
@@ -128,7 +128,7 @@ public class ViewMetadata {
 				throw columnsNotFoundException(db.keySet());
 			}
 			return null;
-		}).execute(query.compose().buildQuery(schema, true), metadata.getConnection());
+		}, metadata.getConnection());
 	}
 	
 	private Map<String, ColumnMetadata> reverseMapKeys(){ //key=columnName

@@ -4,6 +4,7 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.DBColumn.allColumns;
+import static org.usf.jquery.core.Environment.NO_ENV;
 import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Role.JOIN;
@@ -190,7 +191,7 @@ public final class QueryComposer {
 	
 	@Deprecated(forRemoval = true, since = "v4")
 	public Query build(){
-		return compose().buildQuery(null, true, drivenModel);
+		return compose().buildQuery(NO_ENV, true, drivenModel);
 	}
 	
 	public QueryView compose() { //TD check this[clause].length = QueryView[clause].length

@@ -5,9 +5,9 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toSet;
-import static org.usf.jquery.core.Database.TERADATA;
-import static org.usf.jquery.core.Database.currentDatabase;
+import static org.usf.jquery.core.Environment.NO_ENV;
 import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.Product.TERADATA;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
 import static org.usf.jquery.core.QueryBuilder.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
@@ -68,16 +68,16 @@ public final class QueryView implements DBView {
 	}
 
 	public Query build() {
-		return buildQuery(null, true);
+		return buildQuery(NO_ENV, true);
 	}
 	
-	public Query buildQuery(String schema, boolean parameterized, Object... drivenModel) {
+	public Query buildQuery(Environment env, boolean parameterized, Object... drivenModel) {
 		log.trace("building query...");
 		var bg = currentTimeMillis();
 		var flatCTE = flatCte().distinct().toArray(QueryView[]::new);
 		var builder = parameterized 
-				? parameterized(schema, flatCTE, views, unmodifiableMap(overView))
-				: addWithValue(schema, flatCTE, views, unmodifiableMap(overView));
+				? parameterized(env, flatCTE, views, unmodifiableMap(overView))
+				: addWithValue(env, flatCTE, views, unmodifiableMap(overView));
 		if(!isEmpty(flatCTE)) {
 			builder.append("WITH ") // do not resolveView => ViewRef
 			.appendEach(SCOMA, flatCTE, v-> builder.appendViewAlias(v).appendAs().append(v)) 
@@ -90,7 +90,7 @@ public final class QueryView implements DBView {
 			builder.appendEach(" UNION ALL ", drivenModel, o-> buildClauses(builder.withModel(o)));
 		}
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
-		return builder.build();
+		return builder.build(env);
 	}
 	
 	private void buildClauses(QueryBuilder builder) {
@@ -110,7 +110,7 @@ public final class QueryView implements DBView {
 		if(distinct) {
 			builder.append("DISTINCT ");
 		}
-		if(currentDatabase() == TERADATA) {
+		if(builder.getEnvironment().getProduct() == TERADATA) {
 			if(nonNull(offset)) {
 				throw new UnsupportedOperationException("OFFSET option is not supported in Teradata.");
 			}
@@ -186,7 +186,7 @@ public final class QueryView implements DBView {
 	}
 	
 	void fetch(QueryBuilder builder) {
-		if(currentDatabase() != TERADATA) { // TOP n
+		if(builder.getEnvironment().getProduct() != TERADATA) { // TOP n
 			if(nonNull(limit)) {
 				builder.append(" LIMIT " + limit);
 			}

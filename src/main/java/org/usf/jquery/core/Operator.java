@@ -1,9 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
-import static org.usf.jquery.core.Database.H2;
-import static org.usf.jquery.core.Database.TERADATA;
-import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -32,9 +30,21 @@ public interface Operator extends DBProcessor {
 	
 	String id(); //nullable
 
+	void buildOperator(QueryBuilder builder, Object... args);
+
 	@Override
 	default int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
 		throw new UnsupportedOperationException("compose operator");
+	}
+	
+	@Override
+	default void build(QueryBuilder builder, Object... args) {
+		var op = this;
+		var prd = builder.getEnvironment().getProduct();
+		if(nonNull(prd)) {
+			op = prd.replace(op);
+		}
+		op.buildOperator(builder, args);
 	}
 
 	default DBColumn operation(JDBCType type, Object... args) {
@@ -112,42 +122,26 @@ public interface Operator extends DBProcessor {
 	//bitwise functions
 	
 	static TypedOperator bitAnd() {
-		var op = currentDatabase() == TERADATA || currentDatabase() == H2 ? function("BITAND") : operator("&");
-		return new TypedOperator(BIGINT, op, required(BIGINT), required(BIGINT));
+		return new TypedOperator(BIGINT, operator("&"), required(BIGINT), required(BIGINT));
 	}
 	
 	static TypedOperator bitOr() {
-		var op = currentDatabase() == TERADATA || currentDatabase() == H2 ? function("BITOR") : operator("|");
-		return new TypedOperator(BIGINT, op, required(BIGINT), required(BIGINT));
+		return new TypedOperator(BIGINT, operator("|"), required(BIGINT), required(BIGINT));
 	}
 	
 	static TypedOperator bitXor() {
-		var op = currentDatabase() == TERADATA || currentDatabase() == H2 ? function("BITXOR") : operator("^");
-		return new TypedOperator(BIGINT, op, required(BIGINT), required(BIGINT));
+		return new TypedOperator(BIGINT, operator("^"), required(BIGINT), required(BIGINT));
 	}
 	
 	static TypedOperator bitNot() {
-		var op = currentDatabase() == TERADATA || currentDatabase() == H2 ? function("BITNOT") : operator("~");
-		return new TypedOperator(BIGINT, op, required(BIGINT));
+		return new TypedOperator(BIGINT, operator("~"), required(BIGINT));
 	}
 	
 	static TypedOperator bitShiftLeft() {
-		if(currentDatabase() == H2) {
-			return new TypedOperator(BIGINT, function("LSHIFT"), required(BIGINT), required(INTEGER));
-		}
-		if(currentDatabase() == TERADATA) {
-			return new TypedOperator(BIGINT, function("SHIFTLEFT"), required(BIGINT), required(INTEGER));
-		}
 		return new TypedOperator(BIGINT, operator("<<"), required(BIGINT), required(INTEGER));
 	}
 	
 	static TypedOperator bitShiftRight() {
-		if(currentDatabase() == H2) {
-			return new TypedOperator(BIGINT, function("SHIFTRIGHT"), required(BIGINT), required(INTEGER));
-		}
-		if(currentDatabase() == TERADATA) {
-			return new TypedOperator(BIGINT, function("RSHIFT"), required(BIGINT), required(INTEGER));
-		}
 		return new TypedOperator(BIGINT, operator(">>"), required(BIGINT), required(INTEGER));
 	}
 	
@@ -194,8 +188,7 @@ public interface Operator extends DBProcessor {
 	}
 	
 	static TypedOperator replace() {
-		var id = currentDatabase() == TERADATA ? "OREPLACE" : "REPLACE";
-		return new TypedOperator(VARCHAR, function(id), required(VARCHAR), required(VARCHAR), required(VARCHAR)); //!teradata
+		return new TypedOperator(VARCHAR, function("REPLACE"), required(VARCHAR), required(VARCHAR), required(VARCHAR));
 	}
 	
 	static TypedOperator substring() { //int start, int length
@@ -229,8 +222,7 @@ public interface Operator extends DBProcessor {
 	}
 
 	static TypedOperator week() {
-		var fn  = currentDatabase() == TERADATA ? function("td_week_of_year") : extract("WEEK");//teradata 1st week index = 0
-		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+		return new TypedOperator(INTEGER, extract("WEEK"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
 	static TypedOperator day() {
@@ -238,13 +230,11 @@ public interface Operator extends DBProcessor {
 	}
 	
 	static TypedOperator dow() {
-		var fn  = currentDatabase() == TERADATA ? function("td_day_of_week") : extract("DOW");
-		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return new TypedOperator(INTEGER, extract("DOW"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	static TypedOperator doy() {
-		var fn  = currentDatabase() == TERADATA ? function("td_day_of_year") : extract("DOY");
-		return new TypedOperator(INTEGER, fn, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return new TypedOperator(INTEGER, extract("DOY"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	static TypedOperator hour() {

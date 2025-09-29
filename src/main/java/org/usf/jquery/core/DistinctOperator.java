@@ -11,7 +11,7 @@ import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 public final class DistinctOperator implements Operator {
 
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public void buildOperator(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(1, args, this::id);
 		query.append(id()).appendSpace();
 		if(args.length == 1) {

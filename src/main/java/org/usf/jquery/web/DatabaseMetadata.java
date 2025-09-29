@@ -1,11 +1,12 @@
 package org.usf.jquery.web;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Product.fromMetaData;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Map;
 
-import org.usf.jquery.core.Database;
+import org.usf.jquery.core.Product;
 
 import lombok.RequiredArgsConstructor;
 
@@ -18,9 +19,9 @@ import lombok.RequiredArgsConstructor;
 public final class DatabaseMetadata {
 
 	private final Map<String, ViewMetadata> views; //lazy loading
-	private Database type;
+	private Product type;
 	
-	public Database getType() {
+	public Product getType() {
 		return type;
 	}
 	
@@ -34,7 +35,7 @@ public final class DatabaseMetadata {
 	}
 	
 	public void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
-		type = Database.of(metadata.getDatabaseProductName()).orElse(null);
+		type = fromMetaData(metadata);
 		if(nonNull(views)) {
 			for(var v : views.values()) {
 				v.fetch(metadata, schema);

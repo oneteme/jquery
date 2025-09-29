@@ -12,11 +12,11 @@ import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 public interface FunctionOperator extends Operator {
 
 	@Override
-	default void build(QueryBuilder query, Object... args) {
-		build(query, args, 0);
+	default void buildOperator(QueryBuilder query, Object... args) {
+		buildOperator(query, args, 0);
 	}
 	
-	default void build(QueryBuilder query, Object[] args, int from) {
+	default void buildOperator(QueryBuilder query, Object[] args, int from) {
 		query.append(id()).appendParenthesis(()-> query.appendParameters(SCOMA, args, from)); //avoid sub array
 	}
 }

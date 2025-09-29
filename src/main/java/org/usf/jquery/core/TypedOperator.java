@@ -28,7 +28,7 @@ public class TypedOperator implements Operator {
 	}
 	
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public void buildOperator(QueryBuilder query, Object... args) {
 		throw new UnsupportedOperationException(this.getClass()+"::build");
 	}
 	
@@ -54,10 +54,6 @@ public class TypedOperator implements Operator {
 	@Override
 	public boolean is(String name) {
 		return operator.is(name);
-	}
-	
-	public boolean isWindowFunction() {
-		return operator.is(WindowFunction.class);
 	}
 	
 	public boolean isCountFunction() {

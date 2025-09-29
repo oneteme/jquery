@@ -2,7 +2,6 @@ package org.usf.jquery.web;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNullElseGet;
-import static org.usf.jquery.core.Database.currentDatabase;
 import static org.usf.jquery.core.Utils.computeIfAbsentElseThrow;
 import static org.usf.jquery.core.Utils.requireNonNullElseThrow;
 import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage;
@@ -24,12 +23,12 @@ import lombok.NonNull;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class JQuery {
 
-	private static final Map<String, Environment> DATABASES = new HashMap<>();
-	private static final ThreadLocal<Environment> LOCAL_ENV = new ThreadLocal<>();
+	private static final Map<String, WebEnvironment> DATABASES = new HashMap<>();
+	private static final ThreadLocal<WebEnvironment> LOCAL_ENV = new ThreadLocal<>();
 	
 	private static RequestParser requestParser = new DefaultRequestParser();
 
-	public static void register(@NonNull Environment... envs) {
+	public static void register(@NonNull WebEnvironment... envs) {
 		for(var env : envs) {
 			DATABASES.compute(env.getDatabase().identity(), computeIfAbsentElseThrow(env, 
 					()-> resourceAlreadyExistsMessage("environment", env.getDatabase().identity())))
@@ -37,36 +36,34 @@ public final class JQuery {
 		}
 	}
 
-	public static Environment currentEnvironment() {
+	public static WebEnvironment currentEnvironment() {
 		return requireNonNullElseGet(LOCAL_ENV.get(), JQuery::defaultEnvironment);
 	}
 	
-	public static Environment getEnvironment(String name) {
+	public static WebEnvironment getEnvironment(String name) {
 		return requireNonNullElseThrow(DATABASES.get(name), 
 				()-> noSuchResourceException("environment", name));
 	}
 
-	public static Environment defaultEnvironment(){
+	public static WebEnvironment defaultEnvironment(){
 		if(DATABASES.size() == 1) {
 			return DATABASES.values().iterator().next();
 		}
 		throw noSuchResourceException("default environment");
 	}
 
-	public static <T> T apply(Function<Environment, T> fn) {
+	public static <T> T apply(Function<WebEnvironment, T> fn) {
 		return apply(defaultEnvironment(), fn);
 	}
 	
-	public static <T> T apply(Environment env, Function<Environment, T> fn) {	
+	public static <T> T apply(WebEnvironment env, Function<WebEnvironment, T> fn) {	
 		var cur = LOCAL_ENV.get();
 		if(isNull(cur)) {
-			currentDatabase(env.getMetadata().getType());
 			LOCAL_ENV.set(env);
 			try {
 				return fn.apply(env);
 			} finally {
 				LOCAL_ENV.remove();
-				currentDatabase(null);
 			}
 		}
 		else if(cur.getDatabase() == env.getDatabase()) {

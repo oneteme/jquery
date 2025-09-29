@@ -38,7 +38,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public class DefaultRequestParser implements RequestParser {
 	
-	public final QueryComposer parse(Environment env, String defaultView, String[] variables, Map<String, String[]> parameterMap) {
+	public final QueryComposer parse(WebEnvironment env, String defaultView, String[] variables, Map<String, String[]> parameterMap) {
 		var ctx = new QueryContext(ofNullable(env.getViews().get(defaultView))
 				.orElseThrow(()-> noSuchResourceException(VIEW_PARAM, defaultView, env.getDatabase().identity())));
 		return env.query(q->{

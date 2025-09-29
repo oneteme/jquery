@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import javax.sql.DataSource;
-
 /**
  * 
  * @author u$f
@@ -10,5 +8,9 @@ import javax.sql.DataSource;
 @FunctionalInterface
 public interface QueryExecutor<T> {
 
-	T execute(Query query, DataSource ds);
+	T execute(Query query);
+	
+	public static <T> QueryExecutor<T> defaultExecutor(ResultSetMapper<T> mapper){
+		return q-> q.execute(mapper);
+	}
 }

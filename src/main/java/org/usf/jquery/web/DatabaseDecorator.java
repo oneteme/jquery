@@ -3,6 +3,7 @@ package org.usf.jquery.web;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Mappers.keyValueMapper;
 import static org.usf.jquery.core.Mappers.toListMapper;
+import static org.usf.jquery.core.QueryExecutor.defaultExecutor;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
@@ -17,7 +18,6 @@ import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryExecutor;
 import org.usf.jquery.core.ResultSetMapper;
 import org.usf.jquery.core.RowMapper;
-import org.usf.jquery.core.SimpleQueryExecutor;
 import org.usf.jquery.core.TableView;
 
 /**
@@ -69,10 +69,10 @@ public interface DatabaseDecorator {
 	}
 	
 	default <T> T execute(QueryComposer query, ResultSetMapper<T> mapper) {
-		return execute(query, new SimpleQueryExecutor<>(mapper));
+		return run(query, defaultExecutor(mapper));
 	}
 		
-	default <T> T execute(QueryComposer query, QueryExecutor<T> executor) {
+	default <T> T run(QueryComposer query, QueryExecutor<T> executor) {
 		return getEnvironment(identity()).exec(query, executor);
 	}
 	

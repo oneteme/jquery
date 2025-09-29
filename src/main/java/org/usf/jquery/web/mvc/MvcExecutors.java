@@ -5,6 +5,7 @@ import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
 import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.Mappers.keyValueMapper;
+import static org.usf.jquery.core.QueryExecutor.defaultExecutor;
 import static org.usf.jquery.web.mvc.ResponseMappers.asciiResponseWriter;
 import static org.usf.jquery.web.mvc.ResponseMappers.csvResponseWriter;
 import static org.usf.jquery.web.mvc.ResponseMappers.mvcModelMapper;
@@ -16,19 +17,14 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 
-import javax.sql.DataSource;
-
 import org.usf.jquery.core.DynamicModel;
 import org.usf.jquery.core.Query;
 import org.usf.jquery.core.QueryExecutor;
 import org.usf.jquery.core.ResultSetMapper;
-import org.usf.jquery.core.SimpleQueryExecutor;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
-import lombok.Getter;
 import lombok.NoArgsConstructor;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -40,23 +36,23 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MvcExecutors {
 	
-	private static final Map<String, ResponseEntity> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
+	private static final Map<String, Query> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
 	
 	public static QueryExecutor<?> executor(HttpServletResponse res, Optional<String> view) {
 		return switch (view.filter(not(String::isEmpty)).orElse("json")) {
-		case "json" -> new SimpleQueryExecutor<>(keyValueMapper());
-		case "csv" -> new SimpleQueryExecutor<>(csvResponseWriter(res));
-		case "ascii" -> new SimpleQueryExecutor<>(asciiResponseWriter(res));
+		case "json" -> defaultExecutor(keyValueMapper());
+		case "csv" -> defaultExecutor(csvResponseWriter(res));
+		case "ascii" -> defaultExecutor(asciiResponseWriter(res));
 		case "google.v1"-> deferredExecutor(mvcViewBinder(res, "static/google.v1.html")); 
 		default -> throw new UnsupportedOperationException("view="+view);
 		};
 	}
-	
+
 	public static <T> QueryExecutor<T> deferredExecutor(ViewBinder<T> binder) {
-		return (qry, ds)->{
+		return qry->{
 			var id = randomUUID().toString();
 			var res = binder.bind(id);
-			queryQueue.put(id, new ResponseEntity(qry, ds));
+			queryQueue.put(id, qry);
 			return res;
 		};
 	}
@@ -66,18 +62,10 @@ public final class MvcExecutors {
 	}
 	
 	public static <T> T callback(String id, ResultSetMapper<T> mapper){
-		var o = queryQueue.remove(id);
-		if(nonNull(o)) {
-			return new SimpleQueryExecutor<>(mapper).execute(o.getQuery(), o.getDataSource());
+		var qry = queryQueue.remove(id);
+		if(nonNull(qry)) {
+			return qry.execute(mapper);
 		}
 		throw new NoSuchElementException(id + " not found");
-	}
-	
-	@Getter
-	@RequiredArgsConstructor
-	static final class ResponseEntity {
-
-		private final Query query;
-		private final DataSource dataSource;
 	}
 }

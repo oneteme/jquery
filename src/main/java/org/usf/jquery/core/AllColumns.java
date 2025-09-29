@@ -1,8 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Database.TERADATA;
-import static org.usf.jquery.core.Database.currentDatabase;
+import static org.usf.jquery.core.Product.TERADATA;
 import static org.usf.jquery.core.SqlStringBuilder.DOT;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -32,7 +31,7 @@ public final class AllColumns implements NamedColumn {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		if(isEmpty(views) || currentDatabase() != TERADATA) {
+		if(isEmpty(views) || query.getEnvironment().getProduct() != TERADATA) {
 			query.append(ASTR);
 		}
 		else {

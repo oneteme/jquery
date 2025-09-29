@@ -19,7 +19,7 @@ public interface CastFunction extends FunctionOperator {
 	}
 	
 	@Override
-	default void build(QueryBuilder query, Object... args) {
+	default void buildOperator(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(1, args, CastFunction.class::getSimpleName);
 		query.append(id()).appendParenthesis(()-> {
 			query.appendParameter(args[0]).appendAs().append(type());
