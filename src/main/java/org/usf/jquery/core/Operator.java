@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
+import static org.usf.jquery.core.ComparisonExpression.lt;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -254,6 +255,38 @@ public interface Operator extends DBProcessor {
 	}
 	
 	//combined functions
+	
+	static TypedOperator semester() {//[1-2]
+		CombinedOperator op = args-> month().operation(requireNArgs(1, args, ()-> "semester")[0]).toCase()
+				.when(lt(7), 1)
+				.orElse(2);
+		return new TypedOperator(INTEGER, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	static TypedOperator quarter() {//[1-4]
+		CombinedOperator op = args-> month().operation(requireNArgs(1, args, ()-> "quarter")[0]).toCase()
+				.when(lt(4), 1)
+				.when(lt(7), 2)
+				.when(lt(10), 3)
+				.orElse(4);
+		return new TypedOperator(INTEGER, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	static TypedOperator yearSemester() {//YYYY-'S'S
+		CombinedOperator op = args-> concat().operation(
+				varchar().operation(year().operation(requireNArgs(1, args, ()-> "yearSemester")[0])),
+				"-S",
+				varchar().operation(semester().operation(args)));
+		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	static TypedOperator yearQuarter() {//YYYY-'Q'Q
+		CombinedOperator op = args-> concat().operation(
+				varchar().operation(year().operation(requireNArgs(1, args, ()-> "yearQuarter")[0])),
+				"-Q",
+				varchar().operation(quarter().operation(args)));
+		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
 	
 	static TypedOperator yearMonth() {//YYYY-MM
 		CombinedOperator op = args-> left().operation(varchar().operation(requireNArgs(1, args, ()-> "yearMonth")[0]), 7);

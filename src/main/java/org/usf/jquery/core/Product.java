@@ -59,8 +59,8 @@ public enum Product {
 	public static Product fromMetaData(DatabaseMetaData meta) throws SQLException {
 		var name = meta.getDatabaseProductName().toUpperCase();
 		return stream(values())
-		.filter(d-> name.contains(d.name()))
-		.findAny()
-		.orElseThrow(()-> new UnsupportedOperationException(name));
+				.filter(d-> name.contains(d.name()))
+				.findAny()
+				.orElseThrow(()-> new UnsupportedOperationException(name));
 	}
 }

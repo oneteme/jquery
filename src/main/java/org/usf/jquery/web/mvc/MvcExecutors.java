@@ -20,7 +20,6 @@ import java.util.Optional;
 import org.usf.jquery.core.DynamicModel;
 import org.usf.jquery.core.Query;
 import org.usf.jquery.core.QueryExecutor;
-import org.usf.jquery.core.ResultSetMapper;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;
@@ -58,13 +57,9 @@ public final class MvcExecutors {
 	}
 	
 	public static List<DynamicModel> callback(String id, HttpServletResponse res){
-		return callback(id, mvcModelMapper(res));
-	}
-	
-	public static <T> T callback(String id, ResultSetMapper<T> mapper){
 		var qry = queryQueue.remove(id);
 		if(nonNull(qry)) {
-			return qry.execute(mapper);
+			return qry.execute(mvcModelMapper(res));
 		}
 		throw new NoSuchElementException(id + " not found");
 	}

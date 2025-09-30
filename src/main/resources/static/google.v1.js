@@ -4,19 +4,19 @@ onhashchange = process;
 onresize = draw;
 let conf, data, meta, chart, elemId = 'chart';
 
-function process(promise) {
+function process(url) {
 	conf = contextConfiguration('chart');
 	Promise.all([
 		google.charts.load('current', {
 			packages: packageFor(conf.type),
 			language: window.navigator.language.substring(0, 2).toLowerCase()
 		}),
-		promise instanceof Promise? resolveData(promise) : Promise.resolve(data)
+		url ? fetchData(url) : Promise.resolve(data)
 	]).then(draw);
 };
 
-function resolveData(promise){
-	return promise.then(res=> {
+function fetchData(url){
+	return fetch(url).then(res=> {
 		meta = columnMetadata("X-JQuery-Metadata", res.headers);
 		return res.json();
 	}).then(res=> data=res);
@@ -107,6 +107,7 @@ function sankeyDataTable() {
 }
 
 //group:string, [title:string], [popup:string], start:Date|number, end:Date|number
+
 function timelineDataTable() {
 	if (conf.x.cols?.length > 0 && conf.y.cols?.length > 0) {
 		let cols = [createColumn(conf.y.cols[0], 'string')]
@@ -294,7 +295,7 @@ function contextConfiguration(prefix) {
 			cols: sp.get(`${prefix}.y.cols`)?.split(`,`),
 			reduce: {
 				by: sp.get(`${prefix}.x.merge.by`), //row|col
-				apply: sp.get(`${prefix}.x.merge.apply`)//sum|avg|max|min|first|last
+				apply: sp.get(`${prefix}.x.merge.apply`)//sum|avg|max|min|first|last|switch
 			}
 		}
 	};

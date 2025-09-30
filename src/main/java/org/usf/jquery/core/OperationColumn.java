@@ -37,7 +37,7 @@ public final class OperationColumn implements DBColumn {
 			}
 			return resolveOverColumns(query, groupKeys);
 		}
-		return DBObject.tryComposeNested(query, groupKeys, this, args);
+		return DBObject.tryComposeNestedOrElse(query, groupKeys, args, this);
 	}
 
 	@Override

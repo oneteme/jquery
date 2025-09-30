@@ -30,10 +30,10 @@ public interface DBObject {
 	}
 
 	static int tryComposeNested(QueryComposer query, Consumer<DBColumn> cons, Object... args){
-		return tryComposeNested(query, cons, null, args);
+		return tryComposeNestedOrElse(query, cons, args, null);
 	}
 
-	static int tryComposeNested(QueryComposer query, Consumer<DBColumn> cons, DBColumn col, Object... args){
+	static int tryComposeNestedOrElse(QueryComposer query, Consumer<DBColumn> cons, Object[] args, DBColumn col){
 		return composeNested(query, cons, streamOrEmpty(args).mapMulti((o, acc)->{
 			if(o instanceof DBObject n) {
 				acc.accept(n);
