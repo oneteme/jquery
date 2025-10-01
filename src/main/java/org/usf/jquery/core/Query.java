@@ -3,12 +3,14 @@ package org.usf.jquery.core;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.isNull;
 import static java.util.Objects.requireNonNull;
+import static org.usf.jquery.core.Mappers.keyValueMapper;
 import static org.usf.jquery.core.TypedArg.values;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.List;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -28,6 +30,10 @@ public final class Query {
 	@NonNull private final Environment env;
 	@NonNull private final String sql;
 	private final TypedArg[] args; //optional if !prepared
+
+	public List<DynamicModel> execute() {
+		return execute(keyValueMapper());
+	}
 
 	public <T> T execute(ResultSetMapper<T> mapper) {
 		try {

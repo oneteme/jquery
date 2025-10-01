@@ -11,7 +11,7 @@ function process(url) {
 			packages: packageFor(conf.type),
 			language: window.navigator.language.substring(0, 2).toLowerCase()
 		}),
-		url ? fetchData(url) : Promise.resolve(data)
+		typeof url == 'string' ? fetchData(url) : Promise.resolve(data)
 	]).then(draw);
 };
 

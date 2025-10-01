@@ -49,7 +49,7 @@ public final class Mappers {
 		};
 	}
 	
-	public static <T> ResultSetMapper<T> limitRowsMapper(int limit, ResultSetMapper<T> rm){
+	public static <T> ResultSetMapper<T> rowLimitMapper(int limit, ResultSetMapper<T> rm){
 		return rs-> rm.map(new ResultSetLimiter(rs, limit));
 	}
 	

@@ -274,7 +274,7 @@ public interface Operator extends DBProcessor {
 	
 	static TypedOperator yearSemester() {//YYYY-'S'S
 		CombinedOperator op = args-> concat().operation(
-				varchar().operation(year().operation(requireNArgs(1, args, ()-> "yearSemester")[0])),
+				varchar().operation(year().operation(args)),
 				"-S",
 				varchar().operation(semester().operation(args)));
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
@@ -282,14 +282,9 @@ public interface Operator extends DBProcessor {
 	
 	static TypedOperator yearQuarter() {//YYYY-'Q'Q
 		CombinedOperator op = args-> concat().operation(
-				varchar().operation(year().operation(requireNArgs(1, args, ()-> "yearQuarter")[0])),
+				varchar().operation(year().operation(args)),
 				"-Q",
 				varchar().operation(quarter().operation(args)));
-		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
-	}
-	
-	static TypedOperator yearMonth() {//YYYY-MM
-		CombinedOperator op = args-> left().operation(varchar().operation(requireNArgs(1, args, ()-> "yearMonth")[0]), 7);
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
@@ -302,6 +297,12 @@ public interface Operator extends DBProcessor {
 		};
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
+	
+	static TypedOperator yearMonth() {//YYYY-MM
+		CombinedOperator op = args-> left().operation(varchar().operation(requireNArgs(1, args, ()-> "yearMonth")[0]), 7);
+		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
 	
 	static TypedOperator monthDay() {//MM-DD
 		CombinedOperator op = args-> {

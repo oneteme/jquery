@@ -22,14 +22,14 @@ import lombok.Getter;
 @Getter
 public final class ViewJoin implements DBObject {
 	
-	private final JoinType joinType;
+	private final JoinType type;
 	private final DBView view;
 	private final DBFilter[] filters;
 	
-	ViewJoin(JoinType joinType, DBView view, DBFilter[] filters) {
-		this.joinType = joinType;
+	ViewJoin(JoinType type, DBView view, DBFilter[] filters) {
+		this.type = type;
 		this.view = view;
-		this.filters = joinType == CROSS 
+		this.filters = type == CROSS 
 				? filters 
 				: requireAtLeastNArgs(1, filters, ViewJoin.class::getSimpleName);
 	}
@@ -44,7 +44,7 @@ public final class ViewJoin implements DBObject {
 	public void build(QueryBuilder query, Object... args) {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
 		var res = view.resolveView(query);
-		query.append(joinType.name()).append(" JOIN ").append(res).appendSpace().appendViewAlias(res);
+		query.append(type.name()).append(" JOIN ").append(res).appendSpace().appendViewAlias(res);
 		if(!isEmpty(filters)) {
 			query.append(" ON ").appendEach(AND.sql(), filters);
 		} //else cross join

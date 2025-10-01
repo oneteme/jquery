@@ -42,7 +42,7 @@ public final class MvcExecutors {
 		case "json" -> defaultExecutor(keyValueMapper());
 		case "csv" -> defaultExecutor(csvResponseWriter(res));
 		case "ascii" -> defaultExecutor(asciiResponseWriter(res));
-		case "google.v1"-> deferredExecutor(mvcViewBinder(res, "static/google.v1.html")); 
+		case "google.v1"-> deferredExecutor(mvcViewBinder(res, "static/google.v1.html"));
 		default -> throw new UnsupportedOperationException("view="+view);
 		};
 	}
