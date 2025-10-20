@@ -2,7 +2,7 @@
 <html lang>
 
 <head>
-	<title>JQuery</title>
+	<title>Preview</title>
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="author" content="u$f">
 	<meta name="generator" content="JQuery">
@@ -11,10 +11,19 @@
 </head>
 
 <body onload="javascript:process('[[${callback}]]');">
-	<div id="chart" style="width: 99.5%; height: 97vh; border: 1px solid #ccc"></div>
-	<a href="https://oneteme.github.io/" target="_blank"> <img
-			src="https://raw.githubusercontent.com/oneteme/oneteme.github.io/main/badges/jquery.svg" height="12px"
-			style="position: fixed; right: 0px; bottom: 0px;" alt="JARVIS"></a>
+	<div id="chart" style="width: 100%; height: 95vh;"></div>
 </body>
+
+<script type="text/javascript">
+	document.onkeydown = function(e) {
+    if (e.ctrlKey && e.keyCode === 83) {
+		e.preventDefault();
+		const map = JSON.parse(localStorage.getItem('jquery.widgets') ?? '{}');
+		map[prompt('ID')] = window.location.href;
+		localStorage.setItem('jquery.widgets', JSON.stringify(map));
+		alert('saved !');
+  	}
+};
+</script>
 
 </html>

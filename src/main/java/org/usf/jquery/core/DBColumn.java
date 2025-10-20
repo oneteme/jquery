@@ -24,6 +24,10 @@ public interface DBColumn extends DBObject, Typed {
 		build(query);
 	}
 	
+	default ColumnProxy as(JDBCType type) {
+		throw new UnsupportedOperationException("not impl");
+	}
+	
 	default ColumnProxy as(String name) {
 		return as(name, null);
 	}

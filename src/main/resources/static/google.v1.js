@@ -93,6 +93,16 @@ function calendarDataTable() {
 	throw new Error('calendar chart require x:date,y:number');
 }
 
+function treemapDataTable() {
+	if (conf.x.cols?.length > 1 && conf.y.cols?.length > 0) {
+		return createDataTable(data,
+			createColumn(conf.x.cols[0], 'string'),
+			createColumn(conf.x.cols[1], 'string'),
+			createColumn(conf.y.cols[0], 'number'));
+	}//else auto column detect 
+	throw new Error('treemap chart require x:[string,string],y:number');
+}
+
 //group:string, [source:string], [target:string], value:Date, [popup:?]
 function sankeyDataTable() {
 	if (conf.x.cols?.length > 0 && conf.y.cols?.length > 0) {
@@ -295,7 +305,7 @@ function contextConfiguration(prefix) {
 			cols: sp.get(`${prefix}.y.cols`)?.split(`,`),
 			reduce: {
 				by: sp.get(`${prefix}.x.merge.by`), //row|col
-				apply: sp.get(`${prefix}.x.merge.apply`)//sum|avg|max|min|first|last|switch
+				apply: sp.get(`${prefix}.x.merge.apply`)//sum|avg|max|min|first|last,[switch]
 			}
 		}
 	};
@@ -314,6 +324,7 @@ function packageFor(chart) { //add config
 		case 'combo': return 'corechart';
 		case 'calendar':
 		case 'timeline':
+		case 'treemap':
 		case 'sankey':
 		case 'table': return chart;
 		default: throw new Error(`unsupported chart type='${chart}'`);
@@ -334,6 +345,7 @@ function chartBuilder(chart) {
 		case 'column': return { fn: chart.charAt(0).toUpperCase() + chart.slice(1) + 'Chart', build: multipleSeriesDataTable, options: { isStacked: 'true' } };
 		case 'histogram': return { fn: 'Histogram', build: multipleSeriesDataTable };
 		case 'sankey': return { fn: 'Sankey', build: sankeyDataTable };
+		case 'treemap': return { fn: 'TreeMap', build: treemapDataTable };
 		case 'calendar': return { fn: 'Calendar', build: calendarDataTable, options: { title: sp.get('title') } };
 		case 'timeline': return { fn: 'Timeline', build: timelineDataTable };
 		default: throw Error(`unsupported chart type='${chart}'`);

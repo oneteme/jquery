@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.function.Consumer;
@@ -53,5 +54,22 @@ public interface DBView extends DBObject {
 	
 	default ViewRef asReference() {
 		return new ViewRef(this);
+	}
+	
+	static DBView view(String name, String schema) {
+		return b->{
+			if(nonNull(schema)) {
+				b.append(schema).append(".");
+			}
+			b.append(name);
+		};
+	}
+	
+	static DBView queryAsView(String sql) {
+		return b-> b.appendParenthesis(()-> b.append(sql));
+	}
+	
+	static DBView requestAsView(String req) {
+		return null;
 	}
 }
