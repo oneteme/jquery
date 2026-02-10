@@ -1,16 +1,19 @@
 package org.usf.jquery.web.proxy;
 
-import static org.usf.jquery.core.JDBCType.INTEGER;
+import static org.usf.jquery.core.ComparisonExpression.ge;
+import static org.usf.jquery.core.ComparisonExpression.lt;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
 import java.time.Instant;
+import java.time.LocalDate;
 
+import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
-import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.web.proxy.Bind.BindType;
 import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
 
@@ -45,9 +48,9 @@ public interface ViewResource {
     	return null;
     }
 
-    @Entry(value="", description="")
+    @Entry(value="rattachement", description="", tagname = "rattach")
     @Parameterized(parser = ArgsParser.class)
-    default ViewJoin[] ratt(Object o1, Instant o2) {
+    default JoinsClause ratt(LocalDate o1, Instant o2) {
     	return null;
     }
 
@@ -55,6 +58,16 @@ public interface ViewResource {
     default Partition latestEdit(){
     	return null;
     }
-    
-    
+
+    @Parameterized(parser = ArgsParser.class)
+    default ComparisonExpression elapsedTimeExpressions(String name) {
+        return switch (name) {
+            case "fastest" -> lt(1);
+            case "fast" -> ge(1).and(lt(3));
+            case "medium" -> ge(3).and(lt(5));
+            case "slow" -> ge(5).and(lt(10));
+            case "slowest" -> ge(10);
+            default -> null;
+        };
+    }
 }

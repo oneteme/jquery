@@ -40,7 +40,7 @@ public interface Resource {
 		for(var m : methods) {
 			var ann = m.getAnnotation(Entry.class); //entry annotation has higher priority than method name
 			if(nonNull(ann) && ann.value().equals(name)) {
-				return m;
+				return m;	
 			}
 			if(m.getName().equals(name)) {
 				res = m; //keep looking for entry annotation, method name is fallback

@@ -4,10 +4,13 @@ import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
+import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.ViewJoin.join;
 
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.function.BiFunction;
 
 import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.DBColumn;
@@ -21,19 +24,23 @@ import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 
-public final class ExpressionEvaluator {
+import lombok.NoArgsConstructor;
 
-	public static DBView evalView(EntryChain entry, QueryContext ctx) {
+@NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
+public final class EntryResolver {
+
+	public static DBView resolveView(EntryChain entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var view = evalView(itr, ctx);
-			assertEntry(itr.get(), false, true);
+			var view = resolveView(itr, ctx);
+			assertLastEntry(itr, true);
 			ctx.addView(requireTag(itr.get()), view);
 			return view;
 		}
@@ -42,11 +49,11 @@ public final class ExpressionEvaluator {
 		}
 	}
 
-	public static DBColumn evalColumn(EntryChain entry, QueryContext ctx) {
+	public static DBColumn resolveColumn(EntryChain entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var col = parseColumn(itr, ctx);
-			assertEntry(itr.get(), false, false);
+			var col = resolveColumn(itr, ctx);
+			assertLastEntry(itr, false);
 			return col;
 		}
 		catch (Exception e) {
@@ -54,11 +61,11 @@ public final class ExpressionEvaluator {
 		}
 	}
 
-	public static NamedColumn evalNamedColumn(EntryChain entry, QueryContext ctx) {
+	public static NamedColumn resolveNamedColumn(EntryChain entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var col = parseColumn(itr, ctx);
-			assertEntry(itr.get(), false, true);
+			var col = resolveColumn(itr, ctx);
+			assertLastEntry(itr, true);
 			return col instanceof NamedColumn nc ? nc : col.as(requireTag(itr.get()));
 		}
 		catch (Exception e) {
@@ -66,15 +73,15 @@ public final class ExpressionEvaluator {
 		}
 	}
 	
-	public static DBFilter evalFilter(EntryChain entry, QueryContext ctx) {
+	public static DBFilter resolveFilter(EntryChain entry, QueryContext ctx, EntryChain... outerArgs) {
 		return null;
 	}
 	
-	public static DBOrder evalOrder(EntryChain entry, QueryContext ctx) {
+	public static DBOrder resolveOrder(EntryChain entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var ord = lookupDeclaredResource(itr, DBOrder.class, ctx).orElseGet(()-> parseOrder(itr.reset(), ctx));
-			assertEntry(itr.get(), false, false);
+			var ord = lookupDeclaredResource(itr, DBOrder.class, ctx, null).orElseGet(()-> parseOrder(itr.reset(), ctx));
+			assertLastEntry(itr, false);
 			return ord;
 		}
 		catch (Exception e) {
@@ -82,11 +89,11 @@ public final class ExpressionEvaluator {
 		}
 	}
 
-	public static JoinsClause evalJoin(EntryChain entry, QueryContext ctx) {
+	public static JoinsClause resolveJoin(EntryChain entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var join = lookupDeclaredResource(itr, JoinsClause.class, ctx).orElseGet(()-> parseJoin(itr.reset(), ctx));
-			assertEntry(itr.get(), false, false);
+			var join = lookupDeclaredResource(itr, JoinsClause.class, ctx, null).orElseGet(()-> parseJoin(itr.reset(), ctx));
+			assertLastEntry(itr, false);
 			return join;
 		}
 		catch (Exception e) {
@@ -94,11 +101,11 @@ public final class ExpressionEvaluator {
 		}
 	}
 	
-	public static Partition evalPartition(EntryChain entry, QueryContext ctx) {
+	public static Partition resolvePartition(EntryChain entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var prt = lookupDeclaredResource(itr, Partition.class, ctx).orElseGet(()-> parsePartition(itr.reset(), ctx));
-			assertEntry(itr.get(), false, false);
+			var prt = lookupDeclaredResource(itr, Partition.class, ctx, null).orElseGet(()-> parsePartition(itr.reset(), ctx));
+			assertLastEntry(itr, false);
 			return prt;
 		}
 		catch (Exception e) {
@@ -106,45 +113,54 @@ public final class ExpressionEvaluator {
 		}
 	}
 
-	public static SingleQueryColumn evalQueryColumn(EntryChain entry, QueryContext ctx) {
-		throw new UnsupportedOperationException("not implemented yet");
+	public static SingleQueryColumn resolveQueryColumn(EntryChain entry, QueryContext ctx) {
+		try {
+			var itr = entry.iterator();
+			var view = resolveView(itr, ctx);
+			if(view instanceof QueryView query) {
+				assertLastEntry(itr, false);
+				return query.asColumn();
+			}
+			throw new EntryParseException("");
+		}
+		catch (Exception e) {
+			throw new EntryParseException("invalid single query column expression : " + entry.getValue(), e);
+		}
 	}
 	
-	static DBView evalView(EntryChainIterator itr, QueryContext ctx) {
+	static DBView resolveView(EntryChainIterator itr, QueryContext ctx) {
 		var entry = itr.get();
-		var res = ctx.lookupView(entry.getValue(), entry.getArgs());
-		if(res.isPresent()) {
-			return itr.hasNext() ? parseView(itr.advance(), ctx.subContext(res.get())) : res.get(); //view.select().filter()..
+		var view = ctx.lookupView(true, entry.getValue(), entry.getArgs());
+		if(view.isPresent()) {
+			return itr.hasNext() ? parseView(itr.advance(), ctx.subContext(view.get())) : view.get(); //view.select().filter()..
 		}
 		throw new NoSuchElementException("view resource not found : " + entry.getValue());
 	}
 	
-	static DBView parseView(EntryChainIterator itr, QueryContext ctx) {
+	static QueryView parseView(EntryChainIterator itr, QueryContext ctx) {
 		//select().filter().order()...
 		return null;
 	}
 	
 	static DBView parseFilter(EntryChainIterator itr, QueryContext ctx) {
-		//select().filter().order()...
 		return null;
 	}
 	
 	static DBOrder parseOrder(EntryChainIterator itr, QueryContext ctx) {
-		var col = parseColumn(itr, ctx);
-		DBOrder order;
+		var col = resolveColumn(itr, ctx);
 		if(itr.hasNext()) {
-			var e = itr.next();
-			if(e.getValue().matches("asc|desc")) {
-				order = col.order(OrderType.valueOf(e.getValue().toUpperCase()));
+			var entry = itr.next();
+			if(entry.getValue().matches("asc|desc")) {
+				if(entry.hasArgs()) {
+					throw new EntryParseException("order operator cannot have arguments");
+				}
+				return col.order(OrderType.valueOf(entry.getValue().toUpperCase()));
 			}
 			else {
-				throw new EntryParseException("invalid order type : " + e.getValue());
+				throw new EntryParseException("invalid order type : " + entry.getValue());
 			}
 		}
-		else {
-			order = col.order();
-		}
-		return order;
+		return col.order();
 	}
 	
 	static JoinsClause parseJoin(EntryChainIterator itr, QueryContext ctx) {
@@ -152,8 +168,8 @@ public final class ExpressionEvaluator {
 		if(nonNull(entry.getArgs()) && entry.getArgs().length == 2 && entry.getValue().matches("(inner|left|right|full|cross)Join")) {
 			try {
 				var type = JoinType.valueOf(entry.getValue().substring(0, entry.getValue().length()-5).toUpperCase());
-				var view = evalView(entry.getArgs()[0], ctx);
-				var filter = evalFilter(entry.getArgs()[1], ctx);
+				var view = resolveView(entry.getArgs()[0], ctx);
+				var filter = resolveFilter(entry.getArgs()[1], ctx);
 				return JoinsClause.of(join(type, view, filter));
 			}
 			catch (Exception e) {
@@ -168,35 +184,37 @@ public final class ExpressionEvaluator {
 		return null;
 	}
 	
-	static DBColumn parseColumn(EntryChainIterator itr, QueryContext ctx) {
-		var res = lookupDeclaredResource(itr, DBColumn.class, ctx); //column or criteria resource
+	static DBColumn resolveColumn(EntryChainIterator itr, QueryContext ctx) {
+		var res = lookupDeclaredResource(itr, DBColumn.class, ctx, (v, e)->{ 
+			if("count".equals(e.getValue())) {
+				return Optional.of(invokeOperator(e, e.hasArgs() ? null : allColumns(v), ctx));
+			}
+			return empty();
+		}); //column or criteria resource
 		var col = chainResource(itr, res.orElse(null), ctx);
 		if(nonNull(col)) {
 			return col;
 		}
 		throw new NoSuchElementException("column resource not found : " + itr.get().getValue());
 	}
-	
-	static <T> Optional<T> lookupDeclaredResource(EntryChainIterator itr, Class<T> type, QueryContext ctx) {
-		DBView view = ctx.getDefaultView();
-		var e = itr.get();
-		if(e.hasNext()) {
-			var res = ctx.lookupView(e.getNext().getValue());
-			if(res.isPresent()) {
-				view = res.get();
-				e = itr.next();
+
+	static <T> Optional<T> lookupDeclaredResource(EntryChainIterator itr, Class<T> type, QueryContext ctx, BiFunction<DBView, EntryChain, Optional<T>> fn) {
+		if(itr.hasNext()) { //view.rsrc
+			var vRes = ctx.lookupView(false, itr.get().getValue()); //parameterized view resource is not supported, must be declared as view resource in context
+			if(vRes.isPresent()) {
+				var view = vRes.get();
+				var res = lookupViewResource(ctx, view, itr.next(), type);
+				if(res.isEmpty() && nonNull(fn)) {
+					res = fn.apply(view, itr.get());
+				}
+				if(res.isPresent()) {
+					return res;
+				}
+				itr.reset();
 			}
 		}
-		return ctx.lookupViewResource(view, e.getValue(), type, e.getArgs());
-	}
-	
-	static void assertEntry(EntryChain entry, boolean nextAllowed, boolean tagAllowed) {
-		if(!nextAllowed && entry.hasNext()) {
-			throw new EntrySyntaxException(" entry cannot have next entry");
-		}
-		if(!tagAllowed && entry.hasTag()) {
-			throw new EntrySyntaxException(" entry cannot have tag");
-		}
+		var res = lookupViewResource(ctx, ctx.getDefaultView(), itr.get(), type);
+		return res.isPresent() || isNull(fn) ? res : fn.apply(ctx.getDefaultView(), itr.get());
 	}
 	
 	static DBColumn chainResource(EntryChainIterator itr, DBColumn res, QueryContext ctx) {
@@ -261,6 +279,19 @@ public final class ExpressionEvaluator {
 			}
 		});
 		return arr;
+	}
+
+	static <T> Optional<T> lookupViewResource(QueryContext ctx, DBView view, EntryChain entry, Class<T> type) { //pretty syntax
+		return ctx.lookupViewResource(view, entry.getValue(), type, entry.getArgs());
+	}
+
+	static void assertLastEntry(EntryChainIterator entry, boolean tagAllowed) {
+		if(entry.hasNext()) {
+			throw new EntrySyntaxException(" entry cannot have next entry");
+		}
+		if(!tagAllowed && entry.get().hasTag()) {
+			throw new EntrySyntaxException(" entry cannot have tag");
+		}
 	}
 	
 	static String requireTag(EntryChain entry) {

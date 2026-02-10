@@ -3,6 +3,11 @@ package org.usf.jquery.web.proxy;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 public final class EntryChainIterator implements Iterator<EntryChain> {
 
 	private final EntryChain head;

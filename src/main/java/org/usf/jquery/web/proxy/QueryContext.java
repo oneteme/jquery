@@ -46,11 +46,17 @@ public final class QueryContext {
 	private final Map<String, DBView> cache = new HashMap<>();
 	private final TypeParserRegistry registry;
 	
-	public Optional<DBView> lookupView(String name, EntryChain... args) { 
+	public Optional<DBView> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
 		var view = cache.get(name);
 		if(isNull(view)) {
 			var mth = findMethod(schema, name);
 			if(nonNull(mth) && DBView.class.isAssignableFrom(mth.getReturnType())) {
+				if(!allowParameterize) {
+					if(mth.getParameterCount() > 0) {
+						throw new IllegalArgumentException("view resource '" + mth.getName() + "' expects parameters, but parameterization is not allowed in this context");
+					}
+					addView(name, view);
+				} //else explicit view add
 				view = DBView.class.cast(invokeResource(mth, schema, args, this));
 			}
 		}
@@ -60,13 +66,13 @@ public final class QueryContext {
 	public <T> Optional<T> lookupViewResource(DBView view, String name, Class<T> type, EntryChain... args) { 
 		var mth = findMethod(view, name);
 		return nonNull(mth) && type.isAssignableFrom(mth.getReturnType()) 
-				? Optional.of(type.cast(invokeResource(mth, schema, args, this)))
+				? Optional.of(type.cast(invokeResource(mth, view, args, this)))
 				: empty();
 	}
 	
 	void addView(String name, DBView view) {
 		cache.compute(name, (k,v)->{
-			if(nonNull(v)) {
+			if(v != view) {
 				throw new IllegalArgumentException("a view with name '" + name + "' already exists in context");
 			}
 			return view;
