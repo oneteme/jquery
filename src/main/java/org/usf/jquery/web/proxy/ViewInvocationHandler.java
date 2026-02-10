@@ -1,15 +1,12 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Modifier.isAbstract;
-import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
-import static org.usf.jquery.core.DBColumn.column;
+import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.DBObject.toSQL;
-import static org.usf.jquery.core.DBView.queryAsView;
-import static org.usf.jquery.core.DBView.view;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 import static org.usf.jquery.web.proxy.ResourceUtils.lookupBindAnnotation;
 import static org.usf.jquery.web.proxy.ResourceUtils.lookupResourceAnnotation;
@@ -21,6 +18,7 @@ import java.util.Map;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
@@ -31,8 +29,13 @@ import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Slf4j
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 final class ViewInvocationHandler implements InvocationHandler {
 
 	private final DBView view;
@@ -45,91 +48,83 @@ final class ViewInvocationHandler implements InvocationHandler {
 			return obj instanceof DBColumn col ? mapColumn(method, col) : obj; //map column only
 		}
 		if(isAbstract(method.getModifiers())) {
-			if(DBFilter.class.isAssignableFrom(method.getReturnType())) { //filter first (extends Column)
-				return buildFilter(method, args);
+			var bnd = method.getAnnotation(Bind.class); //required
+			if(nonNull(bnd) && !bnd.value().isEmpty()) {
+				return buildResource(method, bnd, args);
 			}
-			if(DBColumn.class.isAssignableFrom(method.getReturnType())) {
-				return buildColumn(method, args); //type ??
-			}
-			if(ViewJoin[].class.isAssignableFrom(method.getReturnType())) {
-				return buildJoin(method, args); //type ??
-			}
-			if(Partition.class.isAssignableFrom(method.getReturnType())) {
-				return buildJoin(method, args); //type ??
-			}
-			throw new IllegalStateException("invoke " + method);
+			throw new IllegalArgumentException("missing decorator @Bind on " + method);
 		}
 		return switch (method.getName()) {
 		case "equals"->  proxy == args[0];
 		case "hashCode"-> hash(view);
 		case "toString"-> toSQL(view);
-		default -> throw new IllegalStateException("invoke " + method);
+		default -> throw new IllegalStateException("unexpected method invocation " + method);
 		};
 	}
 	
 	DBColumn mapColumn(Method method, DBColumn col) {
-		var rsrc = method.getAnnotation(Resource.class); //exposed resource
-		if(nonNull(rsrc) && !rsrc.tagname().isEmpty()) {
-			return col.as(rsrc.tagname());
+		var rsr = method.getAnnotation(Entry.class); //exposed resource
+		if(nonNull(rsr) && !rsr.tagname().isEmpty()) {
+			col = col.as(rsr.tagname());
 		}
-		var typed = method.getAnnotation(Typed.class); //abstract & default method
-		if(nonNull(typed)) {
-			return col.as(typed.value());
+		var typ = method.getAnnotation(Typed.class); //abstract & default method
+		if(nonNull(typ)) {
+			col = col.as(typ.value());
 		}
 		return col;
 	}
 	
-	ViewColumn buildColumn(Method method, Object[] args) { //REF | REQ | SQL
-		var bind = method.getAnnotation(Bind.class); //required
-		var type = ofNullable(method.getAnnotation(Typed.class))
+	Object buildResource(Method method, Bind bind, Object[] args) {
+		var type = method.getReturnType();
+		if(DBColumn.class.isAssignableFrom(type)) {
+			return buildColumn(method, bind, args);
+		}
+		if(DBFilter.class.isAssignableFrom(type)) { //filter first (extends Column)
+			return buildFilter(method, bind, args);
+		}
+		if(ViewJoin[].class.isAssignableFrom(type)) {
+			return buildJoin(method, bind, args);
+		}
+		if(Partition.class.isAssignableFrom(type)) {
+			return buildPartition(method, bind, args);
+		}
+		if(DBOrder.class.isAssignableFrom(type)) {
+			return buildOrder(method, bind, args);
+		}
+		throw new IllegalStateException("unsupported method type " + method);
+	}
+	
+	ViewColumn buildColumn(Method method, Bind bind, Object[] args) { //REF | REQ | SQL
+		var typ = ofNullable(method.getAnnotation(Typed.class))
 				.map(Typed::value)
 				.or(()-> ofNullable(metadata.get(bind.value())).map(ColumnMetadata::getType))
 				.orElse(null);
-		var tag = ofNullable(method.getAnnotation(Resource.class))
-				.map(Resource::value)
+		var tag = ofNullable(method.getAnnotation(Entry.class))
+				.map(Entry::tagname)
+				.filter(not(String::isEmpty))
 				.orElseGet(method::getName);
 		return switch (bind.type()) {
-		case REF -> new ViewColumn(bind.value(), view, type, tag);
-		case SQL -> column(bind.value(), view, type, tag); //use args
-		//TODO REQ
-		default -> throw new UnsupportedOperationException(bind.type()+"");
+		case REF -> new ViewColumn(bind.value(), view, typ, tag);
+		default  -> throw new UnsupportedOperationException("not implemented");
 		};
 	}
-
 	
-	DBFilter buildFilter(Method method, Object[] args) { //REQ | SQL
-		throw new UnsupportedOperationException();
+	DBFilter buildFilter(Method method, Bind bind, Object[] args) { 
+		throw new UnsupportedOperationException("not implemented");
 	}
 
-	ViewJoin[] buildJoin(Method method, Object[] args) { //REQ | SQL
-		throw new UnsupportedOperationException();
+	ViewJoin[] buildJoin(Method method, Bind bind, Object[] args) { 
+		throw new UnsupportedOperationException("not implemented");
 	}
 
-	Partition buildPartition(Method method, Object[] args) { //REQ | SQL
-		throw new UnsupportedOperationException();
+	Partition buildPartition(Method method, Bind bind, Object[] args) {
+		throw new UnsupportedOperationException("not implemented");
 	}
 	
-//	if(isNull(bnd)) {
-//		throw new IllegalArgumentException("missing decorator @ViewBind on " + m);
-//	}
-//	if(!bnd.name().matches("\\w+")) { //2 character at least
-//		throw new IllegalArgumentException("invalid name " + bnd);
-//	}
-//	if(m.getParameterCount() > 0) {
-//		throw new IllegalArgumentException();
-//	}
-	
-	static <T extends ViewResource> T buildView(Class<T> clazz, Bind bind, String schema) {
-		var view = switch(bind.type()) {
-		case REF-> view(bind.value(), schema);
-		case SQL-> queryAsView(bind.value());
-		//TODO REQ
-		default-> throw new UnsupportedOperationException();
-		};
-		return clazz.cast(newProxyInstance(ViewInvocationHandler.class.getClassLoader(), 
-				new Class<?>[]{clazz}, new ViewInvocationHandler(view)));
+	Partition buildOrder(Method method, Bind bind, Object[] args) { 
+		throw new UnsupportedOperationException("not implemented");
 	}
-
+	
 	static void validateViewResources(Class<?> clazz) {
 		if(clazz.isInterface()) {
 			stream(clazz.getMethods()).forEach(mth->{

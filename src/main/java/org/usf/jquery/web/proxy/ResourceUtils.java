@@ -59,8 +59,8 @@ public final class ResourceUtils {
 		throw new IllegalArgumentException("@Bind is required for " + elem);
 	}
 	
-	public static Optional<Resource> lookupResourceAnnotation(Method method) {
-		var rsc = method.getAnnotation(Resource.class);
+	public static Optional<Entry> lookupResourceAnnotation(Method method) {
+		var rsc = method.getAnnotation(Entry.class);
 		if(nonNull(rsc)) {
 			if(!rsc.value().isEmpty() && rsc.value().matches("\\w+")) {
 				throw new IllegalArgumentException("invalid @Resource.value=["+rsc.value()+"] on " + method); 

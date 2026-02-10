@@ -1,12 +1,12 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.Retention;
 import java.lang.annotation.Target;
+import java.lang.reflect.Method;
 
 /**
  * 
@@ -14,15 +14,17 @@ import java.lang.annotation.Target;
  *
  */
 @Documented
-@Target({TYPE, METHOD})
+@Target(METHOD)
 @Retention(RUNTIME)
-public @interface Bind {
+public @interface Parameterized {
+	
+	//boolean acceptVariables() default true;
 
-	String value();
+	Class<ArgsParser> parser(); 
 	
-	BindType type() default BindType.REF;
-	
-	enum BindType {
-		REF, REQ, SQL;
+	@FunctionalInterface
+	public interface ArgsParser {
+
+		Object[] parse(Method m, EntryChain[] args, QueryContext ctx);
 	}
 }

@@ -57,6 +57,7 @@ import org.usf.jquery.core.ViewJoin;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
+import lombok.EqualsAndHashCode;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 
@@ -65,6 +66,7 @@ import lombok.Setter;
  * @author u$f
  *
  */
+@EqualsAndHashCode(exclude = "prev")
 @Setter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 final class EntryChain {

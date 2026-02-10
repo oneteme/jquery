@@ -1,17 +1,22 @@
 package org.usf.jquery.web.proxy;
 
+import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
+import java.time.Instant;
+
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.web.proxy.Bind.BindType;
-
-import lombok.NonNull;
+import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
 
 public interface ViewResource {
+    
+    DBView toView();
 
 	@Bind("va_loc")
     ViewColumn location(); 
@@ -27,22 +32,22 @@ public interface ViewResource {
 	@Bind("dh_end")
     ViewColumn end();
     
-    @Resource(value="toto", description="")
-    default @NonNull NamedColumn elapsedtime(){
+    @Entry(value="toto", description="")
+    default NamedColumn elapsedtime(){
     	return start().epoch().minus(end().epoch()).as("elps");
     }
     
     @Bind(value="start.epoch.minus(end.epoch)", type = BindType.REQ)
     NamedColumn elapsedtime2();
     
-    
-    @Resource(value="", description="")
+    @Entry(value="", description="")
     default DBFilter active(){
     	return null;
     }
 
-    @Resource(value="", description="")
-    default ViewJoin[] ratt() {
+    @Entry(value="", description="")
+    @Parameterized(parser = ArgsParser.class)
+    default ViewJoin[] ratt(Object o1, Instant o2) {
     	return null;
     }
 
@@ -50,4 +55,6 @@ public interface ViewResource {
     default Partition latestEdit(){
     	return null;
     }
+    
+    
 }

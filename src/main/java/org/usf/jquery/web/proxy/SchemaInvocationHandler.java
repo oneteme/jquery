@@ -4,7 +4,8 @@ import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
-import static org.usf.jquery.web.proxy.JQueryResource.getView;
+import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.DBView.view;
 import static org.usf.jquery.web.proxy.ResourceUtils.lookupBindAnnotation;
 import static org.usf.jquery.web.proxy.ResourceUtils.lookupResourceAnnotation;
 import static org.usf.jquery.web.proxy.ViewInvocationHandler.validateViewResources;
@@ -12,28 +13,35 @@ import static org.usf.jquery.web.proxy.ViewInvocationHandler.validateViewResourc
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
+import org.usf.jquery.core.DBView;
+
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SchemaInvocationHandler implements InvocationHandler {
 	
 	private final String name;
+	private final String schema;
 	
 	@Override
-	@SuppressWarnings("unchecked")
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if(method.isDefault()) {
 			return InvocationHandler.invokeDefault(proxy, method, args);
 		}
 		if(isAbstract(method.getModifiers())) {
-			var type = method.getReturnType();
-			if(ViewResource.class.isAssignableFrom(type)) {
-				return getView((Class<ViewResource>)type, method.getAnnotation(Bind.class), name); //cache ?
+			var bind = method.getAnnotation(Bind.class); //required
+			if(nonNull(bind) && !bind.value().isEmpty()) {
+				return buildResource(method, bind, args);
 			}
-			throw new IllegalStateException("illegal method " + method);
+			throw new IllegalArgumentException("missing decorator @Bind on " + method);
 		}
 		return switch (method.getName()) {
 		case "equals"-> proxy == args[0];
@@ -43,10 +51,24 @@ public final class SchemaInvocationHandler implements InvocationHandler {
 		};
 	}
 
-	static <T extends SchemaResource> T schemaProxy(Class<T> clazz) {
+	DBView buildResource(Method method, Bind bind, Object[] args) {
+		var type = method.getReturnType();
+		if(DBView.class.isAssignableFrom(type)) {
+			var view = switch(bind.type()) {
+			case REF-> view(bind.value(), schema);
+//			case REQ-> evalView(parseEntry(bind.value()), null)
+			default -> throw new UnsupportedOperationException("not implemented");
+			};
+			return (DBView)(newProxyInstance(ViewInvocationHandler.class.getClassLoader(), 
+					new Class<?>[]{type}, new ViewInvocationHandler(view)));
+		}
+		throw new IllegalStateException("unsupported method type " + method);
+	}
+
+	static <T extends Resource> T createSchemaProxy(Class<T> clazz) {
 		var name = validateSchemaResources(clazz);
 		return clazz.cast(newProxyInstance(SchemaInvocationHandler.class.getClassLoader(), 
-				new Class<?>[]{clazz}, new SchemaInvocationHandler(name)));
+				new Class<?>[]{clazz}, new SchemaInvocationHandler(name, null))); //TODO parse schema from annotation
 	}
 	
 	static String validateSchemaResources(Class<?> clazz) {

@@ -1,7 +1,6 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.annotation.ElementType.METHOD;
-import static java.lang.annotation.ElementType.TYPE;
 import static java.lang.annotation.RetentionPolicy.RUNTIME;
 
 import java.lang.annotation.Documented;
@@ -14,15 +13,13 @@ import java.lang.annotation.Target;
  *
  */
 @Documented
-@Target({TYPE, METHOD})
+@Target(METHOD)
 @Retention(RUNTIME)
-public @interface Bind {
+public @interface Entry { //or expose
 
-	String value();
+	String value() default "";
+
+	String description() default ""; //html !?
 	
-	BindType type() default BindType.REF;
-	
-	enum BindType {
-		REF, REQ, SQL;
-	}
+	String tagname() default ""; //for DBColumn only
 }

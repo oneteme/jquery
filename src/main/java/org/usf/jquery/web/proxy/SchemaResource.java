@@ -1,26 +1,17 @@
 package org.usf.jquery.web.proxy;
 
-import static org.usf.jquery.web.proxy.Bind.BindType.REQ;
-import static org.usf.jquery.web.proxy.Bind.BindType.SQL;
+import static java.util.Objects.nonNull;
 
-import java.time.Instant;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Objects;
 
-//@Bind("public")
+/**
+ * 
+ * @author u$f
+ *
+ */
 public interface SchemaResource {
 	
-//	@Bind("main_ses") //no args
-//	ViewResource mainSes();
-//
-//	@Bind("rest_ses") //no args
-//	ViewResource restSes();
-//	
-//	@Bind(value="column=..&col1=..&col2=#arg&join=..&order=..", type = REQ)
-//	ViewResource customRequest(Instant arg);
-//	
-//	@Bind(value="SELECT * FROM v WHERE c IN(?)", type = SQL)
-//	ViewResource custumQuery(int[] args);
-//	
-//	default ViewResource anySession() {
-//		return null; //union
-//	}
+	@Bind("table_1")
+	ViewResource view1();
 }
