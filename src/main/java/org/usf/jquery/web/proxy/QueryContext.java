@@ -62,6 +62,13 @@ public final class QueryContext {
 		}
 		return ofNullable(view);
 	}
+
+	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, EntryChain... args) { 
+		var mth = findMethod(schema, name);
+		return nonNull(mth) && type.isAssignableFrom(mth.getReturnType()) 
+				? Optional.of(type.cast(invokeResource(mth, schema, args, this)))
+				: empty();
+	}
 	
 	public <T> Optional<T> lookupViewResource(DBView view, String name, Class<T> type, EntryChain... args) { 
 		var mth = findMethod(view, name);

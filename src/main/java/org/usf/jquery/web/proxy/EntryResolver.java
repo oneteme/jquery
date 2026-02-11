@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.function.BiFunction;
 
 import org.usf.jquery.core.Comparator;
+import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBOrder;
@@ -167,7 +168,7 @@ public final class EntryResolver {
 		var entry = itr.get();
 		if(nonNull(entry.getArgs()) && entry.getArgs().length == 2 && entry.getValue().matches("(inner|left|right|full|cross)Join")) {
 			try {
-				var type = JoinType.valueOf(entry.getValue().substring(0, entry.getValue().length()-5).toUpperCase());
+				var type = JoinType.valueOf(entry.getValue().substring(0, entry.getValue().length()-4).toUpperCase());
 				var view = resolveView(entry.getArgs()[0], ctx);
 				var filter = resolveFilter(entry.getArgs()[1], ctx);
 				return JoinsClause.of(join(type, view, filter));
@@ -217,13 +218,17 @@ public final class EntryResolver {
 		return res.isPresent() || isNull(fn) ? res : fn.apply(ctx.getDefaultView(), itr.get());
 	}
 	
-	static DBColumn chainResource(EntryChainIterator itr, DBColumn res, QueryContext ctx) {
+	static DBColumn chainResource(EntryChainIterator itr, DBColumn res, QueryContext ctx, EntryChain... outArgs) {
 		var col = res;
 		while(itr.hasNext()) {
-			var entry = itr.get().getNext();
+			var entry = itr.next();
 			var tmp = invokeOperator(entry, col, ctx);
 			if(isNull(tmp)) {
 				tmp = invokeComparator(entry, col, ctx);
+			}
+			if(isNull(tmp)) {
+				var exp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, entry.hasArgs() ? entry.getArgs() : outArgs);
+				tmp = exp.map(res::filter).orElse(null); //TODO expression(column, arg1, arg2, ..) + column is null
 			}
 			if(isNull(tmp)) {
 				break;

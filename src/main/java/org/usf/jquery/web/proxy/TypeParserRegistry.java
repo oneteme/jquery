@@ -96,14 +96,14 @@ public final class TypeParserRegistry {
 		//Object ?
 		VAL_PARSERS = unmodifiableMap(smpl);
 		var expr = new HashMap<Class<?>, ExpressionParser<?>>();
-		expr.put(DBColumn.class, EntryResolver::evalColumn);
-		expr.put(NamedColumn.class, EntryResolver::evalNamedColumn);
-		expr.put(DBFilter.class, EntryResolver::evalFilter);
-		expr.put(DBOrder.class, EntryResolver::evalOrder);
-		expr.put(JoinsClause.class, EntryResolver::evalJoin);
-		expr.put(Partition.class, EntryResolver::evalPartition);
-		expr.put(DBView.class, EntryResolver::evalView);
-		expr.put(SingleQueryColumn.class, EntryResolver::evalQueryColumn);
+		expr.put(DBColumn.class, EntryResolver::resolveColumn);
+		expr.put(NamedColumn.class, EntryResolver::resolveNamedColumn);
+		expr.put(DBFilter.class, EntryResolver::resolveFilter);
+		expr.put(DBOrder.class, EntryResolver::resolveOrder);
+		expr.put(JoinsClause.class, EntryResolver::resolveJoin);
+		expr.put(Partition.class, EntryResolver::resolvePartition);
+		expr.put(DBView.class, EntryResolver::resolveView);
+		expr.put(SingleQueryColumn.class, EntryResolver::resolveQueryColumn);
 		VAR_PARSERS = unmodifiableMap(expr);
 	}
 	

@@ -58,16 +58,4 @@ public interface ViewResource {
     default Partition latestEdit(){
     	return null;
     }
-
-    @Parameterized(parser = ArgsParser.class)
-    default ComparisonExpression elapsedTimeExpressions(String name) {
-        return switch (name) {
-            case "fastest" -> lt(1);
-            case "fast" -> ge(1).and(lt(3));
-            case "medium" -> ge(3).and(lt(5));
-            case "slow" -> ge(5).and(lt(10));
-            case "slowest" -> ge(10);
-            default -> null;
-        };
-    }
 }
