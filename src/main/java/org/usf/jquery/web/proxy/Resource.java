@@ -1,5 +1,7 @@
 package org.usf.jquery.web.proxy;
 
+import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -34,16 +36,19 @@ public interface Resource {
 		}
 	}
 	
-	static Method findMethod(Object proxy, String name) {
-		var methods = proxy.getClass().getMethods();
+	static Method findMethod(Class<?> clazz, String name, boolean isStatic) {
+		var methods = clazz.getMethods();
 		Method res = null;
 		for(var m : methods) {
-			var ann = m.getAnnotation(Entry.class); //entry annotation has higher priority than method name
-			if(nonNull(ann) && ann.value().equals(name)) {
-				return m;	
-			}
-			if(m.getName().equals(name)) {
-				res = m; //keep looking for entry annotation, method name is fallback
+			var mod = m.getModifiers();
+			if(isPublic(mod) && (isStatic(m.getModifiers()) == isStatic)) {
+				var ann = m.getAnnotation(Entry.class); //entry annotation has higher priority than method name
+				if(nonNull(ann) && ann.value().equals(name)) {
+					return m;	
+				}
+				if(m.getName().equals(name)) {
+					res = m; //keep searching for entry annotation but remember method with matching name
+				}
 			}
 		}
 		return res;

@@ -188,7 +188,7 @@ public final class EntryResolver {
 	static DBColumn resolveColumn(EntryChainIterator itr, QueryContext ctx) {
 		var res = lookupDeclaredResource(itr, DBColumn.class, ctx, (v, e)->{ 
 			if("count".equals(e.getValue())) {
-				return Optional.of(invokeOperator(e, e.hasArgs() ? null : allColumns(v), ctx));
+				return Optional.of(invokeOperator(e.getValue(), e.hasArgs() ? null : allColumns(v), e.getArgs(), ctx));
 			}
 			return empty();
 		}); //column or criteria resource
@@ -222,13 +222,14 @@ public final class EntryResolver {
 		var col = res;
 		while(itr.hasNext()) {
 			var entry = itr.next();
-			var tmp = invokeOperator(entry, col, ctx);
+			var args = entry.hasArgs() ? entry.getArgs() : outArgs;
+			var tmp = invokeOperator(entry.getValue(), col, args, ctx);
 			if(isNull(tmp)) {
-				tmp = invokeComparator(entry, col, ctx);
+				tmp = invokeComparator(entry.getValue(), col, args, ctx);
 			}
-			if(isNull(tmp)) {
-				var exp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, entry.hasArgs() ? entry.getArgs() : outArgs);
-				tmp = exp.map(res::filter).orElse(null); //TODO expression(column, arg1, arg2, ..) + column is null
+			if(isNull(tmp) && nonNull(col)) {
+				tmp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, args)
+						.map(res::filter).orElse(null);
 			}
 			if(isNull(tmp)) {
 				break;
@@ -241,17 +242,19 @@ public final class EntryResolver {
 		return col;
 	}
 
-	static DBColumn invokeOperator(EntryChain entry, Object pre, QueryContext ctx) {
-		var opr = lookup(Operator.class, TypedOperator.class, entry.getValue()); //count !?
+	static DBColumn invokeOperator(String name, Object col, EntryChain[] args, QueryContext ctx) {
+		var opr = ctx.lookupSchemaResource(name, TypedOperator.class, args) //check declared operator first, then static resource
+				.orElseGet(()-> lookup(Operator.class, TypedOperator.class, name));
 		return nonNull(opr) 
-				? opr.operation(resolveArgs(opr.getParameterSet(), pre, entry.getArgs(), ctx))
+				? opr.operation(resolveArgs(opr.getParameterSet(), col, args, ctx))
 				: null;
 	}
 	
-	static DBFilter invokeComparator(EntryChain entry, Object pre, QueryContext ctx) {
-		var cmp = lookup(Comparator.class, TypedComparator.class, entry.getValue());
+	static DBFilter invokeComparator(String name, Object col, EntryChain[] args, QueryContext ctx) {
+		var cmp = ctx.lookupSchemaResource(name, TypedComparator.class, args) //check declared comparator first, then static resource
+				.orElseGet(()-> lookup(Comparator.class, TypedComparator.class, name));
 		return nonNull(cmp) 
-			? cmp.filter(resolveArgs(cmp.getParameterSet(), pre, entry.getArgs(), ctx))
+			? cmp.filter(resolveArgs(cmp.getParameterSet(), col, args, ctx))
 			: null;
 	}
 	
@@ -260,7 +263,7 @@ public final class EntryResolver {
 			var mth = clazz.getMethod(name); //no parameter
 			if(nonNull(mth)) {
 				var mod = mth.getModifiers();
-				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isStatic(mod) && isPublic(mod)) {
+				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod) && isStatic(mod)) {
 					return type.cast(mth.invoke(null));
 				}
 			}

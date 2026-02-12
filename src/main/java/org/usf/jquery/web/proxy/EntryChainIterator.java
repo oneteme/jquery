@@ -42,5 +42,5 @@ public final class EntryChainIterator implements Iterator<EntryChain> {
 	public EntryChainIterator reset() {
 		this.cursor = head;
 		return this;
-	}
+	}	
 }

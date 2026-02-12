@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface Bind {
 
-	String value();
+	String value() default "";
 	
 	BindType type() default BindType.REF;
 	

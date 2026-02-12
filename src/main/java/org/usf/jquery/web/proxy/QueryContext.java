@@ -1,5 +1,7 @@
 package org.usf.jquery.web.proxy;
 
+import static java.lang.reflect.Proxy.getInvocationHandler;
+import static java.lang.reflect.Proxy.isProxyClass;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
@@ -15,6 +17,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.proxy.Resource.findMethod;
 import static org.usf.jquery.web.proxy.Resource.invokeResource;
 
+import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -41,15 +44,26 @@ public final class QueryContext {
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
-	private final DBSchema schema;
+	private final Object schema;
 	private final DBView defaultView;
 	private final Map<String, DBView> cache = new HashMap<>();
 	private final TypeParserRegistry registry;
 	
+	public static Class<?> getType(Object o){
+		var type = o.getClass(); 
+		if(isProxyClass(type)) { 
+			if(getInvocationHandler(o) instanceof SchemaInvocationHandler sh) { 
+				return sh.getSchemaType(); 
+			} 
+			throw new IllegalArgumentException("unsupported schema type " + type); 
+		}
+		return type;
+	}
+	
 	public Optional<DBView> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
 		var view = cache.get(name);
 		if(isNull(view)) {
-			var mth = findMethod(schema, name);
+			var mth = findMethod(getType(schema), name, false);
 			if(nonNull(mth) && DBView.class.isAssignableFrom(mth.getReturnType())) {
 				if(!allowParameterize) {
 					if(mth.getParameterCount() > 0) {
@@ -64,25 +78,26 @@ public final class QueryContext {
 	}
 
 	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, EntryChain... args) { 
-		var mth = findMethod(schema, name);
-		return nonNull(mth) && type.isAssignableFrom(mth.getReturnType()) 
-				? Optional.of(type.cast(invokeResource(mth, schema, args, this)))
-				: empty();
+		return invoke(schema, name, type, args);
 	}
 	
 	public <T> Optional<T> lookupViewResource(DBView view, String name, Class<T> type, EntryChain... args) { 
-		var mth = findMethod(view, name);
+		return invoke(view, name, type, args);
+	}
+	
+	 <T> Optional<T> invoke(Object obj, String name, Class<T> type, EntryChain... args){
+		var mth = findMethod(getType(schema), name, false);
 		return nonNull(mth) && type.isAssignableFrom(mth.getReturnType()) 
-				? Optional.of(type.cast(invokeResource(mth, view, args, this)))
+				? Optional.of(type.cast(invokeResource(mth, obj, args, this)))
 				: empty();
 	}
 	
 	void addView(String name, DBView view) {
 		cache.compute(name, (k,v)->{
-			if(v != view) {
-				throw new IllegalArgumentException("a view with name '" + name + "' already exists in context");
+			if(isNull(v) || v == view) { 
+				return view;
 			}
-			return view;
+			throw new IllegalArgumentException("a view with name '" + name + "' already exists in context");
 		});
 	}
 	
