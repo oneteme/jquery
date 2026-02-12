@@ -2,20 +2,19 @@ package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.newProxyInstance;
-import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
-import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.DBView.view;
-import static org.usf.jquery.web.proxy.ResourceUtils.lookupBindAnnotation;
-import static org.usf.jquery.web.proxy.ResourceUtils.lookupResourceAnnotation;
-import static org.usf.jquery.web.proxy.ViewInvocationHandler.validateViewResources;
+import static org.usf.jquery.web.proxy.ResourceScanner.scanMethods;
+import static org.usf.jquery.web.proxy.ResourceScanner.scanBinding;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 
-import org.usf.jquery.core.DBView;
+import javax.sql.DataSource;
+
 import org.usf.jquery.core.Product;
+import org.usf.jquery.web.spec.SchemaResource;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -32,9 +31,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SchemaInvocationHandler implements InvocationHandler {
 	
+	private final Class<?> schemaType;
 	private final String name;
 	private final Product product;
-	private final Class<?> schemaType;
+	private final DataSource ds;
 	
 	@Override
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
@@ -67,29 +67,13 @@ public final class SchemaInvocationHandler implements InvocationHandler {
 				new Class<?>[]{type}, new ViewInvocationHandler(view)));
 	}
 
-	static <T extends Resource> T createSchemaProxy(Class<T> clazz) {
-		var name = validateSchemaResources(clazz);
-		return clazz.cast(newProxyInstance(SchemaInvocationHandler.class.getClassLoader(), 
-				new Class<?>[]{clazz}, new SchemaInvocationHandler(name, null, clazz))); //TODO parse schema from annotation
-	}
-	
-	static String validateSchemaResources(Class<?> clazz) {
+	static <T extends SchemaResource> T createSchemaProxy(Class<T> clazz, DataSource ds) {
 		if(clazz.isInterface()) {
-			stream(clazz.getMethods()).forEach(mth->{
-				lookupBindAnnotation(mth, c->{
-					if(c == ViewResource.class) {
-						throw new IllegalArgumentException(mth.getName() + " must return a type that extends 'ViewResource.class'");
-					}
-					if(ViewResource.class.isAssignableFrom(c)) {
-						return t-> true; //REF|REQ|SQL
-					}
-					throw new IllegalArgumentException("illegal return type " + mth);
-				});
-				lookupResourceAnnotation(mth);
-				validateViewResources(mth.getReturnType());
-			});
-			return lookupBindAnnotation(clazz).map(Bind::value).filter(not(String::isEmpty)).orElse(null);
+			scanMethods(clazz.getMethods(), (t,c)-> c.isInterface()); // view or ComparisonExpression
+			var bind = scanBinding(clazz, false);
+			return clazz.cast(newProxyInstance(SchemaInvocationHandler.class.getClassLoader(), 
+					new Class<?>[]{clazz}, new SchemaInvocationHandler(clazz, nonNull(bind) ? bind.value() : null, null, ds)));
 		}
-		throw new IllegalArgumentException(clazz + " is not a interface");
-	}
+		throw new IllegalArgumentException("schema type must be an interface : " + clazz);
+	}	
 }

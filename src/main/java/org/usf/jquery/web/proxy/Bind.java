@@ -18,9 +18,11 @@ import java.lang.annotation.Target;
 @Retention(RUNTIME)
 public @interface Bind {
 
-	String value() default "";
+	String value();
 	
 	BindType type() default BindType.REF;
+	
+	//scope !?
 	
 	enum BindType {
 		REF, REQ, SQL;

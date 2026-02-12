@@ -49,7 +49,7 @@ public final class QueryContext {
 	private final Map<String, DBView> cache = new HashMap<>();
 	private final TypeParserRegistry registry;
 	
-	public static Class<?> getType(Object o){
+	public static Class<?> typeOf(Object o){
 		var type = o.getClass(); 
 		if(isProxyClass(type)) { 
 			if(getInvocationHandler(o) instanceof SchemaInvocationHandler sh) { 
@@ -63,7 +63,7 @@ public final class QueryContext {
 	public Optional<DBView> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
 		var view = cache.get(name);
 		if(isNull(view)) {
-			var mth = findMethod(getType(schema), name, false);
+			var mth = findMethod(typeOf(schema), name, false);
 			if(nonNull(mth) && DBView.class.isAssignableFrom(mth.getReturnType())) {
 				if(!allowParameterize) {
 					if(mth.getParameterCount() > 0) {
@@ -86,7 +86,7 @@ public final class QueryContext {
 	}
 	
 	 <T> Optional<T> invoke(Object obj, String name, Class<T> type, EntryChain... args){
-		var mth = findMethod(getType(schema), name, false);
+		var mth = findMethod(typeOf(schema), name, false);
 		return nonNull(mth) && type.isAssignableFrom(mth.getReturnType()) 
 				? Optional.of(type.cast(invokeResource(mth, obj, args, this)))
 				: empty();

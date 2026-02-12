@@ -11,7 +11,7 @@ import java.util.function.Function;
  *
  */
 @FunctionalInterface
-interface ArgTypeRef extends Function<Object[], JDBCType> {
+public interface ArgTypeRef extends Function<Object[], JDBCType> {
 
 	static ArgTypeRef firstArgJdbcType() {
 		return arr-> typeOf(requireAtLeastNArgs(1, arr, ArgTypeRef.class::getSimpleName)[0])

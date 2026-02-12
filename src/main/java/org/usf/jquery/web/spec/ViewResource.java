@@ -1,26 +1,24 @@
-package org.usf.jquery.web.proxy;
+package org.usf.jquery.web.spec;
 
-import static org.usf.jquery.core.ComparisonExpression.ge;
-import static org.usf.jquery.core.ComparisonExpression.lt;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
 import java.time.Instant;
 import java.time.LocalDate;
 
-import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
+import org.usf.jquery.web.proxy.Bind;
 import org.usf.jquery.web.proxy.Bind.BindType;
+import org.usf.jquery.web.proxy.Expose;
+import org.usf.jquery.web.proxy.Parameterized;
 import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
+import org.usf.jquery.web.proxy.Typed;
 
 public interface ViewResource {
     
-    DBView toView();
-
 	@Bind("va_loc")
     ViewColumn location(); 
 
@@ -35,7 +33,7 @@ public interface ViewResource {
 	@Bind("dh_end")
     ViewColumn end();
     
-    @Entry(value="toto", description="")
+    @Expose(identity="toto", description="")
     default NamedColumn elapsedtime(){
     	return start().epoch().minus(end().epoch()).as("elps");
     }
@@ -43,12 +41,12 @@ public interface ViewResource {
     @Bind(value="start.epoch.minus(end.epoch)", type = BindType.REQ)
     NamedColumn elapsedtime2();
     
-    @Entry(value="", description="")
-    default DBFilter active(){
+    @Expose(description="")
+    default DBFilter active(LocalDate date) {
     	return null;
     }
 
-    @Entry(value="rattachement", description="", tagname = "rattach")
+    @Expose(identity="rattachement", description="")
     @Parameterized(parser = ArgsParser.class)
     default JoinsClause ratt(LocalDate o1, Instant o2) {
     	return null;

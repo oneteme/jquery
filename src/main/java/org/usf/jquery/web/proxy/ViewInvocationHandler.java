@@ -1,15 +1,13 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Modifier.isAbstract;
-import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.DBObject.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
-import static org.usf.jquery.web.proxy.ResourceUtils.lookupBindAnnotation;
-import static org.usf.jquery.web.proxy.ResourceUtils.lookupResourceAnnotation;
+import static org.usf.jquery.web.proxy.ResourceScanner.scanMethods;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -20,10 +18,11 @@ import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
-import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.web.ColumnMetadata;
+import org.usf.jquery.web.spec.ViewResource;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -45,12 +44,12 @@ final class ViewInvocationHandler implements InvocationHandler {
 	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
 		if(method.isDefault()) {
 			var obj = InvocationHandler.invokeDefault(proxy, method, args);
-			return obj instanceof DBColumn col ? mapColumn(method, col) : obj; //map column only
+			return obj instanceof DBColumn col ? decorate(method, col) : obj; //map column only
 		}
 		if(isAbstract(method.getModifiers())) {
 			var bnd = method.getAnnotation(Bind.class); //required
 			if(nonNull(bnd) && !bnd.value().isEmpty()) {
-				return buildResource(method, bnd, args);
+				return resolveBinding(method, bnd, args);
 			}
 			throw new IllegalArgumentException("missing decorator @Bind on " + method);
 		}
@@ -62,10 +61,10 @@ final class ViewInvocationHandler implements InvocationHandler {
 		};
 	}
 	
-	DBColumn mapColumn(Method method, DBColumn col) {
-		var rsr = method.getAnnotation(Entry.class); //exposed resource
-		if(nonNull(rsr) && !rsr.tagname().isEmpty()) {
-			col = col.as(rsr.tagname());
+	DBColumn decorate(Method method, DBColumn col) {
+		var rsr = method.getAnnotation(Expose.class); //exposed resource
+		if(nonNull(rsr) && !rsr.alias().isEmpty()) {
+			col = col.as(rsr.alias());
 		}
 		var typ = method.getAnnotation(Typed.class); //abstract & default method
 		if(nonNull(typ)) {
@@ -74,22 +73,22 @@ final class ViewInvocationHandler implements InvocationHandler {
 		return col;
 	}
 	
-	Object buildResource(Method method, Bind bind, Object[] args) {
+	Object resolveBinding(Method method, Bind bind, Object[] args) {
 		var type = method.getReturnType();
 		if(DBColumn.class.isAssignableFrom(type)) {
 			return buildColumn(method, bind, args);
 		}
 		if(DBFilter.class.isAssignableFrom(type)) { //filter first (extends Column)
-			return buildFilter(method, bind, args);
+			throw new UnsupportedOperationException("not implemented");
 		}
-		if(ViewJoin[].class.isAssignableFrom(type)) {
-			return buildJoin(method, bind, args);
+		if(JoinsClause.class.isAssignableFrom(type)) {
+			throw new UnsupportedOperationException("not implemented");
 		}
 		if(Partition.class.isAssignableFrom(type)) {
-			return buildPartition(method, bind, args);
+			throw new UnsupportedOperationException("not implemented");
 		}
 		if(DBOrder.class.isAssignableFrom(type)) {
-			return buildOrder(method, bind, args);
+			throw new UnsupportedOperationException("not implemented");
 		}
 		throw new IllegalStateException("unsupported method type " + method);
 	}
@@ -99,8 +98,8 @@ final class ViewInvocationHandler implements InvocationHandler {
 				.map(Typed::value)
 				.or(()-> ofNullable(metadata.get(bind.value())).map(ColumnMetadata::getType))
 				.orElse(null);
-		var tag = ofNullable(method.getAnnotation(Entry.class))
-				.map(Entry::tagname)
+		var tag = ofNullable(method.getAnnotation(Expose.class))
+				.map(Expose::alias)
 				.filter(not(String::isEmpty))
 				.orElseGet(method::getName);
 		return switch (bind.type()) {
@@ -108,44 +107,22 @@ final class ViewInvocationHandler implements InvocationHandler {
 		default  -> throw new UnsupportedOperationException("not implemented");
 		};
 	}
-	
-	DBFilter buildFilter(Method method, Bind bind, Object[] args) { 
-		throw new UnsupportedOperationException("not implemented");
-	}
 
-	ViewJoin[] buildJoin(Method method, Bind bind, Object[] args) { 
-		throw new UnsupportedOperationException("not implemented");
-	}
-
-	Partition buildPartition(Method method, Bind bind, Object[] args) {
-		throw new UnsupportedOperationException("not implemented");
-	}
-	
-	Partition buildOrder(Method method, Bind bind, Object[] args) { 
-		throw new UnsupportedOperationException("not implemented");
-	}
-	
-	static void validateViewResources(Class<?> clazz) {
+	static <T extends ViewResource> T bind(Class<T> clazz) {
 		if(clazz.isInterface()) {
-			stream(clazz.getMethods()).forEach(mth->{
-				lookupBindAnnotation(mth, c->{
-					if(DBColumn.class.isAssignableFrom(c)) {
-						return t-> true;
-					}
-					if(c == DBFilter.class || c == ViewJoin[].class || c == Partition.class) {
-						return t-> t != REF;
-					}
-					throw new IllegalArgumentException("illegal type " + c);
-				});
-				lookupResourceAnnotation(mth);
-				var type = mth.getReturnType();
-				if(DBColumn.class.isAssignableFrom(type)) {
-					//validateColumnResource
+			scanMethods(clazz.getMethods(), (t,c)-> {
+				if(t == REF) {
+					return c == ViewColumn.class;
+				}
+				else {
+					return DBColumn.class.isAssignableFrom(c) || 
+							DBFilter.class.isAssignableFrom(c) || 
+							c == DBOrder.class || 
+							c == Partition.class||
+							c == JoinsClause.class ;
 				}
 			});
 		}
-		else {
-			throw new IllegalArgumentException(clazz + " is not a interface");
-		}
+		throw new IllegalArgumentException("view must be an interface : " + clazz);
 	}
 }

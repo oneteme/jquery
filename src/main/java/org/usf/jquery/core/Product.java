@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public enum Product {
 
-	POSTGRESQL, MYSQL, ORACLE, SQLSERVER, 
+	POSTGRESQL, MYSQL, ORACLE, SQLSERVER, DEFAULT, 
 	
 	TERADATA {
 		@Override

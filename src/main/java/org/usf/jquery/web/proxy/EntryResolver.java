@@ -75,7 +75,18 @@ public final class EntryResolver {
 	}
 	
 	public static DBFilter resolveFilter(EntryChain entry, QueryContext ctx, EntryChain... outerArgs) {
-		return null;
+		try {
+			var itr = entry.iterator();
+			var col = resolveColumn(itr, ctx, outerArgs);
+			assertLastEntry(itr, false);
+			if(col instanceof DBFilter filter) { 
+				return filter; 
+			} 
+			throw new EntryParseException(entry.getValue() + " does not resolve to a filter");
+		}
+		catch (Exception e) {
+			throw new EntryParseException("invalid filter expression : " + entry.getValue(), e);
+		}
 	}
 	
 	public static DBOrder resolveOrder(EntryChain entry, QueryContext ctx) {
@@ -140,11 +151,7 @@ public final class EntryResolver {
 	
 	static QueryView parseView(EntryChainIterator itr, QueryContext ctx) {
 		//select().filter().order()...
-		return null;
-	}
-	
-	static DBView parseFilter(EntryChainIterator itr, QueryContext ctx) {
-		return null;
+		throw new UnsupportedOperationException("not implemented yet");
 	}
 	
 	static DBOrder parseOrder(EntryChainIterator itr, QueryContext ctx) {
@@ -181,18 +188,17 @@ public final class EntryResolver {
 	}
 	
 	static Partition parsePartition(EntryChainIterator itr, QueryContext ctx) {
-		
-		return null;
+		throw new UnsupportedOperationException("not implemented yet");
 	}
 	
-	static DBColumn resolveColumn(EntryChainIterator itr, QueryContext ctx) {
+	static DBColumn resolveColumn(EntryChainIterator itr, QueryContext ctx, EntryChain... outArgs) {
 		var res = lookupDeclaredResource(itr, DBColumn.class, ctx, (v, e)->{ 
 			if("count".equals(e.getValue())) {
-				return Optional.of(invokeOperator(e.getValue(), e.hasArgs() ? null : allColumns(v), e.getArgs(), ctx));
+				return Optional.of(invokeOperator(e.hasArgs() ? null : allColumns(v), e.getValue(), e.getArgs(), ctx));
 			}
 			return empty();
 		}); //column or criteria resource
-		var col = chainResource(itr, res.orElse(null), ctx);
+		var col = chainResource(itr, res.orElse(null), ctx, outArgs);
 		if(nonNull(col)) {
 			return col;
 		}
@@ -218,31 +224,33 @@ public final class EntryResolver {
 		return res.isPresent() || isNull(fn) ? res : fn.apply(ctx.getDefaultView(), itr.get());
 	}
 	
+	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
+	
 	static DBColumn chainResource(EntryChainIterator itr, DBColumn res, QueryContext ctx, EntryChain... outArgs) {
 		var col = res;
 		while(itr.hasNext()) {
 			var entry = itr.next();
-			var args = entry.hasArgs() ? entry.getArgs() : outArgs;
-			var tmp = invokeOperator(entry.getValue(), col, args, ctx);
+			var tmp = invokeOperator(col, entry.getValue(), entry.getArgs(), ctx);
 			if(isNull(tmp)) {
-				tmp = invokeComparator(entry.getValue(), col, args, ctx);
+				var args = itr.hasNext() || nonNull(entry.getArgs()) ? entry.getArgs() : outArgs; //do not use entry.getArgs()
+				tmp = invokeComparator(col, entry.getValue(), args, ctx);
+				if(isNull(tmp) && nonNull(col)) {
+					tmp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, args)
+							.map(res::filter).orElse(null);
+				}
 			}
-			if(isNull(tmp) && nonNull(col)) {
-				tmp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, args)
-						.map(res::filter).orElse(null);
-			}
-			if(isNull(tmp)) {
-				break;
-			}
-			else {
+			if(nonNull(tmp)) {
 				itr.advance();
 				col = tmp;
+			}
+			else {
+				break;
 			}
 		}
 		return col;
 	}
 
-	static DBColumn invokeOperator(String name, Object col, EntryChain[] args, QueryContext ctx) {
+	static DBColumn invokeOperator(Object col, String name, EntryChain[] args, QueryContext ctx) {
 		var opr = ctx.lookupSchemaResource(name, TypedOperator.class, args) //check declared operator first, then static resource
 				.orElseGet(()-> lookup(Operator.class, TypedOperator.class, name));
 		return nonNull(opr) 
@@ -250,7 +258,7 @@ public final class EntryResolver {
 				: null;
 	}
 	
-	static DBFilter invokeComparator(String name, Object col, EntryChain[] args, QueryContext ctx) {
+	static DBFilter invokeComparator(Object col, String name, EntryChain[] args, QueryContext ctx) {
 		var cmp = ctx.lookupSchemaResource(name, TypedComparator.class, args) //check declared comparator first, then static resource
 				.orElseGet(()-> lookup(Comparator.class, TypedComparator.class, name));
 		return nonNull(cmp) 

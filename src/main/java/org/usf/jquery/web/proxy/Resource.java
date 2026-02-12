@@ -42,8 +42,8 @@ public interface Resource {
 		for(var m : methods) {
 			var mod = m.getModifiers();
 			if(isPublic(mod) && (isStatic(m.getModifiers()) == isStatic)) {
-				var ann = m.getAnnotation(Entry.class); //entry annotation has higher priority than method name
-				if(nonNull(ann) && ann.value().equals(name)) {
+				var ann = m.getAnnotation(Expose.class); //entry annotation has higher priority than method name
+				if(nonNull(ann) && ann.value() && ann.identity().equals(name)) {
 					return m;	
 				}
 				if(m.getName().equals(name)) {
