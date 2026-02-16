@@ -5,7 +5,7 @@ import java.util.function.Consumer;
 import lombok.RequiredArgsConstructor;
 
 @RequiredArgsConstructor
-public final class JoinsClause implements DBObject { //TODO : rename to JoinsClause or something else
+public final class JoinsClause implements DBObject {
 
 	private final ViewJoin[] joins;
 

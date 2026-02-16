@@ -7,7 +7,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.DBObject.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
-import static org.usf.jquery.web.proxy.ResourceScanner.scanMethods;
+import static org.usf.jquery.web.proxy.ResourceScanner.scanResources;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -110,7 +110,7 @@ final class ViewInvocationHandler implements InvocationHandler {
 
 	static <T extends ViewResource> T bind(Class<T> clazz) {
 		if(clazz.isInterface()) {
-			scanMethods(clazz.getMethods(), (t,c)-> {
+			scanResources(clazz.getMethods(), (t,c)-> {
 				if(t == REF) {
 					return c == ViewColumn.class;
 				}
@@ -119,7 +119,7 @@ final class ViewInvocationHandler implements InvocationHandler {
 							DBFilter.class.isAssignableFrom(c) || 
 							c == DBOrder.class || 
 							c == Partition.class||
-							c == JoinsClause.class ;
+							c == JoinsClause.class;
 				}
 			});
 		}

@@ -22,11 +22,11 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResourceScanner {
 
-	public static void scanMethods(Method[] methods, BiPredicate<BindType, Class<?>> matcher) {
+	public static void scanResources(Method[] methods, BiPredicate<BindType, Class<?>> matcher) {
 		var resources = new HashMap<String, Method> ();
 		stream(methods)
 		.filter(m-> !isStatic(m.getModifiers()))
-		.forEach(m-> resources.compute(scanMethod(m, matcher), (k,v)->{ 
+		.forEach(m-> resources.compute(validateResourceIdentifier(m, matcher), (k,v)->{ 
 			if(isNull(v)) { 
 				return m; 
 			} 
@@ -34,7 +34,7 @@ public final class ResourceScanner {
 		}));
 	}
 	
-	public static String scanMethod(Method m, BiPredicate<BindType, Class<?>> matcher) {
+	public static String validateResourceIdentifier(Method m, BiPredicate<BindType, Class<?>> matcher) {
 		if(isAbstract(m.getModifiers())) {
 			var bnd = scanBinding(m, true);
 			if(m.getParameterCount() > 0) { 
@@ -47,21 +47,21 @@ public final class ResourceScanner {
 		else if(nonNull(m.getAnnotation(Bind.class))) { //bind default method 
 			throw new IllegalArgumentException("cannot bind defaut medthod");
 		}
-		var name = m.getName();
+		var id = m.getName();
 		var exps = m.getAnnotation(Expose.class); 
 		if(nonNull(exps) && !exps.identity().isEmpty()) {
 			if(!exps.identity().matches("[a-zA-Z]\\w*")) { 
 				throw new IllegalArgumentException("invalid @Expose.id=["+exps.identity()+"] on " + m); 
 			}
-			name = exps.identity();
+			id = exps.identity();
 		}
-		return name;
+		return id;
 	}
 	
 	public static Bind scanBinding(AnnotatedElement elem, boolean required){
 		var bnd = elem.getAnnotation(Bind.class);
 		if(nonNull(bnd)) {
-			if(bnd.type() == REF && !bnd.value().matches("\\w*")) {
+			if(bnd.type() == REF && !bnd.value().matches("\\w+")) {
 				throw new IllegalArgumentException("invalid @Bind.value=["+bnd.value()+"] on " + elem); 
 			}	
 			return bnd;

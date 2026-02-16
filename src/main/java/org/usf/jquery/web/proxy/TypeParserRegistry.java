@@ -33,6 +33,11 @@ import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.SingleQueryColumn;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 public final class TypeParserRegistry {
 	
 	private static final Map<Class<?>, SimpleParser<?>> VAL_PARSERS;
@@ -60,7 +65,7 @@ public final class TypeParserRegistry {
 		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) {
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
-		return (SimpleParser<T>)p;
+		return (SimpleParser<T>) p;
 	}
 	
 	@SuppressWarnings("unchecked")

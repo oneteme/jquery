@@ -435,7 +435,7 @@ public interface Operator extends DBProcessor {
 	}
 	
 	static TypedOperator ctimestamp() {
-		return new TypedOperator(TIMESTAMP_WITH_TIMEZONE, constant("CURRENT_TIMESTAMP"));
+		return new TypedOperator(TIMESTAMP, constant("CURRENT_TIMESTAMP"));
 	}
 
 	static ArithmeticOperator operator(String symbol) {

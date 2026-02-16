@@ -11,6 +11,7 @@ import static org.usf.jquery.core.ViewJoin.join;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 
 import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparisonExpression;
@@ -42,7 +43,7 @@ public final class EntryResolver {
 			var itr = entry.iterator();
 			var view = resolveView(itr, ctx);
 			assertLastEntry(itr, true);
-			ctx.addView(requireTag(itr.get()), view);
+			ctx.declareView(requireTag(itr.get()), view);
 			return view;
 		}
 		catch (Exception e) {
@@ -144,7 +145,9 @@ public final class EntryResolver {
 		var entry = itr.get();
 		var view = ctx.lookupView(true, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
-			return itr.hasNext() ? parseView(itr.advance(), ctx.subContext(view.get())) : view.get(); //view.select().filter()..
+			return itr.hasNext() 
+					? parseView(itr.advance(), ctx.subContext(view.get()))  //view.select().filter()..
+					: view.get();
 		}
 		throw new NoSuchElementException("view resource not found : " + entry.getValue());
 	}
@@ -172,23 +175,47 @@ public final class EntryResolver {
 	}
 	
 	static JoinsClause parseJoin(EntryChainIterator itr, QueryContext ctx) {
+		Predicate<String> isJoin = s-> s.matches("(inner|left|right|full|cross)Join");
 		var entry = itr.get();
-		if(nonNull(entry.getArgs()) && entry.getArgs().length == 2 && entry.getValue().matches("(inner|left|right|full|cross)Join")) {
+		if(!isJoin.test(entry.getValue())) {
+			var view = resolveView(itr, ctx);
+			if(entry.hasNext()) {
+				entry = itr.next();
+				if(!isJoin.test(entry.getValue())) {
+					throw new EntryParseException("invalid join operator : " + entry.getValue());
+				}
+				ctx = ctx.map(view);
+			}
+			else {
+				throw new EntryParseException("join operator is missing");
+			}
+		}
+		if(entry.hasArgs() && entry.getArgs().length == 2) {
+			assertLastEntry(itr, false);
 			try {
 				var type = JoinType.valueOf(entry.getValue().substring(0, entry.getValue().length()-4).toUpperCase());
-				var view = resolveView(entry.getArgs()[0], ctx);
+				itr = entry.getArgs()[0].iterator();
+				var view = resolveView(itr, ctx);
+				assertLastEntry(itr, false);
 				var filter = resolveFilter(entry.getArgs()[1], ctx);
 				return JoinsClause.of(join(type, view, filter));
 			}
 			catch (Exception e) {
-				throw new EntryParseException("invalid join expression : ", e); //head !?
+				throw new EntryParseException("cannot parse join arguments ", e);
 			}
 		}
-		throw new EntryParseException("invalid join expression : "); //head !?
+		throw new EntryParseException(entry.getValue() + " operator must have exactly 2 arguments");
 	}
 	
 	static Partition parsePartition(EntryChainIterator itr, QueryContext ctx) {
-		throw new UnsupportedOperationException("not implemented yet");
+		var entry = itr.get();
+		do {
+			switch (entry.getValue()) {
+			case "partition":
+			case "order":
+			default: throw new IllegalArgumentException("invalid partition operator : " + entry.getValue());
+			}
+		} while(itr.hasNext());
 	}
 	
 	static DBColumn resolveColumn(EntryChainIterator itr, QueryContext ctx, EntryChain... outArgs) {

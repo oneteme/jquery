@@ -5,8 +5,8 @@ import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.DBView.view;
-import static org.usf.jquery.web.proxy.ResourceScanner.scanMethods;
 import static org.usf.jquery.web.proxy.ResourceScanner.scanBinding;
+import static org.usf.jquery.web.proxy.ResourceScanner.scanResources;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -69,8 +69,8 @@ public final class SchemaInvocationHandler implements InvocationHandler {
 
 	static <T extends SchemaResource> T createSchemaProxy(Class<T> clazz, DataSource ds) {
 		if(clazz.isInterface()) {
-			scanMethods(clazz.getMethods(), (t,c)-> c.isInterface()); // view or ComparisonExpression
 			var bind = scanBinding(clazz, false);
+			scanResources(clazz.getMethods(), (t,c)-> c.isInterface()); // view or ComparisonExpression
 			return clazz.cast(newProxyInstance(SchemaInvocationHandler.class.getClassLoader(), 
 					new Class<?>[]{clazz}, new SchemaInvocationHandler(clazz, nonNull(bind) ? bind.value() : null, null, ds)));
 		}

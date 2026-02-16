@@ -17,7 +17,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.proxy.Resource.findMethod;
 import static org.usf.jquery.web.proxy.Resource.invokeResource;
 
-import java.lang.reflect.Proxy;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,18 +45,11 @@ public final class QueryContext {
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
 	private final Object schema;
 	private final DBView defaultView;
-	private final Map<String, DBView> cache = new HashMap<>();
+	private final Map<String, DBView> cache;
 	private final TypeParserRegistry registry;
-	
-	public static Class<?> typeOf(Object o){
-		var type = o.getClass(); 
-		if(isProxyClass(type)) { 
-			if(getInvocationHandler(o) instanceof SchemaInvocationHandler sh) { 
-				return sh.getSchemaType(); 
-			} 
-			throw new IllegalArgumentException("unsupported schema type " + type); 
-		}
-		return type;
+
+	public QueryContext(Object schema, DBView defaultView, TypeParserRegistry registry) {
+		this(schema, defaultView, new HashMap<>(), registry);
 	}
 	
 	public Optional<DBView> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
@@ -69,7 +61,7 @@ public final class QueryContext {
 					if(mth.getParameterCount() > 0) {
 						throw new IllegalArgumentException("view resource '" + mth.getName() + "' expects parameters, but parameterization is not allowed in this context");
 					}
-					addView(name, view);
+					declareView(name, view);
 				} //else explicit view add
 				view = DBView.class.cast(invokeResource(mth, schema, args, this));
 			}
@@ -92,9 +84,9 @@ public final class QueryContext {
 				: empty();
 	}
 	
-	void addView(String name, DBView view) {
+	void declareView(String name, DBView view) {
 		cache.compute(name, (k,v)->{
-			if(isNull(v) || v == view) { 
+			if(isNull(v) || v == view) {
 				return view;
 			}
 			throw new IllegalArgumentException("a view with name '" + name + "' already exists in context");
@@ -162,12 +154,29 @@ public final class QueryContext {
 		}
 		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
 	}
+
+	public QueryContext subContext(DBView view) {
+		return new QueryContext(schema, view, registry);
+	}
+	
+	public QueryContext map(DBView view) { //inherit cache
+		return new QueryContext(schema, view, cache, registry);
+	}
+	
+	static Class<?> typeOf(Object o){
+		var type = o.getClass(); 
+		if(isProxyClass(type)) { 
+			if(getInvocationHandler(o) instanceof SchemaInvocationHandler sh) { 
+				type = sh.getSchemaType(); 
+			}
+			else {
+				throw new IllegalArgumentException("unsupported schema type " + type); 
+			}
+		}
+		return type;
+	}
 	
 	static EntryParseException cannotParseEntryException(Class<?> type, String v) {
 		return new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + v);
-	}
-	
-	public QueryContext subContext(DBView view) {
-		return new QueryContext(schema, view, registry);
 	}
 }
