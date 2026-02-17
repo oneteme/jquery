@@ -1,7 +1,11 @@
 package org.usf.jquery.web.spec;
 
+import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -56,4 +60,7 @@ public interface ViewResource {
     default Partition latestEdit(){
     	return null;
     }
+
+	Method resourceMethod(String name, Class<?> type);
+    
 }

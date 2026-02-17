@@ -4,21 +4,20 @@ import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.DBView.view;
+import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.web.proxy.ResourceScanner.scanBinding;
-import static org.usf.jquery.web.proxy.ResourceScanner.scanResources;
+import static org.usf.jquery.web.proxy.ResourceScanner.scanExposedResources;
+import static org.usf.jquery.web.proxy.ViewInvocationHandler.createViewHandler;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
+import java.util.Map;
+import java.util.Map.Entry;
 
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.Product;
-import org.usf.jquery.web.spec.SchemaResource;
 
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -28,52 +27,52 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-@RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class SchemaInvocationHandler implements InvocationHandler {
+public final class SchemaInvocationHandler extends ResourceInvokerHandler {
 	
-	private final Class<?> schemaType;
 	private final String name;
-	private final Product product;
+	private final Map<String, ? extends Resource> subHandlers;
 	private final DataSource ds;
+	private final Product product;
+	
+	public SchemaInvocationHandler(String name, Map<String, Method> exposedMethods, Map<String, ? extends Resource> subHandlers, DataSource ds, Product product) {
+		super(exposedMethods);
+		this.subHandlers = subHandlers;
+		this.name = name;
+		this.ds = ds;
+		this.product = product;
+	}
 	
 	@Override
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		if(method.isDefault()) {
-			return InvocationHandler.invokeDefault(proxy, method, args);
+	Object invokeAbstractMethod(Object proxy, Bind bind, Method method, Object[] args) { //bind method must return a resource handler
+		var handler = subHandlers.get(method.getName());
+		if(nonNull(handler)) {
+			return handler;	
 		}
-		if(isAbstract(method.getModifiers())) {
-			var bind = method.getAnnotation(Bind.class); //required
-			if(nonNull(bind) && !bind.value().isEmpty()) {
-				return buildView(method, bind, args);
-			}
-			throw new IllegalArgumentException("missing decorator @Bind on " + method);
-		}
-		return switch (method.getName()) {
-		case "equals"-> proxy == args[0];
-		case "hashCode"-> hash(name);
-		case "toString"-> name;
-		default -> throw new IllegalStateException("unexpected method invocation " + method);
-		};
+		throw new IllegalStateException("no resource handler found for " + method);
+	}
+	
+	@Override
+	int invokeHashCode(Object proxy, Object[] args) {
+		return hash(name);
+	}
+	
+	@Override
+	String invokeToString(Object proxy, Object[] args) {
+		return name;
 	}
 
-	Object buildView(Method method, Bind bind, Object[] args) {
-		var type = method.getReturnType();
-		var view = switch(bind.type()) {
-		case REF-> view(bind.value(), name);
-		//case REQ-> evalView(parseEntry(bind.value()), null)
-		default -> throw new UnsupportedOperationException("not implemented");
-		};
-		return (newProxyInstance(ViewInvocationHandler.class.getClassLoader(), 
-				new Class<?>[]{type}, new ViewInvocationHandler(view)));
-	}
-
-	static <T extends SchemaResource> T createSchemaProxy(Class<T> clazz, DataSource ds) {
+	@SuppressWarnings("unchecked")
+	static <T extends Resource> T createSchemaHandler(Class<T> clazz, DataSource ds) {
 		if(clazz.isInterface()) {
-			var bind = scanBinding(clazz, false);
-			scanResources(clazz.getMethods(), (t,c)-> c.isInterface()); // view or ComparisonExpression
-			return clazz.cast(newProxyInstance(SchemaInvocationHandler.class.getClassLoader(), 
-					new Class<?>[]{clazz}, new SchemaInvocationHandler(clazz, nonNull(bind) ? bind.value() : null, null, ds)));
+			var bnd = scanBinding(clazz, false);
+			var map = scanExposedResources(clazz.getMethods(), (t,c)-> Resource.class.isAssignableFrom(c));
+			var sub = map.entrySet()
+					.stream()
+					.filter(e-> isAbstract(e.getValue().getReturnType().getModifiers())) //only abstract method can be binded to sub handler
+					.collect(toMap(Entry::getKey, e-> createViewHandler((Class<? extends Resource>)e.getValue().getReturnType(), scanBinding(e.getValue(), true))));
+			return clazz.cast(newProxyInstance(SchemaInvocationHandler.class.getClassLoader(), new Class<?>[]{clazz}, 
+					new SchemaInvocationHandler(nonNull(bnd) ? bnd.value() : null, map, sub, ds, null)));
 		}
-		throw new IllegalArgumentException("schema type must be an interface : " + clazz);
-	}	
+		throw new IllegalArgumentException("schema must be an interface : " + clazz);
+	}
 }

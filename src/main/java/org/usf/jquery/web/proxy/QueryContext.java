@@ -1,7 +1,5 @@
 package org.usf.jquery.web.proxy;
 
-import static java.lang.reflect.Proxy.getInvocationHandler;
-import static java.lang.reflect.Proxy.isProxyClass;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
@@ -14,7 +12,6 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.proxy.Resource.findMethod;
 import static org.usf.jquery.web.proxy.Resource.invokeResource;
 
 import java.util.Arrays;
@@ -25,7 +22,6 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.QueryView;
@@ -43,27 +39,25 @@ public final class QueryContext {
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
-	private final Object schema;
-	private final DBView defaultView;
-	private final Map<String, DBView> cache;
+	private final Resource schema;
+	private final Resource defaultView;
+	private final Map<String, Resource> cache;
 	private final TypeParserRegistry registry;
 
-	public QueryContext(Object schema, DBView defaultView, TypeParserRegistry registry) {
+	public QueryContext(Resource schema, Resource defaultView, TypeParserRegistry registry) {
 		this(schema, defaultView, new HashMap<>(), registry);
 	}
 	
-	public Optional<DBView> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
+	public Optional<Resource> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
 		var view = cache.get(name);
 		if(isNull(view)) {
-			var mth = findMethod(typeOf(schema), name, false);
-			if(nonNull(mth) && DBView.class.isAssignableFrom(mth.getReturnType())) {
-				if(!allowParameterize) {
-					if(mth.getParameterCount() > 0) {
-						throw new IllegalArgumentException("view resource '" + mth.getName() + "' expects parameters, but parameterization is not allowed in this context");
-					}
-					declareView(name, view);
+			var mth = schema.lookupMethod(name, Resource.class);
+			if(nonNull(mth)) {
+				if(!allowParameterize && mth.getParameterCount() > 0) {
+					throw new IllegalArgumentException("view resource '" + mth.getName() + "' expects parameters, but parameterization is not allowed in this context");
 				} //else explicit view add
-				view = DBView.class.cast(invokeResource(mth, schema, args, this));
+				view = Resource.class.cast(invokeResource(mth, schema, args, this));
+				declareView(name, view);
 			}
 		}
 		return ofNullable(view);
@@ -73,18 +67,18 @@ public final class QueryContext {
 		return invoke(schema, name, type, args);
 	}
 	
-	public <T> Optional<T> lookupViewResource(DBView view, String name, Class<T> type, EntryChain... args) { 
+	public <T> Optional<T> lookupViewResource(Resource view, String name, Class<T> type, EntryChain... args) { 
 		return invoke(view, name, type, args);
 	}
 	
 	 <T> Optional<T> invoke(Object obj, String name, Class<T> type, EntryChain... args){
-		var mth = findMethod(typeOf(schema), name, false);
-		return nonNull(mth) && type.isAssignableFrom(mth.getReturnType()) 
+		var mth = schema.lookupMethod(name, type);
+		return nonNull(mth)
 				? Optional.of(type.cast(invokeResource(mth, obj, args, this)))
 				: empty();
 	}
 	
-	void declareView(String name, DBView view) {
+	void declareView(String name, Resource view) {
 		cache.compute(name, (k,v)->{
 			if(isNull(v) || v == view) {
 				return view;
@@ -155,27 +149,14 @@ public final class QueryContext {
 		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
 	}
 
-	public QueryContext subContext(DBView view) {
-		return new QueryContext(schema, view, registry);
+	public QueryContext subContext(Resource view) {
+		return new QueryContext(schema, view, null, registry);
 	}
 	
-	public QueryContext map(DBView view) { //inherit cache
+	public QueryContext map(Resource view) { //inherit cache
 		return new QueryContext(schema, view, cache, registry);
 	}
-	
-	static Class<?> typeOf(Object o){
-		var type = o.getClass(); 
-		if(isProxyClass(type)) { 
-			if(getInvocationHandler(o) instanceof SchemaInvocationHandler sh) { 
-				type = sh.getSchemaType(); 
-			}
-			else {
-				throw new IllegalArgumentException("unsupported schema type " + type); 
-			}
-		}
-		return type;
-	}
-	
+		
 	static EntryParseException cannotParseEntryException(Class<?> type, String v) {
 		return new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + v);
 	}

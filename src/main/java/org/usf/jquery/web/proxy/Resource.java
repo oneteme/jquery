@@ -1,7 +1,6 @@
 package org.usf.jquery.web.proxy;
 
-import static java.lang.reflect.Modifier.isPublic;
-import static java.lang.reflect.Modifier.isStatic;
+import static java.lang.reflect.Proxy.getInvocationHandler;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -12,6 +11,13 @@ import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
 
 public interface Resource {
+	
+	public static final EntryChain[] NO_PARAM = new EntryChain[0];
+	
+	//do not change this method signature, it is used by ResourceInvokerHandler to invoke resource method by id
+	Method lookupMethod(String id, Class<?> type);
+
+	<T> T invokeExposed(String id, Class<T> type, EntryChain[] args, QueryContext ctx);
 	
 	static Object invokeResource(Method method, Object proxy, EntryChain[] arguments, QueryContext ctx) {
 		Object[] args = null;
@@ -29,29 +35,12 @@ public interface Resource {
 			throw new ResourceInvocationException("method " + method.getName() + " does not expect arguments");
 		}
 		try {
-			return method.invoke(proxy, args);
+			var handler = getInvocationHandler(proxy);
+			return nonNull(handler) ? handler.invoke(proxy, method, args) : method.invoke(proxy, args); //TODO check this
 		}
-		catch (Exception e) {
+		catch (Throwable e) {
 			throw new ResourceInvocationException(e);
 		}
-	}
-	
-	static Method findMethod(Class<?> clazz, String name, boolean isStatic) {
-		var methods = clazz.getMethods();
-		Method res = null;
-		for(var m : methods) {
-			var mod = m.getModifiers();
-			if(isPublic(mod) && (isStatic(m.getModifiers()) == isStatic)) {
-				var ann = m.getAnnotation(Expose.class); //entry annotation has higher priority than method name
-				if(nonNull(ann) && ann.value() && ann.identity().equals(name)) {
-					return m;	
-				}
-				if(m.getName().equals(name)) {
-					res = m; //keep searching for entry annotation but remember method with matching name
-				}
-			}
-		}
-		return res;
 	}
 	
 	static <T> T newInstance(Class<T> type){

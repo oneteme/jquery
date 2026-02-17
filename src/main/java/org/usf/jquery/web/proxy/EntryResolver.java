@@ -32,6 +32,8 @@ import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
+import org.usf.jquery.web.spec.QueryResource;
+import org.usf.jquery.web.spec.ViewResource;
 
 import lombok.NoArgsConstructor;
 
@@ -130,9 +132,9 @@ public final class EntryResolver {
 		try {
 			var itr = entry.iterator();
 			var view = resolveView(itr, ctx);
-			if(view instanceof QueryView query) {
+			if(view instanceof QueryResource query) {
 				assertLastEntry(itr, false);
-				return query.asColumn();
+				return query.getQuery().asColumn();
 			}
 			throw new EntryParseException("");
 		}
@@ -141,7 +143,7 @@ public final class EntryResolver {
 		}
 	}
 	
-	static DBView resolveView(EntryChainIterator itr, QueryContext ctx) {
+	static Resource resolveView(EntryChainIterator itr, QueryContext ctx) {
 		var entry = itr.get();
 		var view = ctx.lookupView(true, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
@@ -152,7 +154,7 @@ public final class EntryResolver {
 		throw new NoSuchElementException("view resource not found : " + entry.getValue());
 	}
 	
-	static QueryView parseView(EntryChainIterator itr, QueryContext ctx) {
+	static QueryResource parseView(EntryChainIterator itr, QueryContext ctx) {
 		//select().filter().order()...
 		throw new UnsupportedOperationException("not implemented yet");
 	}
@@ -342,5 +344,9 @@ public final class EntryResolver {
 			return entry.getTag();
 		}
 		throw new EntrySyntaxException("entry must have a tag : " + entry.getValue());
+	}
+	
+	public static void main(String[] args) {
+		var ctx = new QueryContext(null, null, null);
 	}
 }

@@ -1,15 +1,15 @@
 package org.usf.jquery.web.proxy;
 
-import static java.lang.reflect.Modifier.isAbstract;
+import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.DBObject.toSQL;
+import static org.usf.jquery.core.DBView.view;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
-import static org.usf.jquery.web.proxy.ResourceScanner.scanResources;
+import static org.usf.jquery.web.proxy.ResourceScanner.scanExposedResources;
 
-import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -22,58 +22,40 @@ import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.web.ColumnMetadata;
-import org.usf.jquery.web.spec.ViewResource;
-
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
-@Slf4j
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-final class ViewInvocationHandler implements InvocationHandler {
+final class ViewInvocationHandler extends ResourceInvokerHandler {
 
 	private final DBView view;
 	private final Map<String, ColumnMetadata> metadata = new LinkedHashMap<>();
+	
+	public ViewInvocationHandler(DBView view, Map<String, Method> resourceMap) {
+		super(resourceMap);
+		this.view = view;
+	}
 
 	@Override
-	public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-		if(method.isDefault()) {
-			var obj = InvocationHandler.invokeDefault(proxy, method, args);
-			return obj instanceof DBColumn col ? decorate(method, col) : obj; //map column only
-		}
-		if(isAbstract(method.getModifiers())) {
-			var bnd = method.getAnnotation(Bind.class); //required
-			if(nonNull(bnd) && !bnd.value().isEmpty()) {
-				return resolveBinding(method, bnd, args);
+	Object invokeDefaultMethod(Object proxy, Method method, Object[] args) throws Throwable {
+		var res = super.invokeDefaultMethod(proxy, method, args);
+		if(res instanceof DBColumn col) {
+			var rsr = method.getAnnotation(Expose.class); //exposed resource
+			if(nonNull(rsr) && !rsr.alias().isEmpty()) {
+				res = col.as(rsr.alias());
 			}
-			throw new IllegalArgumentException("missing decorator @Bind on " + method);
+			var typ = method.getAnnotation(Typed.class); //abstract & default method
+			if(nonNull(typ)) {
+				res = col.as(typ.value());
+			}
 		}
-		return switch (method.getName()) {
-		case "equals"->  proxy == args[0];
-		case "hashCode"-> hash(view);
-		case "toString"-> toSQL(view);
-		default -> throw new IllegalStateException("unexpected method invocation " + method);
-		};
-	}
+		return res;
+	}	
 	
-	DBColumn decorate(Method method, DBColumn col) {
-		var rsr = method.getAnnotation(Expose.class); //exposed resource
-		if(nonNull(rsr) && !rsr.alias().isEmpty()) {
-			col = col.as(rsr.alias());
-		}
-		var typ = method.getAnnotation(Typed.class); //abstract & default method
-		if(nonNull(typ)) {
-			col = col.as(typ.value());
-		}
-		return col;
-	}
-	
-	Object resolveBinding(Method method, Bind bind, Object[] args) {
+	@Override
+	Object invokeAbstractMethod(Object proxy, Bind bind, Method method, Object[] args) {
 		var type = method.getReturnType();
 		if(DBColumn.class.isAssignableFrom(type)) {
 			return buildColumn(method, bind, args);
@@ -107,10 +89,25 @@ final class ViewInvocationHandler implements InvocationHandler {
 		default  -> throw new UnsupportedOperationException("not implemented");
 		};
 	}
+	
+	@Override
+	int invokeHashCode(Object proxy, Object[] args) {
+		return hash(view);
+	}
+	
+	@Override
+	String invokeToString(Object proxy, Object[] args) {
+		return toSQL(view);
+	}
 
-	static <T extends ViewResource> T bind(Class<T> clazz) {
-		if(clazz.isInterface()) {
-			scanResources(clazz.getMethods(), (t,c)-> {
+	static <T extends Resource> T createViewHandler(Class<T> type, Bind bind) {
+		if(type.isInterface()) {
+			var view = switch(bind.type()) {
+			case REF-> view(bind.value(), bind.value());
+			//case REQ-> evalView(parseEntry(bind.value()), null)
+			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
+			};
+			var map = scanExposedResources(type.getMethods(), (t,c)-> {
 				if(t == REF) {
 					return c == ViewColumn.class;
 				}
@@ -122,7 +119,9 @@ final class ViewInvocationHandler implements InvocationHandler {
 							c == JoinsClause.class;
 				}
 			});
+			return type.cast(newProxyInstance(ViewInvocationHandler.class.getClassLoader(), new Class<?>[]{type}, 
+					new ViewInvocationHandler(view, map)));
 		}
-		throw new IllegalArgumentException("view must be an interface : " + clazz);
+		throw new IllegalArgumentException("view must be an interface : " + type);
 	}
 }

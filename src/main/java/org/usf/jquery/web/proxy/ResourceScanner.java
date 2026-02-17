@@ -5,11 +5,13 @@ import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.function.BiPredicate;
 
 import org.usf.jquery.web.proxy.Bind.BindType;
@@ -22,40 +24,42 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class ResourceScanner {
 
-	public static void scanResources(Method[] methods, BiPredicate<BindType, Class<?>> matcher) {
-		var resources = new HashMap<String, Method> ();
-		stream(methods)
-		.filter(m-> !isStatic(m.getModifiers()))
-		.forEach(m-> resources.compute(validateResourceIdentifier(m, matcher), (k,v)->{ 
-			if(isNull(v)) { 
-				return m; 
-			} 
-			throw new IllegalArgumentException("duplicate resource name ["+k+"] : \n" + m + "\n" + v); 
-		}));
+	public static Map<String, Method> scanExposedResources(Method[] methods, BiPredicate<BindType, Class<?>> allowBind) {
+		return stream(methods)
+		.filter(ResourceScanner::isExposedMedthod)
+		.collect(toMap(m-> exposedResourceIdentifier(m, allowBind), identity()));
 	}
 	
-	public static String validateResourceIdentifier(Method m, BiPredicate<BindType, Class<?>> matcher) {
+	public static String exposedResourceIdentifier(Method m, BiPredicate<BindType, Class<?>> allowBind) {
+		var id = m.getName();
+		var exp = m.getAnnotation(Expose.class); 
+		if(nonNull(exp) && !exp.identity().isEmpty()) {
+			if(!exp.identity().matches("[a-zA-Z]\\w*")) { 
+				throw new IllegalArgumentException("invalid @Expose.id=["+exp.identity()+"] on " + m); 
+			}
+			id = exp.identity();
+		}
 		if(isAbstract(m.getModifiers())) {
 			var bnd = scanBinding(m, true);
 			if(m.getParameterCount() > 0) { 
 				throw new IllegalArgumentException("binded method cannot have parameters : " + m);
 			}
-			if(!matcher.test(bnd.type(), m.getReturnType())){
+			if(!allowBind.test(bnd.type(), m.getReturnType())){
 				throw new IllegalArgumentException("invalid @Bind.type=["+bnd.type()+"] for return type " + m.getReturnType() + " on " + m);
 			}
 		}
 		else if(nonNull(m.getAnnotation(Bind.class))) { //bind default method 
 			throw new IllegalArgumentException("cannot bind defaut medthod");
 		}
-		var id = m.getName();
-		var exps = m.getAnnotation(Expose.class); 
-		if(nonNull(exps) && !exps.identity().isEmpty()) {
-			if(!exps.identity().matches("[a-zA-Z]\\w*")) { 
-				throw new IllegalArgumentException("invalid @Expose.id=["+exps.identity()+"] on " + m); 
-			}
-			id = exps.identity();
-		}
 		return id;
+	}
+	
+	static boolean isExposedMedthod(Method m) {
+		if(!isStatic(m.getModifiers())) {
+			var exp = m.getAnnotation(Expose.class);
+			return isNull(exp) || exp.value();
+		}
+		return false;
 	}
 	
 	public static Bind scanBinding(AnnotatedElement elem, boolean required){

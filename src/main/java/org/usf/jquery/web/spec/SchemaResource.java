@@ -7,6 +7,8 @@ import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Operator.function;
 import static org.usf.jquery.core.Parameter.required;
 
+import java.lang.reflect.Method;
+
 import org.usf.jquery.core.ArgTypeRef;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.TypedComparator;
@@ -54,4 +56,6 @@ public interface SchemaResource {
             default -> null;
         };
     }
+
+	Method resourceMethod(String name, Class<?> type);
 }
