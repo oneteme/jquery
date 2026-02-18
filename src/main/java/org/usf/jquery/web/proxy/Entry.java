@@ -1,10 +1,10 @@
 package org.usf.jquery.web.proxy;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.proxy.EntryChainParser.TokenKind.VAR;
+import static org.usf.jquery.web.proxy.EntryParser.TokenKind.VAR;
 
 import org.usf.jquery.web.EntrySyntaxException;
-import org.usf.jquery.web.proxy.EntryChainParser.TokenKind;
+import org.usf.jquery.web.proxy.EntryParser.TokenKind;
 
 import lombok.Getter;
 
@@ -14,19 +14,19 @@ import lombok.Getter;
  *
  */
 @Getter
-final class EntryChain {
+final class Entry {
 
 	private final String value;
 	private final TokenKind kind; //"string"
-	private final EntryChain[] args;
-	private final EntryChain next;
+	private final Entry[] args;
+	private final Entry next;
 	private final String tag;
 
-	EntryChain(String value, TokenKind kind) {
+	Entry(String value, TokenKind kind) {
 		this(value, kind, null, null, null);
 	}
 	
-	EntryChain(String value, TokenKind kind, EntryChain[] args, EntryChain next, String tag) {
+	Entry(String value, TokenKind kind, Entry[] args, Entry next, String tag) {
 		if(kind == VAR) {
 			if(nonNull(next) && next.isValue()) {
 				throw new EntrySyntaxException("next entry must be a variable");
@@ -62,7 +62,7 @@ final class EntryChain {
 		return kind != VAR; //VAL or TXT
 	}
 	
-	public EntryChainIterator iterator() {
-		return new EntryChainIterator(this);
+	public EntryIterator iterator() {
+		return new EntryIterator(this);
 	}
 }

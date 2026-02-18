@@ -2,9 +2,9 @@ package org.usf.jquery.web.proxy;
 
 import static java.lang.Math.min;
 import static java.util.Objects.isNull;
-import static org.usf.jquery.web.proxy.EntryChainParser.TokenKind.TXT;
-import static org.usf.jquery.web.proxy.EntryChainParser.TokenKind.VAL;
-import static org.usf.jquery.web.proxy.EntryChainParser.TokenKind.VAR;
+import static org.usf.jquery.web.proxy.EntryParser.TokenKind.TXT;
+import static org.usf.jquery.web.proxy.EntryParser.TokenKind.VAL;
+import static org.usf.jquery.web.proxy.EntryParser.TokenKind.VAR;
 
 import java.util.ArrayList;
 
@@ -19,17 +19,17 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-public final class EntryChainParser {
+public final class EntryParser {
 
-	public static EntryChain parseEntry(@NonNull String s) {
-		return s.isEmpty() ? new EntryChain("", VAL) : parseEntry(new Lexer(s));
+	public static Entry parseEntry(@NonNull String s) {
+		return s.isEmpty() ? new Entry("", VAL) : parseEntry(new Lexer(s));
 	}
 	
-	public static EntryChain[] parseEntries(@NonNull String s) {
-		return s.isEmpty() ? new EntryChain[0] : parseEntries(new Lexer(s), -1, 0);
+	public static Entry[] parseEntries(@NonNull String s) {
+		return s.isEmpty() ? new Entry[0] : parseEntries(new Lexer(s), -1, 0);
 	}
 
-	static EntryChain parseEntry(Lexer cursor) {
+	static Entry parseEntry(Lexer cursor) {
 		var entry = parseEntry(cursor, false, 0);
 		if(cursor.peek() == -1) {
 			return entry;
@@ -37,8 +37,8 @@ public final class EntryChainParser {
 		throw cursor.unexpectedCharacterException(); //end
 	}
 
-	static EntryChain[] parseEntries(Lexer cursor, int mark, int stack) {
-		var entries = new ArrayList<EntryChain>();
+	static Entry[] parseEntries(Lexer cursor, int mark, int stack) {
+		var entries = new ArrayList<Entry>();
 		entries.add(parseEntry(cursor, false, stack));
 		var c = -1;
 		while((c=cursor.peek()) == ',') {
@@ -46,25 +46,25 @@ public final class EntryChainParser {
 			entries.add(parseEntry(cursor, false, stack));
 		}
 		if(c == mark) {
-			return entries.toArray(EntryChain[]::new);
+			return entries.toArray(Entry[]::new);
 		}
 		throw cursor.unexpectedCharacterException(); //end
 	}
 
-	static EntryChain parseEntry(Lexer lexer, boolean exp, int stack) {
+	static Entry parseEntry(Lexer lexer, boolean exp, int stack) {
 		if(stack > 20) {
 			throw new EntrySyntaxException("too deep entry nesting (>20)");
 		}
 		var kind = lexer.fetch();
 		if(kind == VAR) {
 			var value = lexer.emit();
-			EntryChain[] args = null;
-			EntryChain next = null;
+			Entry[] args = null;
+			Entry next = null;
 			String tag = null;
 			var c = lexer.peek();
 			if(c == '(') {
 				lexer.advance();
-				args = lexer.peek() == ')' ? new EntryChain[0] : parseEntries(lexer, ')', stack+1);
+				args = lexer.peek() == ')' ? new Entry[0] : parseEntries(lexer, ')', stack+1);
 				if(lexer.advance() != ')') {
 					throw lexer.unexpectedCharacterException();
 				}
@@ -82,13 +82,13 @@ public final class EntryChainParser {
 					throw lexer.unexpectedCharacterException();
 				}
 			}
-			return new EntryChain(value, kind, args, next, tag);
+			return new Entry(value, kind, args, next, tag);
 		}
 		if(exp) {
 			throw lexer.unexpectedCharacterException();
 		}
 		if(kind == TXT || kind == VAL) {
-			return new EntryChain(lexer.emit(), kind);
+			return new Entry(lexer.emit(), kind);
 		}
 		throw lexer.unexpectedCharacterException();
 	}

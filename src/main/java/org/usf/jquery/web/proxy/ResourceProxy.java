@@ -35,7 +35,7 @@ public abstract class ResourceProxy implements InvocationHandler {
 	
 	static {
 		try {
-			INVOKE_METHOD = Resource.class.getMethod("invokeResource", String.class, Class.class, EntryChain[].class, QueryContext.class);
+			INVOKE_METHOD = Resource.class.getMethod("invokeResource", String.class, Class.class, Entry[].class, QueryContext.class);
 			EXPOSES_METHOD = Resource.class.getMethod("exposes", String.class, Class.class);
 		} catch (Exception e) {
 			throw new NoSuchMethodError("failed to initialize ResourceInvokerHandler: " + e.getMessage());
@@ -83,7 +83,7 @@ public abstract class ResourceProxy implements InvocationHandler {
 		var m = exposedMethods.get(args[0]);
 		if(nonNull(m) && m.getReturnType() == args[1]) {
 			Object[] arr = null;
-			var entries = (EntryChain[]) args[2];
+			var entries = (Entry[]) args[2];
 			if(m.getParameterCount() > 0) {
 				var ann = m.getAnnotation(Parameterized.class);
 				ArgsParser prs = nonNull(ann) ? newInstance(ann.parser()) : ResourceProxy::parseArgs;
@@ -128,7 +128,7 @@ public abstract class ResourceProxy implements InvocationHandler {
 		}
 	}
 	
-	static Object[] parseArgs(Method m, EntryChain[] args, QueryContext ctx) {
+	static Object[] parseArgs(Method m, Entry[] args, QueryContext ctx) {
 		var params = m.getParameters();
 		if(params.length == 1 && params[0].getType().isArray()) {
 			var type = params[0].getType().getComponentType();

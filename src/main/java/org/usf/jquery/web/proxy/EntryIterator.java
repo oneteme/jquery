@@ -8,12 +8,12 @@ import java.util.NoSuchElementException;
  * @author u$f
  *
  */
-public final class EntryChainIterator implements Iterator<EntryChain> {
+public final class EntryIterator implements Iterator<Entry> {
 
-	private final EntryChain head;
-	private EntryChain cursor;
+	private final Entry head;
+	private Entry cursor;
 	
-	public EntryChainIterator(EntryChain entry) {
+	public EntryIterator(Entry entry) {
 		this.head = this.cursor = entry;
 	}
 
@@ -23,11 +23,11 @@ public final class EntryChainIterator implements Iterator<EntryChain> {
 	}
 	
 	@Override
-	public EntryChain next() {
+	public Entry next() {
 		return advance().get();
 	}
 	
-	public EntryChainIterator advance() {
+	public EntryIterator advance() {
 		if(hasNext()) {
 			cursor = cursor.getNext();
 			return this;
@@ -35,11 +35,11 @@ public final class EntryChainIterator implements Iterator<EntryChain> {
 		throw new NoSuchElementException("no more entry in the chain");
 	}
 	
-	public EntryChain get() {
+	public Entry get() {
 		return cursor;
 	}
 	
-	public EntryChainIterator reset() {
+	public EntryIterator reset() {
 		this.cursor = head;
 		return this;
 	}	

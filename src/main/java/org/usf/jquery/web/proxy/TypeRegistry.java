@@ -41,10 +41,10 @@ import org.usf.jquery.core.SingleQueryColumn;
 public final class TypeRegistry {
 	
 	private static final Map<Class<?>, LiteralParser<?>> VAL_PARSERS;
-	private static final Map<Class<?>, EntryParser<?>> VAR_PARSERS;
+	private static final Map<Class<?>, EntryEvaluator<?>> VAR_PARSERS;
 	
 	private final Map<Class<?>, LiteralParser<?>> valParsers;
-	private final Map<Class<?>, EntryParser<?>> varParsers;
+	private final Map<Class<?>, EntryEvaluator<?>> varParsers;
 	
 	public TypeRegistry() {
 		this.valParsers = new ConcurrentHashMap<>(VAL_PARSERS);
@@ -55,7 +55,7 @@ public final class TypeRegistry {
 		valParsers.put(clazz, parser);
 	}
 	
-	public <T> void register(Class<T> clazz, EntryParser<T> parser) {
+	public <T> void register(Class<T> clazz, EntryEvaluator<T> parser) {
 		varParsers.put(clazz, parser);
 	}
 	
@@ -69,8 +69,8 @@ public final class TypeRegistry {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> EntryParser<T> getVariableParser(Class<T> clazz){
-		return (EntryParser<T>) varParsers.get(clazz);
+	public <T> EntryEvaluator<T> getVariableParser(Class<T> clazz){
+		return (EntryEvaluator<T>) varParsers.get(clazz);
 	}
 	
 	static {
@@ -100,15 +100,15 @@ public final class TypeRegistry {
 		smpl.put(UUID.class, UUID::fromString);
 		//Object ?
 		VAL_PARSERS = unmodifiableMap(smpl);
-		var expr = new HashMap<Class<?>, EntryParser<?>>();
-		expr.put(DBColumn.class, ExpressionEvaluator::resolveColumn);
-		expr.put(NamedColumn.class, ExpressionEvaluator::resolveNamedColumn);
-		expr.put(DBFilter.class, ExpressionEvaluator::resolveFilter);
-		expr.put(DBOrder.class, ExpressionEvaluator::resolveOrder);
-		expr.put(JoinsClause.class, ExpressionEvaluator::resolveJoin);
-		expr.put(Partition.class, ExpressionEvaluator::resolvePartition);
-		expr.put(DBView.class, ExpressionEvaluator::resolveView);
-		expr.put(SingleQueryColumn.class, ExpressionEvaluator::resolveQueryColumn);
+		var expr = new HashMap<Class<?>, EntryEvaluator<?>>();
+		expr.put(DBColumn.class, EntryEvaluators::evaluateColumn);
+		expr.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
+		expr.put(DBFilter.class, EntryEvaluators::evaluateFilter);
+		expr.put(DBOrder.class, EntryEvaluators::evaluateOrder);
+		expr.put(JoinsClause.class, EntryEvaluators::evaluateJoin);
+		expr.put(Partition.class, EntryEvaluators::evaluatePartition);
+		expr.put(DBView.class, EntryEvaluators::evaluateView);
+		expr.put(SingleQueryColumn.class, EntryEvaluators::evaluateQueryColumn);
 		VAR_PARSERS = unmodifiableMap(expr);
 	}
 	
@@ -141,13 +141,15 @@ public final class TypeRegistry {
 		return null;
 	}
 
+	@FunctionalInterface
 	public static interface LiteralParser<T> {
 		
 		T parse(String s) throws Exception;	//parse Exception
 	}
 	
-	public static interface EntryParser<T> {
+	@FunctionalInterface
+	public static interface EntryEvaluator<T> {
 		
-		T parse(EntryChain entry, QueryContext ctx) throws Exception;		
+		T evaluate(Entry entry, QueryContext ctx) throws Exception;		
 	}
 }

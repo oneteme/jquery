@@ -46,7 +46,7 @@ public final class QueryContext {
 		this(schema, defaultView, new HashMap<>(), registry);
 	}
 	
-	public Optional<ViewResource> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
+	public Optional<ViewResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
 		var view = cache.get(name);
 		if(isNull(view)) {
 			try {
@@ -65,15 +65,15 @@ public final class QueryContext {
 		return Optional.empty();
 	}
 
-	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, EntryChain... args) { 
+	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, Entry... args) { 
 		return lookupResource(schema, name, type, args);
 	}
 	
-	public <T> Optional<T> lookupViewResource(Resource view, String name, Class<T> type, EntryChain... args) { 
+	public <T> Optional<T> lookupViewResource(Resource view, String name, Class<T> type, Entry... args) { 
 		return lookupResource(view, name, type, args);
 	}
 	
-	<T> Optional<T> lookupResource(Resource resource, String name, Class<T> type, EntryChain... args) { 
+	<T> Optional<T> lookupResource(Resource resource, String name, Class<T> type, Entry... args) { 
 		return resource.exposes(name, type)
 				? Optional.of(resource.invokeResource(name, type, args, this))
 				: Optional.empty();
@@ -88,7 +88,7 @@ public final class QueryContext {
 		});
 	}
 	
-	public Object resolve(EntryChain entry, JavaType... types) {
+	public Object resolve(Entry entry, JavaType... types) {
 		if(entry.isVariable() && (isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance))) {
 			try {
 				return resolve(entry, DBColumn.class);
@@ -119,12 +119,12 @@ public final class QueryContext {
 		throw new NoSuchElementException("no parser for type " + Arrays.toString(types));
 	}
 
-	public Object resolve(EntryChain entry, Class<?> type) {
+	public Object resolve(Entry entry, Class<?> type) {
 		if(entry.isVariable()) {
 			var prs = registry.getVariableParser(type);
 			if(nonNull(prs)) {
 				try {
-					return prs.parse(entry, this);
+					return prs.evaluate(entry, this);
 				}
 				catch (Exception e) {
 					throw cannotParseEntryException(type, entry.getValue());

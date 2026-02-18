@@ -4,10 +4,10 @@ import static java.lang.String.format;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.params.provider.Arguments.arguments;
-import static org.usf.jquery.web.proxy.EntryChainParser.parseEntry;
-import static org.usf.jquery.web.proxy.EntryChainParser.TokenKind.TXT;
-import static org.usf.jquery.web.proxy.EntryChainParser.TokenKind.VAL;
-import static org.usf.jquery.web.proxy.EntryChainParser.TokenKind.VAR;
+import static org.usf.jquery.web.proxy.EntryParser.parseEntry;
+import static org.usf.jquery.web.proxy.EntryParser.TokenKind.TXT;
+import static org.usf.jquery.web.proxy.EntryParser.TokenKind.VAL;
+import static org.usf.jquery.web.proxy.EntryParser.TokenKind.VAR;
 
 import java.time.Instant;
 import java.time.LocalDate;
@@ -26,10 +26,10 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.params.provider.ValueSource;
-import org.usf.jquery.web.proxy.EntryChain;
+import org.usf.jquery.web.proxy.Entry;
 import org.usf.jquery.web.EntrySyntaxException;
-import org.usf.jquery.web.proxy.EntryChainParser.Lexer;
-import org.usf.jquery.web.proxy.EntryChainParser.TokenKind;
+import org.usf.jquery.web.proxy.EntryParser.Lexer;
+import org.usf.jquery.web.proxy.EntryParser.TokenKind;
 
 /**
  * 
@@ -86,16 +86,16 @@ class EntryChainParserTest {
 	
 	void testParseEntry_value(String s, boolean exp) {
 		var knd = exp ? VAR : VAL;
-		assertEquals(new EntryChain(s, knd), parseEntry(s));
-		assertEquals(new EntryChain(s, TXT), parseEntry("\""+s+"\""));
-		assertEquals(new EntryChain("fn", VAR, new EntryChain[] {new EntryChain(s, knd)}, null, null), parseEntry("fn("+s+")"));
+		assertEquals(new Entry(s, knd), parseEntry(s));
+		assertEquals(new Entry(s, TXT), parseEntry("\""+s+"\""));
+		assertEquals(new Entry("fn", VAR, new Entry[] {new Entry(s, knd)}, null, null), parseEntry("fn("+s+")"));
 		assertEquals(
-				new EntryChain("fn", VAR, new EntryChain[] {new EntryChain(s,knd), new EntryChain(s,knd), new EntryChain(s,knd)}, null, null), 
+				new Entry("fn", VAR, new Entry[] {new Entry(s,knd), new Entry(s,knd), new Entry(s,knd)}, null, null), 
 				parseEntry(format("fn(%s,%s,%s)", s,s,s)));
 		if(exp) {
-			assertEquals(new EntryChain("obj", knd, null, new EntryChain(s, knd), null), parseEntry("obj."+s)); //as member
-			assertEquals(new EntryChain(s, knd, new EntryChain[0], null, null), parseEntry(s+"()")); //as function
-			assertEquals(new EntryChain(s, knd, null, null, "tag"), parseEntry(s+":tag")); //using tag
+			assertEquals(new Entry("obj", knd, null, new Entry(s, knd), null), parseEntry("obj."+s)); //as member
+			assertEquals(new Entry(s, knd, new Entry[0], null, null), parseEntry(s+"()")); //as function
+			assertEquals(new Entry(s, knd, null, null, "tag"), parseEntry(s+":tag")); //using tag
 		}
 	}
 

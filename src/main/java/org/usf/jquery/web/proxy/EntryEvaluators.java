@@ -36,9 +36,9 @@ import org.usf.jquery.web.EntrySyntaxException;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-public final class ExpressionEvaluator {
+public final class EntryEvaluators {
 	
-	public static DBView resolveView(EntryChain entry, QueryContext ctx) {
+	public static DBView evaluateView(Entry entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
 			var view = resolveView(itr, ctx);
@@ -51,7 +51,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 
-	public static DBColumn resolveColumn(EntryChain entry, QueryContext ctx) {
+	public static DBColumn evaluateColumn(Entry entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
 			var col = resolveColumn(itr, ctx);
@@ -63,7 +63,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 
-	public static NamedColumn resolveNamedColumn(EntryChain entry, QueryContext ctx) {
+	public static NamedColumn evaluateNamedColumn(Entry entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
 			var col = resolveColumn(itr, ctx);
@@ -75,7 +75,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 	
-	public static DBFilter resolveFilter(EntryChain entry, QueryContext ctx, EntryChain... outerArgs) {
+	public static DBFilter evaluateFilter(Entry entry, QueryContext ctx, Entry... outerArgs) {
 		try {
 			var itr = entry.iterator();
 			var col = resolveColumn(itr, ctx, outerArgs);
@@ -90,7 +90,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 	
-	public static DBOrder resolveOrder(EntryChain entry, QueryContext ctx) {
+	public static DBOrder evaluateOrder(Entry entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
 			var ord = lookupDeclaredResource(itr, DBOrder.class, ctx, null).orElseGet(()-> parseOrder(itr.reset(), ctx));
@@ -102,7 +102,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 
-	public static JoinsClause resolveJoin(EntryChain entry, QueryContext ctx) {
+	public static JoinsClause evaluateJoin(Entry entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
 			var join = lookupDeclaredResource(itr, JoinsClause.class, ctx, null).orElseGet(()-> parseJoin(itr.reset(), ctx));
@@ -114,7 +114,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 	
-	public static Partition resolvePartition(EntryChain entry, QueryContext ctx) {
+	public static Partition evaluatePartition(Entry entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
 			var prt = lookupDeclaredResource(itr, Partition.class, ctx, null).orElseGet(()-> parsePartition(itr.reset(), ctx));
@@ -126,7 +126,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 
-	public static SingleQueryColumn resolveQueryColumn(EntryChain entry, QueryContext ctx) {
+	public static SingleQueryColumn evaluateQueryColumn(Entry entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
 			var view = resolveView(itr, ctx);
@@ -141,7 +141,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 	
-	static ViewResource resolveView(EntryChainIterator itr, QueryContext ctx) {
+	static ViewResource resolveView(EntryIterator itr, QueryContext ctx) {
 		var entry = itr.get();
 		var view = ctx.lookupView(true, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
@@ -152,13 +152,13 @@ public final class ExpressionEvaluator {
 		throw new NoSuchElementException("view resource not found : " + entry.getValue());
 	}
 	
-	static QueryResource parseView(EntryChainIterator itr, QueryContext ctx) {
+	static QueryResource parseView(EntryIterator itr, QueryContext ctx) {
 		//column().filter().order()...
 		
 		throw new UnsupportedOperationException("not implemented yet");
 	}
 	
-	static DBOrder parseOrder(EntryChainIterator itr, QueryContext ctx) {
+	static DBOrder parseOrder(EntryIterator itr, QueryContext ctx) {
 		var col = resolveColumn(itr, ctx);
 		if(itr.hasNext()) {
 			var entry = itr.next();
@@ -175,7 +175,7 @@ public final class ExpressionEvaluator {
 		return col.order();
 	}
 	
-	static JoinsClause parseJoin(EntryChainIterator itr, QueryContext ctx) {
+	static JoinsClause parseJoin(EntryIterator itr, QueryContext ctx) {
 		Predicate<String> isJoin = s-> s.matches("(inner|left|right|full|cross)Join");
 		var entry = itr.get();
 		if(!isJoin.test(entry.getValue())) {
@@ -198,7 +198,7 @@ public final class ExpressionEvaluator {
 				itr = entry.getArgs()[0].iterator();
 				var view = resolveView(itr, ctx).getView();
 				assertLastEntry(itr, false);
-				var filter = resolveFilter(entry.getArgs()[1], ctx);
+				var filter = evaluateFilter(entry.getArgs()[1], ctx);
 				return JoinsClause.of(join(type, view, filter));
 			}
 			catch (Exception e) {
@@ -208,21 +208,21 @@ public final class ExpressionEvaluator {
 		throw new EntryParseException(entry.getValue() + " operator must have exactly 2 arguments");
 	}
 	
-	static Partition parsePartition(EntryChainIterator itr, QueryContext ctx) {
+	static Partition parsePartition(EntryIterator itr, QueryContext ctx) {
 		var entry = itr.get();
 		var cols = new ArrayList<DBColumn>();
 		var ords = new ArrayList<DBOrder>();
 		do {
 			switch (entry.getValue()) {
-			case "partition": cols.add(resolveColumn(entry.getArgs()[0], ctx)); break;
-			case "order": ords.add(resolveOrder(entry.getArgs()[0], ctx)); break;
+			case "partition": cols.add(evaluateColumn(entry.getArgs()[0], ctx)); break;
+			case "order": ords.add(evaluateOrder(entry.getArgs()[0], ctx)); break;
 			default: throw new IllegalArgumentException("invalid partition operator : " + entry.getValue());
 			}
 		} while(itr.hasNext());
 		return new Partition(cols.toArray(DBColumn[]::new), ords.toArray(DBOrder[]::new));
 	}
 	
-	static DBColumn resolveColumn(EntryChainIterator itr, QueryContext ctx, EntryChain... outArgs) {
+	static DBColumn resolveColumn(EntryIterator itr, QueryContext ctx, Entry... outArgs) {
 		var res = lookupDeclaredResource(itr, DBColumn.class, ctx, (v, e)->{ 
 			if("count".equals(e.getValue())) {
 				return Optional.of(invokeOperator(e.hasArgs() ? null : allColumns(v.getView()), e.getValue(), e.getArgs(), ctx));
@@ -236,7 +236,7 @@ public final class ExpressionEvaluator {
 		throw new NoSuchElementException("column resource not found : " + itr.get().getValue());
 	}
 
-	static <T> Optional<T> lookupDeclaredResource(EntryChainIterator itr, Class<T> type, QueryContext ctx, BiFunction<ViewResource, EntryChain, Optional<T>> fn) {
+	static <T> Optional<T> lookupDeclaredResource(EntryIterator itr, Class<T> type, QueryContext ctx, BiFunction<ViewResource, Entry, Optional<T>> fn) {
 		if(itr.hasNext()) { //view.rsrc
 			var vRes = ctx.lookupView(false, itr.get().getValue()); //parameterized view resource is not supported, must be declared as view resource in context
 			if(vRes.isPresent()) {
@@ -257,7 +257,7 @@ public final class ExpressionEvaluator {
 	
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
 	
-	static DBColumn chainResource(EntryChainIterator itr, DBColumn res, QueryContext ctx, EntryChain... outArgs) {
+	static DBColumn chainResource(EntryIterator itr, DBColumn res, QueryContext ctx, Entry... outArgs) {
 		var col = res;
 		while(itr.hasNext()) {
 			var entry = itr.next();
@@ -281,7 +281,7 @@ public final class ExpressionEvaluator {
 		return col;
 	}
 
-	static DBColumn invokeOperator(Object col, String name, EntryChain[] args, QueryContext ctx) {
+	static DBColumn invokeOperator(Object col, String name, Entry[] args, QueryContext ctx) {
 		var opr = ctx.lookupSchemaResource(name, TypedOperator.class, args) //check declared operator first, then static resource
 				.orElseGet(()-> lookup(Operator.class, TypedOperator.class, name));
 		return nonNull(opr) 
@@ -289,7 +289,7 @@ public final class ExpressionEvaluator {
 				: null;
 	}
 	
-	static DBFilter invokeComparator(Object col, String name, EntryChain[] args, QueryContext ctx) {
+	static DBFilter invokeComparator(Object col, String name, Entry[] args, QueryContext ctx) {
 		var cmp = ctx.lookupSchemaResource(name, TypedComparator.class, args) //check declared comparator first, then static resource
 				.orElseGet(()-> lookup(Comparator.class, TypedComparator.class, name));
 		return nonNull(cmp) 
@@ -310,7 +310,7 @@ public final class ExpressionEvaluator {
 		return null;
 	}
 	
-	static Object[] resolveArgs(ParameterSet ps, Object res, EntryChain[] args, QueryContext ctx){
+	static Object[] resolveArgs(ParameterSet ps, Object res, Entry[] args, QueryContext ctx){
 		var arr = new Object[args.length + (nonNull(res) ? 1 : 0)];
 		ps.eachParameter(args.length, (p,i)-> {
 			if(i==0 && nonNull(res)) {
@@ -328,11 +328,11 @@ public final class ExpressionEvaluator {
 		return arr;
 	}
 
-	static <T> Optional<T> lookupViewResource(QueryContext ctx, ViewResource view, EntryChain entry, Class<T> type) { //pretty syntax
+	static <T> Optional<T> lookupViewResource(QueryContext ctx, ViewResource view, Entry entry, Class<T> type) { //pretty syntax
 		return ctx.lookupViewResource(view, entry.getValue(), type, entry.getArgs());
 	}
 
-	static void assertLastEntry(EntryChainIterator entry, boolean tagAllowed) {
+	static void assertLastEntry(EntryIterator entry, boolean tagAllowed) {
 		if(entry.hasNext()) {
 			throw new EntrySyntaxException(" entry cannot have next entry");
 		}
@@ -341,7 +341,7 @@ public final class ExpressionEvaluator {
 		}
 	}
 	
-	static String requireTag(EntryChain entry) {
+	static String requireTag(Entry entry) {
 		if(entry.hasTag()) {
 			return entry.getTag();
 		}

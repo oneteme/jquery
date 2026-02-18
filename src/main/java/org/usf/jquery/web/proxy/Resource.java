@@ -9,5 +9,5 @@ public interface Resource {
 	
 	boolean exposes(String id, Class<?> type);
 	
-	<T> T invokeResource(String id, Class<T> type, EntryChain[] args, QueryContext ctx);
+	<T> T invokeResource(String id, Class<T> type, Entry[] args, QueryContext ctx);
 }

@@ -25,6 +25,6 @@ public @interface Parameterized {
 	@FunctionalInterface
 	public interface ArgsParser {
 
-		Object[] parse(Method m, EntryChain[] args, QueryContext ctx);
+		Object[] parse(Method m, Entry[] args, QueryContext ctx);
 	}
 }
