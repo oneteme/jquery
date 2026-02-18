@@ -1,6 +1,7 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Modifier.isAbstract;
+import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
@@ -23,43 +24,44 @@ import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ResourceScanner {
+public final class ResourceIntrospector {
 
-	public static Map<String, Method> scanExposedResources(Method[] methods, BiPredicate<BindType, Class<?>> allowBind) {
-		return stream(methods).<Method>mapMulti((m, c)-> {
-			if(!isStatic(m.getModifiers())) {
+	public static Map<String, Method> discoverExposedMethods(Class<?> type, BiPredicate<BindType, Class<?>> allowBind) {
+		return stream(type.getDeclaredMethods()).<Method>mapMulti((m, c)-> {
+			var mod = m.getModifiers();
+			if(!isStatic(mod) && isPublic(mod)) {
 				var exp = validateExpose(m);
+				validateBind(m, allowBind);
+				validateParameterized(m);
 				if(isNull(exp) || exp.value()) {
-					validateBind(m, allowBind);
-					validateParameterized(m);
 					c.accept(m);
 				}
 			}
 		})
-		.collect(toMap(ResourceScanner::getMethodIdentifier, identity(), 
+		.collect(toMap(ResourceIntrospector::resolveIdentifier, identity(), 
 				(m1, m2) -> {
-			        throw new JQueryConfigurationException("duplicate resource identifier: " + m1.getName() + " vs " + m2.getName());
+			        throw new ResourceMappingException("duplicate resource identifier: " + m1.getName() + " vs " + m2.getName());
 			    }));
 	}
 
 	public static Bind validateBind(Method m, BiPredicate<BindType, Class<?>> allowBind){
 		Bind bnd = null;
 		if(isAbstract(m.getModifiers())) {
-			bnd = scanBinding(m, true);
+			bnd = scanBind(m);
 			if(m.getParameterCount() > 0) { 
-				throw new JQueryConfigurationException("binded method cannot have parameters : " + m);
+				throw new ResourceMappingException("binded method cannot have parameters : " + m);
 			}
 			if(!allowBind.test(bnd.type(), m.getReturnType())){
-				throw new JQueryConfigurationException("invalid @Bind.type=["+bnd.type()+"] for return type " + m.getReturnType() + " on " + m);
+				throw new ResourceMappingException("invalid @Bind.type=["+bnd.type()+"] for return type " + m.getReturnType() + " on " + m);
 			}
 		}
 		else if(nonNull(m.getAnnotation(Bind.class))) { //bind default method 
-			throw new JQueryConfigurationException("default method cannot be binded : " + m);
+			throw new ResourceMappingException("default method cannot be binded : " + m);
 		}
 		return bnd;
 	}
 
-	public static Bind scanBinding(AnnotatedElement elem, boolean required){
+	public static Bind scanBind(AnnotatedElement elem){
 		var bnd = elem.getAnnotation(Bind.class);
 		if(nonNull(bnd)) {
 			if(bnd.type() == REF) {
@@ -67,10 +69,7 @@ public final class ResourceScanner {
 			}	
 			return bnd;
 		}
-		if(required) {
-			throw new JQueryConfigurationException("missing decorator @Bind on " + elem);
-		}
-		return null;
+		throw new ResourceMappingException("missing decorator @Bind on " + elem);
 	}
 
 	public static Expose validateExpose(Method m){
@@ -90,26 +89,28 @@ public final class ResourceScanner {
 		var prm = m.getAnnotation(Parameterized.class); //optional annotation for parameterized method
 		if(nonNull(prm)) {
 			if(m.getParameterCount() == 0) { 
-				throw new JQueryConfigurationException("parameterized method must have parameters : " + m);
+				throw new ResourceMappingException("parameterized method must have parameters : " + m);
 			}
 			var type = prm.parser();
 			if(type.isInterface() 
 					|| isAbstract(type.getModifiers())
 					|| stream(type.getConstructors()).noneMatch(c-> c.getParameterCount() == 0)) {
-				throw new JQueryConfigurationException("invalid @Parameterized.parser=["+type+"] on " + m); 
+				throw new ResourceMappingException("invalid @Parameterized.parser=["+type+"] on " + m); 
 			}
 		}
 		return prm;
 	}
 	
-	public static String getMethodIdentifier(Method m) {
+	public static String resolveIdentifier(Method m) {
 		var exp = m.getAnnotation(Expose.class);
-		return nonNull(exp) && !exp.identity().isEmpty() ? exp.identity() : m.getName();
+		return nonNull(exp) && !exp.identity().isEmpty() 
+				? exp.identity() 
+				: m.getName();
 	}
 	
 	static void verifyIdentifier(String id, Supplier<String> message) {
 		if(isNull(id) || !id.matches("[a-zA-Z_]\\w*")) {
-			throw new JQueryConfigurationException(message.get());
+			throw new ResourceMappingException(message.get());
 		}
 	}
 }

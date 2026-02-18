@@ -46,7 +46,7 @@ public interface SchemaSample extends Resource{
 	}
 
 	@Expose(identity="vitesse") 
-    @Parameterized(parser = ArgsParser.class) 
+//    @Parameterized(parser = ArgsParser.class) 
     default ComparisonExpression elapsedTimeExpressions(String name) { //can bind ?
         return switch (name) {
             case "fastest" -> lt(1);
@@ -57,6 +57,4 @@ public interface SchemaSample extends Resource{
             default -> null;
         };
     }
-
-	Method resourceMethod(String name, Class<?> type);
 }

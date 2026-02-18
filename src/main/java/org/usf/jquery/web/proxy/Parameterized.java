@@ -20,7 +20,7 @@ public @interface Parameterized {
 	
 	//boolean acceptVariables() default true;
 
-	Class<ArgsParser> parser(); 
+	Class<? extends ArgsParser> parser(); 
 	
 	@FunctionalInterface
 	public interface ArgsParser {

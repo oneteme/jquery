@@ -10,5 +10,4 @@ import org.usf.jquery.core.DBView;
 public interface ViewResource extends Resource {
 	
 	DBView getView();
-
 }

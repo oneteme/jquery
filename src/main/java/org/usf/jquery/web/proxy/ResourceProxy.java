@@ -26,7 +26,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class ResourceInvokerHandler implements InvocationHandler {
+public abstract class ResourceProxy implements InvocationHandler {
 
 	private static final Method INVOKE_METHOD;
 	private static final Method EXPOSES_METHOD;
@@ -86,7 +86,7 @@ public abstract class ResourceInvokerHandler implements InvocationHandler {
 			var entries = (EntryChain[]) args[2];
 			if(m.getParameterCount() > 0) {
 				var ann = m.getAnnotation(Parameterized.class);
-				ArgsParser prs = nonNull(ann) ? newInstance(ann.parser()) : ResourceInvokerHandler::parseArgs;
+				ArgsParser prs = nonNull(ann) ? newInstance(ann.parser()) : ResourceProxy::parseArgs;
 				try {
 					 arr = prs.parse(m, entries, (QueryContext) args[3]);
 				}

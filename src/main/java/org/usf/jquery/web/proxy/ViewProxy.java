@@ -8,7 +8,7 @@ import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.DBObject.toSQL;
 import static org.usf.jquery.core.DBView.view;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
-import static org.usf.jquery.web.proxy.ResourceScanner.scanExposedResources;
+import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 
 import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
@@ -28,12 +28,12 @@ import org.usf.jquery.web.ColumnMetadata;
  * @author u$f
  *
  */
-final class ViewInvocationHandler extends ResourceInvokerHandler {
+final class ViewProxy extends ResourceProxy {
 
 	private final DBView view;
 	private final Map<String, ColumnMetadata> metadata = new LinkedHashMap<>();
 	
-	public ViewInvocationHandler(DBView view, Map<String, Method> resourceMap) {
+	public ViewProxy(DBView view, Map<String, Method> resourceMap) {
 		super(resourceMap);
 		this.view = view;
 	}
@@ -100,14 +100,14 @@ final class ViewInvocationHandler extends ResourceInvokerHandler {
 		return toSQL(view);
 	}
 
-	static <T extends ViewResource> T createViewHandler(Class<T> type, Bind bind) {
+	static <T extends ViewResource> T createView(Class<T> type, Bind bind) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
 			case REF-> view(bind.value(), bind.value());
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
-			var map = scanExposedResources(type.getMethods(), (t,c)-> {
+			var map = discoverExposedMethods(type, (t,c)-> {
 				if(t == REF) {
 					return c == ViewColumn.class;
 				}
@@ -119,8 +119,8 @@ final class ViewInvocationHandler extends ResourceInvokerHandler {
 							c == JoinsClause.class;
 				}
 			});
-			return type.cast(newProxyInstance(ViewInvocationHandler.class.getClassLoader(), new Class<?>[]{type}, 
-					new ViewInvocationHandler(view, map)));
+			return type.cast(newProxyInstance(ViewProxy.class.getClassLoader(), new Class<?>[]{type}, 
+					new ViewProxy(view, map)));
 		}
 		throw new IllegalArgumentException("view must be an interface : " + type);
 	}

@@ -36,7 +36,7 @@ import org.usf.jquery.web.EntrySyntaxException;
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-public final class EntryResolver {
+public final class ExpressionEvaluator {
 	
 	public static DBView resolveView(EntryChain entry, QueryContext ctx) {
 		try {

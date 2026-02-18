@@ -49,7 +49,7 @@ public interface ViewSample extends ViewResource {
     }
 
     @Expose(identity="rattachement", description="")
-    @Parameterized(parser = ArgsParser.class)
+//    @Parameterized(parser = ArgsParser.class)
     default JoinsClause ratt(LocalDate o1, Instant o2) {
     	return null;
     }
@@ -59,6 +59,5 @@ public interface ViewSample extends ViewResource {
     	return null;
     }
 
-	Method resourceMethod(String name, Class<?> type);
     
 }
