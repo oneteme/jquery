@@ -38,51 +38,51 @@ import org.usf.jquery.core.SingleQueryColumn;
  * @author u$f
  *
  */
-public final class TypeParserRegistry {
+public final class TypeRegistry {
 	
-	private static final Map<Class<?>, SimpleParser<?>> VAL_PARSERS;
-	private static final Map<Class<?>, ExpressionParser<?>> VAR_PARSERS;
+	private static final Map<Class<?>, LiteralParser<?>> VAL_PARSERS;
+	private static final Map<Class<?>, EntryParser<?>> VAR_PARSERS;
 	
-	private final Map<Class<?>, SimpleParser<?>> valParsers;
-	private final Map<Class<?>, ExpressionParser<?>> varParsers;
+	private final Map<Class<?>, LiteralParser<?>> valParsers;
+	private final Map<Class<?>, EntryParser<?>> varParsers;
 	
-	public TypeParserRegistry() {
+	public TypeRegistry() {
 		this.valParsers = new ConcurrentHashMap<>(VAL_PARSERS);
 		this.varParsers = new ConcurrentHashMap<>(VAR_PARSERS);
 	}
 	
-	public <T> void register(Class<T> clazz, SimpleParser<T> parser) {
+	public <T> void register(Class<T> clazz, LiteralParser<T> parser) {
 		valParsers.put(clazz, parser);
 	}
 	
-	public <T> void register(Class<T> clazz, ExpressionParser<T> parser) {
+	public <T> void register(Class<T> clazz, EntryParser<T> parser) {
 		varParsers.put(clazz, parser);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> SimpleParser<T> getValueParser(Class<T> clazz){
+	public <T> LiteralParser<T> getValueParser(Class<T> clazz){
 		var p = valParsers.get(clazz);
 		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) {
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
-		return (SimpleParser<T>) p;
+		return (LiteralParser<T>) p;
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> ExpressionParser<T> getVariableParser(Class<T> clazz){
-		return (ExpressionParser<T>) varParsers.get(clazz);
+	public <T> EntryParser<T> getVariableParser(Class<T> clazz){
+		return (EntryParser<T>) varParsers.get(clazz);
 	}
 	
 	static {
-		var smpl = new HashMap<Class<?>, SimpleParser<?>>();
-		smpl.put(Boolean.class, TypeParserRegistry::parseBoolean); //db boolean compatibility
+		var smpl = new HashMap<Class<?>, LiteralParser<?>>();
+		smpl.put(Boolean.class, TypeRegistry::parseBoolean); //db boolean compatibility
 		smpl.put(Byte.class, Byte::parseByte);
 		smpl.put(Short.class, Short::parseShort);
 		smpl.put(Integer.class, Integer::parseInt);
 		smpl.put(Long.class, Long::parseLong);
 		smpl.put(Float.class, Float::parseFloat);
 		smpl.put(Double.class, Double::parseDouble);
-		smpl.put(Character.class, TypeParserRegistry::parseChar);
+		smpl.put(Character.class, TypeRegistry::parseChar);
 		smpl.put(BigInteger.class, BigInteger::new);
 		smpl.put(BigDecimal.class, BigDecimal::new);
 		smpl.put(String.class, v-> v);
@@ -100,7 +100,7 @@ public final class TypeParserRegistry {
 		smpl.put(UUID.class, UUID::fromString);
 		//Object ?
 		VAL_PARSERS = unmodifiableMap(smpl);
-		var expr = new HashMap<Class<?>, ExpressionParser<?>>();
+		var expr = new HashMap<Class<?>, EntryParser<?>>();
 		expr.put(DBColumn.class, ExpressionEvaluator::resolveColumn);
 		expr.put(NamedColumn.class, ExpressionEvaluator::resolveNamedColumn);
 		expr.put(DBFilter.class, ExpressionEvaluator::resolveFilter);
@@ -141,12 +141,12 @@ public final class TypeParserRegistry {
 		return null;
 	}
 
-	public static interface SimpleParser<T> {
+	public static interface LiteralParser<T> {
 		
 		T parse(String s) throws Exception;	//parse Exception
 	}
 	
-	public static interface ExpressionParser<T> {
+	public static interface EntryParser<T> {
 		
 		T parse(EntryChain entry, QueryContext ctx) throws Exception;		
 	}

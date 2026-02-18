@@ -185,7 +185,7 @@ public final class ExpressionEvaluator {
 				if(!isJoin.test(entry.getValue())) {
 					throw new EntryParseException("invalid join operator : " + entry.getValue());
 				}
-				ctx = ctx.map(view);
+				ctx = ctx.withView(view);
 			}
 			else {
 				throw new EntryParseException("join operator is missing");
@@ -322,7 +322,7 @@ public final class ExpressionEvaluator {
 				}
 			}
 			else {
-				arr[i] = ctx.eval(args[i], p.getTypes());
+				arr[i] = ctx.resolve(args[i], p.getTypes());
 			}
 		});
 		return arr;

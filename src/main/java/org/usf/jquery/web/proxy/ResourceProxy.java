@@ -134,14 +134,14 @@ public abstract class ResourceProxy implements InvocationHandler {
 			var type = params[0].getType().getComponentType();
 			var arr = Array.newInstance(type, args.length);
 			for(int i=0; i<args.length; i++) {
-				Array.set(arr, i, ctx.eval(args[i], type));
+				Array.set(arr, i, ctx.resolve(args[i], type));
 			}
 			return new Object[] {arr};
 		}
 		if(params.length == args.length) {
 			var arr = new Object[params.length];
 			for(int i=0; i<params.length; i++) {
-				arr[i] = ctx.eval(args[i], params[i].getType());
+				arr[i] = ctx.resolve(args[i], params[i].getType());
 			}
 			return arr;
 		}

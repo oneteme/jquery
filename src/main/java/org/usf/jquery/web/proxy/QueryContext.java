@@ -38,11 +38,11 @@ public final class QueryContext {
 	private final Resource schema;
 	private final ViewResource defaultView;
 	private final Map<String, ViewResource> cache;
-	private final TypeParserRegistry registry;
+	private final TypeRegistry registry;
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
 
-	public QueryContext(Resource schema, ViewResource defaultView, TypeParserRegistry registry) {
+	public QueryContext(Resource schema, ViewResource defaultView, TypeRegistry registry) {
 		this(schema, defaultView, new HashMap<>(), registry);
 	}
 	
@@ -88,14 +88,14 @@ public final class QueryContext {
 		});
 	}
 	
-	public Object eval(EntryChain entry, JavaType... types) {
+	public Object resolve(EntryChain entry, JavaType... types) {
 		if(entry.isVariable() && (isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance))) {
 			try {
-				return eval(entry, DBColumn.class);
+				return resolve(entry, DBColumn.class);
 			}
 			catch (Exception e) {
 				try {
-					return eval(entry, QueryView.class);
+					return resolve(entry, QueryView.class);
 				}
 				catch (Exception ex) {
 					//do nothing, try other types
@@ -107,7 +107,7 @@ public final class QueryContext {
 		}
 		for(var t : types) {
 			try {
-				return eval(entry, t.getCorrespondingClass());
+				return resolve(entry, t.getCorrespondingClass());
 			}
 			catch (EntryParseException e) {
 				throw e; //cannot parse entry for this type, no need to try other types
@@ -119,7 +119,7 @@ public final class QueryContext {
 		throw new NoSuchElementException("no parser for type " + Arrays.toString(types));
 	}
 
-	public Object eval(EntryChain entry, Class<?> type) {
+	public Object resolve(EntryChain entry, Class<?> type) {
 		if(entry.isVariable()) {
 			var prs = registry.getVariableParser(type);
 			if(nonNull(prs)) {
@@ -151,10 +151,10 @@ public final class QueryContext {
 	}
 
 	public QueryContext subContext(ViewResource view) {
-		return new QueryContext(schema, view, null, registry);
+		return new QueryContext(schema, view, new HashMap<>(), registry);
 	}
 	
-	public QueryContext map(ViewResource view) { //inherit cache
+	public QueryContext withView(ViewResource view) { //inherit cache
 		return new QueryContext(schema, view, cache, registry);
 	}
 		
