@@ -5,6 +5,7 @@ import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.web.proxy.ResourceScanner.getMethodIdentifier;
 import static org.usf.jquery.web.proxy.ResourceScanner.scanBinding;
 import static org.usf.jquery.web.proxy.ResourceScanner.scanExposedResources;
 import static org.usf.jquery.web.proxy.ViewInvocationHandler.createViewHandler;
@@ -30,13 +31,13 @@ import lombok.extern.slf4j.Slf4j;
 public final class SchemaInvocationHandler extends ResourceInvokerHandler {
 	
 	private final String name;
-	private final Map<String, ? extends Resource> subHandlers;
+	private final Map<String, ? extends ViewResource> viewHandlers;
 	private final DataSource ds;
 	private final Product product;
 	
-	public SchemaInvocationHandler(String name, Map<String, Method> exposedMethods, Map<String, ? extends Resource> subHandlers, DataSource ds, Product product) {
+	public SchemaInvocationHandler(String name, Map<String, Method> exposedMethods, Map<String, ? extends ViewResource> viewHandlers, DataSource ds, Product product) {
 		super(exposedMethods);
-		this.subHandlers = subHandlers;
+		this.viewHandlers = viewHandlers;
 		this.name = name;
 		this.ds = ds;
 		this.product = product;
@@ -44,7 +45,7 @@ public final class SchemaInvocationHandler extends ResourceInvokerHandler {
 	
 	@Override
 	Object invokeAbstractMethod(Object proxy, Bind bind, Method method, Object[] args) { //bind method must return a resource handler
-		var handler = subHandlers.get(method.getName());
+		var handler = viewHandlers.get(getMethodIdentifier(method));
 		if(nonNull(handler)) {
 			return handler;	
 		}
@@ -69,10 +70,10 @@ public final class SchemaInvocationHandler extends ResourceInvokerHandler {
 			var sub = map.entrySet()
 					.stream()
 					.filter(e-> isAbstract(e.getValue().getReturnType().getModifiers())) //only abstract method can be binded to sub handler
-					.collect(toMap(Entry::getKey, e-> createViewHandler((Class<? extends Resource>)e.getValue().getReturnType(), scanBinding(e.getValue(), true))));
+					.collect(toMap(Entry::getKey, e-> createViewHandler((Class<? extends ViewResource>)e.getValue().getReturnType(), scanBinding(e.getValue(), true))));
 			return clazz.cast(newProxyInstance(SchemaInvocationHandler.class.getClassLoader(), new Class<?>[]{clazz}, 
 					new SchemaInvocationHandler(nonNull(bnd) ? bnd.value() : null, map, sub, ds, null)));
 		}
-		throw new IllegalArgumentException("schema must be an interface : " + clazz);
+		throw new JQueryConfigurationException("schema must be an interface : " + clazz);
 	}
 }

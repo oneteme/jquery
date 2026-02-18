@@ -8,6 +8,7 @@ import static java.util.Optional.empty;
 import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.ViewJoin.join;
 
+import java.util.ArrayList;
 import java.util.NoSuchElementException;
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -26,27 +27,24 @@ import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
-import org.usf.jquery.web.spec.QueryResource;
-import org.usf.jquery.web.spec.ViewResource;
 
 import lombok.NoArgsConstructor;
 
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class EntryResolver {
-
+	
 	public static DBView resolveView(EntryChain entry, QueryContext ctx) {
 		try {
 			var itr = entry.iterator();
 			var view = resolveView(itr, ctx);
 			assertLastEntry(itr, true);
 			ctx.declareView(requireTag(itr.get()), view);
-			return view;
+			return view.getView();
 		}
 		catch (Exception e) {
 			throw new EntryParseException("invalid view expression : " + entry.getValue(), e);
@@ -143,19 +141,20 @@ public final class EntryResolver {
 		}
 	}
 	
-	static Resource resolveView(EntryChainIterator itr, QueryContext ctx) {
+	static ViewResource resolveView(EntryChainIterator itr, QueryContext ctx) {
 		var entry = itr.get();
 		var view = ctx.lookupView(true, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
 			return itr.hasNext() 
-					? parseView(itr.advance(), ctx.subContext(view.get()))  //view.select().filter()..
+					? parseView(itr.advance(), ctx.subContext(view.get())) //view.select().filter()..
 					: view.get();
 		}
 		throw new NoSuchElementException("view resource not found : " + entry.getValue());
 	}
 	
 	static QueryResource parseView(EntryChainIterator itr, QueryContext ctx) {
-		//select().filter().order()...
+		//column().filter().order()...
+		
 		throw new UnsupportedOperationException("not implemented yet");
 	}
 	
@@ -197,7 +196,7 @@ public final class EntryResolver {
 			try {
 				var type = JoinType.valueOf(entry.getValue().substring(0, entry.getValue().length()-4).toUpperCase());
 				itr = entry.getArgs()[0].iterator();
-				var view = resolveView(itr, ctx);
+				var view = resolveView(itr, ctx).getView();
 				assertLastEntry(itr, false);
 				var filter = resolveFilter(entry.getArgs()[1], ctx);
 				return JoinsClause.of(join(type, view, filter));
@@ -211,19 +210,22 @@ public final class EntryResolver {
 	
 	static Partition parsePartition(EntryChainIterator itr, QueryContext ctx) {
 		var entry = itr.get();
+		var cols = new ArrayList<DBColumn>();
+		var ords = new ArrayList<DBOrder>();
 		do {
 			switch (entry.getValue()) {
-			case "partition":
-			case "order":
+			case "partition": cols.add(resolveColumn(entry.getArgs()[0], ctx)); break;
+			case "order": ords.add(resolveOrder(entry.getArgs()[0], ctx)); break;
 			default: throw new IllegalArgumentException("invalid partition operator : " + entry.getValue());
 			}
 		} while(itr.hasNext());
+		return new Partition(cols.toArray(DBColumn[]::new), ords.toArray(DBOrder[]::new));
 	}
 	
 	static DBColumn resolveColumn(EntryChainIterator itr, QueryContext ctx, EntryChain... outArgs) {
 		var res = lookupDeclaredResource(itr, DBColumn.class, ctx, (v, e)->{ 
 			if("count".equals(e.getValue())) {
-				return Optional.of(invokeOperator(e.hasArgs() ? null : allColumns(v), e.getValue(), e.getArgs(), ctx));
+				return Optional.of(invokeOperator(e.hasArgs() ? null : allColumns(v.getView()), e.getValue(), e.getArgs(), ctx));
 			}
 			return empty();
 		}); //column or criteria resource
@@ -234,7 +236,7 @@ public final class EntryResolver {
 		throw new NoSuchElementException("column resource not found : " + itr.get().getValue());
 	}
 
-	static <T> Optional<T> lookupDeclaredResource(EntryChainIterator itr, Class<T> type, QueryContext ctx, BiFunction<DBView, EntryChain, Optional<T>> fn) {
+	static <T> Optional<T> lookupDeclaredResource(EntryChainIterator itr, Class<T> type, QueryContext ctx, BiFunction<ViewResource, EntryChain, Optional<T>> fn) {
 		if(itr.hasNext()) { //view.rsrc
 			var vRes = ctx.lookupView(false, itr.get().getValue()); //parameterized view resource is not supported, must be declared as view resource in context
 			if(vRes.isPresent()) {
@@ -326,7 +328,7 @@ public final class EntryResolver {
 		return arr;
 	}
 
-	static <T> Optional<T> lookupViewResource(QueryContext ctx, DBView view, EntryChain entry, Class<T> type) { //pretty syntax
+	static <T> Optional<T> lookupViewResource(QueryContext ctx, ViewResource view, EntryChain entry, Class<T> type) { //pretty syntax
 		return ctx.lookupViewResource(view, entry.getValue(), type, entry.getArgs());
 	}
 
@@ -344,9 +346,5 @@ public final class EntryResolver {
 			return entry.getTag();
 		}
 		throw new EntrySyntaxException("entry must have a tag : " + entry.getValue());
-	}
-	
-	public static void main(String[] args) {
-		var ctx = new QueryContext(null, null, null);
 	}
 }

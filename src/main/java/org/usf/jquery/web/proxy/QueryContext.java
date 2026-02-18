@@ -2,8 +2,6 @@ package org.usf.jquery.web.proxy;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.empty;
-import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -12,7 +10,6 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.proxy.Resource.invokeResource;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -38,47 +35,51 @@ public final class QueryContext {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
-	//TODO allowLiteralJoin, allowLiteralQuery, ..
 	private final Resource schema;
-	private final Resource defaultView;
-	private final Map<String, Resource> cache;
+	private final ViewResource defaultView;
+	private final Map<String, ViewResource> cache;
 	private final TypeParserRegistry registry;
 
-	public QueryContext(Resource schema, Resource defaultView, TypeParserRegistry registry) {
+	//TODO allowLiteralJoin, allowLiteralQuery, ..
+
+	public QueryContext(Resource schema, ViewResource defaultView, TypeParserRegistry registry) {
 		this(schema, defaultView, new HashMap<>(), registry);
 	}
 	
-	public Optional<Resource> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
+	public Optional<ViewResource> lookupView(boolean allowParameterize, String name, EntryChain... args) { 
 		var view = cache.get(name);
 		if(isNull(view)) {
-			var mth = schema.lookupMethod(name, Resource.class);
-			if(nonNull(mth)) {
-				if(!allowParameterize && mth.getParameterCount() > 0) {
-					throw new IllegalArgumentException("view resource '" + mth.getName() + "' expects parameters, but parameterization is not allowed in this context");
-				} //else explicit view add
-				view = Resource.class.cast(invokeResource(mth, schema, args, this));
-				declareView(name, view);
+			try {
+				var res = lookupSchemaResource(name, ViewResource.class, args);
+				if(res.isPresent()) {
+					declareView(name, view);
+				}
+				return res;
+			}
+			catch (EntryParseException e) {
+				if(!allowParameterize && nonNull(args)) {
+					throw new IllegalArgumentException("view resource '" + name + "' expects parameters, but parameterization is not allowed in this context");
+				}
 			}
 		}
-		return ofNullable(view);
+		return Optional.empty();
 	}
 
 	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, EntryChain... args) { 
-		return invoke(schema, name, type, args);
+		return lookupResource(schema, name, type, args);
 	}
 	
 	public <T> Optional<T> lookupViewResource(Resource view, String name, Class<T> type, EntryChain... args) { 
-		return invoke(view, name, type, args);
+		return lookupResource(view, name, type, args);
 	}
 	
-	 <T> Optional<T> invoke(Object obj, String name, Class<T> type, EntryChain... args){
-		var mth = schema.lookupMethod(name, type);
-		return nonNull(mth)
-				? Optional.of(type.cast(invokeResource(mth, obj, args, this)))
-				: empty();
+	<T> Optional<T> lookupResource(Resource resource, String name, Class<T> type, EntryChain... args) { 
+		return resource.exposes(name, type)
+				? Optional.of(resource.invokeResource(name, type, args, this))
+				: Optional.empty();
 	}
 	
-	void declareView(String name, Resource view) {
+	void declareView(String name, ViewResource view) {
 		cache.compute(name, (k,v)->{
 			if(isNull(v) || v == view) {
 				return view;
@@ -149,11 +150,11 @@ public final class QueryContext {
 		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
 	}
 
-	public QueryContext subContext(Resource view) {
+	public QueryContext subContext(ViewResource view) {
 		return new QueryContext(schema, view, null, registry);
 	}
 	
-	public QueryContext map(Resource view) { //inherit cache
+	public QueryContext map(ViewResource view) { //inherit cache
 		return new QueryContext(schema, view, cache, registry);
 	}
 		

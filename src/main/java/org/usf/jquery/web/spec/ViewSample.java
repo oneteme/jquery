@@ -1,8 +1,5 @@
 package org.usf.jquery.web.spec;
 
-import static java.lang.reflect.Modifier.isPublic;
-import static java.lang.reflect.Modifier.isStatic;
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
 import java.lang.reflect.Method;
@@ -20,8 +17,9 @@ import org.usf.jquery.web.proxy.Expose;
 import org.usf.jquery.web.proxy.Parameterized;
 import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
 import org.usf.jquery.web.proxy.Typed;
+import org.usf.jquery.web.proxy.ViewResource;
 
-public interface ViewResource {
+public interface ViewSample extends ViewResource {
     
 	@Bind("va_loc")
     ViewColumn location(); 

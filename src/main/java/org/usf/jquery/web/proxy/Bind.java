@@ -25,6 +25,8 @@ public @interface Bind {
 	//scope !?
 	
 	enum BindType {
-		REF, REQ, SQL;
+		REF, //bind to physical resource reference 
+		REQ, //bind to request expression
+		SQL; //bind to sql expression
 	}
 }

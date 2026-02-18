@@ -17,6 +17,7 @@ import org.usf.jquery.web.proxy.Bind;
 import org.usf.jquery.web.proxy.Expose;
 import org.usf.jquery.web.proxy.Parameterized;
 import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
+import org.usf.jquery.web.proxy.Resource;
 
 /**
  * 
@@ -24,15 +25,15 @@ import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
  *
  */
 @Bind("sample") //bind this class to "sample" database
-public interface SchemaResource {
+public interface SchemaSample extends Resource{
 	
 	@Expose(identity="v1") //export view_1 as resource name v1, if id is empty, method name will be used as resource name
 	@Bind("view_1") //bind this method to "view_1" view of "sample" database
-	ViewResource view1();
+	ViewSample view1();
 	
 	@Expose(false) //view2 is not exposed, but it is still binded to "v2" view of "sample" database, so it can be used as internal resource
 	@Bind("v2")
-	ViewResource view2(); 
+	ViewSample view2(); 
 	
 	@Expose(identity="myFn", description="") 
 	default TypedOperator myFunction() {

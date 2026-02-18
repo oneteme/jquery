@@ -92,9 +92,10 @@ public final class EntryChainParser {
 		}
 		throw lexer.unexpectedCharacterException();
 	}
-	
+
+	//Domain Specific Language	
 	@RequiredArgsConstructor
-	static class Lexer {
+	static class Lexer { 
 		
 		private final String s;
 		private int anchor=0;

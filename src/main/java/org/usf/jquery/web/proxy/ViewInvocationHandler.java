@@ -100,7 +100,7 @@ final class ViewInvocationHandler extends ResourceInvokerHandler {
 		return toSQL(view);
 	}
 
-	static <T extends Resource> T createViewHandler(Class<T> type, Bind bind) {
+	static <T extends ViewResource> T createViewHandler(Class<T> type, Bind bind) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
 			case REF-> view(bind.value(), bind.value());
