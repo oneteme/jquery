@@ -1,5 +1,6 @@
 package org.usf.jquery.web.proxy;
 
+import static java.lang.reflect.Array.newInstance;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.BIGINT;
@@ -119,7 +120,19 @@ public final class QueryContext {
 		throw new NoSuchElementException("no parser for type " + Arrays.toString(types));
 	}
 
-	public Object resolve(Entry entry, Class<?> type) {
+	@SuppressWarnings("unchecked")
+	public <T> T[] resolveAll(Entry[] args, Class<T> type) {
+		T[]	res = null;
+		if(nonNull(args)) {
+			res = (T[]) newInstance(type, args.length);
+			for(int i=0; i<args.length; i++) {
+				res[i] = resolve(args[i], type);
+			}
+		}
+		return res;
+	}
+
+	public <T> T resolve(Entry entry, Class<T> type) {
 		if(entry.isVariable()) {
 			var prs = registry.getVariableParser(type);
 			if(nonNull(prs)) {
@@ -130,14 +143,14 @@ public final class QueryContext {
 					throw cannotParseEntryException(type, entry.getValue());
 				}
 			}
-		}
-		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) {
+		}// consider variable with no args, next or tag as value entry
+		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) { 
 			return evalValue(entry.getValue(), type);
 		}
 		throw new IllegalArgumentException("unkwown");
 	}
 	
-	public Object evalValue(String value, Class<?> type) {
+	public <T> T evalValue(String value, Class<T> type) {
 		var prs = registry.getValueParser(type);
 		if(nonNull(prs)) {
 			try {

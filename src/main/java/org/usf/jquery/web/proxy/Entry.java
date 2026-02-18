@@ -14,10 +14,10 @@ import lombok.Getter;
  *
  */
 @Getter
-final class Entry {
+public final class Entry {
 
 	private final String value;
-	private final TokenKind kind; //"string"
+	private final TokenKind kind;
 	private final Entry[] args;
 	private final Entry next;
 	private final String tag;

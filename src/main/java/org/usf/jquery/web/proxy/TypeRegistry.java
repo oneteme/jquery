@@ -40,10 +40,10 @@ import org.usf.jquery.core.SingleQueryColumn;
  */
 public final class TypeRegistry {
 	
-	private static final Map<Class<?>, LiteralParser<?>> VAL_PARSERS;
+	private static final Map<Class<?>, ValueParser<?>> VAL_PARSERS;
 	private static final Map<Class<?>, EntryEvaluator<?>> VAR_PARSERS;
 	
-	private final Map<Class<?>, LiteralParser<?>> valParsers;
+	private final Map<Class<?>, ValueParser<?>> valParsers;
 	private final Map<Class<?>, EntryEvaluator<?>> varParsers;
 	
 	public TypeRegistry() {
@@ -51,7 +51,7 @@ public final class TypeRegistry {
 		this.varParsers = new ConcurrentHashMap<>(VAR_PARSERS);
 	}
 	
-	public <T> void register(Class<T> clazz, LiteralParser<T> parser) {
+	public <T> void register(Class<T> clazz, ValueParser<T> parser) {
 		valParsers.put(clazz, parser);
 	}
 	
@@ -60,12 +60,12 @@ public final class TypeRegistry {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> LiteralParser<T> getValueParser(Class<T> clazz){
+	public <T> ValueParser<T> getValueParser(Class<T> clazz){
 		var p = valParsers.get(clazz);
 		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) {
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
-		return (LiteralParser<T>) p;
+		return (ValueParser<T>) p;
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -74,7 +74,7 @@ public final class TypeRegistry {
 	}
 	
 	static {
-		var smpl = new HashMap<Class<?>, LiteralParser<?>>();
+		var smpl = new HashMap<Class<?>, ValueParser<?>>();
 		smpl.put(Boolean.class, TypeRegistry::parseBoolean); //db boolean compatibility
 		smpl.put(Byte.class, Byte::parseByte);
 		smpl.put(Short.class, Short::parseShort);
@@ -142,7 +142,7 @@ public final class TypeRegistry {
 	}
 
 	@FunctionalInterface
-	public static interface LiteralParser<T> {
+	public static interface ValueParser<T> {
 		
 		T parse(String s) throws Exception;	//parse Exception
 	}
