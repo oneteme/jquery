@@ -30,7 +30,7 @@ import lombok.RequiredArgsConstructor;
 
 @Getter
 @RequiredArgsConstructor
-public final class QueryContext {
+public final class RequestContext {
 
 	private static final JDBCType[] STD_TYPES = { 
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
@@ -43,7 +43,7 @@ public final class QueryContext {
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
 
-	public QueryContext(Resource schema, ViewResource defaultView, TypeRegistry registry) {
+	public RequestContext(Resource schema, ViewResource defaultView, TypeRegistry registry) {
 		this(schema, defaultView, new HashMap<>(), registry);
 	}
 	
@@ -147,7 +147,7 @@ public final class QueryContext {
 		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) { 
 			return evalValue(entry.getValue(), type);
 		}
-		throw new IllegalArgumentException("unkwown");
+		throw new IllegalArgumentException("cannot resolve entry " + entry + " as type " + type.getSimpleName());
 	}
 	
 	public <T> T evalValue(String value, Class<T> type) {
@@ -163,12 +163,12 @@ public final class QueryContext {
 		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
 	}
 
-	public QueryContext subContext(ViewResource view) {
-		return new QueryContext(schema, view, new HashMap<>(), registry);
+	public RequestContext subContext(ViewResource view) {
+		return new RequestContext(schema, view, new HashMap<>(), registry);
 	}
 	
-	public QueryContext withView(ViewResource view) { //inherit cache
-		return new QueryContext(schema, view, cache, registry);
+	public RequestContext withView(ViewResource view) { //inherit cache
+		return new RequestContext(schema, view, cache, registry);
 	}
 		
 	static EntryParseException cannotParseEntryException(Class<?> type, String v) {

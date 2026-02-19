@@ -2,8 +2,10 @@ package org.usf.jquery.core;
 
 import java.util.function.Consumer;
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
+@Getter
 @RequiredArgsConstructor
 public final class JoinsClause implements DBObject {
 

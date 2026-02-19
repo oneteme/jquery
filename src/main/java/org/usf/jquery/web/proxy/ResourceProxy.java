@@ -3,11 +3,13 @@ package org.usf.jquery.web.proxy;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Objects;
 
 import org.usf.jquery.web.EntryParseException;
 
@@ -33,10 +35,10 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 	
 	static {
 		try {
-			INVOKE_METHOD = Resource.class.getMethod("invokeResource", String.class, Class.class, Entry[].class, QueryContext.class);
+			INVOKE_METHOD = Resource.class.getMethod("invokeResource", String.class, Class.class, Entry[].class, RequestContext.class);
 			EXPOSES_METHOD = Resource.class.getMethod("exposes", String.class, Class.class);
 		} catch (Exception e) {
-			throw new NoSuchMethodError("failed to initialize ResourceInvokerHandler: " + e.getMessage());
+			throw new NoSuchMethodError("failed to initialize ResourceProxy: " + e.getMessage());
 		}
 	}
 	
@@ -53,11 +55,9 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 				return invokeResourceMethod(proxy, assertArguments(INVOKE_METHOD, args));
 			}
 			else {
-				var bind = method.getAnnotation(Bind.class);
-				if(nonNull(bind)) {
-					return invokeAbstractMethod(proxy, bind, method, args);
-				}
-				throw new IllegalStateException("unexpected abstract method invocation " + method);
+				var bind = Objects.requireNonNull(method.getAnnotation(Bind.class), 
+						()-> "abstract method " + method + " must be annotated with @Bind");
+				return invokeAbstractMethod(proxy, requireNonNull(bind), method, args);
 			}
 		}
 		return switch (method.getName()) {
@@ -84,7 +84,7 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 			var entries = (Entry[]) args[2];
 			if(m.getParameterCount() > 0) {
 				try {
-					 arr = (proxy instanceof ArgumentsEvaluator eval ? eval : this).evaluate(m, entries, (QueryContext) args[3]);
+					 arr = (proxy instanceof ArgumentsEvaluator eval ? eval : this).evaluate(m, entries, (RequestContext) args[3]);
 				}
 				catch (EntryParseException e) {
 					throw e;

@@ -150,6 +150,6 @@ public final class TypeRegistry {
 	@FunctionalInterface
 	public static interface EntryEvaluator<T> {
 		
-		T evaluate(Entry entry, QueryContext ctx) throws Exception;		
+		T evaluate(Entry entry, RequestContext ctx) throws Exception;		
 	}
 }

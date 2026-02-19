@@ -42,7 +42,7 @@ public interface SchemaSample extends Resource{
 	}
 
 	@Expose(identity="vitesse") 
-    default ComparisonExpression elapsedTimeExpressions(String name) { //can bind ?
+    default ComparisonExpression elapsedTimeExpressions(String name) { //patch ?
         return switch (name) {
             case "fastest" -> lt(1);
             case "fast" -> ge(1).and(lt(3));

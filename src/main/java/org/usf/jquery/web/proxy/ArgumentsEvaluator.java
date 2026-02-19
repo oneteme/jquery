@@ -10,7 +10,7 @@ import java.lang.reflect.Method;
  */
 public interface ArgumentsEvaluator {
 
-	default Object[] evaluate(Method m, Entry[] args, QueryContext ctx) {
+	default Object[] evaluate(Method m, Entry[] args, RequestContext ctx) {
 		var params = m.getParameters();
 		if(params.length == 1 && params[0].getType().isArray()) {
 			var type = params[0].getType().getComponentType();

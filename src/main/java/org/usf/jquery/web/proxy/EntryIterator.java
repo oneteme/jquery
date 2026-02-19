@@ -27,9 +27,16 @@ public final class EntryIterator implements Iterator<Entry> {
 		return advance().get();
 	}
 	
-	public EntryIterator advance() {
+	public boolean tryAdvance() {
 		if(hasNext()) {
 			cursor = cursor.getNext();
+			return true;
+		}
+		return false;
+	}
+	
+	public EntryIterator advance() {
+		if(tryAdvance()) {
 			return this;
 		}
 		throw new NoSuchElementException("no more entry in the chain");

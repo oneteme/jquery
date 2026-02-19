@@ -27,7 +27,7 @@ public final class QueryResource implements ViewResource {
 	}
 
 	@Override
-	public <T> T invokeResource(String id, Class<T> type, Entry[] args, QueryContext ctx) {
+	public <T> T invokeResource(String id, Class<T> type, Entry[] args, RequestContext ctx) {
 		if(type.isAssignableFrom(NamedColumn.class) && nonNull(query.getColumns())) {
 			return stream(query.getColumns())
 					.filter(c-> id.equals(c.getTag()))

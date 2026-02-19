@@ -105,6 +105,14 @@ public final class QueryComposer {
 		}
 		return this;
 	}
+	
+
+	public QueryComposer joins(@NonNull JoinsClause... joins) {
+		for(var j : joins) {
+			this.joins(j.getJoins()); //TODO check 
+		}
+		return this;
+	}
 
 	public QueryComposer joins(@NonNull ViewJoin... joins) {
 		this.role = JOIN;
