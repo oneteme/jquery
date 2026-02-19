@@ -32,7 +32,6 @@ public final class ResourceIntrospector {
 			if(!isStatic(mod) && isPublic(mod)) {
 				var exp = validateExpose(m);
 				validateBind(m, allowBind);
-				validateParameterized(m);
 				if(isNull(exp) || exp.value()) {
 					c.accept(m);
 				}
@@ -83,22 +82,6 @@ public final class ResourceIntrospector {
 			}
 		}
 		return exp;
-	}
-
-	public static Parameterized validateParameterized(Method m){
-		var prm = m.getAnnotation(Parameterized.class); //optional annotation for parameterized method
-		if(nonNull(prm)) {
-			if(m.getParameterCount() == 0) { 
-				throw new ResourceMappingException("parameterized method must have parameters : " + m);
-			}
-			var type = prm.parser();
-			if(type.isInterface() 
-					|| isAbstract(type.getModifiers())
-					|| stream(type.getConstructors()).noneMatch(c-> c.getParameterCount() == 0)) {
-				throw new ResourceMappingException("invalid @Parameterized.parser=["+type+"] on " + m); 
-			}
-		}
-		return prm;
 	}
 	
 	public static String resolveIdentifier(Method m) {

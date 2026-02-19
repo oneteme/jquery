@@ -2,7 +2,6 @@ package org.usf.jquery.web.spec;
 
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
-import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -14,8 +13,6 @@ import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.web.proxy.Bind;
 import org.usf.jquery.web.proxy.Bind.BindType;
 import org.usf.jquery.web.proxy.Expose;
-import org.usf.jquery.web.proxy.Parameterized;
-import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
 import org.usf.jquery.web.proxy.Typed;
 import org.usf.jquery.web.proxy.ViewResource;
 
@@ -49,7 +46,6 @@ public interface ViewSample extends ViewResource {
     }
 
     @Expose(identity="rattachement", description="")
-//    @Parameterized(parser = ArgsParser.class)
     default JoinsClause ratt(LocalDate o1, Instant o2) {
     	return null;
     }

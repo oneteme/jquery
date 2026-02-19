@@ -7,16 +7,12 @@ import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Operator.function;
 import static org.usf.jquery.core.Parameter.required;
 
-import java.lang.reflect.Method;
-
 import org.usf.jquery.core.ArgTypeRef;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.proxy.Bind;
 import org.usf.jquery.web.proxy.Expose;
-import org.usf.jquery.web.proxy.Parameterized;
-import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
 import org.usf.jquery.web.proxy.Resource;
 
 /**
@@ -46,7 +42,6 @@ public interface SchemaSample extends Resource{
 	}
 
 	@Expose(identity="vitesse") 
-//    @Parameterized(parser = ArgsParser.class) 
     default ComparisonExpression elapsedTimeExpressions(String name) { //can bind ?
         return switch (name) {
             case "fastest" -> lt(1);

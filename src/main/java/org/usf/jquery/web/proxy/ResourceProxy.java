@@ -5,13 +5,11 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Map;
 
 import org.usf.jquery.web.EntryParseException;
-import org.usf.jquery.web.proxy.Parameterized.ArgsParser;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -26,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class ResourceProxy implements InvocationHandler {
+public abstract class ResourceProxy implements InvocationHandler, ArgsEvaluator {
 
 	private static final Method INVOKE_METHOD;
 	private static final Method EXPOSES_METHOD;
@@ -85,10 +83,9 @@ public abstract class ResourceProxy implements InvocationHandler {
 			Object[] arr = null;
 			var entries = (Entry[]) args[2];
 			if(m.getParameterCount() > 0) {
-				var ann = m.getAnnotation(Parameterized.class);
-				ArgsParser prs = nonNull(ann) ? newInstance(ann.parser()) : ResourceProxy::parseArgs;
+				ArgsEvaluator prs = proxy instanceof ArgsEvaluator eval ? eval : this;
 				try {
-					 arr = prs.parse(m, entries, (QueryContext) args[3]);
+					 arr = prs.evaluate(m, entries, (QueryContext) args[3]);
 				}
 				catch (EntryParseException e) {
 					throw e;
@@ -128,26 +125,6 @@ public abstract class ResourceProxy implements InvocationHandler {
 		}
 	}
 	
-	static Object[] parseArgs(Method m, Entry[] args, QueryContext ctx) {
-		var params = m.getParameters();
-		if(params.length == 1 && params[0].getType().isArray()) {
-			var type = params[0].getType().getComponentType();
-			var arr = Array.newInstance(type, args.length);
-			for(int i=0; i<args.length; i++) {
-				Array.set(arr, i, ctx.resolve(args[i], type));
-			}
-			return new Object[] {arr};
-		}
-		if(params.length == args.length) {
-			var arr = new Object[params.length];
-			for(int i=0; i<params.length; i++) {
-				arr[i] = ctx.resolve(args[i], params[i].getType());
-			}
-			return arr;
-		}
-		throw new IllegalArgumentException("expected " + params.length + " arguments but got " + args.length);
-	}
-
 	static Object[] assertArguments(Method m, Object... args) {
 		var nArgs = isNull(args) ? 0 : args.length;
 		if(m.getParameterCount() == nArgs) {
