@@ -70,7 +70,7 @@ public final class EntryEvaluators {
 	public static DBColumn evaluateColumn(Entry entry, RequestContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var col = evaluateColumn(itr, ctx);
+			var col = evalColumn(itr, ctx);
 			assertLastEntry(itr, false);
 			return col;
 		}
@@ -82,7 +82,7 @@ public final class EntryEvaluators {
 	public static NamedColumn evaluateNamedColumn(Entry entry, RequestContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var col = evaluateColumn(itr, ctx);
+			var col = evalColumn(itr, ctx);
 			assertLastEntry(itr, true);
 			return col instanceof NamedColumn nc ? nc : col.as(requireTag(itr.get()));
 		}
@@ -94,7 +94,7 @@ public final class EntryEvaluators {
 	public static DBFilter evaluateFilter(Entry entry, RequestContext ctx, Entry... outerArgs) {
 		try {
 			var itr = entry.iterator();
-			var col = evaluateColumn(itr, ctx, outerArgs);
+			var col = evalColumn(itr, ctx, outerArgs);
 			assertLastEntry(itr, false);
 			if(col instanceof DBFilter filter) { 
 				return filter; 
@@ -133,7 +133,7 @@ public final class EntryEvaluators {
 	public static Partition evaluatePartition(Entry entry, RequestContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var prt = lookupDeclaredResource(itr, Partition.class, ctx, null).orElseGet(()-> evaluatePartition(itr.reset(), ctx));
+			var prt = lookupDeclaredResource(itr, Partition.class, ctx, null).orElseGet(()-> evalPartition(itr.reset(), ctx));
 			assertLastEntry(itr, false);
 			return prt;
 		}
@@ -145,12 +145,12 @@ public final class EntryEvaluators {
 	public static SingleQueryColumn evaluateQueryColumn(Entry entry, RequestContext ctx) {
 		try {
 			var itr = entry.iterator();
-			var view = evalView(itr, ctx);
+			var view = evalView(itr, ctx); //declared resource ?
 			if(view instanceof QueryResource query) {
 				assertLastEntry(itr, false);
 				return query.getQuery().asColumn();
 			}
-			throw new EntryParseException("");
+			throw new EntryParseException(entry.getValue() + " does not resolve to a query resource");
 		}
 		catch (Exception e) {
 			throw new EntryParseException("invalid single query column expression : " + entry.getValue(), e);
@@ -200,7 +200,7 @@ public final class EntryEvaluators {
 	}
 	
 	static DBOrder evalOrder(EntryIterator itr, RequestContext ctx) {
-		var col = evaluateColumn(itr, ctx);
+		var col = evalColumn(itr, ctx);
 		if(itr.hasNext()) {
 			var entry = itr.next();
 			if(entry.getValue().matches("asc|desc")) {
@@ -249,7 +249,7 @@ public final class EntryEvaluators {
 		throw new EntryParseException(entry.getValue() + " operator must have exactly 2 arguments");
 	}
 	
-	static Partition evaluatePartition(EntryIterator itr, RequestContext ctx) {
+	static Partition evalPartition(EntryIterator itr, RequestContext ctx) {
 		var cols = new ArrayList<DBColumn>();
 		var ords = new ArrayList<DBOrder>();
 		do {
@@ -263,7 +263,7 @@ public final class EntryEvaluators {
 		return new Partition(cols.toArray(DBColumn[]::new), ords.toArray(DBOrder[]::new));
 	}
 	
-	static DBColumn evaluateColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
+	static DBColumn evalColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
 		var res = lookupDeclaredResource(itr, DBColumn.class, ctx, (v, e)->{ 
 			if("count".equals(e.getValue())) {
 				return Optional.of(invokeOperator(e.hasArgs() ? null : allColumns(v.getView()), e.getValue(), e.getArgs(), ctx));
