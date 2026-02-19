@@ -24,7 +24,7 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class ResourceProxy implements InvocationHandler, ArgsEvaluator {
+public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvaluator {
 
 	private static final Method INVOKE_METHOD;
 	private static final Method EXPOSES_METHOD;
@@ -83,9 +83,8 @@ public abstract class ResourceProxy implements InvocationHandler, ArgsEvaluator 
 			Object[] arr = null;
 			var entries = (Entry[]) args[2];
 			if(m.getParameterCount() > 0) {
-				ArgsEvaluator prs = proxy instanceof ArgsEvaluator eval ? eval : this;
 				try {
-					 arr = prs.evaluate(m, entries, (QueryContext) args[3]);
+					 arr = (proxy instanceof ArgumentsEvaluator eval ? eval : this).evaluate(m, entries, (QueryContext) args[3]);
 				}
 				catch (EntryParseException e) {
 					throw e;
@@ -116,14 +115,6 @@ public abstract class ResourceProxy implements InvocationHandler, ArgsEvaluator 
 	abstract int invokeHashCode(Object proxy, Object[] args);
 	
 	abstract String invokeToString(Object proxy, Object[] args);
-	
-	static <T> T newInstance(Class<T> type){
-		try {
-			return type.getConstructor().newInstance();
-		} catch (Exception e) {
-			throw new IllegalStateException("failed to create instance of " + type.getName(), e);
-		}
-	}
 	
 	static Object[] assertArguments(Method m, Object... args) {
 		var nArgs = isNull(args) ? 0 : args.length;

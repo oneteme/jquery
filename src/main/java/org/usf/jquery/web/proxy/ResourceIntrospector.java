@@ -30,8 +30,8 @@ public final class ResourceIntrospector {
 		return stream(type.getDeclaredMethods()).<Method>mapMulti((m, c)-> {
 			var mod = m.getModifiers();
 			if(!isStatic(mod) && isPublic(mod)) {
-				var exp = validateExpose(m);
 				validateBind(m, allowBind);
+				var exp = validateExpose(m);
 				if(isNull(exp) || exp.value()) {
 					c.accept(m);
 				}
