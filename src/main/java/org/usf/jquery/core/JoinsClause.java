@@ -18,7 +18,7 @@ public final class JoinsClause implements DBObject {
 
 	@Override
 	public void build(QueryBuilder query, Object... args) {
-		//TODO
+		
 	}
 	
 	public static JoinsClause of(ViewJoin... joins) {

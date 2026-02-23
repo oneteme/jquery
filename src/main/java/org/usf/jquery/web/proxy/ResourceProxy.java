@@ -48,10 +48,10 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 			return invokeDefaultMethod(proxy, method, args);
 		}
 		if(isAbstract(method.getModifiers())) {
-			if(method == EXPOSES_METHOD) {
+			if(method.equals(EXPOSES_METHOD)) {
 				return invokeExposesMethod(assertArguments(EXPOSES_METHOD, args));
 			}
-			if(method == INVOKE_METHOD) {
+			if(method.equals(INVOKE_METHOD)) {
 				return invokeResourceMethod(proxy, assertArguments(INVOKE_METHOD, args));
 			}
 			else {
@@ -74,12 +74,12 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 	
 	boolean invokeExposesMethod(Object[] args) {
 		var m = exposedMethods.get(args[0]);
-		return nonNull(m) && m.getReturnType() == args[1];
+		return nonNull(m) && ((Class<?>)args[1]).isAssignableFrom(m.getReturnType());
 	}
 	
 	Object invokeResourceMethod(Object proxy, Object[] args) {
 		var m = exposedMethods.get(args[0]);
-		if(nonNull(m) && m.getReturnType() == args[1]) {
+		if(nonNull(m) && ((Class<?>)args[1]).isAssignableFrom(m.getReturnType())) {
 			Object[] arr = null;
 			var entries = (Entry[]) args[2];
 			if(m.getParameterCount() > 0) {
@@ -122,7 +122,7 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 			if(nArgs > 0) {
 				var params = m.getParameters();
 				for(int i=0; i<nArgs; i++) {
-					if(!params[i].getType().isInstance(args[i])) {
+					if(nonNull(args[i]) && !params[i].getType().isInstance(args[i])) {
 						throw new IllegalArgumentException("expected argument " + i + " to be of type " + m.getParameters()[i].getType() + " but got " + args[i].getClass());
 					}
 				}

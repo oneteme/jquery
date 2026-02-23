@@ -1,6 +1,7 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Array.newInstance;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.BIGINT;
@@ -17,6 +18,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.DBColumn;
@@ -24,6 +26,7 @@ import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.web.EntryParseException;
+import org.usf.jquery.web.NoSuchResourceException;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -38,32 +41,30 @@ public final class RequestContext {
 
 	private final Resource schema;
 	private final ViewResource defaultView;
-	private final Map<String, ViewResource> cache;
+	private final Set<String> excludeViews;
+	private final Map<String, ViewResource> declaredViews;
 	private final TypeRegistry registry;
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
 
 	public RequestContext(Resource schema, ViewResource defaultView, TypeRegistry registry) {
-		this(schema, defaultView, new HashMap<>(), registry);
+		this(schema, defaultView, emptySet(), new HashMap<>(), registry);
 	}
 	
 	public Optional<ViewResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
-		var view = cache.get(name);
-		if(isNull(view)) {
+		var view = declaredViews.get(name);
+		if(isNull(view) && !excludeViews.contains(name)) {
 			try {
-				var res = lookupSchemaResource(name, ViewResource.class, args);
-				if(res.isPresent()) {
-					declareView(name, view);
-				}
-				return res;
+				return lookupSchemaResource(name, ViewResource.class, args);
 			}
 			catch (EntryParseException e) {
 				if(!allowParameterize && nonNull(args)) {
 					throw new IllegalArgumentException("view resource '" + name + "' expects parameters, but parameterization is not allowed in this context");
 				}
 			}
+			return Optional.empty();
 		}
-		return Optional.empty();
+		return Optional.of(view);
 	}
 
 	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, Entry... args) { 
@@ -81,7 +82,7 @@ public final class RequestContext {
 	}
 	
 	void declareView(String name, ViewResource view) {
-		cache.compute(name, (k,v)->{
+		declaredViews.compute(name, (k,v)->{
 			if(isNull(v) || v == view) {
 				return view;
 			}
@@ -94,11 +95,11 @@ public final class RequestContext {
 			try {
 				return resolve(entry, DBColumn.class);
 			}
-			catch (Exception e) {
+			catch (NoSuchResourceException e) { //TODO check there's no other exception type to catch, otherwise we may hide a parsing error
 				try {
 					return resolve(entry, QueryView.class);
 				}
-				catch (Exception ex) {
+				catch (NoSuchResourceException ex) { //TODO  check there's no other exception type to catch, otherwise we may hide a parsing error
 					//do nothing, try other types
 				}
 			}
@@ -164,11 +165,14 @@ public final class RequestContext {
 	}
 
 	public RequestContext subContext(ViewResource view) {
-		return new RequestContext(schema, view, new HashMap<>(), registry);
+		return new RequestContext(schema, view, excludeViews, new HashMap<>(), registry);
 	}
 	
 	public RequestContext withView(ViewResource view) { //inherit cache
-		return new RequestContext(schema, view, cache, registry);
+		if(view == defaultView) {
+			return this;
+		}
+		return new RequestContext(schema, view, excludeViews, declaredViews, registry);
 	}
 		
 	static EntryParseException cannotParseEntryException(Class<?> type, String v) {

@@ -107,7 +107,7 @@ public final class QueryComposer {
 	}
 	
 
-	public QueryComposer joins(@NonNull JoinsClause... joins) {
+	public QueryComposer joins2(@NonNull JoinsClause... joins) {
 		for(var j : joins) {
 			this.joins(j.getJoins()); //TODO check 
 		}

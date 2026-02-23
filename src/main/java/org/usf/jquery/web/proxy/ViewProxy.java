@@ -56,6 +56,9 @@ final class ViewProxy extends ResourceProxy {
 	
 	@Override
 	Object invokeAbstractMethod(Object proxy, Bind bind, Method method, Object[] args) {
+		if(method.getName().equals("get")) {
+			return view; //TODO complete this
+		}
 		var type = method.getReturnType();
 		if(DBColumn.class.isAssignableFrom(type)) {
 			return buildColumn(method, bind, args);
