@@ -17,6 +17,7 @@ public final class EntryIterator implements Iterator<Entry> {
 
 	private final Entry head;
 	private Entry cursor;
+	private Entry mark;
 	
 	@Override
 	public boolean hasNext() {
@@ -53,6 +54,16 @@ public final class EntryIterator implements Iterator<Entry> {
 	
 	public Entry peekNext() {
 		return isNull(cursor) ? head : cursor.getNext();
+	}
+	
+	public EntryIterator mark() {
+		this.mark = cursor;
+		return this;
+	}
+	
+	public EntryIterator resetToMark() {
+		this.cursor = mark;
+		return this;
 	}
 	
 	public EntryIterator reset() {

@@ -40,6 +40,7 @@ import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
+import org.usf.jquery.core.Utils;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -262,10 +263,8 @@ public final class EntryEvaluators {
 				if(isNull(jView)) {
 					throw new NoSuchResourceException("no such view : " + entry.getValue());
 				}
-				DBFilter[] filters = null;
-				if(itr.hasNext() && FILTER_OPR.equals(itr.peekNext().getValue())) {
-					filters = ctx.resolveAll(itr.next().getArgs(), DBFilter.class);						
-				}
+				var filters = itr.hasNext() && FILTER_OPR.equals(itr.peekNext().getValue()) 
+						? ctx.resolveAll(itr.next().getArgs(), DBFilter.class) : null;
 				if(type != CROSS && isEmpty(filters)) {
 					throw new IllegalArgumentException("join type " + type + " requires at least one filter");
 				}
@@ -281,22 +280,21 @@ public final class EntryEvaluators {
 	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<ViewResource, EntryIterator, T> anonymousResolver) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
 		if(entry.hasNext()) {
-			var vRes = ctx.lookupView(false, entry.getValue()); //parameterized view resource is not supported, must be declared as view resource in context
-			if(vRes.isPresent()) {
-				var view = vRes.get();
-				var res = lookupViewResource(view, type, itr.advance(), ctx)
-						.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(view, itr) : null);
+			var view = ctx.lookupView(false, entry.getValue()); //parameterized view resource is not supported, must be declared as view resource in context
+			if(view.isPresent()) {
+				var res = lookupViewResource(view.get(), type, itr.mark().advance(), ctx) //consume view entry
+						.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(view.get(), itr) : null);
 				if(nonNull(res)) {
 					return res;
 				}
-				itr.reset(); //unsafe reset to original entry if not found in view resource
+				itr.resetToMark();
 			}
 		}
 		return lookupViewResource(ctx.getDefaultView(), type, itr, ctx)
 				.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(ctx.getDefaultView(), itr) : null);
 	}
 
-	static <T> Optional<T> lookupViewResource(ViewResource view, Class<T> type, EntryIterator itr, RequestContext ctx) { //pretty syntax
+	static <T> Optional<T> lookupViewResource(ViewResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
 		var res = ctx.lookupViewResource(view, entry.getValue(), type, entry.getArgs());
 		if(res.isPresent()) {
@@ -316,7 +314,7 @@ public final class EntryEvaluators {
 				tmp = invokeComparator(col, entry.getValue(), args, ctx);
 				if(isNull(tmp) && nonNull(col)) {
 					tmp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, args)
-							.map(res::filter).orElse(null);
+							.map(col::filter).orElse(null);
 				}
 			}
 			if(isNull(tmp)) {
@@ -330,7 +328,7 @@ public final class EntryEvaluators {
 
 	static DBColumn invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
 		var opr = ctx.lookupSchemaResource(name, TypedOperator.class, args) //check declared operator first, then static resource
-				.orElseGet(()-> invokeStatic(Operator.class, TypedOperator.class, name));
+				.orElseGet(()-> tryInvokeStatic(Operator.class, TypedOperator.class, name));
 		return nonNull(opr) 
 				? opr.operation(resolveArgs(opr.getParameterSet(), col, args, ctx))
 				: null;
@@ -338,13 +336,13 @@ public final class EntryEvaluators {
 	
 	static DBFilter invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
 		var cmp = ctx.lookupSchemaResource(name, TypedComparator.class, args) //check declared comparator first, then static resource
-				.orElseGet(()-> invokeStatic(Comparator.class, TypedComparator.class, name));
+				.orElseGet(()-> tryInvokeStatic(Comparator.class, TypedComparator.class, name));
 		return nonNull(cmp) 
 			? cmp.filter(resolveArgs(cmp.getParameterSet(), col, args, ctx))
 			: null;
 	}
 	
-	static <T> T invokeStatic(Class<?> clazz, Class<T> type, String name) {
+	static <T> T tryInvokeStatic(Class<?> clazz, Class<T> type, String name) {
 		try {
 			var mth = clazz.getMethod(name); //no parameter
 			if(nonNull(mth)) {
@@ -366,7 +364,7 @@ public final class EntryEvaluators {
 					arr[i] = res;
 				}
 				else {
-					throw new IllegalArgumentException(); //TODO
+					throw new IllegalArgumentException(); //TODO better error message
 				}
 			}
 			else {
@@ -377,15 +375,15 @@ public final class EntryEvaluators {
 	}
 	
 	static <T> T resolveSingleArgValue(Entry entry, Class<T> type, RequestContext ctx) {
-		return resolveSingleArg(entry, e-> ctx.evalValue(e.get().getValue(), type));
+		return resolveSingleArg(entry, e-> ctx.evalValue(e.next().getValue(), type));
 	}
 	
 	static <T> T resolveSingleArg(Entry entry, Function<EntryIterator, T> resovler) {
 		if(entry.hasArgs() && entry.getArgs().length == 1) {
-			var itr = entry.getArgs()[0].iterator().advance();
-			var res = resovler.apply(itr);
+			var itr = entry.getArgs()[0].iterator();
+			var obj = resovler.apply(itr);
 			assertLastEntry(itr, false);
-			return res;
+			return obj;
 		}
 		throw new EntryParseException("entry " + entry.getValue() + " must have exactly 1 argument");
 	}
