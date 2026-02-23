@@ -44,7 +44,7 @@ public final class SchemaProxy extends ResourceProxy {
 	}
 	
 	@Override
-	Object invokeAbstractMethod(Object proxy, Bind bind, Method method, Object[] args) { //bind method must return a resource handler
+	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) { //bind method must return a resource handler
 		var handler = views.get(resolveIdentifier(method));
 		if(nonNull(handler)) {
 			return handler;	
@@ -70,7 +70,7 @@ public final class SchemaProxy extends ResourceProxy {
 			var sub = stream(clazz.getDeclaredMethods())
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
 					.collect(toMap(ResourceIntrospector::resolveIdentifier, 
-							m-> createView((Class<? extends ViewResource>)m.getReturnType(), m.getAnnotation(Bind.class))));
+							m-> createView((Class<? extends ViewResource>)m.getReturnType(), m.getAnnotation(Bind.class), bnd)));
 			return clazz.cast(newProxyInstance(SchemaProxy.class.getClassLoader(), new Class<?>[]{clazz}, 
 					new SchemaProxy(bnd, map, sub, ds, null)));
 		}

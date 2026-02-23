@@ -1,11 +1,17 @@
 package org.usf.jquery.web.proxy;
 
+import static java.util.Arrays.stream;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
+import static org.usf.jquery.web.proxy.EntryParser.TokenKind.TXT;
 import static org.usf.jquery.web.proxy.EntryParser.TokenKind.VAR;
 
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.proxy.EntryParser.TokenKind;
 
+import lombok.EqualsAndHashCode;
 import lombok.Getter;
 
 /**
@@ -14,6 +20,7 @@ import lombok.Getter;
  *
  */
 @Getter
+@EqualsAndHashCode
 public final class Entry {
 
 	private final String value;
@@ -64,5 +71,20 @@ public final class Entry {
 	
 	public EntryIterator iterator() {
 		return new EntryIterator(this);
+	}
+	
+	@Override
+	public String toString() {
+		var s = ""; // null == EMPTY
+		if(nonNull(value)) {
+			s += kind == TXT ? doubleQuote(value) : value;
+		}
+		if(nonNull(args)){
+			s += stream(args).map(Entry::toString).collect(joining(",", "(", ")"));
+		}
+		if(hasNext()) {
+			s += "." + next.toString();
+		}
+		return isNull(tag) ? s : s + ":" + tag;
 	}
 }

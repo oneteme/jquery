@@ -3,13 +3,11 @@ package org.usf.jquery.web.proxy;
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Map;
-import java.util.Objects;
 
 import org.usf.jquery.web.EntryParseException;
 
@@ -55,9 +53,7 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 				return invokeResourceMethod(proxy, assertArguments(INVOKE_METHOD, args));
 			}
 			else {
-				var bind = Objects.requireNonNull(method.getAnnotation(Bind.class), 
-						()-> "abstract method " + method + " must be annotated with @Bind");
-				return invokeAbstractMethod(proxy, requireNonNull(bind), method, args);
+				return invokeAbstractMethod(proxy, method, args);
 			}
 		}
 		return switch (method.getName()) {
@@ -110,7 +106,7 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 		return proxy == args[0];
 	}
 	
-	abstract Object invokeAbstractMethod(Object proxy, Bind bind, Method method, Object[] args);
+	abstract Object invokeAbstractMethod(Object proxy, Method method, Object[] args);
 	
 	abstract int invokeHashCode(Object proxy, Object[] args);
 	

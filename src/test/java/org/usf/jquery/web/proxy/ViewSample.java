@@ -1,4 +1,4 @@
-package org.usf.jquery.web.spec;
+package org.usf.jquery.web.proxy;
 
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
@@ -10,13 +10,9 @@ import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
-import org.usf.jquery.web.proxy.Bind;
 import org.usf.jquery.web.proxy.Bind.BindType;
-import org.usf.jquery.web.proxy.Expose;
-import org.usf.jquery.web.proxy.Typed;
-import org.usf.jquery.web.proxy.ViewResource;
 
-public interface ViewSample extends ViewResource {
+interface ViewSample extends ViewResource {
     
 	@Bind("va_loc")
     ViewColumn location(); 
@@ -53,7 +49,5 @@ public interface ViewSample extends ViewResource {
     //@Resource(value="", description="")
     default Partition latestEdit(){
     	return null;
-    }
-
-    
+    }    
 }

@@ -17,8 +17,6 @@ import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
-import static org.usf.jquery.web.proxy.EntryParser.parseEntry;
-import static org.usf.jquery.web.proxy.SchemaProxy.createSchema;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -45,7 +43,6 @@ import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
-import org.usf.jquery.web.spec.SchemaSample;
 
 import lombok.NoArgsConstructor;
 
@@ -59,23 +56,13 @@ public final class EntryEvaluators {
 	
 	public static DBView evaluateView(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var view = evalView(itr, ctx, false);
+		var view = evalView(itr, ctx, true);
 		if(nonNull(view)) {
 			assertLastEntry(itr, true);
 			ctx.declareView(requireTag(itr.get()), view);
 			return view.getView();
 		}
-		throw new NoSuchResourceException("no such view : " + itr.get().getValue());
-	}
-
-	public static DBColumn evaluateColumn(Entry entry, RequestContext ctx) {
-		var itr = entry.iterator();
-		var col = evalColumn(itr, ctx);
-		if(nonNull(col)) {
-			assertLastEntry(itr, false);
-			return col;
-		}
-		throw new NoSuchResourceException("no such column : " + itr.get().getValue());
+		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
 	}
 
 	public static NamedColumn evaluateNamedColumn(Entry entry, RequestContext ctx) {
@@ -83,22 +70,37 @@ public final class EntryEvaluators {
 		var col = evalColumn(itr, ctx);
 		if(nonNull(col)) {
 			assertLastEntry(itr, true);
-			return col instanceof NamedColumn nc ? nc : col.as(requireTag(itr.get()));
+			if(col instanceof NamedColumn nc) {
+				return nc;
+			}
+			var tag = requireTag(itr.get());
+			ctx.declareColumn(tag, col);
+			return col.as(tag);
 		}
-		throw new NoSuchResourceException("no such named column : " + itr.get().getValue());
+		throw new NoSuchResourceException("no such named column : " + itr.peekNext().getValue());
+	}
+	
+	public static DBColumn evaluateColumn(Entry entry, RequestContext ctx) {
+		var itr = entry.iterator();
+		var col = evalColumn(itr, ctx);
+		if(nonNull(col)) {
+			assertLastEntry(itr, false);
+			return col;
+		}
+		throw new NoSuchResourceException("no such column : " + itr.peekNext().getValue());
 	}
 	
 	public static DBFilter evaluateFilter(Entry entry, RequestContext ctx, Entry... outerArgs) {
 		var itr = entry.iterator();
 		var col = evalColumn(itr, ctx, outerArgs);
-		if(nonNull(col)) {
-			if(col instanceof DBFilter filter) { 
-				assertLastEntry(itr, false);
-				return filter; 
-			}
-			throw new EntryParseException(entry.getValue() + " does not resolve to a filter");
+		if(col instanceof DBFilter flt) { 
+			assertLastEntry(itr, false);
+			return flt; 
 		}
-		throw new NoSuchResourceException("no such column or filter : " + itr.get().getValue());
+		if(nonNull(col)) {
+			throw new EntryParseException(itr.get().getValue() + " cannot be used as filter resource");
+		}
+		throw new NoSuchResourceException("no such column or filter : " + itr.next().getValue());
 	}
 	
 	public static DBOrder evaluateOrder(Entry entry, RequestContext ctx) {
@@ -108,7 +110,7 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, false);
 			return ord;
 		}
-		throw new NoSuchResourceException("no such order : " + itr.get().getValue());
+		throw new NoSuchResourceException("no such order : " + itr.peekNext().getValue());
 	}
 
 	public static JoinsClause evaluateJoin(Entry entry, RequestContext ctx) {
@@ -118,7 +120,7 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, false);
 			return join;
 		}
-		throw new NoSuchResourceException("no such join : " + itr.get().getValue());
+		throw new NoSuchResourceException("no such join : " + itr.peekNext().getValue());
 	}
 	
 	public static Partition evaluatePartition(Entry entry, RequestContext ctx) {
@@ -128,7 +130,7 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, false);
 			return prt;
 		}
-		throw new NoSuchResourceException("no such partition : " + itr.get().getValue());
+		throw new NoSuchResourceException("no such partition : " + itr.peekNext().getValue());
 	}
 
 	public static SingleQueryColumn evaluateQueryColumn(Entry entry, RequestContext ctx) {
@@ -147,7 +149,7 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, false);
 			return col;
 		}
-		throw new NoSuchResourceException("no such query column : " + itr.get().getValue());
+		throw new NoSuchResourceException("no such query column : " + itr.peekNext().getValue());
 	}
 
 	static ViewResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
@@ -186,7 +188,7 @@ public final class EntryEvaluators {
 
 	static DBColumn evalColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
 		var res = lookupResource(itr, DBColumn.class, ctx, (v, e)->{
-			var entry = e.get();
+			var entry = e.peekNext();
 			if("count".equals(entry.getValue())) {
 				return invokeOperator(entry.hasArgs() ? null : allColumns(v.getView()), entry.getValue(), entry.getArgs(), ctx);
 			}
@@ -282,20 +284,25 @@ public final class EntryEvaluators {
 			var vRes = ctx.lookupView(false, entry.getValue()); //parameterized view resource is not supported, must be declared as view resource in context
 			if(vRes.isPresent()) {
 				var view = vRes.get();
-				var res = lookupViewResource(view, type, itr.next(), ctx).orElseGet(()->
-					nonNull(anonymousResolver) ? anonymousResolver.apply(view, itr) : null);
+				var res = lookupViewResource(view, type, itr.advance(), ctx)
+						.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(view, itr) : null);
 				if(nonNull(res)) {
 					return res;
 				}
-				itr.reset(); //reset to original entry if not found in view resource
+				itr.reset(); //unsafe reset to original entry if not found in view resource
 			}
 		}
-		var col = lookupViewResource(ctx.getDefaultView(), type, entry, ctx).orElseGet(()->
-			nonNull(anonymousResolver) ? anonymousResolver.apply(ctx.getDefaultView(), itr) : null);
-		if(nonNull(col)) {
+		return lookupViewResource(ctx.getDefaultView(), type, itr, ctx)
+				.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(ctx.getDefaultView(), itr) : null);
+	}
+
+	static <T> Optional<T> lookupViewResource(ViewResource view, Class<T> type, EntryIterator itr, RequestContext ctx) { //pretty syntax
+		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
+		var res = ctx.lookupViewResource(view, entry.getValue(), type, entry.getArgs());
+		if(res.isPresent()) {
 			itr.advance();
 		}
-		return col;
+		return res;
 	}
 	
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
@@ -323,7 +330,7 @@ public final class EntryEvaluators {
 
 	static DBColumn invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
 		var opr = ctx.lookupSchemaResource(name, TypedOperator.class, args) //check declared operator first, then static resource
-				.orElseGet(()-> lookup(Operator.class, TypedOperator.class, name));
+				.orElseGet(()-> invokeStatic(Operator.class, TypedOperator.class, name));
 		return nonNull(opr) 
 				? opr.operation(resolveArgs(opr.getParameterSet(), col, args, ctx))
 				: null;
@@ -331,13 +338,13 @@ public final class EntryEvaluators {
 	
 	static DBFilter invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
 		var cmp = ctx.lookupSchemaResource(name, TypedComparator.class, args) //check declared comparator first, then static resource
-				.orElseGet(()-> lookup(Comparator.class, TypedComparator.class, name));
+				.orElseGet(()-> invokeStatic(Comparator.class, TypedComparator.class, name));
 		return nonNull(cmp) 
 			? cmp.filter(resolveArgs(cmp.getParameterSet(), col, args, ctx))
 			: null;
 	}
 	
-	static <T> T lookup(Class<?> clazz, Class<T> type, String name) {
+	static <T> T invokeStatic(Class<?> clazz, Class<T> type, String name) {
 		try {
 			var mth = clazz.getMethod(name); //no parameter
 			if(nonNull(mth)) {
@@ -349,14 +356,10 @@ public final class EntryEvaluators {
 		} catch (Exception e) {/* do not throw exception */}
 		return null;
 	}
-
-	static <T> Optional<T> lookupViewResource(ViewResource view, Class<T> type, Entry entry, RequestContext ctx) { //pretty syntax
-		return ctx.lookupViewResource(view, entry.getValue(), type, entry.getArgs());
-	}
 	
 	static Object[] resolveArgs(ParameterSet ps, Object res, Entry[] args, RequestContext ctx){
-		var len = nonNull(args) ? args.length : 0;
-		var arr = new Object[len + (nonNull(res) ? 1 : 0)];
+		int shift = nonNull(res) ? 1 : 0;
+		var arr = new Object[shift + (nonNull(args) ? args.length : 0)];
 		ps.eachParameter(arr.length, (p,i)-> {
 			if(i==0 && nonNull(res)) {
 				if(p.accept(i, arr)) {
@@ -367,13 +370,12 @@ public final class EntryEvaluators {
 				}
 			}
 			else {
-				arr[i] = ctx.resolve(args[i], p.getTypes());
+				arr[i] = ctx.resolve(args[i-shift], p.getTypes());
 			}
 		});
 		return arr;
 	}
 	
-
 	static <T> T resolveSingleArgValue(Entry entry, Class<T> type, RequestContext ctx) {
 		return resolveSingleArg(entry, e-> ctx.evalValue(e.get().getValue(), type));
 	}
@@ -405,12 +407,6 @@ public final class EntryEvaluators {
 		if(entry.hasTag()) {
 			return entry.getTag();
 		}
-		throw new EntrySyntaxException("entry must have a tag : " + entry.getValue());
-	}
-	
-	public static void main(String[] args) {
-		var sch = createSchema(SchemaSample.class, null);
-		var ctx = new RequestContext(sch, sch.view1(), new TypeRegistry());
-		System.out.println(evaluateNamedColumn(parseEntry("toto.sum.abs.varchar:toto"), ctx));
-	}
+		throw new EntrySyntaxException("expected tag after : " + entry.getValue());
+	}	
 }

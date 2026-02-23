@@ -68,10 +68,12 @@ public final class EntryParser {
 				if(lexer.advance() != ')') {
 					throw lexer.unexpectedCharacterException();
 				}
+				c = lexer.peek();
 			}
 			if(c == '.') {
 				lexer.advance();
 				next = parseEntry(lexer, true, stack+1);
+				c = lexer.peek();
 			}
 			if(c == ':') {
 				lexer.advance();

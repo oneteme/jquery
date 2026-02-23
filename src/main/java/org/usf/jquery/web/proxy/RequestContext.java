@@ -43,12 +43,13 @@ public final class RequestContext {
 	private final ViewResource defaultView;
 	private final Set<String> excludeViews;
 	private final Map<String, ViewResource> declaredViews;
+	private final Map<String, DBColumn> declaredColumns;
 	private final TypeRegistry registry;
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
 
 	public RequestContext(Resource schema, ViewResource defaultView, TypeRegistry registry) {
-		this(schema, defaultView, emptySet(), new HashMap<>(), registry);
+		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), registry);
 	}
 	
 	public Optional<ViewResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
@@ -83,10 +84,19 @@ public final class RequestContext {
 	
 	void declareView(String name, ViewResource view) {
 		declaredViews.compute(name, (k,v)->{
-			if(isNull(v) || v == view) {
+			if(isNull(v)) {
 				return view;
 			}
 			throw new IllegalArgumentException("a view with name '" + name + "' already exists in context");
+		});
+	}
+	
+	void declareColumn(String name, DBColumn column) {
+		declaredColumns.compute(name, (k,v)->{
+			if(isNull(v)) {
+				return column;
+			}
+			throw new IllegalArgumentException("a column with name '" + name + "' already exists in context");
 		});
 	}
 	
@@ -135,13 +145,13 @@ public final class RequestContext {
 
 	public <T> T resolve(Entry entry, Class<T> type) {
 		if(entry.isVariable()) {
-			var prs = registry.getVariableParser(type);
+			var prs = registry.getEvaluator(type);
 			if(nonNull(prs)) {
 				try {
 					return prs.evaluate(entry, this);
 				}
 				catch (Exception e) {
-					throw cannotParseEntryException(type, entry.getValue());
+					throw cannotParseEntryException(type, entry.getValue(), e);
 				}
 			}
 		}// consider variable with no args, next or tag as value entry
@@ -152,30 +162,30 @@ public final class RequestContext {
 	}
 	
 	public <T> T evalValue(String value, Class<T> type) {
-		var prs = registry.getValueParser(type);
+		var prs = registry.getParser(type);
 		if(nonNull(prs)) {
 			try {
 				return prs.parse(value);
 			}
 			catch (Exception e) {
-				throw cannotParseEntryException(type, value);
+				throw cannotParseEntryException(type, value, e);
 			}
 		}
 		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
 	}
 
 	public RequestContext subContext(ViewResource view) {
-		return new RequestContext(schema, view, excludeViews, new HashMap<>(), registry);
+		return new RequestContext(schema, view, excludeViews, new HashMap<>(), new HashMap<>(), registry);
 	}
 	
 	public RequestContext withView(ViewResource view) { //inherit cache
 		if(view == defaultView) {
 			return this;
 		}
-		return new RequestContext(schema, view, excludeViews, declaredViews, registry);
+		return new RequestContext(schema, view, excludeViews, declaredViews, declaredColumns, registry);
 	}
 		
-	static EntryParseException cannotParseEntryException(Class<?> type, String v) {
-		return new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + v);
+	static EntryParseException cannotParseEntryException(Class<?> type, String v, Exception cause) {
+		return new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + v, cause);
 	}
 }

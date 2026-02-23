@@ -1,4 +1,4 @@
-package org.usf.jquery.web.spec;
+package org.usf.jquery.web.proxy;
 
 import static org.usf.jquery.core.Comparator.basicComparator;
 import static org.usf.jquery.core.ComparisonExpression.ge;
@@ -11,9 +11,6 @@ import org.usf.jquery.core.ArgTypeRef;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
-import org.usf.jquery.web.proxy.Bind;
-import org.usf.jquery.web.proxy.Expose;
-import org.usf.jquery.web.proxy.Resource;
 
 /**
  * 
@@ -21,7 +18,7 @@ import org.usf.jquery.web.proxy.Resource;
  *
  */
 @Bind("sample") //bind this class to "sample" database
-public interface SchemaSample extends Resource{
+interface SchemaSample extends Resource {
 	
 	@Expose(identity="v1") //export view_1 as resource name v1, if id is empty, method name will be used as resource name
 	@Bind("view_1") //bind this method to "view_1" view of "sample" database

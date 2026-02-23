@@ -64,6 +64,6 @@ public final class EntryIterator implements Iterator<Entry> {
 	public String toString() {
 		return isNull(cursor) 
 				? "EntryIterator[head]" 
-				: "EntryIterator[cursor=" + cursor + "]";
+				: "EntryIterator[cursor=" + cursor.getValue() + "]";
 	}
 }

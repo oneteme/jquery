@@ -40,28 +40,28 @@ import org.usf.jquery.core.SingleQueryColumn;
  */
 public final class TypeRegistry {
 	
-	private static final Map<Class<?>, ValueParser<?>> VAL_PARSERS;
-	private static final Map<Class<?>, EntryEvaluator<?>> VAR_PARSERS;
+	private static final Map<Class<?>, ValueParser<?>> DEF_PARSERS;
+	private static final Map<Class<?>, EntryEvaluator<?>> DEF_EVALUATORS;
 	
-	private final Map<Class<?>, ValueParser<?>> valParsers;
-	private final Map<Class<?>, EntryEvaluator<?>> varParsers;
+	private final Map<Class<?>, ValueParser<?>> parsers;
+	private final Map<Class<?>, EntryEvaluator<?>> evaluators;
 	
 	public TypeRegistry() {
-		this.valParsers = new ConcurrentHashMap<>(VAL_PARSERS);
-		this.varParsers = new ConcurrentHashMap<>(VAR_PARSERS);
+		this.parsers = new ConcurrentHashMap<>(DEF_PARSERS);
+		this.evaluators = new ConcurrentHashMap<>(DEF_EVALUATORS);
 	}
 	
 	public <T> void register(Class<T> clazz, ValueParser<T> parser) {
-		valParsers.put(clazz, parser);
+		parsers.put(clazz, parser);
 	}
 	
-	public <T> void register(Class<T> clazz, EntryEvaluator<T> parser) {
-		varParsers.put(clazz, parser);
+	public <T> void register(Class<T> clazz, EntryEvaluator<T> evaluator) {
+		evaluators.put(clazz, evaluator);
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> ValueParser<T> getValueParser(Class<T> clazz){
-		var p = valParsers.get(clazz);
+	public <T> ValueParser<T> getParser(Class<T> clazz){
+		var p = parsers.get(clazz);
 		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) {
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
@@ -69,47 +69,47 @@ public final class TypeRegistry {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public <T> EntryEvaluator<T> getVariableParser(Class<T> clazz){
-		return (EntryEvaluator<T>) varParsers.get(clazz);
+	public <T> EntryEvaluator<T> getEvaluator(Class<T> clazz){
+		return (EntryEvaluator<T>) evaluators.get(clazz);
 	}
 	
 	static {
-		var smpl = new HashMap<Class<?>, ValueParser<?>>();
-		smpl.put(Boolean.class, TypeRegistry::parseBoolean); //db boolean compatibility
-		smpl.put(Byte.class, Byte::parseByte);
-		smpl.put(Short.class, Short::parseShort);
-		smpl.put(Integer.class, Integer::parseInt);
-		smpl.put(Long.class, Long::parseLong);
-		smpl.put(Float.class, Float::parseFloat);
-		smpl.put(Double.class, Double::parseDouble);
-		smpl.put(Character.class, TypeRegistry::parseChar);
-		smpl.put(BigInteger.class, BigInteger::new);
-		smpl.put(BigDecimal.class, BigDecimal::new);
-		smpl.put(String.class, v-> v);
-		smpl.put(LocalDate.class, LocalDate::parse);
-		smpl.put(LocalTime.class, LocalTime::parse);
-		smpl.put(LocalDateTime.class, LocalDateTime::parse);
-		smpl.put(OffsetDateTime.class, OffsetDateTime::parse);
-		smpl.put(ZonedDateTime.class, ZonedDateTime::parse);
-		smpl.put(Instant.class, Instant::parse);
-		smpl.put(YearMonth.class, YearMonth::parse);
-		smpl.put(MonthDay.class, MonthDay::parse);
-		smpl.put(java.util.Date.class, getDateInstance()::parse);
-		smpl.put(Date.class, Date::valueOf);
-		smpl.put(Timestamp.class, Timestamp::valueOf);
-		smpl.put(UUID.class, UUID::fromString);
+		var prs = new HashMap<Class<?>, ValueParser<?>>();
+		prs.put(Boolean.class, TypeRegistry::parseBoolean); //db boolean compatibility
+		prs.put(Byte.class, Byte::parseByte);
+		prs.put(Short.class, Short::parseShort);
+		prs.put(Integer.class, Integer::parseInt);
+		prs.put(Long.class, Long::parseLong);
+		prs.put(Float.class, Float::parseFloat);
+		prs.put(Double.class, Double::parseDouble);
+		prs.put(Character.class, TypeRegistry::parseChar);
+		prs.put(BigInteger.class, BigInteger::new);
+		prs.put(BigDecimal.class, BigDecimal::new);
+		prs.put(String.class, v-> v);
+		prs.put(LocalDate.class, LocalDate::parse);
+		prs.put(LocalTime.class, LocalTime::parse);
+		prs.put(LocalDateTime.class, LocalDateTime::parse);
+		prs.put(OffsetDateTime.class, OffsetDateTime::parse);
+		prs.put(ZonedDateTime.class, ZonedDateTime::parse);
+		prs.put(Instant.class, Instant::parse);
+		prs.put(YearMonth.class, YearMonth::parse);
+		prs.put(MonthDay.class, MonthDay::parse);
+		prs.put(java.util.Date.class, getDateInstance()::parse);
+		prs.put(Date.class, Date::valueOf);
+		prs.put(Timestamp.class, Timestamp::valueOf);
+		prs.put(UUID.class, UUID::fromString);
 		//Object ?
-		VAL_PARSERS = unmodifiableMap(smpl);
-		var expr = new HashMap<Class<?>, EntryEvaluator<?>>();
-		expr.put(DBColumn.class, EntryEvaluators::evaluateColumn);
-		expr.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
-		expr.put(DBFilter.class, EntryEvaluators::evaluateFilter);
-		expr.put(DBOrder.class, EntryEvaluators::evaluateOrder);
-		expr.put(JoinsClause.class, EntryEvaluators::evaluateJoin);
-		expr.put(Partition.class, EntryEvaluators::evaluatePartition);
-		expr.put(DBView.class, EntryEvaluators::evaluateView);
-		expr.put(SingleQueryColumn.class, EntryEvaluators::evaluateQueryColumn);
-		VAR_PARSERS = unmodifiableMap(expr);
+		DEF_PARSERS = unmodifiableMap(prs);
+		var evl = new HashMap<Class<?>, EntryEvaluator<?>>();
+		evl.put(DBColumn.class, EntryEvaluators::evaluateColumn);
+		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
+		evl.put(DBFilter.class, EntryEvaluators::evaluateFilter);
+		evl.put(DBOrder.class, EntryEvaluators::evaluateOrder);
+		evl.put(JoinsClause.class, EntryEvaluators::evaluateJoin);
+		evl.put(Partition.class, EntryEvaluators::evaluatePartition);
+		evl.put(DBView.class, EntryEvaluators::evaluateView);
+		evl.put(SingleQueryColumn.class, EntryEvaluators::evaluateQueryColumn);
+		DEF_EVALUATORS = unmodifiableMap(evl);
 	}
 	
 	static Boolean parseBoolean(String v) throws ParseException {

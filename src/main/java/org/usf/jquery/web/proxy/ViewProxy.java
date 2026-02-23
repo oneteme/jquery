@@ -3,6 +3,7 @@ package org.usf.jquery.web.proxy;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
+import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.DBObject.toSQL;
@@ -55,12 +56,14 @@ final class ViewProxy extends ResourceProxy {
 	}	
 	
 	@Override
-	Object invokeAbstractMethod(Object proxy, Bind bind, Method method, Object[] args) {
-		if(method.getName().equals("get")) {
-			return view; //TODO complete this
+	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) {
+		if(method.getReturnType() == DBView.class && method.getParameterCount() == 0 && method.getName().equals("getView")) {
+			return view;
 		}
 		var type = method.getReturnType();
 		if(DBColumn.class.isAssignableFrom(type)) {
+			var bind = requireNonNull(method.getAnnotation(Bind.class), 
+					()-> "abstract method " + method + " must be annotated with @Bind");
 			return buildColumn(method, bind, args);
 		}
 		if(DBFilter.class.isAssignableFrom(type)) { //filter first (extends Column)
@@ -103,10 +106,10 @@ final class ViewProxy extends ResourceProxy {
 		return toSQL(view);
 	}
 
-	static <T extends ViewResource> T createView(Class<T> type, Bind bind) {
+	static <T extends ViewResource> T createView(Class<T> type, Bind bind, String schema) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
-			case REF-> view(bind.value(), bind.value());
+			case REF-> view(bind.value(), schema);
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
