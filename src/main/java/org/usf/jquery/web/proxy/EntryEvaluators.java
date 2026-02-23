@@ -290,8 +290,12 @@ public final class EntryEvaluators {
 				itr.reset(); //reset to original entry if not found in view resource
 			}
 		}
-		return lookupViewResource(ctx.getDefaultView(), type, entry, ctx).orElseGet(()->
+		var col = lookupViewResource(ctx.getDefaultView(), type, entry, ctx).orElseGet(()->
 			nonNull(anonymousResolver) ? anonymousResolver.apply(ctx.getDefaultView(), itr) : null);
+		if(nonNull(col)) {
+			itr.advance();
+		}
+		return col;
 	}
 	
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
@@ -351,8 +355,9 @@ public final class EntryEvaluators {
 	}
 	
 	static Object[] resolveArgs(ParameterSet ps, Object res, Entry[] args, RequestContext ctx){
-		var arr = new Object[args.length + (nonNull(res) ? 1 : 0)];
-		ps.eachParameter(args.length, (p,i)-> {
+		var len = nonNull(args) ? args.length : 0;
+		var arr = new Object[len + (nonNull(res) ? 1 : 0)];
+		ps.eachParameter(arr.length, (p,i)-> {
 			if(i==0 && nonNull(res)) {
 				if(p.accept(i, arr)) {
 					arr[i] = res;
@@ -406,6 +411,6 @@ public final class EntryEvaluators {
 	public static void main(String[] args) {
 		var sch = createSchema(SchemaSample.class, null);
 		var ctx = new RequestContext(sch, sch.view1(), new TypeRegistry());
-		System.out.println(evaluateColumn(parseEntry("toto.pl"), ctx));
+		System.out.println(evaluateNamedColumn(parseEntry("toto.sum.abs.varchar:toto"), ctx));
 	}
 }
