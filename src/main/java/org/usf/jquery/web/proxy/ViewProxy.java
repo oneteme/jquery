@@ -7,7 +7,6 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static org.usf.jquery.core.DBObject.toSQL;
-import static org.usf.jquery.core.DBView.view;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 
@@ -21,6 +20,7 @@ import org.usf.jquery.core.DBOrder;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.web.ColumnMetadata;
 
@@ -109,7 +109,7 @@ final class ViewProxy extends ResourceProxy {
 	static <T extends ViewResource> T createView(Class<T> type, Bind bind, String schema) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
-			case REF-> view(bind.value(), schema);
+			case REF-> new TableView(bind.value(), schema, null);
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};

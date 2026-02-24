@@ -40,7 +40,6 @@ import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
-import org.usf.jquery.core.Utils;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -136,31 +135,37 @@ public final class EntryEvaluators {
 
 	public static SingleQueryColumn evaluateQueryColumn(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var col = lookupResource(itr, SingleQueryColumn.class, ctx, (v, e)-> {
-			var view = evalView(itr, ctx, true);
-			if(view instanceof QueryResource query && query.getQuery().getColumns().length == 1) {
-				return query.getQuery().asColumn();
-			}
-			if(nonNull(view)) {
-				throw new EntryParseException("view " + itr.get().getValue() + " cannot be used as query column");
-			}
-			return null;
-		});
+		var col = lookupResource(itr, SingleQueryColumn.class, ctx, (v, e)-> evalColumnQuery(itr, v, ctx));
 		if(nonNull(col)) {
 			assertLastEntry(itr, false);
 			return col;
 		}
 		throw new NoSuchResourceException("no such query column : " + itr.peekNext().getValue());
 	}
+	
+	static SingleQueryColumn evalColumnQuery(EntryIterator itr, ViewResource view, RequestContext ctx) {
+		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
+		if(COLUMN_PARAM.equals(entry.getValue())) {
+			view = evalQuery(itr, ctx.subContext(view));
+		}
+		if(view instanceof QueryResource query) {
+			if(query.getQuery().getColumns().length == 1) {
+				return query.getQuery().asColumn();
+			}
+			throw new EntryParseException(""); //TODO
+		}
+		return null;
+	}
 
 	static ViewResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
-		if(allowAnonymous && COLUMN_PARAM.equals(entry.getValue())) { //check query resource before view resource
+		if(allowAnonymous && COLUMN_PARAM.equals(entry.getValue())) {
 			return evalQuery(itr, ctx.subContext(ctx.getDefaultView()));
 		} //parameterized view considered as anonymous view resource, not supported for direct lookup
 		var view = ctx.lookupView(allowAnonymous, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
-			return itr.advance().hasNext() && allowAnonymous && COLUMN_PARAM.equals(itr.peekNext().getValue()) //view.column().filter()..
+			itr.advance();
+			return allowAnonymous && itr.hasNext() && COLUMN_PARAM.equals(itr.peekNext().getValue()) //view.column().filter()..
 					? evalQuery(itr, ctx.subContext(view.get())) : view.get();
 		}
 		return null;
@@ -168,23 +173,20 @@ public final class EntryEvaluators {
 
 	static DBOrder evalOrder(EntryIterator itr, RequestContext ctx) {
 		var col = evalColumn(itr, ctx);
-		if(nonNull(col)) {
-			if(itr.hasNext()) {
-				var entry = itr.peekNext();
-				if(nonNull(entry.getValue()) && entry.getValue().matches("asc|desc")) {
-					if(entry.hasArgs()) {
-						throw new EntryParseException("order operator cannot have arguments");
-					}
+		if(isNull(col)) {
+			return null;
+		}
+		if(itr.hasNext()) {
+			var entry = itr.peekNext();
+			if(nonNull(entry.getValue()) && entry.getValue().matches("asc|desc")) {
+				if(!entry.hasArgs()) {
 					itr.advance(); //consume order type entry
 					return col.order(OrderType.valueOf(entry.getValue().toUpperCase()));
 				}
-				else {
-					throw new EntryParseException("invalid order type : " + entry.getValue());
-				}
+				throw new EntryParseException("order operator cannot have arguments");
 			}
-			return col.order();
 		}
-		return null;
+		return col.order();
 	}
 
 	static DBColumn evalColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
@@ -310,7 +312,7 @@ public final class EntryEvaluators {
 			var entry = itr.peekNext();
 			var tmp = invokeOperator(col, entry.getValue(), entry.getArgs(), ctx);
 			if(isNull(tmp)) {
-				var args = itr.hasNext() || nonNull(entry.getArgs()) ? entry.getArgs() : outArgs; //do not use entry.getArgs()
+				var args = entry.hasNext() || nonNull(entry.getArgs()) ? entry.getArgs() : outArgs; //do not use entry.getArgs()
 				tmp = invokeComparator(col, entry.getValue(), args, ctx);
 				if(isNull(tmp) && nonNull(col)) {
 					tmp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, args)

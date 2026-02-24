@@ -1,11 +1,13 @@
 package org.usf.jquery.web.proxy;
 
+import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
 import java.time.Instant;
 import java.time.LocalDate;
 
 import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
@@ -27,6 +29,10 @@ interface ViewSample extends ViewResource {
 	@Typed(TIMESTAMP)
 	@Bind("dh_end")
     ViewColumn end();
+	
+	@Typed(INTEGER)
+	@Bind("va_size")
+    ViewColumn size();
     
     @Expose(identity="toto", description="")
     default NamedColumn elapsedtime(){

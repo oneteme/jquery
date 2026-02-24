@@ -151,7 +151,7 @@ public final class RequestContext {
 					return prs.evaluate(entry, this);
 				}
 				catch (Exception e) {
-					throw cannotParseEntryException(type, entry.getValue(), e);
+					throw new EntryParseException("cannot evaluate '" + type.getSimpleName() + "' expression " + entry, e);
 				}
 			}
 		}// consider variable with no args, next or tag as value entry
@@ -168,7 +168,7 @@ public final class RequestContext {
 				return prs.parse(value);
 			}
 			catch (Exception e) {
-				throw cannotParseEntryException(type, value, e);
+				throw new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + value, e);
 			}
 		}
 		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
@@ -183,9 +183,5 @@ public final class RequestContext {
 			return this;
 		}
 		return new RequestContext(schema, view, excludeViews, declaredViews, declaredColumns, registry);
-	}
-		
-	static EntryParseException cannotParseEntryException(Class<?> type, String v, Exception cause) {
-		return new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + v, cause);
 	}
 }
