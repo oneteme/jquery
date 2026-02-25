@@ -7,8 +7,6 @@ import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Operator.function;
 import static org.usf.jquery.core.Parameter.required;
 
-import java.lang.reflect.Method;
-
 import org.usf.jquery.core.ArgTypeRef;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.TypedComparator;
@@ -20,7 +18,7 @@ import org.usf.jquery.core.TypedOperator;
  *
  */
 @Bind("sample") //bind this class to "sample" database
-interface SchemaSample extends Resource, ArgumentsEvaluator {
+interface SchemaSample extends Resource {
 	
 	@Expose(identity="v1") //export view_1 as resource name v1, if id is empty, method name will be used as resource name
 	@Bind("view_1") //bind this method to "view_1" view of "sample" database
@@ -51,10 +49,4 @@ interface SchemaSample extends Resource, ArgumentsEvaluator {
             default -> null;
         };
     }
-	
-	@Override
-	default Object[] evaluate(Method m, Entry[] args, RequestContext ctx) {
-		// TODO Auto-generated method stub
-		return ArgumentsEvaluator.super.evaluate(m, args, ctx);
-	}
 }

@@ -6,6 +6,8 @@ import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static org.usf.jquery.core.Comparator.eq;
+import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.DBColumn.allColumns;
 import static org.usf.jquery.core.JoinType.CROSS;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -308,14 +310,17 @@ public final class EntryEvaluators {
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
 	static DBColumn chainResource(EntryIterator itr, DBColumn res, RequestContext ctx, Entry... outArgs) {
 		var col = res;
+		Entry entry = itr.get();
 		while(itr.hasNext()) {
-			var entry = itr.peekNext();
+			entry = itr.peekNext();
 			var tmp = invokeOperator(col, entry.getValue(), entry.getArgs(), ctx);
 			if(isNull(tmp)) {
-				var args = entry.hasNext() || nonNull(entry.getArgs()) ? entry.getArgs() : outArgs; //do not use entry.getArgs()
-				tmp = invokeComparator(col, entry.getValue(), args, ctx);
+				if(!entry.hasNext() && !entry.hasArgs()) {
+					entry = entry.withArgs(outArgs);
+				}
+				tmp = invokeComparator(col, entry.getValue(), entry.getArgs(), ctx);
 				if(isNull(tmp) && nonNull(col)) {
-					tmp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, args)
+					tmp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, entry.getArgs())
 							.map(col::filter).orElse(null);
 				}
 			}
@@ -325,9 +330,13 @@ public final class EntryEvaluators {
 			itr.advance();
 			col = tmp;
 		}
+		if(!itr.hasNext() && !isEmpty(outArgs) && itr.get() == entry) { //last entry, outArgs not yet applied
+			var cmp = outArgs.length == 1 ? eq() : in();
+			col = cmp.filter(resolveArgs(cmp.getParameterSet(), col, outArgs, ctx));
+		}
 		return col;
 	}
-
+	
 	static DBColumn invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
 		var opr = ctx.lookupSchemaResource(name, TypedOperator.class, args) //check declared operator first, then static resource
 				.orElseGet(()-> tryInvokeStatic(Operator.class, TypedOperator.class, name));

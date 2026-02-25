@@ -1,5 +1,6 @@
 package org.usf.jquery.web.proxy;
 
+import static java.lang.reflect.Array.newInstance;
 import static java.util.Objects.nonNull;
 
 import java.lang.reflect.Array;
@@ -17,7 +18,7 @@ public interface ArgumentsEvaluator {
 		var params = m.getParameters();
 		if(params.length == 1 && params[0].getType().isArray()) {
 			var type = params[0].getType().getComponentType();
-			var arr = Array.newInstance(type, nArgs);
+			var arr = newInstance(type, nArgs);
 			for(int i=0; i<nArgs; i++) {
 				Array.set(arr, i, ctx.resolve(args[i], type));
 			}
