@@ -71,7 +71,7 @@ public final class SchemaProxy extends ResourceProxy {
 			var map = discoverExposedMethods(clazz, (t,c)-> ViewResource.class.isAssignableFrom(c));
 			var sub = stream(clazz.getDeclaredMethods())
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
-					.collect(toMap(ResourceIntrospector::resolveIdentifier, 
+					.parallel().collect(toMap(ResourceIntrospector::resolveIdentifier, 
 							m-> createView((Class<? extends ViewResource>)m.getReturnType(), m.getAnnotation(Bind.class), bnd, ds)));
 			var vendor = nonNull(ds) ? fetchProduct(ds) : DEFAULT;
 			return clazz.cast(newProxyInstance(SchemaProxy.class.getClassLoader(), new Class<?>[]{clazz}, 

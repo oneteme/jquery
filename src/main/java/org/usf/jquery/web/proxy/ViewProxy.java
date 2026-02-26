@@ -139,6 +139,6 @@ final class ViewProxy extends ResourceProxy {
 			return type.cast(newProxyInstance(ViewProxy.class.getClassLoader(), new Class<?>[]{type}, 
 					new ViewProxy(view, map, meta)));
 		}
-		throw new IllegalArgumentException("view must be an interface : " + type);
+		throw new ResourceMappingException("view must be an interface : " + type);
 	}
 }

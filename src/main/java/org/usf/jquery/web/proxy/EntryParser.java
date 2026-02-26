@@ -127,7 +127,7 @@ public final class EntryParser {
 						kind = isLetChar(v) ? VAR : VAL; //first char must be letter
 					}
 					else {
-						throw new IllegalStateException();
+						throw new IllegalStateException("unexpected state: " + kind);
 					}
 				}
 				else if(!isVarChar(v) && (isNull(kind) || kind == VAR)){

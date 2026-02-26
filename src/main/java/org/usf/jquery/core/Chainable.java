@@ -1,10 +1,10 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.stream;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
 
 import java.util.function.Function;
-import java.util.stream.Stream;
 
 /**
  * 
@@ -22,7 +22,6 @@ public interface Chainable<T extends Chainable<T>> {
 	default T or(T exp) {
 		return append(OR, exp);
 	}
-	
 
 	static <T, C extends Chainable<C>> C or(T[] values, Function<T, C> builder) {
 		return chain(OR, values, builder);
@@ -33,6 +32,6 @@ public interface Chainable<T extends Chainable<T>> {
 	}
 	
 	static <T, C extends Chainable<C>> C chain(LogicalOperator op, T[] values, Function<T, C> builder) {
-		return Stream.of(values).map(builder).reduce(op::combine).orElseThrow();
+		return stream(values).map(builder).reduce(op::combine).orElseThrow();
 	}
 }
