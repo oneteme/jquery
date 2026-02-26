@@ -379,7 +379,7 @@ public final class EntryEvaluators {
 				}
 			}
 			else {
-				arr[i] = ctx.resolve(args[i-shift], p.getTypes());
+				arr[i] = ctx.resolve(args[i-shift], p.types(arr));
 			}
 		});
 		return arr;

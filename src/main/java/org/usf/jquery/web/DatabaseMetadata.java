@@ -35,7 +35,7 @@ public final class DatabaseMetadata {
 	}
 	
 	public void fetch(DatabaseMetaData metadata, String schema) throws SQLException {
-		type = parseName(metadata);
+		type = parseName(null);
 		if(nonNull(views)) {
 			for(var v : views.values()) {
 				v.fetch(metadata, schema);

@@ -368,6 +368,10 @@ public interface Operator extends DBProcessor {
 		return new TypedOperator(DOUBLE, cast("DECIMAL"), required(VARCHAR, BIGINT), optional(INTEGER), optional(INTEGER));
 	}
 
+	static TypedOperator bool() {
+		return new TypedOperator(BOOLEAN, cast("BOOLEAN"), required(VARCHAR, BIGINT)); //any
+	}
+
 	//other functions
 	
 	static TypedOperator coalesce() {

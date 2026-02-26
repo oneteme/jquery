@@ -8,6 +8,7 @@ import static org.usf.jquery.core.Operator.function;
 import static org.usf.jquery.core.Parameter.required;
 
 import org.usf.jquery.core.ArgTypeRef;
+import org.usf.jquery.core.Chainable;
 import org.usf.jquery.core.ComparisonExpression;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
@@ -39,14 +40,14 @@ interface SchemaSample extends Resource {
 	}
 
 	@Expose(identity="vitesse") 
-    default ComparisonExpression elapsedTimeExpressions(String name) { //patch ?
-        return switch (name) {
+    default ComparisonExpression elapsedTimeExpressions(String... values) { //patch ?
+		return Chainable.or(values, v-> switch (v) {
             case "fastest" -> lt(1);
             case "fast" -> ge(1).and(lt(3));
             case "medium" -> ge(3).and(lt(5));
             case "slow" -> ge(5).and(lt(10));
             case "slowest" -> ge(10);
             default -> null;
-        };
+        });
     }
 }

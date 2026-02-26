@@ -123,7 +123,7 @@ public final class QueryBuilder {
 				return append("?");
 			}
 		}
-		if(o instanceof Number){
+		if(o instanceof Number || o instanceof Boolean){
 			return append(o.toString());
 		} 
 		return append(nonNull(o) ? quote(o.toString()) : "null");   //TD : stringify value using db default pattern

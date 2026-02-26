@@ -26,7 +26,7 @@ public interface Environment {
 	
 	static SimpleEnvironment using(DataSource ds, String schema) {
 		try(var cnx = ds.getConnection()){
-			return new SimpleEnvironment(ds, parseName(cnx.getMetaData()), schema);
+			return new SimpleEnvironment(ds, parseName(null), schema);
 		}
 		catch (SQLException e) {
 			throw new JQueryException(e);
