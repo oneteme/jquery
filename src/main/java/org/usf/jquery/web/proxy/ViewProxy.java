@@ -1,18 +1,23 @@
 package org.usf.jquery.web.proxy;
 
+import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.newProxyInstance;
+import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
+import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.DBObject.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
+import static org.usf.jquery.web.proxy.DatabaseIntrospector.fetchMetadata;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 
 import java.lang.reflect.Method;
-import java.util.LinkedHashMap;
 import java.util.Map;
+
+import javax.sql.DataSource;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
@@ -22,7 +27,6 @@ import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.ViewColumn;
-import org.usf.jquery.web.ColumnMetadata;
 
 /**
  * 
@@ -32,11 +36,12 @@ import org.usf.jquery.web.ColumnMetadata;
 final class ViewProxy extends ResourceProxy {
 
 	private final DBView view;
-	private final Map<String, ColumnMetadata> metadata = new LinkedHashMap<>();
+	private final ViewMetadata metadata;
 	
-	public ViewProxy(DBView view, Map<String, Method> resourceMap) {
+	ViewProxy(DBView view, Map<String, Method> resourceMap, ViewMetadata metadata) {
 		super(resourceMap);
 		this.view = view;
+		this.metadata = metadata;
 	}
 
 	@Override
@@ -84,11 +89,10 @@ final class ViewProxy extends ResourceProxy {
 	ViewColumn buildColumn(Method method, Bind bind, Object[] args) { //REF | REQ | SQL
 		var typ = ofNullable(method.getAnnotation(Typed.class))
 				.map(Typed::value)
-				.or(()-> ofNullable(metadata.get(bind.value())).map(ColumnMetadata::getType))
-				.orElse(null);
+				.orElseGet(()-> metadata.getColumnType(bind.value()));
 		var tag = ofNullable(method.getAnnotation(Expose.class))
 				.map(Expose::alias)
-				.filter(not(String::isEmpty))
+				.filter(not(String::isEmpty)) //optional
 				.orElseGet(method::getName);
 		return switch (bind.type()) {
 		case REF -> new ViewColumn(bind.value(), view, typ, tag);
@@ -106,7 +110,7 @@ final class ViewProxy extends ResourceProxy {
 		return toSQL(view);
 	}
 
-	static <T extends ViewResource> T createView(Class<T> type, Bind bind, String schema) {
+	static <T extends ViewResource> T createView(Class<T> type, Bind bind, String schema, DataSource ds) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
 			case REF-> new TableView(bind.value(), schema, null);
@@ -125,8 +129,15 @@ final class ViewProxy extends ResourceProxy {
 							c == JoinsClause.class;
 				}
 			});
+			var cols = stream(type.getDeclaredMethods())
+			.filter(m-> isAbstract(m.getModifiers()) && m.getAnnotation(Bind.class).type() == REF) //must have bind annotation
+			.map(m-> m.getAnnotation(Bind.class).value())
+			.collect(toSet());
+			
+			var meta = fetchMetadata(schema, view.getName(), cols, ds);
+			
 			return type.cast(newProxyInstance(ViewProxy.class.getClassLoader(), new Class<?>[]{type}, 
-					new ViewProxy(view, map)));
+					new ViewProxy(view, map, meta)));
 		}
 		throw new IllegalArgumentException("view must be an interface : " + type);
 	}

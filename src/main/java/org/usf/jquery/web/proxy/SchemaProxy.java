@@ -6,9 +6,11 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.core.DatabaseVendor.DEFAULT;
+import static org.usf.jquery.web.proxy.DatabaseIntrospector.fetchProduct;
+import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.resolveIdentifier;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.scanBind;
-import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 import static org.usf.jquery.web.proxy.ViewProxy.createView;
 
 import java.lang.reflect.Method;
@@ -16,7 +18,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.Product;
+import org.usf.jquery.core.DatabaseVendor;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -33,9 +35,9 @@ public final class SchemaProxy extends ResourceProxy {
 	private final String name;
 	private final Map<String, ? extends ViewResource> views;
 	private final DataSource ds;
-	private final Product product;
+	private final DatabaseVendor product;
 	
-	public SchemaProxy(String name, Map<String, Method> exposedMethods, Map<String, ? extends ViewResource> views, DataSource ds, Product product) {
+	SchemaProxy(String name, Map<String, Method> exposedMethods, Map<String, ? extends ViewResource> views, DataSource ds, DatabaseVendor product) {
 		super(exposedMethods);
 		this.views = views;
 		this.name = name;
@@ -70,10 +72,12 @@ public final class SchemaProxy extends ResourceProxy {
 			var sub = stream(clazz.getDeclaredMethods())
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
 					.collect(toMap(ResourceIntrospector::resolveIdentifier, 
-							m-> createView((Class<? extends ViewResource>)m.getReturnType(), m.getAnnotation(Bind.class), bnd)));
+							m-> createView((Class<? extends ViewResource>)m.getReturnType(), m.getAnnotation(Bind.class), bnd, ds)));
+			var vendor = nonNull(ds) ? fetchProduct(ds) : DEFAULT;
 			return clazz.cast(newProxyInstance(SchemaProxy.class.getClassLoader(), new Class<?>[]{clazz}, 
-					new SchemaProxy(bnd, map, sub, ds, null)));
+					new SchemaProxy(bnd, map, sub, ds, vendor)));
 		}
 		throw new ResourceMappingException("schema must be an interface : " + clazz);
 	}
+	
 }

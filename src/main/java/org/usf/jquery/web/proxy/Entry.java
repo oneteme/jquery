@@ -26,8 +26,7 @@ public final class Entry {
 
 	private final String value;
 	private final TokenKind kind;
-	@With
-	private final Entry[] args;
+	@With private final Entry[] args;
 	private final Entry next;
 	private final String tag;
 

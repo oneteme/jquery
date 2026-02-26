@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Product.fromMetaData;
+import static org.usf.jquery.core.DatabaseVendor.parseName;
 
 import java.sql.SQLException;
 
@@ -20,13 +20,13 @@ public interface Environment {
 
 	DataSource getDataSource();
 	
-	Product getProduct();
+	DatabaseVendor getProduct();
 	
 	String getSchema();
 	
 	static SimpleEnvironment using(DataSource ds, String schema) {
 		try(var cnx = ds.getConnection()){
-			return new SimpleEnvironment(ds, fromMetaData(cnx.getMetaData()), schema);
+			return new SimpleEnvironment(ds, parseName(cnx.getMetaData()), schema);
 		}
 		catch (SQLException e) {
 			throw new JQueryException(e);
@@ -38,7 +38,7 @@ public interface Environment {
 	static class SimpleEnvironment implements Environment {
 		
 		private final DataSource dataSource;
-		private final Product product;
+		private final DatabaseVendor product;
 		private final String schema;
 	}
 }

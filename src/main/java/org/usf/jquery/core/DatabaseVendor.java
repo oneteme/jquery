@@ -1,10 +1,8 @@
 package org.usf.jquery.core;
 
 import static java.util.Arrays.stream;
+import static java.util.Objects.isNull;
 import static org.usf.jquery.core.Operator.function;
-
-import java.sql.DatabaseMetaData;
-import java.sql.SQLException;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -14,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
  * 
  */
 @Slf4j
-public enum Product {
+public enum DatabaseVendor {
 
 	POSTGRESQL, MYSQL, ORACLE, SQLSERVER, DEFAULT, 
 	
@@ -56,11 +54,14 @@ public enum Product {
 		return op;
 	}
 	
-	public static Product fromMetaData(DatabaseMetaData meta) throws SQLException {
-		var name = meta.getDatabaseProductName().toUpperCase();
+	public static DatabaseVendor parseName(String name) {
+		if(isNull(name)) {
+			return DEFAULT;
+		}
+		var v = name.toUpperCase();
 		return stream(values())
-				.filter(d-> name.contains(d.name()))
+				.filter(d-> name.contains(v))
 				.findAny()
-				.orElseThrow(()-> new UnsupportedOperationException(name));
+				.orElse(DEFAULT);
 	}
 }
