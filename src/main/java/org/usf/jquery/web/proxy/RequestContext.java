@@ -47,6 +47,10 @@ public final class RequestContext {
 	private final TypeRegistry registry;
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
+	
+	public RequestContext(Resource schema, ViewResource defaultView) {
+		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
+	}
 
 	public RequestContext(Resource schema, ViewResource defaultView, TypeRegistry registry) {
 		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), registry);

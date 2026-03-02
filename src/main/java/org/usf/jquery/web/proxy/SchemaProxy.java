@@ -65,7 +65,7 @@ public final class SchemaProxy extends ResourceProxy {
 	}
 
 	@SuppressWarnings("unchecked")
-	static <T extends Resource> T createSchema(Class<T> clazz, DataSource ds) {
+	static <T extends SchemaResource> T createSchema(Class<T> clazz, DataSource ds) {
 		if(clazz.isInterface()) {
 			var bnd = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
 			var map = discoverExposedMethods(clazz, (t,c)-> ViewResource.class.isAssignableFrom(c));
