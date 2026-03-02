@@ -14,13 +14,13 @@ import org.usf.jquery.core.JavaType.Typed;
  * @author u$f
  *
  */
-public interface DBColumn extends DBObject, Typed {
+public interface Column extends DBObject, Typed {
 	
 	void build(QueryBuilder query);
 	
 	@Override
 	default void build(QueryBuilder query, Object... args) {
-		requireNoArgs(args, DBColumn.class::getSimpleName);
+		requireNoArgs(args, Column.class::getSimpleName);
 		build(query);
 	}
 	
@@ -38,387 +38,387 @@ public interface DBColumn extends DBObject, Typed {
 	
 	// filters
 	
-	default ColumnSingleFilter eq(Object value) {
+	default SimpleCriteria eq(Object value) {
 		return Comparator.eq().filter(this, value);
 	}
 
-	default ColumnSingleFilter ne(Object value) {
+	default SimpleCriteria ne(Object value) {
 		return Comparator.ne().filter(this, value);
 	}
 
-	default ColumnSingleFilter lt(Object value) {
+	default SimpleCriteria lt(Object value) {
 		return Comparator.lt().filter(this, value);
 	}
 
-	default ColumnSingleFilter le(Object value) {
+	default SimpleCriteria le(Object value) {
 		return Comparator.le().filter(this, value);
 	}
 
-	default ColumnSingleFilter gt(Object value) {
+	default SimpleCriteria gt(Object value) {
 		return Comparator.gt().filter(this, value);
 	}
 
-	default ColumnSingleFilter ge(Object value) {
+	default SimpleCriteria ge(Object value) {
 		return Comparator.ge().filter(this, value);
 	}
 
-	default ColumnSingleFilter between(Object min, Object max) { //included
+	default SimpleCriteria between(Object min, Object max) { //included
 		return Comparator.between().filter(this, min, max);
 	}
 	
-	default ColumnSingleFilter like(Object value) {
+	default SimpleCriteria like(Object value) {
 		return Comparator.like().filter(this, value);
 	}
 	
-	default ColumnSingleFilter startsLike(Object value) {
+	default SimpleCriteria startsLike(Object value) {
 		return Comparator.startsLike().filter(this, value);
 	}
 
-	default ColumnSingleFilter endsLike(Object value) {
+	default SimpleCriteria endsLike(Object value) {
 		return Comparator.endsLike().filter(this, value);
 	}
 
-	default ColumnSingleFilter contentLike(Object value) {
+	default SimpleCriteria contentLike(Object value) {
 		return Comparator.contentLike().filter(this, value);
 	}
 	
-	default ColumnSingleFilter startsNotLike(Object value) {
+	default SimpleCriteria startsNotLike(Object value) {
 		return Comparator.startsNotLike().filter(this, value);
 	}
 
-	default ColumnSingleFilter endsNotLike(Object value) {
+	default SimpleCriteria endsNotLike(Object value) {
 		return Comparator.endsNotLike().filter(this, value);
 	}
 
-	default ColumnSingleFilter contentNotLike(Object value) {
+	default SimpleCriteria contentNotLike(Object value) {
 		return Comparator.contentNotLike().filter(this, value);
 	}
 
-	default ColumnSingleFilter notLike(Object value) {
+	default SimpleCriteria notLike(Object value) {
 		return Comparator.notLike().filter(this, value);
 	}
 
-	default ColumnSingleFilter ilike(Object value) {
+	default SimpleCriteria ilike(Object value) {
 		return Comparator.iLike().filter(this, value);
 	}
 
-	default ColumnSingleFilter notILike(Object value) {
+	default SimpleCriteria notILike(Object value) {
 		return Comparator.notILike().filter(this, value);
 	}
 
-	default ColumnSingleFilter isNull() {
+	default SimpleCriteria isNull() {
 		return Comparator.isNull().filter(this);
 	}
 
-	default ColumnSingleFilter notNull() {
+	default SimpleCriteria notNull() {
 		return Comparator.notNull().filter(this);
 	}
 
 	@SuppressWarnings("unchecked")
-	default <T> ColumnSingleFilter in(T... arr) {
+	default <T> SimpleCriteria in(T... arr) {
 		return Comparator.in().filter(appendFirst(arr, this)); 
 	}
 
 	@SuppressWarnings("unchecked")
-	default <T> ColumnSingleFilter notIn(T... arr) {
+	default <T> SimpleCriteria notIn(T... arr) {
 		return Comparator.notIn().filter(appendFirst(arr, this));
 	}
 	
-	default ColumnSingleFilter filter(Predicate exp) {
-		return new ColumnSingleFilter(this, exp);
+	default SimpleCriteria filter(Predicate exp) {
+		return new SimpleCriteria(this, exp);
 	}
 	
 	// arithmetic operations
 	
-	default DBColumn plus(Object o) {
+	default Column plus(Object o) {
 		return Operator.plus().operation(this, o);
 	}
 
-	default DBColumn minus(Object o) {
+	default Column minus(Object o) {
 		return Operator.minus().operation(this, o);
 	}
 
-	default DBColumn multiply(Object o) {
+	default Column multiply(Object o) {
 		return Operator.multiply().operation(this, o);
 	}
 
-	default DBColumn divide(Object o) {
+	default Column divide(Object o) {
 		return Operator.divide().operation(this, o);
 	}
 	
 	//numeric functions
 	
-	default DBColumn sqrt() {
+	default Column sqrt() {
 		return Operator.sqrt().operation(this);
 	}
 	
-	default DBColumn exp() {
+	default Column exp() {
 		return Operator.exp().operation(this);
 	}
 	
-	default DBColumn log() {
+	default Column log() {
 		return Operator.log().operation(this);
 	}
 
-	default DBColumn log(int base) {
+	default Column log(int base) {
 		return Operator.log().operation(this, base);
 	}
 	
-	default DBColumn abs() {
+	default Column abs() {
 		return Operator.abs().operation(this);
 	}
 
-	default DBColumn ceil() {
+	default Column ceil() {
 		return Operator.ceil().operation(this);
 	}
 
-	default DBColumn floor() {
+	default Column floor() {
 		return Operator.floor().operation(this);
 	}
 
-	default DBColumn trunc() {
+	default Column trunc() {
 		return Operator.trunc().operation(this);
 	}
 
-	default DBColumn trunc(int digit) {
+	default Column trunc(int digit) {
 		return Operator.trunc().operation(this, digit);
 	}
 	
-	default DBColumn round() {
+	default Column round() {
 		return Operator.round().operation(this);
 	}
 	
-	default DBColumn round(int digit) {
+	default Column round(int digit) {
 		return Operator.round().operation(this, digit);
 	}
 	
-	default DBColumn mod(int value) {
+	default Column mod(int value) {
 		return Operator.mod().operation(this, value);
 	}
 	
-	default DBColumn pow(int value) {
+	default Column pow(int value) {
 		return Operator.pow().operation(this, value);
 	}
 
 	//bitwise functions
 	
-	default DBColumn bitAnd(int value) {
+	default Column bitAnd(int value) {
 		return Operator.bitAnd().operation(this, value);
 	}
 	
-	default DBColumn bitOr(int value) {
+	default Column bitOr(int value) {
 		return Operator.bitOr().operation(this, value);
 	}
 	
-	default DBColumn bitXor(int value) {
+	default Column bitXor(int value) {
 		return Operator.bitXor().operation(this, value);
 	}
 	
-	default DBColumn bitNot(int value) {
+	default Column bitNot(int value) {
 		return Operator.bitNot().operation(this, value);
 	}
 	
-	default DBColumn bitShiftLeft(int value) {
+	default Column bitShiftLeft(int value) {
 		return Operator.bitShiftLeft().operation(this, value);
 	}
 	
-	default DBColumn bitShiftRight(int value) {
+	default Column bitShiftRight(int value) {
 		return Operator.bitShiftRight().operation(this, value);
 	}
 	
 	//string functions
 
-	default DBColumn length() {
+	default Column length() {
 		return Operator.length().operation(this);
 	}
 	
-	default DBColumn trim() {
+	default Column trim() {
 		return Operator.trim().operation(this);
 	}
 
-	default DBColumn ltrim() {
+	default Column ltrim() {
 		return Operator.ltrim().operation(this);
 	}
 
-	default DBColumn rtrim() {
+	default Column rtrim() {
 		return Operator.rtrim().operation(this);
 	}
 	
-	default DBColumn upper() {
+	default Column upper() {
 		return Operator.upper().operation(this);
 	}
 
-	default DBColumn lower() {
+	default Column lower() {
 		return Operator.lower().operation(this);
 	}
 	
-	default DBColumn initcap() {
+	default Column initcap() {
 		return Operator.initcap().operation(this);
 	}
 	
-	default DBColumn reverse() {
+	default Column reverse() {
 		return Operator.reverse().operation(this);
 	}
 	
-	default DBColumn left(int n) {
+	default Column left(int n) {
 		return Operator.left().operation(this, n);
 	}
 	
-	default DBColumn right(int n) {
+	default Column right(int n) {
 		return Operator.pow().operation(this, n);
 	}
 	
-	default DBColumn replace(String oldValue, String newValue) {
+	default Column replace(String oldValue, String newValue) {
 		return Operator.replace().operation(this, oldValue, newValue);
 	}
 	
-	default DBColumn substring(int start, int end) {
+	default Column substring(int start, int end) {
 		return Operator.substring().operation(this, start, end);
 	}
 	
-	default DBColumn concat(Object... str) {
+	default Column concat(Object... str) {
 		return Operator.concat().operation(appendFirst(str, this));
 	}
 	
-	default DBColumn lpad(int n, String value) {
+	default Column lpad(int n, String value) {
 		return Operator.lpad().operation(this, n, value);
 	}
 	
-	default DBColumn rpad(int n, String value) {
+	default Column rpad(int n, String value) {
 		return Operator.rpad().operation(this, n, value);
 	}
 
 	//temporal functions
 	
-	default DBColumn year() {
+	default Column year() {
 		return Operator.year().operation(this);
 	}
 	
-	default DBColumn month() {
+	default Column month() {
 		return Operator.month().operation(this);
 	}
 
-	default DBColumn week() {
+	default Column week() {
 		return Operator.week().operation(this);
 	}
 	
-	default DBColumn day() {
+	default Column day() {
 		return Operator.day().operation(this);
 	}
 	
-	default DBColumn dow() {
+	default Column dow() {
 		return Operator.dow().operation(this);
 	}
 	
-	default DBColumn doy() {
+	default Column doy() {
 		return Operator.doy().operation(this);
 	}
 
-	default DBColumn hour() {
+	default Column hour() {
 		return Operator.hour().operation(this);
 	}
 
-	default DBColumn minute() {
+	default Column minute() {
 		return Operator.minute().operation(this);
 	}
 	
-	default DBColumn second() {
+	default Column second() {
 		return Operator.second().operation(this);
 	}
 	
-	default DBColumn epoch() {
+	default Column epoch() {
 		return Operator.epoch().operation(this);
 	}
 	
-	default DBColumn yearMonth() {
+	default Column yearMonth() {
 		return Operator.yearMonth().operation(this);
 	}
 	
-	default DBColumn yearWeek() {
+	default Column yearWeek() {
 		return Operator.yearWeek().operation(this);
 	}
 	
-	default DBColumn monthDay() {
+	default Column monthDay() {
 		return Operator.monthDay().operation(this);
 	}
 	
-	default DBColumn hourMinute() {
+	default Column hourMinute() {
 		return Operator.hourMinute().operation(this);
 	}
 	
 	//cast functions
 
-	default DBColumn varchar() {
+	default Column varchar() {
 		return Operator.varchar().operation(this);
 	}
 	
-	default DBColumn varchar(int size) {
+	default Column varchar(int size) {
 		return Operator.varchar().operation(this, size);
 	}
 	
-	default DBColumn date() {
+	default Column date() {
 		return Operator.date().operation(this);
 	}
 	
-	default DBColumn timestamp() {
+	default Column timestamp() {
 		return Operator.timestamp().operation(this);
 	}
 	
-	default DBColumn integer() {
+	default Column integer() {
 		return Operator.integer().operation(this);
 	}
 	
-	default DBColumn bigint() {
+	default Column bigint() {
 		return Operator.bigint().operation(this);
 	}
 	
-	default DBColumn decimal() {
+	default Column decimal() {
 		return Operator.decimal().operation(this);
 	}
 	
-	default DBColumn decimal(int digit, int precision) {
+	default Column decimal(int digit, int precision) {
 		return Operator.decimal().operation(this, digit, precision);
 	}
 
 	//other functions
 	
-	default DBColumn distinct() {
+	default Column distinct() {
 		return Operator.distinct().operation(this);
 	}
 	
-	default DBColumn coalesce(Object o) {
+	default Column coalesce(Object o) {
 		return Operator.coalesce().operation(this, o);
 	}
 	
 	//aggregate functions
 
-	default DBColumn count() {
+	default Column count() {
 		return Operator.count().operation(this);
 	}
 
-	default DBColumn min() {
+	default Column min() {
 		return Operator.min().operation(this);
 	}
 
-	default DBColumn max() {
+	default Column max() {
 		return Operator.max().operation(this);
 	}
 
-	default DBColumn sum() {
+	default Column sum() {
 		return Operator.sum().operation(this);
 	}
 	
-	default DBColumn avg() {
+	default Column avg() {
 		return Operator.avg().operation(this);
 	}
 
 	//pipe functions
 	
-	default DBColumn over(DBColumn[] cols, Order[] orders) {
+	default Column over(Column[] cols, Order[] orders) {
 		return over(new Partition(cols, orders));
 	}
 	
-	default DBColumn over(Partition part) {
+	default Column over(Partition part) {
 		return Operator.over().operation(this, part);
 	}
 
@@ -450,33 +450,33 @@ public interface DBColumn extends DBObject, Typed {
 	
 	// constants
 	
-	static DBColumn cdate() {
+	static Column cdate() {
 		return Operator.cdate().operation();
 	}
 	
-	static DBColumn ctime() {
+	static Column ctime() {
 		return Operator.ctime().operation();
 	}
 	
-	static DBColumn ctimestamp() {
+	static Column ctimestamp() {
 		return Operator.ctimestamp().operation();
 	}
 
-	static DBColumn countAll(DBView... view) {
+	static Column countAll(DBView... view) {
 		return Operator.count().operation(allColumns(view));
 	}
 	
 	//window functions
 	
-	static DBColumn rank() {
+	static Column rank() {
 		return Operator.rank().operation();
 	}
 	
-	static DBColumn rowNumber() {
+	static Column rowNumber() {
 		return Operator.rowNumber().operation();
 	}
 	
-	static DBColumn denseRank() {
+	static Column denseRank() {
 		return Operator.denseRank().operation();
 	}
 	

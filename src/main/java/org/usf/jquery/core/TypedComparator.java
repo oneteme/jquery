@@ -32,7 +32,7 @@ public final class TypedComparator implements Comparator {
 	}
 	
 	@Override
-	public ColumnSingleFilter filter(Object... args) {
+	public SimpleCriteria filter(Object... args) {
 		return comparator.filter(parameterSet.assertArguments(args));
 	}
 	@Override

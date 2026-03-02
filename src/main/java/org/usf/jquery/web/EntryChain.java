@@ -13,7 +13,7 @@ import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
-import static org.usf.jquery.core.DBColumn.allColumns;
+import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.FILTER;
@@ -43,8 +43,8 @@ import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.Predicate;
-import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.Column;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.NamedColumn;
@@ -98,7 +98,7 @@ final class EntryChain {
 	}
 	
 	//[view.]column[.expression]*
-	public DBColumn evalColumn(QueryContext ctx, boolean requireTag) {
+	public Column evalColumn(QueryContext ctx, boolean requireTag) {
 		try {
 			var cur = chainResourceExpression(ctx);
 			if(cur.entry.isLast()) {
@@ -134,16 +134,16 @@ final class EntryChain {
 		}
 	}
 
-	public DBFilter evalFilter(QueryContext ctx) {
+	public Criteria evalFilter(QueryContext ctx) {
 		return evalFilter(ctx, null); //null ==> inner filter
 	}
 
 	//[view.]criteria | [view.]column.criteria | [view.]column[.operator]*[.comparator][.and|or(comparator)]*
-	public DBFilter evalFilter(QueryContext ctx, EntryChain[] outerArgs) {
+	public Criteria evalFilter(QueryContext ctx, EntryChain[] outerArgs) {
 		try {
 			var rsc = chainResourceExpression(ctx, outerArgs);
 			if(rsc.entry.isLast()) {
-				if(rsc.col instanceof DBFilter f) {
+				if(rsc.col instanceof Criteria f) {
 					return f;
 				}
 				throw new EntrySyntaxException(this + " is not a filter");
@@ -254,7 +254,7 @@ final class EntryChain {
 	public Optional<Partition> parsePartition(QueryContext ctx) {
 		if(value.matches(PARTITION_PATTERN)) {
 			try {
-				var cols = new ArrayList<DBColumn>();
+				var cols = new ArrayList<Column>();
 				var ords = new ArrayList<Order>();
 				var e = this;
 				do {
@@ -266,7 +266,7 @@ final class EntryChain {
 					e = e.next;
 				} while(nonNull(e));
 				return Optional.of(new Partition(
-						cols.toArray(DBColumn[]::new), 
+						cols.toArray(Column[]::new), 
 						ords.toArray(Order[]::new)));
 			}
 			catch (Exception ex) {
@@ -510,20 +510,20 @@ final class EntryChain {
 	final class EntryChainCursor {
 		
 		private final ViewDecorator vd;
-		private final Builder<ViewDecorator, DBFilter> viewCrt;
+		private final Builder<ViewDecorator, Criteria> viewCrt;
 		private final Builder<ViewDecorator, Predicate> colCrt;
 		private EntryChain entry;
-		private DBColumn col;
+		private Column col;
 
-		public EntryChainCursor(EntryChain entry, ViewDecorator vd, DBColumn col) {
+		public EntryChainCursor(EntryChain entry, ViewDecorator vd, Column col) {
 			this(vd, null, null, entry, col); //[view.]column
 		}
 
-		public EntryChainCursor(EntryChain entry, ViewDecorator vd, DBColumn col, Builder<ViewDecorator, Predicate> colCrt) {
+		public EntryChainCursor(EntryChain entry, ViewDecorator vd, Column col, Builder<ViewDecorator, Predicate> colCrt) {
 			this(vd, null, colCrt, entry, col); //[view.]colum.criteria
 		}
 
-		public EntryChainCursor(EntryChain entry, ViewDecorator vd, Builder<ViewDecorator, DBFilter> viewCrt) {
+		public EntryChainCursor(EntryChain entry, ViewDecorator vd, Builder<ViewDecorator, Criteria> viewCrt) {
 			this(vd, viewCrt, null, entry, null); //[view.]criteria
 		}
 		

@@ -19,7 +19,7 @@ public final class QueryUnion implements DBObject {
 	private final QueryView view;
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		return view.compose(composer, groupKeys);
 	}
 	

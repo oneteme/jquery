@@ -12,18 +12,18 @@ import java.util.function.Consumer;
  *
  */
 //@see ComparisonExpressionGroup
-public final class ColumnFilterGroup implements DBFilter {
+public final class CriteriaGroup implements Criteria {
 	
 	private final LogicalOperator operator;
-	private final DBFilter[] filters;
+	private final Criteria[] filters;
 	
-	ColumnFilterGroup(LogicalOperator operator, DBFilter... filters) {
+	CriteriaGroup(LogicalOperator operator, Criteria... filters) {
 		this.operator = operator;
-		this.filters = chain(operator, requireAtLeastNArgs(1, filters, ColumnFilterGroup.class::getSimpleName));
+		this.filters = chain(operator, requireAtLeastNArgs(1, filters, CriteriaGroup.class::getSimpleName));
 	}
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return DBObject.composeNested(query, groupKeys, filters);
 	}
 	
@@ -33,8 +33,8 @@ public final class ColumnFilterGroup implements DBFilter {
 	}
 
 	@Override
-	public DBFilter append(LogicalOperator op, DBFilter filter) {
-		return new ColumnFilterGroup(op, this, filter);
+	public Criteria append(LogicalOperator op, Criteria filter) {
+		return new CriteriaGroup(op, this, filter);
 	}
 	
 	@Override
@@ -42,16 +42,16 @@ public final class ColumnFilterGroup implements DBFilter {
 		return DBObject.toSQL(this);
 	}
 	
-	static DBFilter[] chain(LogicalOperator op, DBFilter... filters) {
-		var res = new ArrayList<DBFilter>(filters.length);
+	static Criteria[] chain(LogicalOperator op, Criteria... filters) {
+		var res = new ArrayList<Criteria>(filters.length);
 		for(var f : filters) {
-			if(f instanceof ColumnFilterGroup fg && fg.operator == op) {
+			if(f instanceof CriteriaGroup fg && fg.operator == op) {
 				addAll(res, fg.filters);
 			}
 			else {
 				res.add(f);
 			}
 		}
-		return res.toArray(DBFilter[]::new);
+		return res.toArray(Criteria[]::new);
 	}
 }

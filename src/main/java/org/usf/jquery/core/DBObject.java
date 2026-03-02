@@ -17,23 +17,23 @@ import java.util.stream.Stream;
  */
 public interface DBObject {
 	
-	int compose(QueryComposer composer, Consumer<DBColumn> groupKeys);
+	int compose(QueryComposer composer, Consumer<Column> groupKeys);
 	
 	void build(QueryBuilder query, Object... args);
 
-	static int composeNested(QueryComposer query, Consumer<DBColumn> cons, DBObject[] args){
+	static int composeNested(QueryComposer query, Consumer<Column> cons, DBObject[] args){
 		return composeNested(query, cons, null, args);
 	}
 	
-	static int composeNested(QueryComposer query, Consumer<DBColumn> cons, DBColumn col, DBObject[] args){
+	static int composeNested(QueryComposer query, Consumer<Column> cons, Column col, DBObject[] args){
 		return composeNested(query, cons, streamOrEmpty(args), col);
 	}
 
-	static int tryComposeNested(QueryComposer query, Consumer<DBColumn> cons, Object... args){
+	static int tryComposeNested(QueryComposer query, Consumer<Column> cons, Object... args){
 		return tryComposeNestedOrElse(query, cons, args, null);
 	}
 
-	static int tryComposeNestedOrElse(QueryComposer query, Consumer<DBColumn> cons, Object[] args, DBColumn col){
+	static int tryComposeNestedOrElse(QueryComposer query, Consumer<Column> cons, Object[] args, Column col){
 		return composeNested(query, cons, streamOrEmpty(args).mapMulti((o, acc)->{
 			if(o instanceof DBObject n) {
 				acc.accept(n);
@@ -42,11 +42,11 @@ public interface DBObject {
 	}
 
 	//0: groupKey, +1: aggregation, -1: constant  
-	static int composeNested(QueryComposer query, Consumer<DBColumn> cons, Stream<DBObject> stream, DBColumn col){
+	static int composeNested(QueryComposer query, Consumer<Column> cons, Stream<DBObject> stream, Column col){
 		if(isNull(col)) {
 			return stream.mapToInt(o-> o.compose(query, cons)).max().orElse(-1);
 		}
-		var arr = new ArrayList<DBColumn>();
+		var arr = new ArrayList<Column>();
 		var lvl = stream.mapToInt(o-> o.compose(query, arr::add)).max().orElse(-1);
 		if(lvl == 0) { //group keys
 			cons.accept(col);

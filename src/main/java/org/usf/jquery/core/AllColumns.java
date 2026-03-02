@@ -22,7 +22,7 @@ public final class AllColumns implements NamedColumn {
 	private final DBView[] views;
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
+	public int compose(QueryComposer query, Consumer<Column> cons) {
 		if(nonNull(views)) {
 			query.declare(views); //declare views
 		}

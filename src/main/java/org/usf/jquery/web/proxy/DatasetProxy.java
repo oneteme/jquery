@@ -20,8 +20,8 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.Column;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
@@ -48,7 +48,7 @@ final class DatasetProxy extends ResourceProxy {
 	@Override
 	Object invokeDefaultMethod(Object proxy, Method method, Object[] args) throws Throwable {
 		var res = super.invokeDefaultMethod(proxy, method, args);
-		if(res instanceof DBColumn col) {
+		if(res instanceof Column col) {
 			var rsr = method.getAnnotation(Expose.class); //exposed resource
 			if(nonNull(rsr) && !rsr.alias().isEmpty()) {
 				res = col.as(rsr.alias());
@@ -67,12 +67,12 @@ final class DatasetProxy extends ResourceProxy {
 			return view;
 		}
 		var type = method.getReturnType();
-		if(DBColumn.class.isAssignableFrom(type)) {
+		if(Column.class.isAssignableFrom(type)) {
 			var bind = requireNonNull(method.getAnnotation(Bind.class), 
 					()-> "abstract method " + method + " must be annotated with @Bind");
 			return buildColumn(method, bind, args);
 		}
-		if(DBFilter.class.isAssignableFrom(type)) { //filter first (extends Column)
+		if(Criteria.class.isAssignableFrom(type)) { //filter first (extends Column)
 			throw new UnsupportedOperationException("not implemented");
 		}
 		if(JoinsClause.class.isAssignableFrom(type)) {
@@ -123,8 +123,8 @@ final class DatasetProxy extends ResourceProxy {
 					return c == ViewColumn.class;
 				}
 				else {
-					return DBColumn.class.isAssignableFrom(c) || 
-							DBFilter.class.isAssignableFrom(c) || 
+					return Column.class.isAssignableFrom(c) || 
+							Criteria.class.isAssignableFrom(c) || 
 							c == Order.class || 
 							c == Partition.class||
 							c == JoinsClause.class;

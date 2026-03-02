@@ -30,7 +30,7 @@ public class ViewColumn implements NamedColumn{
 	}
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		if(nonNull(view)) {
 			query.declare(view);
 		}

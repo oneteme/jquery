@@ -37,12 +37,12 @@ public class TypedOperator implements Operator {
 		return operator.id();
 	}
 
-	public DBColumn operation(Object... args) {
+	public Column operation(Object... args) {
 		return this.operation(typeFn.apply(args), args);
 	}
 
 	@Override // do not delegate this
-	public DBColumn operation(JDBCType type, Object... args) {
+	public Column operation(JDBCType type, Object... args) {
 		return operator.operation(type, parameterSet.assertArguments(args));
 	}
 	

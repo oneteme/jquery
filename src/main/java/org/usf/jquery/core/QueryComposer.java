@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.core.DBColumn.allColumns;
+import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.Environment.NO_ENV;
 import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Role.FILTER;
@@ -42,15 +42,15 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public final class QueryComposer {
 	
-	static final Consumer<DBColumn> DO_NOTHING = o->{};
+	static final Consumer<Column> DO_NOTHING = o->{};
 	
 	private final Set<QueryView> ctes = new LinkedHashSet<>();
 	private final List<NamedColumn> columns = new ArrayList<>();
 	private final Set<DBView> views = new LinkedHashSet<>(); //preserve order
 	private final List<ViewJoin> joins = new ArrayList<>(); 
-	private final Set<DBColumn> group = new HashSet<>(); 
-	private final List<DBFilter> where = new ArrayList<>(); 
-	private final List<DBFilter> having = new ArrayList<>();
+	private final Set<Column> group = new HashSet<>(); 
+	private final List<Criteria> where = new ArrayList<>(); 
+	private final List<Criteria> having = new ArrayList<>();
 	private final List<Order> orders = new ArrayList<>();
 	private final List<QueryUnion> unions = new ArrayList<>();
 	private final Map<String, String[]> variables = new LinkedHashMap<>();
@@ -92,10 +92,10 @@ public final class QueryComposer {
 		return this;
 	}
 
-	public QueryComposer filters(@NonNull DBFilter... filters){
+	public QueryComposer filters(@NonNull Criteria... filters){
 		this.role = FILTER;
 		for(var f : filters) {
-			var arr = new ArrayList<DBColumn>();
+			var arr = new ArrayList<Column>();
 			var lvl = f.compose(this, arr::add);
 			if(lvl > 0) {
 				aggregation |= having.add(f);
@@ -221,9 +221,9 @@ public final class QueryComposer {
 		acceptArray(ctes, QueryView[]::new, queryView::setCtes);
 		acceptArray(views, DBView[]::new, queryView::setViews);
 		acceptArray(joins, ViewJoin[]::new, queryView::setJoins);
-		acceptArray(where, DBFilter[]::new, queryView::setWhere);
-		acceptArray(group, DBColumn[]::new, queryView::setGroup);
-		acceptArray(having, DBFilter[]::new, queryView::setHaving);
+		acceptArray(where, Criteria[]::new, queryView::setWhere);
+		acceptArray(group, Column[]::new, queryView::setGroup);
+		acceptArray(having, Criteria[]::new, queryView::setHaving);
 		acceptArray(orders, Order[]::new, queryView::setOrders);
 		acceptArray(unions, QueryUnion[]::new, queryView::setUnions);
 		acceptObject(limit, Objects::nonNull, queryView::setLimit);

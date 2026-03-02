@@ -17,12 +17,12 @@ import lombok.RequiredArgsConstructor;
 public final class ColumnProxy implements NamedColumn {
 
 	//do not @Delegate
-	private final DBColumn column;
+	private final Column column;
 	private final JDBCType type; //optional
 	private final String tag; //optional
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
+	public int compose(QueryComposer query, Consumer<Column> cons) {
 		return column.compose(query, cons);
 	}
 

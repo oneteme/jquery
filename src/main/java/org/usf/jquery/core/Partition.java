@@ -17,11 +17,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class Partition implements DBObject {
 
-	private final DBColumn[] columns;//optional
+	private final Column[] columns;//optional
 	private final  Order[] orders; //optional
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return max(
 				DBObject.composeNested(query, groupKeys, columns), 
 				DBObject.composeNested(query, groupKeys, orders));

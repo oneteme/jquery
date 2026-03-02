@@ -18,11 +18,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 final class WhenCase implements DBObject, Typed {
 	
-	private final DBFilter filter; //optional
+	private final Criteria filter; //optional
 	private final Object value; //then|else
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return DBObject.tryComposeNested(query, groupKeys, filter, value);
 	}
 	

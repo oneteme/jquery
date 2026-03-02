@@ -6,7 +6,7 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import java.time.Instant;
 import java.time.LocalDate;
 
-import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
@@ -42,7 +42,7 @@ interface DatasetSample extends DatasetResource {
     NamedColumn elapsedtime2();
     
     @Expose(description="")
-    default DBFilter active(LocalDate date) {
+    default Criteria active(LocalDate date) {
     	return null;
     }
 

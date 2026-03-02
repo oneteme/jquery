@@ -30,7 +30,7 @@ public final class SingleQueryColumn implements DBObject, Typed {
 	}
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		return view.compose(composer, groupKeys);
 	}
 	

@@ -10,13 +10,13 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public class ColumnSingleFilter implements DBFilter {
+public class SimpleCriteria implements Criteria {
 
 	private final Object left;
 	private final Predicate expression;
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return DBObject.tryComposeNested(query, groupKeys, left, expression);
 	}
 	
@@ -26,8 +26,8 @@ public class ColumnSingleFilter implements DBFilter {
 	}
 
 	@Override
-	public ColumnFilterGroup append(LogicalOperator op, DBFilter filter) {
-		return new ColumnFilterGroup(op, this, filter);
+	public CriteriaGroup append(LogicalOperator op, Criteria filter) {
+		return new CriteriaGroup(op, this, filter);
 	}
 	
 	@Override

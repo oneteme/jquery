@@ -19,7 +19,7 @@ public interface DBView extends DBObject {
 	 * do not declare self on composer
 	 */
 	@Override
-	default int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	default int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		return -1; 
 	}
 	

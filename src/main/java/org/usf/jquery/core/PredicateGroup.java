@@ -23,7 +23,7 @@ public final class PredicateGroup implements Predicate {
 	}
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return DBObject.composeNested(query, groupKeys, expressions);
 	}
 

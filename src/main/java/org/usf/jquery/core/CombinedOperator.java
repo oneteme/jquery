@@ -8,10 +8,10 @@ package org.usf.jquery.core;
 @FunctionalInterface
 public interface CombinedOperator extends Operator {
 	
-	DBColumn combine(Object... args);
+	Column combine(Object... args);
 	
 	@Override
-	default DBColumn operation(JDBCType type, Object... args) {
+	default Column operation(JDBCType type, Object... args) {
 		var c = combine(args);
 		if(type == c.getType()) {
 			return c;

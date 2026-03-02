@@ -24,9 +24,9 @@ public final class ViewJoin implements DBObject {
 	
 	private final JoinType type;
 	private final DBView view;
-	private final DBFilter[] filters;
+	private final Criteria[] filters;
 	
-	ViewJoin(JoinType type, DBView view, DBFilter[] filters) {
+	ViewJoin(JoinType type, DBView view, Criteria[] filters) {
 		this.type = type;
 		this.view = view;
 		this.filters = type == CROSS 
@@ -35,7 +35,7 @@ public final class ViewJoin implements DBObject {
 	}
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		query.declare(view); //if filters is null
 		return DBObject.composeNested(query, groupKeys, filters);
 	}
@@ -55,27 +55,27 @@ public final class ViewJoin implements DBObject {
 		return DBObject.toSQL(this);
 	}
 	
-	public static ViewJoin innerJoin(DBView view, DBFilter... filters) {
+	public static ViewJoin innerJoin(DBView view, Criteria... filters) {
 		return new ViewJoin(INNER, view, filters);
 	}
 	
-	public static ViewJoin leftJoin(DBView view, DBFilter... filters) {
+	public static ViewJoin leftJoin(DBView view, Criteria... filters) {
 		return new ViewJoin(LEFT, view, filters);
 	}
 	
-	public static ViewJoin rightJoin(DBView view, DBFilter... filters) {
+	public static ViewJoin rightJoin(DBView view, Criteria... filters) {
 		return new ViewJoin(RIGHT, view, filters);
 	}
 
-	public static ViewJoin fullJoin(DBView view, DBFilter... filters) {
+	public static ViewJoin fullJoin(DBView view, Criteria... filters) {
 		return new ViewJoin(FULL, view, filters);
 	}
 
-	public static ViewJoin crossJoin(DBView view, DBFilter... filters) {
+	public static ViewJoin crossJoin(DBView view, Criteria... filters) {
 		return new ViewJoin(CROSS, view, filters);
 	}
 
-	public static ViewJoin join(JoinType joinType, DBView view, DBFilter... filters) {
+	public static ViewJoin join(JoinType joinType, DBView view, Criteria... filters) {
 		return new ViewJoin(joinType, view, filters);
 	}
 }

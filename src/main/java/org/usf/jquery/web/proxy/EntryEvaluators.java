@@ -8,7 +8,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
-import static org.usf.jquery.core.DBColumn.allColumns;
+import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.JoinType.CROSS;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.ViewJoin.join;
@@ -27,8 +27,8 @@ import java.util.function.Function;
 
 import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.Predicate;
-import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.Column;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinType;
@@ -82,7 +82,7 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such named column : " + itr.peekNext().getValue());
 	}
 	
-	public static DBColumn evaluateColumn(Entry entry, RequestContext ctx) {
+	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
 		var col = evalColumn(itr, ctx);
 		if(nonNull(col)) {
@@ -92,10 +92,10 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such column : " + itr.peekNext().getValue());
 	}
 	
-	public static DBFilter evaluateFilter(Entry entry, RequestContext ctx, Entry... outerArgs) {
+	public static Criteria evaluateFilter(Entry entry, RequestContext ctx, Entry... outerArgs) {
 		var itr = entry.iterator();
 		var col = evalColumn(itr, ctx, outerArgs);
-		if(col instanceof DBFilter flt) { 
+		if(col instanceof Criteria flt) { 
 			assertLastEntry(itr, false);
 			return flt; 
 		}
@@ -191,8 +191,8 @@ public final class EntryEvaluators {
 		return col.order();
 	}
 
-	static DBColumn evalColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
-		var res = lookupResource(itr, DBColumn.class, ctx, (v, e)->{
+	static Column evalColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
+		var res = lookupResource(itr, Column.class, ctx, (v, e)->{
 			var entry = e.peekNext();
 			if("count".equals(entry.getValue())) {
 				return invokeOperator(entry.hasArgs() ? null : allColumns(v.getView()), entry.getValue(), entry.getArgs(), ctx);
@@ -210,12 +210,13 @@ public final class EntryEvaluators {
 				var entry = itr.peekNext();
 				switch (entry.getValue()) {
 				case COLUMN_PARAM-> query.columns(ctx.resolveAll(entry.getArgs(), NamedColumn.class));
-				case FILTER_OPR-> query.filters(ctx.resolveAll(entry.getArgs(), DBFilter.class)); 
+				case FILTER_OPR-> query.filters(ctx.resolveAll(entry.getArgs(), Criteria.class)); 
 				case ORDER_PARAM-> query.orders(ctx.resolveAll(entry.getArgs(), Order.class));
 				case JOIN_PARAM-> query.joins2(ctx.resolveAll(entry.getArgs(), JoinsClause.class));
 				case LIMIT_PARAM-> query.limit(resolveSingleArgValue(entry, Integer.class, ctx));
 				case OFFSET_PARAM-> query.offset(resolveSingleArgValue(entry, Integer.class, ctx));
 				case DISTINCT_PARAM-> query.distinct(resolveSingleArgValue(entry, Boolean.class, ctx));
+				//TODO union
 				default-> matched = false;
 				}
 				if(!matched) {
@@ -234,14 +235,14 @@ public final class EntryEvaluators {
 	}
 	
 	static Partition evalPartition(EntryIterator itr, RequestContext ctx) {
-		var cols = new ArrayList<DBColumn>();
+		var cols = new ArrayList<Column>();
 		var ords = new ArrayList<Order>();
 		try {
 			var matched = true;
 			while(itr.hasNext()) {
 				var entry = itr.peekNext();
 				switch (entry.getValue()) {
-				case COLUMN_PARAM-> addAll(cols, ctx.resolveAll(entry.getArgs(), DBColumn.class));
+				case COLUMN_PARAM-> addAll(cols, ctx.resolveAll(entry.getArgs(), Column.class));
 				case ORDER_PARAM-> addAll(ords, ctx.resolveAll(entry.getArgs(), Order.class));
 				default-> matched = false;
 				}
@@ -254,7 +255,7 @@ public final class EntryEvaluators {
 		catch (Exception e) {
 			throw new EntryParseException("cannot parse query arguments ", e);
 		} //optional partition args ?
-		return new Partition(cols.toArray(DBColumn[]::new), ords.toArray(Order[]::new));
+		return new Partition(cols.toArray(Column[]::new), ords.toArray(Order[]::new));
 	}
 
 	static JoinsClause evalJoin(EntryIterator itr, RequestContext ctx) {
@@ -268,7 +269,7 @@ public final class EntryEvaluators {
 					throw new NoSuchResourceException("no such view : " + entry.getValue());
 				}
 				var filters = itr.hasNext() && FILTER_OPR.equals(itr.peekNext().getValue()) 
-						? ctx.resolveAll(itr.next().getArgs(), DBFilter.class) : null;
+						? ctx.resolveAll(itr.next().getArgs(), Criteria.class) : null;
 				if(type != CROSS && isEmpty(filters)) {
 					throw new IllegalArgumentException("join type " + type + " requires at least one filter");
 				}
@@ -308,7 +309,7 @@ public final class EntryEvaluators {
 	}
 	
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
-	static DBColumn chainResource(EntryIterator itr, DBColumn res, RequestContext ctx, Entry... outArgs) {
+	static Column chainResource(EntryIterator itr, Column res, RequestContext ctx, Entry... outArgs) {
 		var col = res;
 		Entry entry = itr.get();
 		while(itr.hasNext()) {
@@ -337,7 +338,7 @@ public final class EntryEvaluators {
 		return col;
 	}
 	
-	static DBColumn invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
+	static Column invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
 		var opr = ctx.lookupSchemaResource(name, TypedOperator.class, args) //check declared operator first, then static resource
 				.orElseGet(()-> tryInvokeStatic(Operator.class, TypedOperator.class, name));
 		return nonNull(opr) 
@@ -345,7 +346,7 @@ public final class EntryEvaluators {
 				: null;
 	}
 	
-	static DBFilter invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
+	static Criteria invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
 		var cmp = ctx.lookupSchemaResource(name, TypedComparator.class, args) //check declared comparator first, then static resource
 				.orElseGet(()-> tryInvokeStatic(Comparator.class, TypedComparator.class, name));
 		return nonNull(cmp) 

@@ -16,11 +16,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class Order implements DBObject {
 
-	private final DBColumn column;
+	private final Column column;
 	private final OrderType type;
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return column.compose(query, groupKeys);
 	}
 	

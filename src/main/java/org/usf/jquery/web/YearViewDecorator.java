@@ -5,7 +5,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
 import static org.usf.jquery.core.Comparator.in;
-import static org.usf.jquery.core.DBColumn.constant;
+import static org.usf.jquery.core.Column.constant;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
@@ -17,8 +17,8 @@ import java.util.Map;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.Column;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.TableView;
 
@@ -46,7 +46,7 @@ public interface YearViewDecorator extends ViewDecorator {
 		});
 	}
 	
-	default DBFilter monthFilter() {
+	default Criteria monthFilter() {
 		var mc = monthRevision();
 		return nonNull(mc) 
 				? column(mc).filter(in()
@@ -54,7 +54,7 @@ public interface YearViewDecorator extends ViewDecorator {
 				: null;
 	}
 
-	static Builder<ViewDecorator, DBColumn> yearRevision() {
+	static Builder<ViewDecorator, Column> yearRevision() {
 		return (view, args)-> {
 			if(view instanceof YearViewDecorator) {
 				return constant(INTEGER, (m, v)-> nonNull(m) ? ((YearMonths)m).year() : null);

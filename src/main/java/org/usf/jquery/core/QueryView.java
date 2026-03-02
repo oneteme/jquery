@@ -39,9 +39,9 @@ public final class QueryView implements DBView {
 
 	private QueryView[] ctes;
 	private NamedColumn[] columns;
-	private DBColumn[] group;
-	private DBFilter[] where; 
-	private DBFilter[] having;
+	private Column[] group;
+	private Criteria[] where; 
+	private Criteria[] having;
 	private ViewJoin[] joins; 
 	private Order[] orders;
 	private DBView[] views; //preserve order
@@ -54,7 +54,7 @@ public final class QueryView implements DBView {
 	private Map<DBView, QueryView> overView;
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		if(!isEmpty(ctes)) { // subQuery
 			composer.ctes(ctes);
 		}

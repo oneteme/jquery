@@ -3,7 +3,7 @@ package org.usf.jquery.web;
 import static java.util.Objects.isNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 
-import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewJoin;
@@ -42,7 +42,7 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	}
 	
 	@Override
-	public Builder<ViewDecorator, DBFilter> criteriaBuilder(String name) {
+	public Builder<ViewDecorator, Criteria> criteriaBuilder(String name) {
 		return vd.criteriaBuilder(name);
 	}
 	

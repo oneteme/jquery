@@ -12,7 +12,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
-public class ValueColumn implements DBColumn {
+public class ValueColumn implements Column {
 	
 	private final Object value;
 	private final JDBCType type;
@@ -23,7 +23,7 @@ public class ValueColumn implements DBColumn {
 	}
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return -1;
 	}
 	

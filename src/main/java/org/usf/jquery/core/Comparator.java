@@ -20,12 +20,12 @@ public interface Comparator extends DBProcessor {
 	String id();
 	
 	@Override
-	default int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	default int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		throw new UnsupportedOperationException("compose comparator");
 	}
 
-	default ColumnSingleFilter filter(Object... args) {
-		return new ColumnSingleFilter(args[0], 
+	default SimpleCriteria filter(Object... args) {
+		return new SimpleCriteria(args[0], 
 				expression(copyOfRange(args, 1, args.length))); // no type
 	}
 	

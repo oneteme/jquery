@@ -5,7 +5,7 @@ package org.usf.jquery.core;
  * @author u$f
  *
  */
-public interface DBFilter extends DBColumn, Chainable<DBFilter> {
+public interface Criteria extends Column, Chainable<Criteria> {
 	
 	void build(QueryBuilder query);
 	

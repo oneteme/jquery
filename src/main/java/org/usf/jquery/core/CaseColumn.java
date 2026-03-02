@@ -12,7 +12,7 @@ import java.util.stream.Stream;
  * @author u$f
  *
  */
-public final class CaseColumn implements DBColumn {
+public final class CaseColumn implements Column {
 
 	private final WhenCase[] whenCases;
 	
@@ -21,7 +21,7 @@ public final class CaseColumn implements DBColumn {
 	}
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return DBObject.composeNested(query, groupKeys, this, whenCases);
 	}
 

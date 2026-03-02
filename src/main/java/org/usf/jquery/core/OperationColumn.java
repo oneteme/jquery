@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class OperationColumn implements DBColumn {
+public final class OperationColumn implements Column {
 
 	private final Operator operator;
 	private final Object[] args; //optional
@@ -25,7 +25,7 @@ public final class OperationColumn implements DBColumn {
 	private ViewColumn overColumn; 
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
 			DBObject.tryComposeNested(query, c-> {}, args); //declare views only
 			return 1;
@@ -55,7 +55,7 @@ public final class OperationColumn implements DBColumn {
 		return nonNull(overColumn) ? overColumn.getType() : type;
 	}
 	
-	private int resolveOverColumns(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	private int resolveOverColumns(QueryComposer composer, Consumer<Column> groupKeys) {
 		requireAtLeastNArgs(1, args, ()-> "over"); //partition
 		var lvl = DBObject.tryComposeNested(composer, groupKeys, args[0])-1; //nested aggregate function
 		return args.length == 1

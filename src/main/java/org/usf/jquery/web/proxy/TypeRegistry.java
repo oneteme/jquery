@@ -24,8 +24,8 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import org.usf.jquery.core.DBColumn;
-import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.Column;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
@@ -101,9 +101,9 @@ public final class TypeRegistry {
 		//Object ?
 		DEF_PARSERS = unmodifiableMap(prs);
 		var evl = new HashMap<Class<?>, EntryEvaluator<?>>();
-		evl.put(DBColumn.class, EntryEvaluators::evaluateColumn);
+		evl.put(Column.class, EntryEvaluators::evaluateColumn);
 		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
-		evl.put(DBFilter.class, EntryEvaluators::evaluateFilter);
+		evl.put(Criteria.class, EntryEvaluators::evaluateFilter);
 		evl.put(Order.class, EntryEvaluators::evaluateOrder);
 		evl.put(JoinsClause.class, EntryEvaluators::evaluateJoin);
 		evl.put(Partition.class, EntryEvaluators::evaluatePartition);

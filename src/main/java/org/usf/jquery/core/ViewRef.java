@@ -16,7 +16,7 @@ public final class ViewRef implements DBView {
 	private final DBView view;
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		throw new IllegalStateException("ViewRef cannot be composed");
 	}
 

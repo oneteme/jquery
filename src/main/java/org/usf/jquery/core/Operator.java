@@ -34,7 +34,7 @@ public interface Operator extends DBProcessor {
 	void buildOperator(QueryBuilder builder, Object... args);
 
 	@Override
-	default int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	default int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		throw new UnsupportedOperationException("compose operator");
 	}
 	
@@ -48,7 +48,7 @@ public interface Operator extends DBProcessor {
 		op.buildOperator(builder, args);
 	}
 
-	default DBColumn operation(JDBCType type, Object... args) {
+	default Column operation(JDBCType type, Object... args) {
 		return new OperationColumn(this, args, type);
 	}
 	
@@ -333,7 +333,7 @@ public interface Operator extends DBProcessor {
 	private static TypedOperator chain(LogicalOperator op) {
 		CombinedOperator co = args-> {
 			requireNArgs(2, args, op::name);
-			return ((DBFilter)args[0]).append(op, (DBFilter)args[1]);
+			return ((Criteria)args[0]).append(op, (Criteria)args[1]);
 		};
 		return new TypedOperator(BOOLEAN, co, required(BOOLEAN), required(BOOLEAN));
 	}

@@ -24,7 +24,7 @@ public final class SimplePredicate implements Predicate {
 	private final Adjuster<Object[]> adjuster; //optional
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		return DBObject.tryComposeNested(query, groupKeys, right);
 	}
 	

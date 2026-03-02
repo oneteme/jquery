@@ -7,8 +7,8 @@ import static java.time.Instant.now;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.core.DBColumn.allColumns;
-import static org.usf.jquery.core.DBColumn.constant;
+import static org.usf.jquery.core.Column.allColumns;
+import static org.usf.jquery.core.Column.constant;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 

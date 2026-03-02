@@ -12,7 +12,7 @@ public final class JoinsClause implements DBObject {
 	private final ViewJoin[] joins;
 
 	@Override
-	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
+	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		return 0; //TODO
 	}
 

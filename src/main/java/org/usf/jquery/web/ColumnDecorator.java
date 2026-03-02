@@ -5,7 +5,7 @@ import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 
 import org.usf.jquery.core.Predicate;
-import org.usf.jquery.core.DBColumn;
+import org.usf.jquery.core.Column;
 import org.usf.jquery.core.JDBCType;
 
 /**
@@ -28,7 +28,7 @@ public interface ColumnDecorator {
 		return nonNull(meta) ? meta.getType() : null;
 	}
 	
-	default Builder<ViewDecorator, DBColumn> builder() {
+	default Builder<ViewDecorator, Column> builder() {
 		return null; // no builder by default
 	}
 	

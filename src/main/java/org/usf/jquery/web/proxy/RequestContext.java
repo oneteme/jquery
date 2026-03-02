@@ -21,7 +21,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.DBColumn;
+import org.usf.jquery.core.Column;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.QueryView;
@@ -43,7 +43,7 @@ public final class RequestContext {
 	private final DatasetResource defaultView;
 	private final Set<String> excludeViews;
 	private final Map<String, DatasetResource> declaredViews;
-	private final Map<String, DBColumn> declaredColumns;
+	private final Map<String, Column> declaredColumns;
 	private final TypeRegistry registry;
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
@@ -95,7 +95,7 @@ public final class RequestContext {
 		});
 	}
 	
-	void declareColumn(String name, DBColumn column) {
+	void declareColumn(String name, Column column) {
 		declaredColumns.compute(name, (k,v)->{
 			if(isNull(v)) {
 				return column;
@@ -107,7 +107,7 @@ public final class RequestContext {
 	public Object resolve(Entry entry, JavaType... types) {
 		if(entry.isVariable() && (isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance))) {
 			try {
-				return resolve(entry, DBColumn.class);
+				return resolve(entry, Column.class);
 			}
 			catch (NoSuchResourceException e) { //TODO check there's no other exception type to catch, otherwise we may hide a parsing error
 				try {

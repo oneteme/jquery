@@ -8,7 +8,7 @@ import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 
 import java.util.Map;
 
-import org.usf.jquery.core.DBFilter;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
@@ -31,7 +31,7 @@ public interface ViewDecorator {
 		return null; //no builder by default
 	}
 
-	default Builder<ViewDecorator, DBFilter> criteriaBuilder(String name) { 
+	default Builder<ViewDecorator, Criteria> criteriaBuilder(String name) { 
 		return null; //no criteria by default
 	}
 	
@@ -62,7 +62,7 @@ public interface ViewDecorator {
 		throw noSuchResourceException(COLUMN_PARAM, cd.identity(), identity());
 	}
 	
-	default DBFilter criteria(String name, String...args) {
+	default Criteria criteria(String name, String...args) {
 		return requireNonNull(criteriaBuilder(name), "criteriaBuilder")
 				.build(this, args);
 	}

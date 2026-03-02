@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class CaseColumnBuilder {
 
-	private final DBColumn column;
+	private final Column column;
 	private final List<WhenCase> cases = new ArrayList<>();
 	
 	public CaseColumnBuilder() {
@@ -29,7 +29,7 @@ public final class CaseColumnBuilder {
 		throw new IllegalArgumentException("cannot append expression " + exp);
 	}
 	
-	public CaseColumnBuilder when(DBFilter filter, Object then) {
+	public CaseColumnBuilder when(Criteria filter, Object then) {
 		cases.add(new WhenCase(filter, then));
 		return this;
 	}
