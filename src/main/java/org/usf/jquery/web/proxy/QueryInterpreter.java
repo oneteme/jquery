@@ -38,7 +38,7 @@ public interface QueryInterpreter {
 	
 	static final Logger log = getLogger(QueryInterpreter.class);
 	
-	default QueryComposer requestQuery(@NonNull QueryRequest qr, @NonNull Map<String, String[]> parameterMap) {
+	default QueryComposer parseQuery(@NonNull QueryRequest qr, @NonNull Map<String, String[]> parameterMap) {
 		var modifiableMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
 		if(!isEmpty(qr.ignore())) {
 			for(var k : qr.ignore()) {
@@ -94,7 +94,7 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	static void parseOrders(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseOrders(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			parse(parameters).map(e-> ctx.resolve(e, Order.class)).forEach(query::orders);
 		}
