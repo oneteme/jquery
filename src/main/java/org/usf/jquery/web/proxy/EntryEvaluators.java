@@ -26,10 +26,10 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.usf.jquery.core.Comparator;
-import org.usf.jquery.core.ComparisonExpression;
+import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.Order;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinType;
 import org.usf.jquery.core.JoinsClause;
@@ -105,9 +105,9 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such column or filter : " + itr.next().getValue());
 	}
 	
-	public static DBOrder evaluateOrder(Entry entry, RequestContext ctx) {
+	public static Order evaluateOrder(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var ord = lookupResource(itr, DBOrder.class, ctx, (v, e)-> evalOrder(e, ctx));
+		var ord = lookupResource(itr, Order.class, ctx, (v, e)-> evalOrder(e, ctx));
 		if(nonNull(ord)) {
 			assertLastEntry(itr, false);
 			return ord;
@@ -145,7 +145,7 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such query column : " + itr.peekNext().getValue());
 	}
 	
-	static SingleQueryColumn evalColumnQuery(EntryIterator itr, ViewResource view, RequestContext ctx) {
+	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetResource view, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		if(COLUMN_PARAM.equals(entry.getValue())) {
 			view = evalQuery(itr, ctx.subContext(view));
@@ -159,7 +159,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 
-	static ViewResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
+	static DatasetResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		if(allowAnonymous && COLUMN_PARAM.equals(entry.getValue())) {
 			return evalQuery(itr, ctx.subContext(ctx.getDefaultView()));
@@ -173,7 +173,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 
-	static DBOrder evalOrder(EntryIterator itr, RequestContext ctx) {
+	static Order evalOrder(EntryIterator itr, RequestContext ctx) {
 		var col = evalColumn(itr, ctx);
 		if(isNull(col)) {
 			return null;
@@ -211,7 +211,7 @@ public final class EntryEvaluators {
 				switch (entry.getValue()) {
 				case COLUMN_PARAM-> query.columns(ctx.resolveAll(entry.getArgs(), NamedColumn.class));
 				case FILTER_OPR-> query.filters(ctx.resolveAll(entry.getArgs(), DBFilter.class)); 
-				case ORDER_PARAM-> query.orders(ctx.resolveAll(entry.getArgs(), DBOrder.class));
+				case ORDER_PARAM-> query.orders(ctx.resolveAll(entry.getArgs(), Order.class));
 				case JOIN_PARAM-> query.joins2(ctx.resolveAll(entry.getArgs(), JoinsClause.class));
 				case LIMIT_PARAM-> query.limit(resolveSingleArgValue(entry, Integer.class, ctx));
 				case OFFSET_PARAM-> query.offset(resolveSingleArgValue(entry, Integer.class, ctx));
@@ -235,14 +235,14 @@ public final class EntryEvaluators {
 	
 	static Partition evalPartition(EntryIterator itr, RequestContext ctx) {
 		var cols = new ArrayList<DBColumn>();
-		var ords = new ArrayList<DBOrder>();
+		var ords = new ArrayList<Order>();
 		try {
 			var matched = true;
 			while(itr.hasNext()) {
 				var entry = itr.peekNext();
 				switch (entry.getValue()) {
 				case COLUMN_PARAM-> addAll(cols, ctx.resolveAll(entry.getArgs(), DBColumn.class));
-				case ORDER_PARAM-> addAll(ords, ctx.resolveAll(entry.getArgs(), DBOrder.class));
+				case ORDER_PARAM-> addAll(ords, ctx.resolveAll(entry.getArgs(), Order.class));
 				default-> matched = false;
 				}
 				if(!matched) {
@@ -254,7 +254,7 @@ public final class EntryEvaluators {
 		catch (Exception e) {
 			throw new EntryParseException("cannot parse query arguments ", e);
 		} //optional partition args ?
-		return new Partition(cols.toArray(DBColumn[]::new), ords.toArray(DBOrder[]::new));
+		return new Partition(cols.toArray(DBColumn[]::new), ords.toArray(Order[]::new));
 	}
 
 	static JoinsClause evalJoin(EntryIterator itr, RequestContext ctx) {
@@ -281,7 +281,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 	
-	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<ViewResource, EntryIterator, T> anonymousResolver) {
+	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> anonymousResolver) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
 		if(entry.hasNext()) {
 			var view = ctx.lookupView(false, entry.getValue()); //parameterized view resource is not supported, must be declared as view resource in context
@@ -298,7 +298,7 @@ public final class EntryEvaluators {
 				.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(ctx.getDefaultView(), itr) : null);
 	}
 
-	static <T> Optional<T> lookupViewResource(ViewResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
+	static <T> Optional<T> lookupViewResource(DatasetResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
 		var res = ctx.lookupViewResource(view, entry.getValue(), type, entry.getArgs());
 		if(res.isPresent()) {
@@ -320,7 +320,7 @@ public final class EntryEvaluators {
 				}
 				tmp = invokeComparator(col, entry.getValue(), entry.getArgs(), ctx);
 				if(isNull(tmp) && nonNull(col)) {
-					tmp = ctx.lookupSchemaResource(entry.getValue(), ComparisonExpression.class, entry.getArgs())
+					tmp = ctx.lookupSchemaResource(entry.getValue(), Predicate.class, entry.getArgs())
 							.map(col::filter).orElse(null);
 				}
 			}

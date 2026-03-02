@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 public final class Partition implements DBObject {
 
 	private final DBColumn[] columns;//optional
-	private final  DBOrder[] orders; //optional
+	private final  Order[] orders; //optional
 	
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {

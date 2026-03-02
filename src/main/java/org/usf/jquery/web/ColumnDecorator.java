@@ -4,7 +4,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 
-import org.usf.jquery.core.ComparisonExpression;
+import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.JDBCType;
 
@@ -32,11 +32,11 @@ public interface ColumnDecorator {
 		return null; // no builder by default
 	}
 	
-	default Builder<ViewDecorator, ComparisonExpression> criteriaBuilder(String name) {
+	default Builder<ViewDecorator, Predicate> criteriaBuilder(String name) {
 		return null; // no criteria by default
 	}
 	
-	default ComparisonExpression criteria(String name, ViewDecorator vd, String... args) {
+	default Predicate criteria(String name, ViewDecorator vd, String... args) {
 		return requireNonNull(criteriaBuilder(name), "criteriaBuilder")
 				.build(vd, args);
 	}

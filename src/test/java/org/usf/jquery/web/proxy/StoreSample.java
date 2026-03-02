@@ -1,15 +1,15 @@
 package org.usf.jquery.web.proxy;
 
 import static org.usf.jquery.core.Comparator.basicComparator;
-import static org.usf.jquery.core.ComparisonExpression.ge;
-import static org.usf.jquery.core.ComparisonExpression.lt;
+import static org.usf.jquery.core.Predicate.ge;
+import static org.usf.jquery.core.Predicate.lt;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Operator.function;
 import static org.usf.jquery.core.Parameter.required;
 
 import org.usf.jquery.core.ArgTypeRef;
 import org.usf.jquery.core.Chainable;
-import org.usf.jquery.core.ComparisonExpression;
+import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.TypedComparator;
 import org.usf.jquery.core.TypedOperator;
 
@@ -19,15 +19,15 @@ import org.usf.jquery.core.TypedOperator;
  *
  */
 @Bind("sample") //bind this class to "sample" database
-interface SchemaSample extends Store {
+interface StoreSample extends StoreResource {
 	
 	@Expose(identity="v1") //export view_1 as resource name v1, if id is empty, method name will be used as resource name
 	@Bind("view_1") //bind this method to "view_1" view of "sample" database
-	ViewSample view1();
+	DatasetSample view1();
 	
 	@Expose(false) //view2 is not exposed, but it is still binded to "v2" view of "sample" database, so it can be used as internal resource
 	@Bind("v2")
-	ViewSample view2(); 
+	DatasetSample view2(); 
 	
 	@Expose(identity="myFn", description="") 
 	default TypedOperator myFunction() {
@@ -40,7 +40,7 @@ interface SchemaSample extends Store {
 	}
 
 	@Expose(identity="vitesse") 
-    default ComparisonExpression elapsedTimeExpressions(String... values) { //patch ?
+    default Predicate elapsedTimeExpressions(String... values) { //patch ?
 		return Chainable.or(values, v-> switch (v) {
             case "fastest" -> lt(1);
             case "fast" -> ge(1).and(lt(3));

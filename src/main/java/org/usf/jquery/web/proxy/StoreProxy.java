@@ -11,7 +11,7 @@ import static org.usf.jquery.web.proxy.DatabaseIntrospector.fetchProduct;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.resolveIdentifier;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.scanBind;
-import static org.usf.jquery.web.proxy.ViewProxy.createView;
+import static org.usf.jquery.web.proxy.DatasetProxy.createDataset;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -30,14 +30,14 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public final class SchemaProxy extends ResourceProxy {
+public final class StoreProxy extends ResourceProxy {
 	
 	private final String name;
-	private final Map<String, ? extends ViewResource> views;
+	private final Map<String, ? extends DatasetResource> views;
 	private final DataSource ds;
 	private final DatabaseVendor product;
 	
-	SchemaProxy(String name, Map<String, Method> exposedMethods, Map<String, ? extends ViewResource> views, DataSource ds, DatabaseVendor product) {
+	StoreProxy(String name, Map<String, Method> exposedMethods, Map<String, ? extends DatasetResource> views, DataSource ds, DatabaseVendor product) {
 		super(exposedMethods);
 		this.views = views;
 		this.name = name;
@@ -65,19 +65,18 @@ public final class SchemaProxy extends ResourceProxy {
 	}
 
 	@SuppressWarnings("unchecked")
-	static <T extends Store> T createSchema(Class<T> clazz, DataSource ds) {
+	static <T extends StoreResource> T createStore(Class<T> clazz, DataSource ds) {
 		if(clazz.isInterface()) {
 			var bnd = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
-			var map = discoverExposedMethods(clazz, (t,c)-> ViewResource.class.isAssignableFrom(c));
+			var map = discoverExposedMethods(clazz, (t,c)-> DatasetResource.class.isAssignableFrom(c));
 			var sub = stream(clazz.getDeclaredMethods())
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
 					.parallel().collect(toMap(ResourceIntrospector::resolveIdentifier, 
-							m-> createView((Class<? extends ViewResource>)m.getReturnType(), m.getAnnotation(Bind.class), bnd, ds)));
+							m-> createDataset((Class<? extends DatasetResource>)m.getReturnType(), m.getAnnotation(Bind.class), bnd, ds)));
 			var vendor = nonNull(ds) ? fetchProduct(ds) : DEFAULT;
-			return clazz.cast(newProxyInstance(SchemaProxy.class.getClassLoader(), new Class<?>[]{clazz}, 
-					new SchemaProxy(bnd, map, sub, ds, vendor)));
+			return clazz.cast(newProxyInstance(StoreProxy.class.getClassLoader(), new Class<?>[]{clazz}, 
+					new StoreProxy(bnd, map, sub, ds, vendor)));
 		}
 		throw new ResourceMappingException("schema must be an interface : " + clazz);
 	}
-	
 }

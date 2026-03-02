@@ -16,7 +16,7 @@ import lombok.With;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class ComparisonSingleExpression implements ComparisonExpression {
+public final class SimplePredicate implements Predicate {
 
 	private final Comparator comparator;
 	private final Object[] right; //optional
@@ -40,10 +40,10 @@ public final class ComparisonSingleExpression implements ComparisonExpression {
 		}
 		comparator.build(query, param.toArray());
 	}
-
+	
 	@Override
-	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
-		return new ComparisonExpressionGroup(op, this, exp);
+	public Predicate append(LogicalOperator op, Predicate exp) {
+		return new PredicateGroup(op, this, exp);
 	}
 
 	@Override

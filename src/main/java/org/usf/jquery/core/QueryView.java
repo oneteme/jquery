@@ -39,17 +39,18 @@ public final class QueryView implements DBView {
 
 	private QueryView[] ctes;
 	private NamedColumn[] columns;
-	private DBColumn[] group; 
+	private DBColumn[] group;
 	private DBFilter[] where; 
 	private DBFilter[] having;
 	private ViewJoin[] joins; 
-	private DBOrder[] orders;
+	private Order[] orders;
 	private DBView[] views; //preserve order
 	private QueryUnion[] unions;
 	private boolean distinct;
 	private boolean aggregation;
 	private Integer limit;
 	private Integer offset;
+	private Integer maxRows;
 	private Map<DBView, QueryView> overView;
 	
 	@Override

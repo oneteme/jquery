@@ -1,6 +1,6 @@
 package org.usf.jquery.web.proxy;
 
-import static org.usf.jquery.web.proxy.SchemaProxy.createSchema;
+import static org.usf.jquery.web.proxy.StoreProxy.createStore;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -19,17 +19,18 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class JQueryManager {
 	
-	private static final Map<Class<?>, Store> schemas = new LinkedHashMap<>();
+	private static final Map<Class<?>, StoreResource> schemas = new LinkedHashMap<>();
 	
-	public static void register(Class<? extends Store> clazz, DataSource ds) {
-		schemas.put(clazz, createSchema(clazz, ds));
+	public static void register(Class<? extends StoreResource> clazz, DataSource ds) {
+		schemas.put(clazz, createStore(clazz, ds));
 	}
 	
-	public static <T extends Store> T getSchema(Class<T> clazz){
+	public static <T extends StoreResource> T getSchema(Class<T> clazz){
 		return clazz.cast(schemas.get(clazz));
 	}
 
-	public static <T extends Store> T getDefaultSchema(){
+	@SuppressWarnings("unchecked")
+	public static <T extends StoreResource> T getDefaultSchema(){
 		if(schemas.size() == 1) {
 			return (T) schemas.values().iterator().next();
 		}

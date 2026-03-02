@@ -51,7 +51,7 @@ public final class QueryComposer {
 	private final Set<DBColumn> group = new HashSet<>(); 
 	private final List<DBFilter> where = new ArrayList<>(); 
 	private final List<DBFilter> having = new ArrayList<>();
-	private final List<DBOrder> orders = new ArrayList<>();
+	private final List<Order> orders = new ArrayList<>();
 	private final List<QueryUnion> unions = new ArrayList<>();
 	private final Map<String, String[]> variables = new LinkedHashMap<>();
 	private boolean distinct;
@@ -59,6 +59,8 @@ public final class QueryComposer {
 	private Integer limit;
 	private Integer offset;
 	private Object[] drivenModel;
+	
+	private int maxRows;
 	
 	private final Map<DBView, QueryComposer> overView = new HashMap<>();
 	
@@ -123,7 +125,7 @@ public final class QueryComposer {
 		return this;
 	}
 	
-	public QueryComposer orders(@NonNull DBOrder... orders) {
+	public QueryComposer orders(@NonNull Order... orders) {
 		this.role = ORDER;
 		for(var o : orders) {
 			aggregation |= this.orders.add(o) && o.compose(this, group::add) > 0;
@@ -157,6 +159,11 @@ public final class QueryComposer {
 	
 	public QueryComposer distinct(boolean distinct) {
 		this.distinct = distinct;
+		return this;
+	}
+	
+	public QueryComposer maxRows(int maxRows) {
+		this.maxRows = maxRows;
 		return this;
 	}
 	
@@ -217,7 +224,7 @@ public final class QueryComposer {
 		acceptArray(where, DBFilter[]::new, queryView::setWhere);
 		acceptArray(group, DBColumn[]::new, queryView::setGroup);
 		acceptArray(having, DBFilter[]::new, queryView::setHaving);
-		acceptArray(orders, DBOrder[]::new, queryView::setOrders);
+		acceptArray(orders, Order[]::new, queryView::setOrders);
 		acceptArray(unions, QueryUnion[]::new, queryView::setUnions);
 		acceptObject(limit, Objects::nonNull, queryView::setLimit);
 		acceptObject(offset, Objects::nonNull, queryView::setOffset);

@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
-import static org.usf.jquery.core.ComparisonExpression.lt;
+import static org.usf.jquery.core.Predicate.lt;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;

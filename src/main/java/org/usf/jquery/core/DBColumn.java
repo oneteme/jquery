@@ -124,7 +124,7 @@ public interface DBColumn extends DBObject, Typed {
 		return Comparator.notIn().filter(appendFirst(arr, this));
 	}
 	
-	default ColumnSingleFilter filter(ComparisonExpression exp) {
+	default ColumnSingleFilter filter(Predicate exp) {
 		return new ColumnSingleFilter(this, exp);
 	}
 	
@@ -414,7 +414,7 @@ public interface DBColumn extends DBObject, Typed {
 
 	//pipe functions
 	
-	default DBColumn over(DBColumn[] cols, DBOrder[] orders) {
+	default DBColumn over(DBColumn[] cols, Order[] orders) {
 		return over(new Partition(cols, orders));
 	}
 	
@@ -424,20 +424,20 @@ public interface DBColumn extends DBObject, Typed {
 
 	//orders
 
-	default DBOrder order() {
+	default Order order() {
 		return order(null); //default
 	}
 	
-	default DBOrder asc() {
+	default Order asc() {
 		return order(ASC);
 	}
 	
-	default DBOrder desc() {
+	default Order desc() {
 		return order(DESC);
 	}
 	
-	default DBOrder order(OrderType order) {
-		return new DBOrder(this, order);
+	default Order order(OrderType order) {
+		return new Order(this, order);
 	}
 	
 	default CaseColumnBuilder toCase() {

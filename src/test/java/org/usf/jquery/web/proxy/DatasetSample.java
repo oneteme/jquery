@@ -13,7 +13,7 @@ import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.web.proxy.Bind.BindType;
 
-interface ViewSample extends ViewResource {
+interface DatasetSample extends DatasetResource {
     
 	@Bind("va_loc")
     ViewColumn location(); 

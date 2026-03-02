@@ -10,7 +10,6 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import org.usf.jquery.web.EntryParseException;
-import org.usf.jquery.web.NoSuchResourceException;
 
 import lombok.AccessLevel;
 import lombok.Getter;

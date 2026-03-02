@@ -20,7 +20,7 @@ public @interface QueryRequest {
 	String dataset();
 	
 	/** The database or schema identity. */
-	Class<? extends Store> store() default Store.class; //optional database identity
+	Class<? extends StoreResource> store() default StoreResource.class;
 
 	/** Default columns to select if none are provided in the request. */
 	String[] fields() default {};
@@ -32,5 +32,5 @@ public @interface QueryRequest {
 	boolean aggregate() default false;
 
 	/** Hard limit for the number of rows returned. */
-	int maxSize() default -1; //max rows to return, -1 for no limit, else throw IllegalDataAccessException
+	int maxSize() default 0;
 }

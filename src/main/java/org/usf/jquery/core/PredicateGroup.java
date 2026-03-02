@@ -12,14 +12,14 @@ import java.util.function.Consumer;
  *
  */
 //@see ColumnFilterGroup
-public final class ComparisonExpressionGroup implements ComparisonExpression {
+public final class PredicateGroup implements Predicate {
 	
 	private final LogicalOperator operator;
-	private final ComparisonExpression[] expressions;
+	private final Predicate[] expressions;
 	
-	ComparisonExpressionGroup(LogicalOperator operator, ComparisonExpression... expressions) {
+	PredicateGroup(LogicalOperator operator, Predicate... expressions) {
 		this.operator = operator;
-		this.expressions = chain(operator, requireAtLeastNArgs(1, expressions, ComparisonExpressionGroup.class::getSimpleName));
+		this.expressions = chain(operator, requireAtLeastNArgs(1, expressions, PredicateGroup.class::getSimpleName));
 	}
 	
 	@Override
@@ -33,8 +33,8 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 	}
 	
 	@Override
-	public ComparisonExpression append(LogicalOperator op, ComparisonExpression exp) {
-		return new ComparisonExpressionGroup(op, this, exp);
+	public Predicate append(LogicalOperator op, Predicate exp) {
+		return new PredicateGroup(op, this, exp);
 	}
 	
 	@Override
@@ -42,16 +42,16 @@ public final class ComparisonExpressionGroup implements ComparisonExpression {
 		return DBObject.toSQL(this, "<left>");
 	}
 
-	static ComparisonExpression[] chain(LogicalOperator op, ComparisonExpression... filters) {
-		var res = new ArrayList<ComparisonExpression>(filters.length);
+	static Predicate[] chain(LogicalOperator op, Predicate... filters) {
+		var res = new ArrayList<Predicate>(filters.length);
 		for(var f : filters) {
-			if(f instanceof ComparisonExpressionGroup fg && fg.operator == op) {
+			if(f instanceof PredicateGroup fg && fg.operator == op) {
 				addAll(res, fg.expressions);
 			}
 			else {
 				res.add(f);
 			}
 		}
-		return res.toArray(ComparisonExpression[]::new);
+		return res.toArray(Predicate[]::new);
 	}
 }

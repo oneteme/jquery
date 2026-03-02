@@ -26,7 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.Order;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
@@ -104,7 +104,7 @@ public final class TypeRegistry {
 		evl.put(DBColumn.class, EntryEvaluators::evaluateColumn);
 		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
 		evl.put(DBFilter.class, EntryEvaluators::evaluateFilter);
-		evl.put(DBOrder.class, EntryEvaluators::evaluateOrder);
+		evl.put(Order.class, EntryEvaluators::evaluateOrder);
 		evl.put(JoinsClause.class, EntryEvaluators::evaluateJoin);
 		evl.put(Partition.class, EntryEvaluators::evaluatePartition);
 		evl.put(DBView.class, EntryEvaluators::evaluateView);

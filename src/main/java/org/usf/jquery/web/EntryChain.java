@@ -42,11 +42,11 @@ import java.util.ArrayList;
 import java.util.Optional;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.ComparisonExpression;
+import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
 import org.usf.jquery.core.DBObject;
-import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.Order;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
@@ -117,7 +117,7 @@ final class EntryChain {
 	}
 	
 	//[view.]column[.operator]*[.order]
-	public DBOrder evalOrder(QueryContext ctx) {
+	public Order evalOrder(QueryContext ctx) {
 		try {
 			var rsc = chainResourceExpression(ctx);
 			if(rsc.entry.isLast()) { // default order
@@ -255,7 +255,7 @@ final class EntryChain {
 		if(value.matches(PARTITION_PATTERN)) {
 			try {
 				var cols = new ArrayList<DBColumn>();
-				var ords = new ArrayList<DBOrder>();
+				var ords = new ArrayList<Order>();
 				var e = this;
 				do {
 					switch (e.value) {
@@ -267,7 +267,7 @@ final class EntryChain {
 				} while(nonNull(e));
 				return Optional.of(new Partition(
 						cols.toArray(DBColumn[]::new), 
-						ords.toArray(DBOrder[]::new)));
+						ords.toArray(Order[]::new)));
 			}
 			catch (Exception ex) {
 				throw cannotParseEntryException(this, PARTITION_OPR, ex);
@@ -511,7 +511,7 @@ final class EntryChain {
 		
 		private final ViewDecorator vd;
 		private final Builder<ViewDecorator, DBFilter> viewCrt;
-		private final Builder<ViewDecorator, ComparisonExpression> colCrt;
+		private final Builder<ViewDecorator, Predicate> colCrt;
 		private EntryChain entry;
 		private DBColumn col;
 
@@ -519,7 +519,7 @@ final class EntryChain {
 			this(vd, null, null, entry, col); //[view.]column
 		}
 
-		public EntryChainCursor(EntryChain entry, ViewDecorator vd, DBColumn col, Builder<ViewDecorator, ComparisonExpression> colCrt) {
+		public EntryChainCursor(EntryChain entry, ViewDecorator vd, DBColumn col, Builder<ViewDecorator, Predicate> colCrt) {
 			this(vd, null, colCrt, entry, col); //[view.]colum.criteria
 		}
 

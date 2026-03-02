@@ -5,10 +5,10 @@ package org.usf.jquery.web.proxy;
  * @author u$f
  *
  */
-public interface Store extends Resource {
+public interface StoreResource extends Resource {
 	
 	//can override defaultView to provide a custom TypeRegistry 
 	default RequestContext createContext(String defaultView) {
-		return new RequestContext(this, invokeResource(defaultView, ViewResource.class, null, null));
+		return new RequestContext(this, invokeResource(defaultView, DatasetResource.class, null, null));
 	}
 }

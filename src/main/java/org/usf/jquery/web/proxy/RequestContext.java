@@ -40,27 +40,27 @@ public final class RequestContext {
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
 	private final Resource schema;
-	private final ViewResource defaultView;
+	private final DatasetResource defaultView;
 	private final Set<String> excludeViews;
-	private final Map<String, ViewResource> declaredViews;
+	private final Map<String, DatasetResource> declaredViews;
 	private final Map<String, DBColumn> declaredColumns;
 	private final TypeRegistry registry;
 
 	//TODO allowLiteralJoin, allowLiteralQuery, ..
 	
-	public RequestContext(Resource schema, ViewResource defaultView) {
+	public RequestContext(Resource schema, DatasetResource defaultView) {
 		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
 	}
 
-	public RequestContext(Resource schema, ViewResource defaultView, TypeRegistry registry) {
+	public RequestContext(Resource schema, DatasetResource defaultView, TypeRegistry registry) {
 		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), registry);
 	}
 	
-	public Optional<ViewResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
+	public Optional<DatasetResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
 		var view = declaredViews.get(name);
 		if(isNull(view) && !excludeViews.contains(name)) {
 			try {
-				return lookupSchemaResource(name, ViewResource.class, args);
+				return lookupSchemaResource(name, DatasetResource.class, args);
 			}
 			catch (EntryParseException e) {
 				if(!allowParameterize && nonNull(args)) {
@@ -86,7 +86,7 @@ public final class RequestContext {
 				: Optional.empty();
 	}
 	
-	void declareView(String name, ViewResource view) {
+	void declareView(String name, DatasetResource view) {
 		declaredViews.compute(name, (k,v)->{
 			if(isNull(v)) {
 				return view;
@@ -178,11 +178,11 @@ public final class RequestContext {
 		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
 	}
 
-	public RequestContext subContext(ViewResource view) {
+	public RequestContext subContext(DatasetResource view) {
 		return new RequestContext(schema, view, excludeViews, new HashMap<>(), new HashMap<>(), registry);
 	}
 	
-	public RequestContext withView(ViewResource view) { //inherit cache
+	public RequestContext withView(DatasetResource view) { //inherit cache
 		if(view == defaultView) {
 			return this;
 		}

@@ -9,71 +9,71 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-public interface ComparisonExpression extends DBObject, Chainable<ComparisonExpression> {
+public interface Predicate extends DBObject, Chainable<Predicate> {
 
 	void build(QueryBuilder query, Object left); // do change method order
 
 	@Override
 	default void build(QueryBuilder query, Object... args) {
-		requireNArgs(1, args, ComparisonExpression.class::getSimpleName);
+		requireNArgs(1, args, Predicate.class::getSimpleName);
 		build(query, args[0]);
 	}
 	
-	static ComparisonExpression eq(Object right) {
+	static Predicate eq(Object right) {
 		return Comparator.eq().expression(right);
 	}
 
-	static ComparisonExpression ne(Object right) {
+	static Predicate ne(Object right) {
 		return Comparator.ne().expression(right);
 	}
 	
-	static ComparisonExpression lt(Object right) {
+	static Predicate lt(Object right) {
 		return Comparator.lt().expression(right);
 	}
 
-	static ComparisonExpression le(Object right) {
+	static Predicate le(Object right) {
 		return Comparator.le().expression(right);
 	}
 
-	static ComparisonExpression gt(Object right) {
+	static Predicate gt(Object right) {
 		return Comparator.gt().expression(right);
 	}
 
-	static ComparisonExpression ge(Object right) {
+	static Predicate ge(Object right) {
 		return Comparator.ge().expression(right);
 	}
 	
-	static ComparisonExpression like(Object right) {
+	static Predicate like(Object right) {
 		return Comparator.like().expression(right);
 	}
 	
-	static ComparisonExpression iLike(Object right) {
+	static Predicate iLike(Object right) {
 		return Comparator.iLike().expression(right);
 	}
 
-	static ComparisonExpression notLike(Object right) {
+	static Predicate notLike(Object right) {
 		return Comparator.notLike().expression(right);
 	}
 
-	static ComparisonExpression notILike(Object right) {
+	static Predicate notILike(Object right) {
 		return Comparator.notILike().expression(right);
 	}
 
-	static ComparisonExpression isNull() {
+	static Predicate isNull() {
 		return Comparator.isNull().expression();
 	}
 
-	static ComparisonExpression isNotNull() {
+	static Predicate isNotNull() {
 		return Comparator.notNull().expression();
 	}
 
 	@SuppressWarnings("unchecked")
-	static <T> ComparisonExpression in(@NonNull T... right) {
+	static <T> Predicate in(@NonNull T... right) {
 		return Comparator.in().expression((Object[])right);
 	}
 	
 	@SuppressWarnings("unchecked")
-	static <T> ComparisonExpression notIn(@NonNull T... right) {
+	static <T> Predicate notIn(@NonNull T... right) {
 		return Comparator.notIn().expression((Object[])right);
 	}
 }

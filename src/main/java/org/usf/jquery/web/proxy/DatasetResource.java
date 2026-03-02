@@ -7,7 +7,7 @@ import org.usf.jquery.core.DBView;
  * @author u$f
  *
  */
-public interface ViewResource extends Resource {
+public interface DatasetResource extends Resource {
 	
 	DBView getView();
 }

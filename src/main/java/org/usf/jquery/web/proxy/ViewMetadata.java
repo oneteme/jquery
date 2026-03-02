@@ -1,5 +1,7 @@
 package org.usf.jquery.web.proxy;
 
+import static java.time.Instant.now;
+import static java.util.Collections.emptyMap;
 import static java.util.Objects.nonNull;
 
 import java.time.Instant;
@@ -33,5 +35,9 @@ public class ViewMetadata {
 		}
 		log.warn("column {} not found in view {}", name, this.name);
 		return null;
+	}
+	
+	static ViewMetadata noMetadata(String name) {
+		return new ViewMetadata(name, null, emptyMap(), now());
 	}
 }

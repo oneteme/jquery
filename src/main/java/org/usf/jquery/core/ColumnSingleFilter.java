@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
 public class ColumnSingleFilter implements DBFilter {
 
 	private final Object left;
-	private final ComparisonExpression expression;
+	private final Predicate expression;
 
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {

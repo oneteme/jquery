@@ -14,6 +14,7 @@ public final class Parameters {
 	//parameters
 	public static final String VIEW_PARAM = "view";
 	public static final String COLUMN_PARAM = "column";
+	public static final String FIELD_PARAM = "field";
 	public static final String DISTINCT_PARAM = "distinct";
 	public static final String JOIN_PARAM = "join";
 	public static final String ORDER_PARAM = "order";

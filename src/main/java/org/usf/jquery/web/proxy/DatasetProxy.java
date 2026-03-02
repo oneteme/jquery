@@ -13,6 +13,7 @@ import static org.usf.jquery.core.DBObject.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.fetchMetadata;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
+import static org.usf.jquery.web.proxy.ViewMetadata.noMetadata;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -21,7 +22,7 @@ import javax.sql.DataSource;
 
 import org.usf.jquery.core.DBColumn;
 import org.usf.jquery.core.DBFilter;
-import org.usf.jquery.core.DBOrder;
+import org.usf.jquery.core.Order;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.Partition;
@@ -33,12 +34,12 @@ import org.usf.jquery.core.ViewColumn;
  * @author u$f
  *
  */
-final class ViewProxy extends ResourceProxy {
+final class DatasetProxy extends ResourceProxy {
 
 	private final DBView view;
 	private final ViewMetadata metadata;
 	
-	ViewProxy(DBView view, Map<String, Method> resourceMap, ViewMetadata metadata) {
+	DatasetProxy(DBView view, Map<String, Method> resourceMap, ViewMetadata metadata) {
 		super(resourceMap);
 		this.view = view;
 		this.metadata = metadata;
@@ -80,7 +81,7 @@ final class ViewProxy extends ResourceProxy {
 		if(Partition.class.isAssignableFrom(type)) {
 			throw new UnsupportedOperationException("not implemented");
 		}
-		if(DBOrder.class.isAssignableFrom(type)) {
+		if(Order.class.isAssignableFrom(type)) {
 			throw new UnsupportedOperationException("not implemented");
 		}
 		throw new IllegalStateException("unsupported method type " + method);
@@ -110,7 +111,7 @@ final class ViewProxy extends ResourceProxy {
 		return toSQL(view);
 	}
 
-	static <T extends ViewResource> T createView(Class<T> type, Bind bind, String schema, DataSource ds) {
+	static <T extends DatasetResource> T createDataset(Class<T> type, Bind bind, String schema, DataSource ds) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
 			case REF-> new TableView(bind.value(), schema, null);
@@ -124,7 +125,7 @@ final class ViewProxy extends ResourceProxy {
 				else {
 					return DBColumn.class.isAssignableFrom(c) || 
 							DBFilter.class.isAssignableFrom(c) || 
-							c == DBOrder.class || 
+							c == Order.class || 
 							c == Partition.class||
 							c == JoinsClause.class;
 				}
@@ -134,10 +135,12 @@ final class ViewProxy extends ResourceProxy {
 			.map(m-> m.getAnnotation(Bind.class).value())
 			.collect(toSet());
 			
-			var meta = fetchMetadata(schema, view.getName(), cols, ds);
+			var meta = nonNull(ds) 
+					? fetchMetadata(schema, view.getName(), cols, ds) 
+					: noMetadata(view.getName());
 			
-			return type.cast(newProxyInstance(ViewProxy.class.getClassLoader(), new Class<?>[]{type}, 
-					new ViewProxy(view, map, meta)));
+			return type.cast(newProxyInstance(DatasetProxy.class.getClassLoader(), new Class<?>[]{type}, 
+					new DatasetProxy(view, map, meta)));
 		}
 		throw new ResourceMappingException("view must be an interface : " + type);
 	}

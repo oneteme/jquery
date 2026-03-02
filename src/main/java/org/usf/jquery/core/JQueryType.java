@@ -15,7 +15,7 @@ public enum JQueryType implements JavaType {
 	NAMED_COLUMN(NamedColumn.class),
 	QUERY_COLUMN(SingleQueryColumn.class),
 	FILTER(DBFilter.class),
-	ORDER(DBOrder.class),
+	ORDER(Order.class),
 	QUERY(QueryView.class),
 	JOIN(ViewJoin[].class),
 	PARTITION(Partition.class);

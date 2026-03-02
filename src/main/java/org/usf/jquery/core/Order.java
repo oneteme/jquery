@@ -14,10 +14,10 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class DBOrder implements DBObject {
+public final class Order implements DBObject {
 
 	private final DBColumn column;
-	private final OrderType order;
+	private final OrderType type;
 	
 	@Override
 	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
@@ -26,10 +26,10 @@ public final class DBOrder implements DBObject {
 	
 	@Override
 	public void build(QueryBuilder query, Object... args) {
-		requireNoArgs(args, DBOrder.class::getSimpleName);
+		requireNoArgs(args, Order.class::getSimpleName);
 		query.append(column);
-		if(nonNull(order)) {
-			query.appendSpace().append(order.name());
+		if(nonNull(type)) {
+			query.appendSpace().append(type.name());
 		}
 	}
 	

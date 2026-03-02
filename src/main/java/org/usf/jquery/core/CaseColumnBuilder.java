@@ -22,7 +22,7 @@ public final class CaseColumnBuilder {
 		this(null);
 	}
 	
-	public CaseColumnBuilder when(ComparisonExpression exp, Object then) {
+	public CaseColumnBuilder when(Predicate exp, Object then) {
 		if(nonNull(column)) {
 			return when(column.filter(exp), then);
 		}

@@ -27,7 +27,7 @@ public final class TypedComparator implements Comparator {
 	}
 	
 	@Override
-	public ComparisonSingleExpression expression(Object... right) {
+	public SimplePredicate expression(Object... right) {
 		return Comparator.super.expression(right);  //cannot assertArguments because no left operand
 	}
 	

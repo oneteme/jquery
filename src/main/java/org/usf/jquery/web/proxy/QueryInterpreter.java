@@ -2,9 +2,12 @@ package org.usf.jquery.web.proxy;
 
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Stream.concat;
+import static org.slf4j.LoggerFactory.getLogger;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
+import static org.usf.jquery.web.Parameters.FIELD_PARAM;
 import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
@@ -20,10 +23,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.DBOrder;
+import org.slf4j.Logger;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.Order;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.web.ResourceAccessException;
@@ -32,30 +36,35 @@ import lombok.NonNull;
 
 public interface QueryInterpreter {
 	
+	static Logger log = getLogger(QueryInterpreter.class);
+	
 	default QueryComposer requestQuery(@NonNull QueryRequest qr, @NonNull Map<String, String[]> parameterMap) {
 		var modifiableMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
 		if(!isEmpty(qr.ignore())) {
 			for(var k : qr.ignore()) {
 				if(modifiableMap.containsKey(k)) {
+					log.warn("ignoring parameter '{}' as specified in @QueryRequest", k);
 					modifiableMap.remove(k);
 				}
 			}
 		}
-		modifiableMap.computeIfAbsent(COLUMN_PARAM, k-> qr.fields());
-		var schema = qr.store() == Store.class 
-				? getDefaultSchema() 
+		resolveColumnCompatibility(modifiableMap);
+		modifiableMap.computeIfAbsent(FIELD_PARAM, k-> qr.fields());		
+		var schema = qr.store() == StoreResource.class 
+				? getDefaultSchema() //default schema if not specified
 				: getSchema(qr.store());
-		var query= parse(modifiableMap, schema.createContext(qr.dataset()));
+		var query = parseQuery(modifiableMap, schema.createContext(qr.dataset()));
+		query.maxRows(qr.maxSize());
 		if(!qr.aggregate() || query.isAggregation()) {
 			return query; 
 		}
 		throw new ResourceAccessException("query is not aggregation");
 	}
 	
-	private QueryComposer parse(Map<String, String[]> parameterMap, RequestContext ctx) {
+	default QueryComposer parseQuery(Map<String, String[]> parameterMap, RequestContext ctx) {
 		var query = new QueryComposer();
 		parseViews(parameterMap.remove(VIEW_PARAM), query, ctx);
-		parseColumns(parameterMap.remove(COLUMN_PARAM), query, ctx);
+		parseColumns(parameterMap.remove(FIELD_PARAM), query, ctx);
 		parseJoins(parameterMap.remove(JOIN_PARAM), query, ctx);
 		parseOrders(parameterMap.remove(ORDER_PARAM), query, ctx);
 		parseDistinct(parameterMap.remove(DISTINCT_PARAM), query, ctx);
@@ -81,13 +90,13 @@ public interface QueryInterpreter {
 			parse(parameters).map(e-> ctx.resolve(e, NamedColumn.class)).forEach(query::columns);
 		}
 		else {
-			throw new IllegalArgumentException("Missing required parameter: " + COLUMN_PARAM);
+			throw new IllegalArgumentException("Missing required parameter: " + FIELD_PARAM);
 		}
 	}
 	
 	private void parseOrders(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
-			parse(parameters).map(e-> ctx.resolve(e, DBOrder.class)).forEach(query::orders);
+			parse(parameters).map(e-> ctx.resolve(e, Order.class)).forEach(query::orders);
 		}
 	}
 	
@@ -153,5 +162,15 @@ public interface QueryInterpreter {
 	
 	private static Stream<Entry> parse(String[] values) {
 		return stream(values).flatMap(c-> stream(parseEntries(c)));
+	}
+	
+	private static void resolveColumnCompatibility(Map<String, String[]> modifiableMap) {
+		var columns = modifiableMap.remove(COLUMN_PARAM);
+		if(!isEmpty(columns)) {
+			log.warn("'{}' parameter is deprecated, use {} instead", COLUMN_PARAM, FIELD_PARAM);
+			modifiableMap.compute(FIELD_PARAM, (k, v)-> isEmpty(v) 
+					? columns 
+					: concat(stream(v), stream(columns)).toArray(String[]::new));
+		}
 	}
 }
