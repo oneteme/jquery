@@ -16,15 +16,21 @@ import java.lang.annotation.Target;
 @Retention(RetentionPolicy.RUNTIME)
 public @interface QueryRequest {
 
-	String view(); //view identity
+	/** The target table or view name. */
+	String dataset();
 	
-	Class<? extends SchemaResource> database() default SchemaResource.class; //optional database identity
+	/** The database or schema identity. */
+	Class<? extends Store> store() default Store.class; //optional database identity
+
+	/** Default columns to select if none are provided in the request. */
+	String[] fields() default {};
+
+	/** Parameters to be ignored by the interpreter. */
+	String[] ignore() default {};
 	
-	String[] defaultColumns() default {};
-	
-	String[] ignoreParameters() default {}; // will be not parsed
-	
-	boolean aggregationOnly() default false; // else throw IllegalDataAccessException
-	
-	int maxRows() default -1; //max rows to return, -1 for no limit, else throw IllegalDataAccessException
+	/** If true, ensures the query is an aggregation. */
+	boolean aggregate() default false;
+
+	/** Hard limit for the number of rows returned. */
+	int maxSize() default -1; //max rows to return, -1 for no limit, else throw IllegalDataAccessException
 }

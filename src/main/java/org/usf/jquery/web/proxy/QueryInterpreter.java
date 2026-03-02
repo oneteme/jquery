@@ -30,23 +30,23 @@ import org.usf.jquery.web.ResourceAccessException;
 
 import lombok.NonNull;
 
-public interface RequestQueryMapper {
+public interface QueryInterpreter {
 	
 	default QueryComposer requestQuery(@NonNull QueryRequest qr, @NonNull Map<String, String[]> parameterMap) {
 		var modifiableMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
-		if(!isEmpty(qr.ignoreParameters())) {
-			for(var k : qr.ignoreParameters()) {
+		if(!isEmpty(qr.ignore())) {
+			for(var k : qr.ignore()) {
 				if(modifiableMap.containsKey(k)) {
 					modifiableMap.remove(k);
 				}
 			}
 		}
-		modifiableMap.computeIfAbsent(COLUMN_PARAM, k-> qr.defaultColumns());
-		var schema = qr.database() == SchemaResource.class 
+		modifiableMap.computeIfAbsent(COLUMN_PARAM, k-> qr.fields());
+		var schema = qr.store() == Store.class 
 				? getDefaultSchema() 
-				: getSchema(qr.database());
-		var query= parse(modifiableMap, schema.createContext(qr.view()));
-		if(!qr.aggregationOnly() || query.isAggregation()) {
+				: getSchema(qr.store());
+		var query= parse(modifiableMap, schema.createContext(qr.dataset()));
+		if(!qr.aggregate() || query.isAggregation()) {
 			return query; 
 		}
 		throw new ResourceAccessException("query is not aggregation");
