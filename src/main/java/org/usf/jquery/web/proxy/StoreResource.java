@@ -1,5 +1,7 @@
 package org.usf.jquery.web.proxy;
 
+import org.usf.jquery.web.NoSuchResourceException;
+
 /**
  * 
  * @author u$f
@@ -7,8 +9,11 @@ package org.usf.jquery.web.proxy;
  */
 public interface StoreResource extends Resource {
 	
-	//can override defaultView to provide a custom TypeRegistry 
+	//can override createContext to provide a custom TypeRegistry 
 	default RequestContext createContext(String defaultView) {
-		return new RequestContext(this, invokeResource(defaultView, DatasetResource.class, null, null));
+		if(exposes(defaultView, DatasetResource.class)) {
+			return new RequestContext(this, invokeResource(defaultView, DatasetResource.class, null, null));
+		}
+		throw new NoSuchResourceException("");
 	}
 }

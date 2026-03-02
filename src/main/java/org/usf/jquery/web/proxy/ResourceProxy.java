@@ -10,6 +10,7 @@ import java.lang.reflect.Method;
 import java.util.Map;
 
 import org.usf.jquery.web.EntryParseException;
+import org.usf.jquery.web.NoSuchResourceException;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -99,7 +100,7 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 				throw new ResourceInvocationException(e);
 			}
 		}
-		return null;		
+		throw new NoSuchResourceException("");		
 	}
 	
 	boolean invokeEquals(Object proxy, Object[] args) {

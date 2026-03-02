@@ -6,6 +6,7 @@ import static java.util.Objects.nonNull;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.QueryView;
+import org.usf.jquery.web.NoSuchResourceException;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -34,7 +35,7 @@ public final class QueryResource implements DatasetResource {
 					.findFirst().map(type::cast)
 					.orElse(null);
 		}
-		throw new IllegalArgumentException("no exposed method with id '" + id + "' found in query resource");
+		throw new NoSuchResourceException("no exposed method with id '" + id + "' found in query resource");
 	}
 	
 	@Override

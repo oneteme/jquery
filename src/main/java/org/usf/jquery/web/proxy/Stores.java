@@ -17,7 +17,7 @@ import lombok.NoArgsConstructor;
  *
  */
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-public final class JQueryManager {
+public final class Stores {
 	
 	private static final Map<Class<?>, StoreResource> schemas = new LinkedHashMap<>();
 	

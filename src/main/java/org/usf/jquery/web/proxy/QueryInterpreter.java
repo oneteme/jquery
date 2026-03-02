@@ -16,8 +16,8 @@ import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import static org.usf.jquery.web.proxy.EntryEvaluators.evaluateFilter;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntries;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntry;
-import static org.usf.jquery.web.proxy.JQueryManager.getDefaultSchema;
-import static org.usf.jquery.web.proxy.JQueryManager.getSchema;
+import static org.usf.jquery.web.proxy.Stores.getDefaultSchema;
+import static org.usf.jquery.web.proxy.Stores.getSchema;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -36,14 +36,14 @@ import lombok.NonNull;
 
 public interface QueryInterpreter {
 	
-	static Logger log = getLogger(QueryInterpreter.class);
+	static final Logger log = getLogger(QueryInterpreter.class);
 	
 	default QueryComposer requestQuery(@NonNull QueryRequest qr, @NonNull Map<String, String[]> parameterMap) {
 		var modifiableMap = new LinkedHashMap<>(parameterMap); //modifiable map + preserve order
 		if(!isEmpty(qr.ignore())) {
 			for(var k : qr.ignore()) {
 				if(modifiableMap.containsKey(k)) {
-					log.warn("ignoring parameter '{}' as specified in @QueryRequest", k);
+					log.debug("ignoring parameter '{}' as specified in @QueryRequest", k);
 					modifiableMap.remove(k);
 				}
 			}
@@ -74,7 +74,7 @@ public interface QueryInterpreter {
 		return query;
 	}
 	
-	private void parseViews(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseViews(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			parse(parameters).map(e-> ctx.resolve(e, DBView.class))
 				.<QueryView>mapMulti((v,cons)-> {
@@ -85,7 +85,7 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	private void parseColumns(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseColumns(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			parse(parameters).map(e-> ctx.resolve(e, NamedColumn.class)).forEach(query::columns);
 		}
@@ -94,41 +94,41 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	private void parseOrders(String[] parameters, QueryComposer query, RequestContext ctx) {
+	static void parseOrders(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			parse(parameters).map(e-> ctx.resolve(e, Order.class)).forEach(query::orders);
 		}
 	}
 	
-	private void parseJoins(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseJoins(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			parse(parameters).map(e-> ctx.resolve(e, JoinsClause.class)).forEach(query::joins2);
 		}
 	}
 	
-	private void parseFilters(Map<String, String[]> parameterMap, QueryComposer query, RequestContext ctx) {
+	default void parseFilters(Map<String, String[]> parameterMap, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameterMap)) {
 			parameterMap.entrySet().forEach(e-> 
 				query.filters(evaluateFilter(parseEntry(e.getKey()), ctx, parse(e.getValue()).toArray(Entry[]::new))));
 		}
 	}
 	
-	private void parseDistinct(String[] parameters, QueryComposer query, RequestContext ctx) {
-		var parameter = optionalSingleParameter(parameters, DISTINCT_PARAM);
-		if(nonNull(parameter) && !parameter.isEmpty()) {
+	default void parseDistinct(String[] parameters, QueryComposer query, RequestContext ctx) {
+		var arg = optionalSingleArgument(parameters, DISTINCT_PARAM);
+		if(!isEmpty(arg)) {
 			try {
-				query.distinct(ctx.evalValue(parameter, Boolean.class));
+				query.distinct(ctx.evalValue(arg, Boolean.class));
 			} catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + DISTINCT_PARAM, e);
 			}
 		}
 	}
 	
-	private void parseLimit(String[] parameters, QueryComposer query, RequestContext ctx) {
-		var parameter = optionalSingleParameter(parameters, LIMIT_PARAM);
-		if(nonNull(parameter) && !parameter.isEmpty()) {
+	default void parseLimit(String[] parameters, QueryComposer query, RequestContext ctx) {
+		var arg = optionalSingleArgument(parameters, LIMIT_PARAM);
+		if(!isEmpty(arg)) {
 			try {
-				query.limit(ctx.evalValue(parameter, Integer.class));
+				query.limit(ctx.evalValue(arg, Integer.class));
 			}
 			catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + LIMIT_PARAM, e);
@@ -136,11 +136,11 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	private void parseOffset(String[] parameters, QueryComposer query, RequestContext ctx) {
-		var parameter = optionalSingleParameter(parameters, OFFSET_PARAM);
-		if(nonNull(parameter) && !parameter.isEmpty()) {
+	default void parseOffset(String[] parameters, QueryComposer query, RequestContext ctx) {
+		var arg = optionalSingleArgument(parameters, OFFSET_PARAM);
+		if(!isEmpty(arg)) {
 			try {
-				query.offset(ctx.evalValue(parameter, Integer.class));	
+				query.offset(ctx.evalValue(arg, Integer.class));	
 			}
 			catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + OFFSET_PARAM, e);
@@ -148,7 +148,7 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	private String optionalSingleParameter(String[] param, String paramName) {
+	private static String optionalSingleArgument(String[] param, String paramName) {
 		if(nonNull(param)) {
 			if(param.length==1) {
 				return param[0];
