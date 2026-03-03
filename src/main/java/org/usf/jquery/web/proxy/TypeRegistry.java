@@ -22,14 +22,13 @@ import java.time.ZonedDateTime;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.Order;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.SingleQueryColumn;
 
@@ -47,30 +46,33 @@ public final class TypeRegistry {
 	private final Map<Class<?>, EntryEvaluator<?>> evaluators;
 	
 	public TypeRegistry() {
-		this.parsers = new ConcurrentHashMap<>(DEF_PARSERS);
-		this.evaluators = new ConcurrentHashMap<>(DEF_EVALUATORS);
+		this.parsers = new HashMap<>();
+		this.evaluators = new HashMap<>();
 	}
 	
-	public <T> void register(Class<T> clazz, ValueParser<T> parser) {
+	public <T> TypeRegistry register(Class<T> clazz, ValueParser<T> parser) {
 		parsers.put(clazz, parser);
+		return this;
 	}
 	
-	public <T> void register(Class<T> clazz, EntryEvaluator<T> evaluator) {
+	public <T> TypeRegistry register(Class<T> clazz, EntryEvaluator<T> evaluator) {
 		evaluators.put(clazz, evaluator);
+		return this;
 	}
 	
 	@SuppressWarnings("unchecked")
 	public <T> ValueParser<T> getParser(Class<T> clazz){
 		var p = parsers.get(clazz);
-		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) {
+		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) { //strict | toUPPER
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
-		return (ValueParser<T>) p;
+		return (ValueParser<T>) (nonNull(p) ? p : DEF_PARSERS.get(clazz));
 	}
 	
 	@SuppressWarnings("unchecked")
 	public <T> EntryEvaluator<T> getEvaluator(Class<T> clazz){
-		return (EntryEvaluator<T>) evaluators.get(clazz);
+		var p = evaluators.get(clazz);
+		return (EntryEvaluator<T>) (nonNull(p) ? p : DEF_EVALUATORS.get(clazz));
 	}
 	
 	static {

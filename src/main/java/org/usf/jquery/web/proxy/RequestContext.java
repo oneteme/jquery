@@ -13,6 +13,7 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Utils.isEmpty;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +27,7 @@ import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.web.EntryParseException;
+import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
 
 import lombok.Getter;
@@ -46,7 +48,7 @@ public final class RequestContext {
 	private final Map<String, Column> declaredColumns;
 	private final TypeRegistry registry;
 
-	//TODO allowLiteralJoin, allowLiteralQuery, ..
+	// SecurityPolicy(allowLiteralJoin, allowLiteralQuery, ..)
 	
 	public RequestContext(Resource schema, DatasetResource defaultView) {
 		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
@@ -109,11 +111,11 @@ public final class RequestContext {
 			try {
 				return resolve(entry, Column.class);
 			}
-			catch (NoSuchResourceException e) { //TODO check there's no other exception type to catch, otherwise we may hide a parsing error
+			catch (NoSuchResourceException e) {
 				try {
 					return resolve(entry, QueryView.class);
 				}
-				catch (NoSuchResourceException ex) { //TODO  check there's no other exception type to catch, otherwise we may hide a parsing error
+				catch (NoSuchResourceException ex) {
 					//do nothing, try other types
 				}
 			}
@@ -136,15 +138,23 @@ public final class RequestContext {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T[] resolveAll(Entry[] args, Class<T> type) {
-		T[]	res = null;
+	public <T> T resolveAll(Entry[] args, Class<T> type) {
 		if(nonNull(args)) {
-			res = (T[]) newInstance(type, args.length);
-			for(int i=0; i<args.length; i++) {
-				res[i] = resolve(args[i], type);
+			if(type.isArray()) {
+				var arr = newInstance(type.arrayType(), args.length);
+				for(int i=0; i<args.length; i++) {
+					Array.set(arr, i, resolve(args[i], type));
+				}
+				return (T)arr;
+			}
+			if(args.length == 1) {
+				return resolve(args[0], type);
+			}
+			if(args.length > 1) {
+				throw new EntrySyntaxException("multiple entries cannot be resolved to single value of type " + type.getSimpleName());
 			}
 		}
-		return res;
+		return null;
 	}
 
 	public <T> T resolve(Entry entry, Class<T> type) {
@@ -162,14 +172,14 @@ public final class RequestContext {
 		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) { 
 			return evalValue(entry.getValue(), type);
 		}
-		throw new IllegalArgumentException("cannot resolve entry " + entry + " as type " + type.getSimpleName());
+		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
 	}
 	
 	public <T> T evalValue(String value, Class<T> type) {
 		var prs = registry.getParser(type);
 		if(nonNull(prs)) {
 			try {
-				return prs.parse(value);
+				return nonNull(value) ? prs.parse(value) : null;
 			}
 			catch (Exception e) {
 				throw new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + value, e);

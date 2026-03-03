@@ -209,10 +209,10 @@ public final class EntryEvaluators {
 			while(itr.hasNext()) {
 				var entry = itr.peekNext();
 				switch (entry.getValue()) {
-				case COLUMN_PARAM-> query.columns(ctx.resolveAll(entry.getArgs(), NamedColumn.class));
-				case FILTER_OPR-> query.filters(ctx.resolveAll(entry.getArgs(), Criteria.class)); 
-				case ORDER_PARAM-> query.orders(ctx.resolveAll(entry.getArgs(), Order.class));
-				case JOIN_PARAM-> query.joins2(ctx.resolveAll(entry.getArgs(), JoinsClause.class));
+				case COLUMN_PARAM-> query.columns(ctx.resolveAll(entry.getArgs(), NamedColumn[].class));
+				case FILTER_OPR-> query.filters(ctx.resolveAll(entry.getArgs(), Criteria[].class)); 
+				case ORDER_PARAM-> query.orders(ctx.resolveAll(entry.getArgs(), Order[].class));
+				case JOIN_PARAM-> query.joins2(ctx.resolveAll(entry.getArgs(), JoinsClause[].class));
 				case LIMIT_PARAM-> query.limit(resolveSingleArgValue(entry, Integer.class, ctx));
 				case OFFSET_PARAM-> query.offset(resolveSingleArgValue(entry, Integer.class, ctx));
 				case DISTINCT_PARAM-> query.distinct(resolveSingleArgValue(entry, Boolean.class, ctx));
@@ -242,8 +242,8 @@ public final class EntryEvaluators {
 			while(itr.hasNext()) {
 				var entry = itr.peekNext();
 				switch (entry.getValue()) {
-				case COLUMN_PARAM-> addAll(cols, ctx.resolveAll(entry.getArgs(), Column.class));
-				case ORDER_PARAM-> addAll(ords, ctx.resolveAll(entry.getArgs(), Order.class));
+				case COLUMN_PARAM-> addAll(cols, ctx.resolveAll(entry.getArgs(), Column[].class));
+				case ORDER_PARAM-> addAll(ords, ctx.resolveAll(entry.getArgs(), Order[].class));
 				default-> matched = false;
 				}
 				if(!matched) {
@@ -269,7 +269,7 @@ public final class EntryEvaluators {
 					throw new NoSuchResourceException("no such view : " + entry.getValue());
 				}
 				var filters = itr.hasNext() && FILTER_OPR.equals(itr.peekNext().getValue()) 
-						? ctx.resolveAll(itr.next().getArgs(), Criteria.class) : null;
+						? ctx.resolveAll(itr.next().getArgs(), Criteria[].class) : null;
 				if(type != CROSS && isEmpty(filters)) {
 					throw new IllegalArgumentException("join type " + type + " requires at least one filter");
 				}
