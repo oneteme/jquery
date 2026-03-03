@@ -387,7 +387,7 @@ public final class EntryEvaluators {
 	}
 	
 	static <T> T resolveSingleArgValue(Entry entry, Class<T> type, RequestContext ctx) {
-		return resolveSingleArg(entry, e-> ctx.evalValue(e.next().getValue(), type));
+		return resolveSingleArg(entry, e-> ctx.parseValue(e.next().getValue(), type));
 	}
 	
 	static <T> T resolveSingleArg(Entry entry, Function<EntryIterator, T> resovler) {

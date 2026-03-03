@@ -141,9 +141,9 @@ public final class RequestContext {
 	public <T> T resolveAll(Entry[] args, Class<T> type) {
 		if(nonNull(args)) {
 			if(type.isArray()) {
-				var arr = newInstance(type.arrayType(), args.length);
+				var arr = newInstance(type.componentType(), args.length);
 				for(int i=0; i<args.length; i++) {
-					Array.set(arr, i, resolve(args[i], type));
+					Array.set(arr, i, resolve(args[i], type.componentType()));
 				}
 				return (T)arr;
 			}
@@ -170,12 +170,12 @@ public final class RequestContext {
 			}
 		}// consider variable with no args, next or tag as value entry
 		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) { 
-			return evalValue(entry.getValue(), type);
+			return parseValue(entry.getValue(), type);
 		}
-		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
+		throw new EntryParseException("cannot resolve entry " + entry + " to type " + type.getSimpleName());
 	}
 	
-	public <T> T evalValue(String value, Class<T> type) {
+	public <T> T parseValue(String value, Class<T> type) {
 		var prs = registry.getParser(type);
 		if(nonNull(prs)) {
 			try {
@@ -185,7 +185,7 @@ public final class RequestContext {
 				throw new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + value, e);
 			}
 		}
-		throw new NoSuchElementException("no parser for type " + type.getSimpleName());
+		throw new EntryParseException("no parser for type " + type.getSimpleName());
 	}
 
 	public RequestContext subContext(DatasetResource view) {

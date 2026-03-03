@@ -117,7 +117,7 @@ public interface QueryInterpreter {
 		var arg = optionalSingleArgument(parameters, DISTINCT_PARAM);
 		if(!isEmpty(arg)) {
 			try {
-				query.distinct(ctx.evalValue(arg, Boolean.class));
+				query.distinct(ctx.parseValue(arg, Boolean.class));
 			} catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + DISTINCT_PARAM, e);
 			}
@@ -128,7 +128,7 @@ public interface QueryInterpreter {
 		var arg = optionalSingleArgument(parameters, LIMIT_PARAM);
 		if(!isEmpty(arg)) {
 			try {
-				query.limit(ctx.evalValue(arg, Integer.class));
+				query.limit(ctx.parseValue(arg, Integer.class));
 			}
 			catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + LIMIT_PARAM, e);
@@ -140,7 +140,7 @@ public interface QueryInterpreter {
 		var arg = optionalSingleArgument(parameters, OFFSET_PARAM);
 		if(!isEmpty(arg)) {
 			try {
-				query.offset(ctx.evalValue(arg, Integer.class));	
+				query.offset(ctx.parseValue(arg, Integer.class));	
 			}
 			catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + OFFSET_PARAM, e);
