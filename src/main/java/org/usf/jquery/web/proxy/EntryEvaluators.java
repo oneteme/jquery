@@ -95,9 +95,9 @@ public final class EntryEvaluators {
 	public static Criteria evaluateFilter(Entry entry, RequestContext ctx, Entry... outerArgs) {
 		var itr = entry.iterator();
 		var col = evalColumn(itr, ctx, outerArgs);
-		if(col instanceof Criteria flt) { 
+		if(col instanceof Criteria crt) { 
 			assertLastEntry(itr, false);
-			return flt; 
+			return crt; 
 		}
 		if(nonNull(col)) {
 			throw new EntryParseException(itr.get().getValue() + " cannot be used as filter resource");
