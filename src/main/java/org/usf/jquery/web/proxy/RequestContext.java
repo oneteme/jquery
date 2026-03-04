@@ -214,7 +214,7 @@ public final class RequestContext {
 	
 	static <T> Optional<T> tryInvokeMethod(Object obj, Class<T> type, String name) {
 		try {
-			var mth = obj.getClass().getDeclaredMethod(name); //no parameter
+			var mth = obj.getClass().getMethod(name); //no parameter
 			if(nonNull(mth)) {
 				var mod = mth.getModifiers();
 				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod)) {
