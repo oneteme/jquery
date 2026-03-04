@@ -19,27 +19,27 @@ public class H2Operators extends Operators {
 
 	@Override
 	public TypedOperator bitOr() {
-		return new TypedOperator(BIGINT, operator("BITOR"), required(BIGINT), required(BIGINT));
+		return new TypedOperator(BIGINT, function("BITOR"), required(BIGINT), required(BIGINT));
 	}
 
 	@Override
 	public TypedOperator bitXor() {
-		return new TypedOperator(BIGINT, operator("BITXOR"), required(BIGINT), required(BIGINT));
+		return new TypedOperator(BIGINT, function("BITXOR"), required(BIGINT), required(BIGINT));
 	}
 
 	@Override
 	public TypedOperator bitNot() {
-		return new TypedOperator(BIGINT, operator("BITNOT"), required(BIGINT));
+		return new TypedOperator(BIGINT, function("BITNOT"), required(BIGINT));
 	}
 
 	@Override
 	public TypedOperator bitShiftLeft() {
-		return new TypedOperator(BIGINT, operator("LSHIFT"), required(BIGINT), required(INTEGER));
+		return new TypedOperator(BIGINT, function("LSHIFT"), required(BIGINT), required(INTEGER));
 	}
 
 	@Override
 	public TypedOperator bitShiftRight() {
-		return new TypedOperator(BIGINT, operator("RSHIFT"), required(BIGINT), required(INTEGER));
+		return new TypedOperator(BIGINT, function("RSHIFT"), required(BIGINT), required(INTEGER));
 	}
 	
 }

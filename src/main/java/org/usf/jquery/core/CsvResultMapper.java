@@ -43,7 +43,7 @@ public final class CsvResultMapper implements ResultSetMapper<Void> {
             }
         }
         catch(IOException e) {
-            throw new MappingException("error writing results", e);
+            throw new DataMappingException("error writing results", e);
         }
 		log.info("{} rows written in {} ms", rw, currentTimeMillis() - bg);
         return null;

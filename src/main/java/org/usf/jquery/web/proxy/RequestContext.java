@@ -58,12 +58,12 @@ public final class RequestContext {
 
 	// SecurityPolicy(allowLiteralJoin, allowLiteralQuery, ..)
 	
-	public RequestContext(StoreResource schema, DatasetResource defaultView) {
-		this(defaultView, schema, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
+	public RequestContext(StoreResource store, DatasetResource defaultDataset) {
+		this(defaultDataset, store, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
 	}
 
-	public RequestContext(StoreResource schema, DatasetResource defaultView, TypeRegistry registry) {
-		this(defaultView, schema, emptySet(), new HashMap<>(), new HashMap<>(), registry);
+	public RequestContext(StoreResource store, DatasetResource defaultDataset, TypeRegistry registry) {
+		this(defaultDataset, store, emptySet(), new HashMap<>(), new HashMap<>(), registry);
 	}
 	
 	public Optional<DatasetResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
@@ -184,7 +184,7 @@ public final class RequestContext {
 //				try {
 					return prs.evaluate(entry, this);
 //				}
-//				catch (Exception e) {
+//				catch (Exception e) { this hide original exception
 //					throw new EntryParseException("cannot evaluate '" + type.getSimpleName() + "' expression " + entry, e);
 //				}
 			}

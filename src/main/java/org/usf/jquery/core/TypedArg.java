@@ -14,7 +14,7 @@ public record TypedArg(Object value, int type) {
 		return new TypedArg(value, type);
 	}
 	
-	public static Object[] values(TypedArg[] arr) {
+	public static Object[] values(TypedArg... arr) {
 		return nonNull(arr) ? stream(arr).map(TypedArg::value).toArray() : null;
 	}
 }

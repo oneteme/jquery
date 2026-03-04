@@ -31,6 +31,7 @@ public interface ArgumentsEvaluator {
 			}
 			return arr;
 		}
+		//returning TypedOperator or TypedComparator !
 		throw new IllegalArgumentException("expected " + params.length + " arguments but got " + nArgs);
 	}
 }

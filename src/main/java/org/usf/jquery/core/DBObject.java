@@ -60,7 +60,7 @@ public interface DBObject {
 	static String toSQL(DBObject obj, Object... args) {
 		var query = addWithValue();
 		obj.build(query, args);
-		return query.build().getSql();
+		return query.build().sql();
 	}
 	
 	private static <T> Stream<T> streamOrEmpty(T[] arr) {

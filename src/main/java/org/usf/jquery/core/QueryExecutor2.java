@@ -13,27 +13,23 @@ import javax.sql.DataSource;
 
 import org.slf4j.Logger;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 public interface QueryExecutor2 {
 
 	static final Logger log = getLogger(QueryExecutor.class);
 	
 	default <T> T execute(Query query, ResultSetMapper<T> mapper, DataSource ds) {
-		try {
-			return internalExecute(query, mapper, ds);
-		}
-		catch (Exception e) {
-			throw new RuntimeException("error executing query: " + query.getSql(), e);
-		}
-	}
-	
-	default <T> T internalExecute(Query query, ResultSetMapper<T> mapper, DataSource ds) throws SQLException {
-		log.debug("preparing query : {}", query.getSql());
+		log.debug("preparing query: {}", query.sql());
 		try(var cnx = ds.getConnection(); 
-			var ps = cnx.prepareStatement(query.getSql())){
-			var args = query.getArgs();
+			var ps = cnx.prepareStatement(query.sql())){
+			var args = query.args();
 			if(!isEmpty(args)) {
 				if(log.isDebugEnabled()) {
-					log.debug("using arguments : {}", Arrays.toString(values(args)));
+					log.debug("binding query parameters: {}", Arrays.toString(values(args)));
 				}
 				for(var i=0; i<args.length; i++) {
 					if(isNull(args[i].value())) {
@@ -44,17 +40,17 @@ public interface QueryExecutor2 {
 					}
 				}						
 			}
-			log.trace("executing query..");
-			var bg = currentTimeMillis();
+			var ct = currentTimeMillis();
 			try(var rs = ps.executeQuery()){
-				log.trace("query executed in {} ms", currentTimeMillis() - bg);
-				try {
-					return mapper.map(rs);
+				if(log.isDebugEnabled()) {	
+					log.debug("query executed in {} ms", currentTimeMillis() - ct);
 				}
-				catch(SQLException e) {
-					throw new MappingException("error mapping results for query: " + query.getSql(), e);
-				}
+				return mapper.mapUnchecked(rs);
 			}
+		}
+		catch (SQLException e) {
+			var args = values(query.args());
+			throw new QueryExecutionException("error executing query: " + query.sql() + " with args: " + Arrays.toString(args), e);
 		}
 	}
 }

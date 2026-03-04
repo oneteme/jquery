@@ -12,9 +12,7 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 
-import lombok.Getter;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -23,18 +21,17 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-@Getter
-@RequiredArgsConstructor
-public final class Query {
+public final record Query (
+		Environment env,
+		@NonNull String sql,
+		TypedArg[] args){
 
-	@NonNull private final Environment env;
-	@NonNull private final String sql;
-	private final TypedArg[] args; //optional if !prepared
-
+	@Deprecated
 	public List<DynamicModel> execute() {
 		return execute(keyValueMapper());
 	}
 
+	@Deprecated
 	public <T> T execute(ResultSetMapper<T> mapper) {
 		try {
 			try(var cn = requireNonNull(env.getDataSource(), "require datasource").getConnection()){
@@ -46,6 +43,7 @@ public final class Query {
 		}	
 	}
 
+	@Deprecated
 	public <T> T execute(ResultSetMapper<T> mapper, Connection cnx) throws SQLException {
 		log.debug("preparing statement : {}", sql);
 		try(var ps = cnx.prepareStatement(sql)){
@@ -68,7 +66,7 @@ public final class Query {
 					return mapper.map(rs);
 				}
 				catch(SQLException e) {
-					throw new MappingException("error mapping results for query: " + sql, e);
+					throw new DataMappingException("error mapping results for query: " + sql, e);
 				}
 			}
 		}

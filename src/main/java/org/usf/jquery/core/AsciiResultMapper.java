@@ -87,7 +87,7 @@ public final class AsciiResultMapper implements ResultSetMapper<Void> {
 			}
 			writer.writeLine(div);
 		} catch (IOException e) {
-            throw new MappingException("error writing results", e);
+            throw new DataMappingException("error writing results", e);
 		}
 		log.info("{} rows mapped in {} ms", rw, currentTimeMillis() - bg);
 		return null;

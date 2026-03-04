@@ -43,7 +43,7 @@ public final class StoreManager implements QueryExecutor2 {
 		if(nonNull(res)) {
 			return res;
 		}
-		throw new NoSuchResourceException("");
+		throw new NoSuchResourceException("store not found for " + clazz);
 	}
 
 	@SuppressWarnings("unchecked")
@@ -60,19 +60,19 @@ public final class StoreManager implements QueryExecutor2 {
 	
 	public <S extends StoreResource, T> T execute(Class<S> clazz, QueryComposer query, ResultSetMapper<T> mapper) {
 		var store = getStore(clazz);
-		var exec = store instanceof QueryExecutor2 qe ? qe : this; //allow store to override default query executor
+		var exec = store instanceof QueryExecutor2 qe ? qe : this; //allow stores to override default execution strategy
 		return exec.execute(query.compose().build(), mapper, store.metadata().dataSource());
 	}
 	
 	public <S extends StoreResource, T> T withStore(Class<S> clazz, Function<S,T> fn) {
-		var prev = getCurrentStore();
+		var prv = getCurrentStore();
 		var str = getStore(clazz);
 		setCurrentStore(str);
 		try {
 			return fn.apply(str);
 		}
 		finally {
-			setCurrentStore(prev);
+			setCurrentStore(prv);
 		}
 	}
 }
