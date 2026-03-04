@@ -21,7 +21,7 @@ import lombok.extern.slf4j.Slf4j;
 @ToString
 @Slf4j
 @RequiredArgsConstructor
-public class ViewMetadata {
+public class DatasetMetadata {
 
 	private final String name;
 	private final DatasetType type;
@@ -37,7 +37,7 @@ public class ViewMetadata {
 		return null;
 	}
 	
-	static ViewMetadata noMetadata(String name) {
-		return new ViewMetadata(name, null, emptyMap(), now());
+	static DatasetMetadata noMetadata(String name) {
+		return new DatasetMetadata(name, null, emptyMap(), now());
 	}
 }

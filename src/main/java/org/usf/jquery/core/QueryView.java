@@ -7,7 +7,7 @@ import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.Environment.NO_ENV;
 import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.DatabaseVendor.TERADATA;
+import static org.usf.jquery.core.ProductVendor.TERADATA;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
 import static org.usf.jquery.core.QueryBuilder.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;

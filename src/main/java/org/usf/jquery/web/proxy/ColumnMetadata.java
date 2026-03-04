@@ -1,7 +1,7 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.Integer.MAX_VALUE;
-import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.DECIMAL;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.FLOAT;
@@ -32,7 +32,7 @@ public final class ColumnMetadata {
 	private final int precision;
 	
 	public String toJavaType(){
-		return isNull(type) ? null : type.getCorrespondingClass().getSimpleName();
+		return nonNull(type) ? type.getCorrespondingClass().getSimpleName() : null;
 	}
 	
 	public String toSqlType(){

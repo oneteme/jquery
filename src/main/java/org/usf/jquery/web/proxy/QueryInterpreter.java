@@ -16,8 +16,7 @@ import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import static org.usf.jquery.web.proxy.EntryEvaluators.evaluateFilter;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntries;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntry;
-import static org.usf.jquery.web.proxy.Stores.getDefaultStore;
-import static org.usf.jquery.web.proxy.Stores.getStore;
+import static org.usf.jquery.web.proxy.StoreManager.getInstance;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -50,10 +49,10 @@ public interface QueryInterpreter {
 		}
 		resolveColumnCompatibility(modifiableMap);
 		modifiableMap.computeIfAbsent(FIELD_PARAM, k-> qr.fields());		
-		var schema = qr.store() == StoreResource.class 
-				? getDefaultStore() //default schema if not specified
-				: getStore(qr.store());
-		var query = parseQuery(modifiableMap, schema.createContext(qr.dataset()));
+		var store = qr.store() == StoreResource.class 
+				? getInstance().getDefaultStore() //default schema if not specified
+				: getInstance().getStore(qr.store());
+		var query = parseQuery(modifiableMap, store.createContext(qr.dataset()));
 		query.maxRows(qr.maxSize());
 		if(!qr.aggregate() || query.isAggregation()) {
 			return query; 

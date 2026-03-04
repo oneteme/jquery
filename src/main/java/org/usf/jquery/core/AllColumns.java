@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.DatabaseVendor.TERADATA;
+import static org.usf.jquery.core.ProductVendor.TERADATA;
 import static org.usf.jquery.core.SqlStringBuilder.DOT;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;

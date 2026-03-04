@@ -50,4 +50,5 @@ interface StoreSample extends StoreResource {
             default -> null;
         });
     }
+	
 }

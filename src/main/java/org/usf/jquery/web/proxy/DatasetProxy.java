@@ -11,9 +11,9 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.DBObject.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
-import static org.usf.jquery.web.proxy.DatabaseIntrospector.fetchMetadata;
+import static org.usf.jquery.web.proxy.DatabaseIntrospector.datasetMetadata;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
-import static org.usf.jquery.web.proxy.ViewMetadata.noMetadata;
+import static org.usf.jquery.web.proxy.DatasetMetadata.noMetadata;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -22,9 +22,9 @@ import javax.sql.DataSource;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.Order;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinsClause;
+import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.TableView;
 import org.usf.jquery.core.ViewColumn;
@@ -37,9 +37,9 @@ import org.usf.jquery.core.ViewColumn;
 final class DatasetProxy extends ResourceProxy {
 
 	private final DBView view;
-	private final ViewMetadata metadata;
+	private final DatasetMetadata metadata;
 	
-	DatasetProxy(DBView view, Map<String, Method> resourceMap, ViewMetadata metadata) {
+	DatasetProxy(DBView view, Map<String, Method> resourceMap, DatasetMetadata metadata) {
 		super(resourceMap);
 		this.view = view;
 		this.metadata = metadata;
@@ -111,10 +111,10 @@ final class DatasetProxy extends ResourceProxy {
 		return toSQL(view);
 	}
 
-	static <T extends DatasetResource> T createDataset(Class<T> type, Bind bind, String schema, DataSource ds) {
+	static <T extends DatasetResource> T createDataset(Class<T> type, Bind bind, String store, DataSource ds) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
-			case REF-> new TableView(bind.value(), schema, null);
+			case REF-> new TableView(bind.value(), store, null);
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
@@ -136,7 +136,7 @@ final class DatasetProxy extends ResourceProxy {
 			.collect(toSet());
 			
 			var meta = nonNull(ds) 
-					? fetchMetadata(schema, view.getName(), cols, ds) 
+					? datasetMetadata(store, view.getName(), cols, ds) 
 					: noMetadata(view.getName());
 			
 			return type.cast(newProxyInstance(DatasetProxy.class.getClassLoader(), new Class<?>[]{type}, 

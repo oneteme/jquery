@@ -1,5 +1,10 @@
 package org.usf.jquery.web.proxy;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @SuppressWarnings("serial")
 public final class ResourceInvocationException extends RuntimeException {
 

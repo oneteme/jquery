@@ -12,7 +12,7 @@ import static org.usf.jquery.core.Role.ORDER;
 import static org.usf.jquery.core.Role.UNION;
 import static org.usf.jquery.core.Utils.computeIfAbsentElseThrow;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage;
+import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage; //TODO move to core package	
 
 import java.util.ArrayList;
 import java.util.Collection;

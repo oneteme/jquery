@@ -5,8 +5,11 @@ import static java.time.Instant.now;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.DatabaseVendor.parseName;
+import static org.usf.jquery.core.Comparators.STD_COMPARTORS;
 import static org.usf.jquery.core.JDBCType.fromDataType;
+import static org.usf.jquery.core.Operators.STD_OPERATORS;
+import static org.usf.jquery.core.ProductVendor.DEFAULT;
+import static org.usf.jquery.core.ProductVendor.parseName;
 import static org.usf.jquery.web.proxy.DatasetType.TABLE;
 import static org.usf.jquery.web.proxy.DatasetType.VIEW;
 
@@ -20,7 +23,10 @@ import java.util.TreeSet;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.DatabaseVendor;
+import org.usf.jquery.core.H2Operators;
+import org.usf.jquery.core.ProductVendor;
+import org.usf.jquery.core.StoreMetadata;
+import org.usf.jquery.core.TeradataOperators;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -35,7 +41,22 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DatabaseIntrospector {
 	
-	public static DatabaseVendor fetchProduct(DataSource ds) {
+	static final StoreMetadata DEFAULT_META = new StoreMetadata(DEFAULT, null, STD_OPERATORS, STD_COMPARTORS);
+	
+	public static StoreMetadata storeMetadata(DataSource ds) {
+		if(nonNull(ds)) {
+			var type = fetchProduct(ds);
+			var oper = switch (type) {
+			case H2 -> new H2Operators();
+			case TERADATA -> new TeradataOperators();
+			default -> STD_OPERATORS;
+			};
+			return new StoreMetadata(type, ds, oper, STD_COMPARTORS);
+		}
+		return DEFAULT_META;
+	}
+	
+	public static ProductVendor fetchProduct(DataSource ds) {
 		try(var conn = ds.getConnection()) {
 			var name = conn.getMetaData().getDatabaseProductName();
 			return parseName(name);
@@ -46,7 +67,7 @@ public final class DatabaseIntrospector {
 		}
 	}
 	
-	static ViewMetadata fetchMetadata( String schema, String dataset, Set<String> columns, DataSource ds) {
+	public static DatasetMetadata datasetMetadata(String schema, String dataset, Set<String> columns, DataSource ds) {
 		Map<String, ColumnMetadata> map = new HashMap<>();
 		DatasetType type = null;
 		try(var cnx = ds.getConnection()) {
@@ -66,7 +87,7 @@ public final class DatabaseIntrospector {
 		catch (Exception e) {
 			log.error("error while fetching metadata for dataset '{}'", dataset, e);
 		}
-		return new ViewMetadata(dataset, type, unmodifiableMap(map), now());
+		return new DatasetMetadata(dataset, type, unmodifiableMap(map), now());
 	}
 	
 	static DatasetType datasetType(DatabaseMetaData meta, String schema, String table) {
