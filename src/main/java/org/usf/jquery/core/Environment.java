@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.ProductVendor.parseName;
+import static org.usf.jquery.core.Provider.parseName;
 
 import java.sql.SQLException;
 
@@ -20,7 +20,7 @@ public interface Environment {
 
 	DataSource getDataSource();
 	
-	ProductVendor getProduct();
+	Provider getProduct();
 	
 	String getSchema();
 	
@@ -38,7 +38,7 @@ public interface Environment {
 	static class SimpleEnvironment implements Environment {
 		
 		private final DataSource dataSource;
-		private final ProductVendor product;
+		private final Provider product;
 		private final String schema;
 	}
 }

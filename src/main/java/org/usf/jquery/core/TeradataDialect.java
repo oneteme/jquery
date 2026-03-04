@@ -7,14 +7,20 @@ import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
+import static org.usf.jquery.core.Operators.function;
 import static org.usf.jquery.core.Parameter.required;
+import static org.usf.jquery.core.Provider.TERADATA;
 
 /**
  * 
  * @author u$f
  * 
  */
-public class TeradataOperators extends Operators {
+public final class TeradataDialect extends Dialect {
+
+	public TeradataDialect() {
+		super(TERADATA);
+	}
 
 	@Override
 	public TypedOperator bitAnd() {

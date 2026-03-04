@@ -6,7 +6,7 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.web.proxy.DatabaseIntrospector.storeMetadata;
+import static org.usf.jquery.web.proxy.DatabaseIntrospector.storeDialect;
 import static org.usf.jquery.web.proxy.DatasetProxy.createDataset;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.resolveIdentifier;
@@ -17,9 +17,7 @@ import java.util.Map;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.Comparators;
-import org.usf.jquery.core.Operators;
-import org.usf.jquery.core.StoreMetadata;
+import org.usf.jquery.core.Dialect;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -35,25 +33,24 @@ public final class StoreProxy extends ResourceProxy {
 	
 	private final String name;
 	private final Map<String, ? extends DatasetResource> views;
-	private final StoreMetadata metadata;
+	private final Dialect dialect;
+	private final DataSource dataSource;
 	
-	StoreProxy(String name, Map<String, Method> exposedMethods, Map<String, ? extends DatasetResource> views, StoreMetadata metadata) {
+	StoreProxy(String name, Map<String, Method> exposedMethods, Map<String, ? extends DatasetResource> views, Dialect dialect, DataSource dataSource) {
 		super(exposedMethods);
 		this.views = views;
 		this.name = name;
-		this.metadata = metadata;
+		this.dialect = dialect;
+		this.dataSource = dataSource;
 	}
 	
 	@Override
 	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) { //bind method must return a resource handler
-		if(method.getReturnType() == StoreMetadata.class && method.getParameterCount() == 0 && "metadata".equals(method.getName())) {
-			return metadata;
+		if(method.getReturnType() == Dialect.class && method.getParameterCount() == 0 && "dialect".equals(method.getName())) {
+			return dialect;
 		}
-		if(Operators.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "operators".equals(method.getName())) {
-			return metadata.operators();
-		}
-		if(Comparators.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "comparators".equals(method.getName())) {
-			return metadata.comparators();
+		if(DataSource.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "dataSource".equals(method.getName())) {
+			return dataSource;
 		}
 		var handler = views.get(resolveIdentifier(method));
 		if(nonNull(handler)) {
@@ -82,7 +79,7 @@ public final class StoreProxy extends ResourceProxy {
 					.parallel().collect(toMap(ResourceIntrospector::resolveIdentifier, 
 							m-> createDataset((Class<? extends DatasetResource>) m.getReturnType(), m.getAnnotation(Bind.class), bnd, ds)));
 			return clazz.cast(newProxyInstance(StoreProxy.class.getClassLoader(), new Class<?>[]{clazz}, 
-					new StoreProxy(bnd, map, sub, storeMetadata(ds))));
+					new StoreProxy(bnd, map, sub, storeDialect(ds), ds)));
 		}
 		throw new ResourceMappingException("schema must be an interface : " + clazz);
 	}

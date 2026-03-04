@@ -1,8 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Comparators.STD_COMPARTORS;
-import static org.usf.jquery.core.Operators.STD_OPERATORS;
+import static org.usf.jquery.core.Dialect.DEFAULT_META;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
 import static org.usf.jquery.core.Stores.getCurrentStore;
@@ -42,89 +41,89 @@ public interface Column extends DBObject, Typed {
 	// filters
 	
 	default SimpleCriteria eq(Object value) {
-		return comparators().eq().filter(this, value);
+		return dialect().eq().filter(this, value);
 	}
 
 	default SimpleCriteria ne(Object value) {
-		return comparators().ne().filter(this, value);
+		return dialect().ne().filter(this, value);
 	}
 
 	default SimpleCriteria lt(Object value) {
-		return comparators().lt().filter(this, value);
+		return dialect().lt().filter(this, value);
 	}
 
 	default SimpleCriteria le(Object value) {
-		return comparators().le().filter(this, value);
+		return dialect().le().filter(this, value);
 	}
 
 	default SimpleCriteria gt(Object value) {
-		return comparators().gt().filter(this, value);
+		return dialect().gt().filter(this, value);
 	}
 
 	default SimpleCriteria ge(Object value) {
-		return comparators().ge().filter(this, value);
+		return dialect().ge().filter(this, value);
 	}
 
 	default SimpleCriteria between(Object min, Object max) { //included
-		return comparators().between().filter(this, min, max);
+		return dialect().between().filter(this, min, max);
 	}
 	
 	default SimpleCriteria like(Object value) {
-		return comparators().like().filter(this, value);
+		return dialect().like().filter(this, value);
 	}
 	
 	default SimpleCriteria startsLike(Object value) {
-		return comparators().startsLike().filter(this, value);
+		return dialect().startsLike().filter(this, value);
 	}
 
 	default SimpleCriteria endsLike(Object value) {
-		return comparators().endsLike().filter(this, value);
+		return dialect().endsLike().filter(this, value);
 	}
 
 	default SimpleCriteria contentLike(Object value) {
-		return comparators().contentLike().filter(this, value);
+		return dialect().contentLike().filter(this, value);
 	}
 	
 	default SimpleCriteria startsNotLike(Object value) {
-		return comparators().startsNotLike().filter(this, value);
+		return dialect().startsNotLike().filter(this, value);
 	}
 
 	default SimpleCriteria endsNotLike(Object value) {
-		return comparators().endsNotLike().filter(this, value);
+		return dialect().endsNotLike().filter(this, value);
 	}
 
 	default SimpleCriteria contentNotLike(Object value) {
-		return comparators().contentNotLike().filter(this, value);
+		return dialect().contentNotLike().filter(this, value);
 	}
 
 	default SimpleCriteria notLike(Object value) {
-		return comparators().notLike().filter(this, value);
+		return dialect().notLike().filter(this, value);
 	}
 
 	default SimpleCriteria ilike(Object value) {
-		return comparators().iLike().filter(this, value);
+		return dialect().iLike().filter(this, value);
 	}
 
 	default SimpleCriteria notILike(Object value) {
-		return comparators().notILike().filter(this, value);
+		return dialect().notILike().filter(this, value);
 	}
 
 	default SimpleCriteria isNull() {
-		return comparators().isNull().filter(this);
+		return dialect().isNull().filter(this);
 	}
 
 	default SimpleCriteria notNull() {
-		return comparators().notNull().filter(this);
+		return dialect().notNull().filter(this);
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> SimpleCriteria in(T... arr) {
-		return comparators().in().filter(appendFirst(arr, this)); 
+		return dialect().in().filter(appendFirst(arr, this)); 
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> SimpleCriteria notIn(T... arr) {
-		return comparators().notIn().filter(appendFirst(arr, this));
+		return dialect().notIn().filter(appendFirst(arr, this));
 	}
 	
 	default SimpleCriteria filter(Predicate exp) {
@@ -134,285 +133,285 @@ public interface Column extends DBObject, Typed {
 	// arithmetic operations
 	
 	default Column plus(Object o) {
-		return operators().plus().operation(this, o);
+		return dialect().plus().operation(this, o);
 	}
 
 	default Column minus(Object o) {
-		return operators().minus().operation(this, o);
+		return dialect().minus().operation(this, o);
 	}
 
 	default Column multiply(Object o) {
-		return operators().multiply().operation(this, o);
+		return dialect().multiply().operation(this, o);
 	}
 
 	default Column divide(Object o) {
-		return operators().divide().operation(this, o);
+		return dialect().divide().operation(this, o);
 	}
 	
 	//numeric functions
 	
 	default Column sqrt() {
-		return operators().sqrt().operation(this);
+		return dialect().sqrt().operation(this);
 	}
 	
 	default Column exp() {
-		return operators().exp().operation(this);
+		return dialect().exp().operation(this);
 	}
 	
 	default Column log() {
-		return operators().log().operation(this);
+		return dialect().log().operation(this);
 	}
 
 	default Column log(int base) {
-		return operators().log().operation(this, base);
+		return dialect().log().operation(this, base);
 	}
 	
 	default Column abs() {
-		return operators().abs().operation(this);
+		return dialect().abs().operation(this);
 	}
 
 	default Column ceil() {
-		return operators().ceil().operation(this);
+		return dialect().ceil().operation(this);
 	}
 
 	default Column floor() {
-		return operators().floor().operation(this);
+		return dialect().floor().operation(this);
 	}
 
 	default Column trunc() {
-		return operators().trunc().operation(this);
+		return dialect().trunc().operation(this);
 	}
 
 	default Column trunc(int digit) {
-		return operators().trunc().operation(this, digit);
+		return dialect().trunc().operation(this, digit);
 	}
 	
 	default Column round() {
-		return operators().round().operation(this);
+		return dialect().round().operation(this);
 	}
 	
 	default Column round(int digit) {
-		return operators().round().operation(this, digit);
+		return dialect().round().operation(this, digit);
 	}
 	
 	default Column mod(int value) {
-		return operators().mod().operation(this, value);
+		return dialect().mod().operation(this, value);
 	}
 	
 	default Column pow(int value) {
-		return operators().pow().operation(this, value);
+		return dialect().pow().operation(this, value);
 	}
 
 	//bitwise functions
 	
 	default Column bitAnd(int value) {
-		return operators().bitAnd().operation(this, value);
+		return dialect().bitAnd().operation(this, value);
 	}
 	
 	default Column bitOr(int value) {
-		return operators().bitOr().operation(this, value);
+		return dialect().bitOr().operation(this, value);
 	}
 	
 	default Column bitXor(int value) {
-		return operators().bitXor().operation(this, value);
+		return dialect().bitXor().operation(this, value);
 	}
 	
 	default Column bitNot(int value) {
-		return operators().bitNot().operation(this, value);
+		return dialect().bitNot().operation(this, value);
 	}
 	
 	default Column bitShiftLeft(int value) {
-		return operators().bitShiftLeft().operation(this, value);
+		return dialect().bitShiftLeft().operation(this, value);
 	}
 	
 	default Column bitShiftRight(int value) {
-		return operators().bitShiftRight().operation(this, value);
+		return dialect().bitShiftRight().operation(this, value);
 	}
 	
 	//string functions
 
 	default Column length() {
-		return operators().length().operation(this);
+		return dialect().length().operation(this);
 	}
 	
 	default Column trim() {
-		return operators().trim().operation(this);
+		return dialect().trim().operation(this);
 	}
 
 	default Column ltrim() {
-		return operators().ltrim().operation(this);
+		return dialect().ltrim().operation(this);
 	}
 
 	default Column rtrim() {
-		return operators().rtrim().operation(this);
+		return dialect().rtrim().operation(this);
 	}
 	
 	default Column upper() {
-		return operators().upper().operation(this);
+		return dialect().upper().operation(this);
 	}
 
 	default Column lower() {
-		return operators().lower().operation(this);
+		return dialect().lower().operation(this);
 	}
 	
 	default Column initcap() {
-		return operators().initcap().operation(this);
+		return dialect().initcap().operation(this);
 	}
 	
 	default Column reverse() {
-		return operators().reverse().operation(this);
+		return dialect().reverse().operation(this);
 	}
 	
 	default Column left(int n) {
-		return operators().left().operation(this, n);
+		return dialect().left().operation(this, n);
 	}
 	
 	default Column right(int n) {
-		return operators().pow().operation(this, n);
+		return dialect().pow().operation(this, n);
 	}
 	
 	default Column replace(String oldValue, String newValue) {
-		return operators().replace().operation(this, oldValue, newValue);
+		return dialect().replace().operation(this, oldValue, newValue);
 	}
 	
 	default Column substring(int start, int end) {
-		return operators().substring().operation(this, start, end);
+		return dialect().substring().operation(this, start, end);
 	}
 	
 	default Column concat(Object... str) {
-		return operators().concat().operation(appendFirst(str, this));
+		return dialect().concat().operation(appendFirst(str, this));
 	}
 	
 	default Column lpad(int n, String value) {
-		return operators().lpad().operation(this, n, value);
+		return dialect().lpad().operation(this, n, value);
 	}
 	
 	default Column rpad(int n, String value) {
-		return operators().rpad().operation(this, n, value);
+		return dialect().rpad().operation(this, n, value);
 	}
 
 	//temporal functions
 	
 	default Column year() {
-		return operators().year().operation(this);
+		return dialect().year().operation(this);
 	}
 	
 	default Column month() {
-		return operators().month().operation(this);
+		return dialect().month().operation(this);
 	}
 
 	default Column week() {
-		return operators().week().operation(this);
+		return dialect().week().operation(this);
 	}
 	
 	default Column day() {
-		return operators().day().operation(this);
+		return dialect().day().operation(this);
 	}
 	
 	default Column dow() {
-		return operators().dow().operation(this);
+		return dialect().dow().operation(this);
 	}
 	
 	default Column doy() {
-		return operators().doy().operation(this);
+		return dialect().doy().operation(this);
 	}
 
 	default Column hour() {
-		return operators().hour().operation(this);
+		return dialect().hour().operation(this);
 	}
 
 	default Column minute() {
-		return operators().minute().operation(this);
+		return dialect().minute().operation(this);
 	}
 	
 	default Column second() {
-		return operators().second().operation(this);
+		return dialect().second().operation(this);
 	}
 	
 	default Column epoch() {
-		return operators().epoch().operation(this);
+		return dialect().epoch().operation(this);
 	}
 	
 	default Column yearMonth() {
-		return operators().yearMonth().operation(this);
+		return dialect().yearMonth().operation(this);
 	}
 	
 	default Column yearWeek() {
-		return operators().yearWeek().operation(this);
+		return dialect().yearWeek().operation(this);
 	}
 	
 	default Column monthDay() {
-		return operators().monthDay().operation(this);
+		return dialect().monthDay().operation(this);
 	}
 	
 	default Column hourMinute() {
-		return operators().hourMinute().operation(this);
+		return dialect().hourMinute().operation(this);
 	}
 	
 	//cast functions
 
 	default Column varchar() {
-		return operators().varchar().operation(this);
+		return dialect().varchar().operation(this);
 	}
 	
 	default Column varchar(int size) {
-		return operators().varchar().operation(this, size);
+		return dialect().varchar().operation(this, size);
 	}
 	
 	default Column date() {
-		return operators().date().operation(this);
+		return dialect().date().operation(this);
 	}
 	
 	default Column timestamp() {
-		return operators().timestamp().operation(this);
+		return dialect().timestamp().operation(this);
 	}
 	
 	default Column integer() {
-		return operators().integer().operation(this);
+		return dialect().integer().operation(this);
 	}
 	
 	default Column bigint() {
-		return operators().bigint().operation(this);
+		return dialect().bigint().operation(this);
 	}
 	
 	default Column decimal() {
-		return operators().decimal().operation(this);
+		return dialect().decimal().operation(this);
 	}
 	
 	default Column decimal(int digit, int precision) {
-		return operators().decimal().operation(this, digit, precision);
+		return dialect().decimal().operation(this, digit, precision);
 	}
 
 	//other functions
 	
 	default Column distinct() {
-		return operators().distinct().operation(this);
+		return dialect().distinct().operation(this);
 	}
 	
 	default Column coalesce(Object o) {
-		return operators().coalesce().operation(this, o);
+		return dialect().coalesce().operation(this, o);
 	}
 	
 	//aggregate functions
 
 	default Column count() {
-		return operators().count().operation(this);
+		return dialect().count().operation(this);
 	}
 
 	default Column min() {
-		return operators().min().operation(this);
+		return dialect().min().operation(this);
 	}
 
 	default Column max() {
-		return operators().max().operation(this);
+		return dialect().max().operation(this);
 	}
 
 	default Column sum() {
-		return operators().sum().operation(this);
+		return dialect().sum().operation(this);
 	}
 	
 	default Column avg() {
-		return operators().avg().operation(this);
+		return dialect().avg().operation(this);
 	}
 
 	//pipe functions
@@ -422,7 +421,7 @@ public interface Column extends DBObject, Typed {
 	}
 	
 	default Column over(Partition part) {
-		return operators().over().operation(this, part);
+		return dialect().over().operation(this, part);
 	}
 
 	//orders
@@ -454,33 +453,33 @@ public interface Column extends DBObject, Typed {
 	// constants
 	
 	static Column cdate() {
-		return operators().cdate().operation();
+		return dialect().cdate().operation();
 	}
 	
 	static Column ctime() {
-		return operators().ctime().operation();
+		return dialect().ctime().operation();
 	}
 	
 	static Column ctimestamp() {
-		return operators().ctimestamp().operation();
+		return dialect().ctimestamp().operation();
 	}
 
 	static Column countAll(DBView... view) {
-		return operators().count().operation(allColumns(view));
+		return dialect().count().operation(allColumns(view));
 	}
 	
 	//window functions
 	
 	static Column rank() {
-		return operators().rank().operation();
+		return dialect().rank().operation();
 	}
 	
 	static Column rowNumber() {
-		return operators().rowNumber().operation();
+		return dialect().rowNumber().operation();
 	}
 	
 	static Column denseRank() {
-		return operators().denseRank().operation();
+		return dialect().denseRank().operation();
 	}
 	
 	static ViewColumn column(String value) {
@@ -519,13 +518,8 @@ public interface Column extends DBObject, Typed {
 		return new ValueColumn(null, type, adj);
 	}
 	
-	private static Operators operators() {		
+	private static Dialect dialect() {		
 		var store = getCurrentStore();
-		return nonNull(store) ? store.operators() : STD_OPERATORS;
-	}
-	
-	private static Comparators comparators() {
-		var store = getCurrentStore();
-		return nonNull(store) ? store.comparators() : STD_COMPARTORS;
+		return nonNull(store) ? store.dialect() : DEFAULT_META;
 	}
 }

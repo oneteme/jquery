@@ -23,5 +23,6 @@ public final class Parameters {
 	//query parameter
 	public static final String SELECT_OPR = "select";
 	public static final String FILTER_OPR = "filter";
+	public static final String CRITERIA_OPR = "criteria";
 	public static final String PARTITION_OPR = "partition";
 }

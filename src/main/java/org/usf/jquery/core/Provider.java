@@ -12,7 +12,7 @@ import lombok.extern.slf4j.Slf4j;
  * 
  */
 @Slf4j
-public enum ProductVendor {
+public enum Provider {
 
 	POSTGRESQL, MYSQL, ORACLE, SQLSERVER, DEFAULT, 
 	
@@ -55,7 +55,7 @@ public enum ProductVendor {
 		return op;
 	}
 	
-	public static ProductVendor parseName(String name) {
+	public static Provider parseName(String name) {
 		if(isNull(name)) {
 			return DEFAULT;
 		}

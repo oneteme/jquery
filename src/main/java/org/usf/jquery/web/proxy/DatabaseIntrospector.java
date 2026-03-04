@@ -5,11 +5,10 @@ import static java.time.Instant.now;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Comparators.STD_COMPARTORS;
+import static org.usf.jquery.core.Dialect.DEFAULT_META;
 import static org.usf.jquery.core.JDBCType.fromDataType;
-import static org.usf.jquery.core.Operators.STD_OPERATORS;
-import static org.usf.jquery.core.ProductVendor.DEFAULT;
-import static org.usf.jquery.core.ProductVendor.parseName;
+import static org.usf.jquery.core.Provider.DEFAULT;
+import static org.usf.jquery.core.Provider.parseName;
 import static org.usf.jquery.web.proxy.DatasetType.TABLE;
 import static org.usf.jquery.web.proxy.DatasetType.VIEW;
 
@@ -23,10 +22,10 @@ import java.util.TreeSet;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.H2Operators;
-import org.usf.jquery.core.ProductVendor;
-import org.usf.jquery.core.StoreMetadata;
-import org.usf.jquery.core.TeradataOperators;
+import org.usf.jquery.core.Dialect;
+import org.usf.jquery.core.H2Dialect;
+import org.usf.jquery.core.Provider;
+import org.usf.jquery.core.TeradataDialect;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -41,22 +40,15 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class DatabaseIntrospector {
 	
-	static final StoreMetadata DEFAULT_META = new StoreMetadata(DEFAULT, null, STD_OPERATORS, STD_COMPARTORS);
+	public static Dialect storeDialect(DataSource ds) {
+		return switch (nonNull(ds) ? fetchProduct(ds) : DEFAULT) {
+		case H2 -> new H2Dialect();
+		case TERADATA -> new TeradataDialect();
+		default -> DEFAULT_META;
+		};
+}
 	
-	public static StoreMetadata storeMetadata(DataSource ds) {
-		if(nonNull(ds)) {
-			var type = fetchProduct(ds);
-			var oper = switch (type) {
-			case H2 -> new H2Operators();
-			case TERADATA -> new TeradataOperators();
-			default -> STD_OPERATORS;
-			};
-			return new StoreMetadata(type, ds, oper, STD_COMPARTORS);
-		}
-		return DEFAULT_META;
-	}
-	
-	public static ProductVendor fetchProduct(DataSource ds) {
+	public static Provider fetchProduct(DataSource ds) {
 		try(var conn = ds.getConnection()) {
 			var name = conn.getMetaData().getDatabaseProductName();
 			return parseName(name);

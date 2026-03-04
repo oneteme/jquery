@@ -1,16 +1,21 @@
 package org.usf.jquery.core;
 
-
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.INTEGER;
+import static org.usf.jquery.core.Operators.function;
 import static org.usf.jquery.core.Parameter.required;
+import static org.usf.jquery.core.Provider.H2;
 
 /**
  * 
  * @author u$f
  * 
  */
-public class H2Operators extends Operators {
+public final class H2Dialect extends Dialect {
+
+	public H2Dialect() {
+		super(H2);
+	}
 
 	@Override
 	public TypedOperator bitAnd() {
@@ -41,5 +46,4 @@ public class H2Operators extends Operators {
 	public TypedOperator bitShiftRight() {
 		return new TypedOperator(BIGINT, function("RSHIFT"), required(BIGINT), required(INTEGER));
 	}
-	
 }

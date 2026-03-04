@@ -24,214 +24,212 @@ import static org.usf.jquery.core.Validation.requireNArgs;
  * @author u$f
  *
  */
-public class Operators {
-	
-	public static final Operators STD_OPERATORS = new Operators();
+public interface Operators {
 	
 	//Arithmetic operations
 
-	public TypedOperator plus() {
+	default TypedOperator plus() {
 		return new TypedOperator(firstArgJdbcType(), operator("+"), required(), required(firstArgJdbcType()));
 	}
 
-	public TypedOperator minus() {
+	default TypedOperator minus() {
 		return new TypedOperator(firstArgJdbcType(), operator("-"), required(), required(firstArgJdbcType())); //date|datetime
 	}
 
-	public TypedOperator multiply() {
+	default TypedOperator multiply() {
 		return new TypedOperator(firstArgJdbcType(), operator("*"), required(), required(firstArgJdbcType()));
 	}
 	
-	public TypedOperator divide() {
+	default TypedOperator divide() {
 		return new TypedOperator(firstArgJdbcType(), operator("/"), required(), required(firstArgJdbcType()));
 	}
 	
 	//numeric functions
 	
-	public TypedOperator sqrt() {
+	default TypedOperator sqrt() {
 		return new TypedOperator(DOUBLE, function("SQRT"), required(DOUBLE)); 
 	}
 	
-	public TypedOperator exp() {
+	default TypedOperator exp() {
 		return new TypedOperator(DOUBLE, function("EXP"), required(DOUBLE)); 
 	}
 	
-	public TypedOperator log() {
+	default TypedOperator log() {
 		return new TypedOperator(DOUBLE, function("LOG"), required(DOUBLE), optional(INTEGER)); 
 	}
 	
-	public TypedOperator abs() {
+	default TypedOperator abs() {
 		return new TypedOperator(DOUBLE, function("ABS"), required(DOUBLE));
 	}
 
-	public TypedOperator ceil() {
+	default TypedOperator ceil() {
 		return new TypedOperator(BIGINT, function("CEIL"), required(DOUBLE)); 
 	}
 
-	public TypedOperator floor() {
+	default TypedOperator floor() {
 		return new TypedOperator(BIGINT, function("FLOOR"), required(DOUBLE)); 
 	}
 
-	public TypedOperator trunc() {
+	default TypedOperator trunc() {
 		return new TypedOperator(BIGINT, function("TRUNC"), required(DOUBLE), optional(INTEGER)); 
 	}
 	
-	public TypedOperator round() {
+	default TypedOperator round() {
 		return new TypedOperator(DOUBLE, function("ROUND"), required(DOUBLE), optional(INTEGER));
 	}
 	
-	public TypedOperator mod() {
+	default TypedOperator mod() {
 		return new TypedOperator(BIGINT, function("MOD"), required(DOUBLE), required(DOUBLE));
 	}	
 	
-	public TypedOperator pow() {
+	default TypedOperator pow() {
 		return new TypedOperator(DOUBLE, function("POW"), required(DOUBLE), required(DOUBLE));
 	}
 
 	//bitwise functions
 	
-	public TypedOperator bitAnd() {
+	default TypedOperator bitAnd() {
 		return new TypedOperator(BIGINT, operator("&"), required(BIGINT), required(BIGINT));
 	}
 	
-	public TypedOperator bitOr() {
+	default TypedOperator bitOr() {
 		return new TypedOperator(BIGINT, operator("|"), required(BIGINT), required(BIGINT));
 	}
 	
-	public TypedOperator bitXor() {
+	default TypedOperator bitXor() {
 		return new TypedOperator(BIGINT, operator("^"), required(BIGINT), required(BIGINT));
 	}
 	
-	public TypedOperator bitNot() {
+	default TypedOperator bitNot() {
 		return new TypedOperator(BIGINT, operator("~"), required(BIGINT));
 	}
 	
-	public TypedOperator bitShiftLeft() {
+	default TypedOperator bitShiftLeft() {
 		return new TypedOperator(BIGINT, operator("<<"), required(BIGINT), required(INTEGER));
 	}
 	
-	public TypedOperator bitShiftRight() {
+	default TypedOperator bitShiftRight() {
 		return new TypedOperator(BIGINT, operator(">>"), required(BIGINT), required(INTEGER));
 	}
 	
 	//string functions
 
-	public TypedOperator length() {
+	default TypedOperator length() {
 		return new TypedOperator(INTEGER, function("LENGTH"), required(VARCHAR));
 	}
 	
-	public TypedOperator trim() {
+	default TypedOperator trim() {
 		return new TypedOperator(VARCHAR, function("TRIM"), required(VARCHAR));
 	}
 
-	public TypedOperator ltrim() {
+	default TypedOperator ltrim() {
 		return new TypedOperator(VARCHAR, function("LTRIM"), required(VARCHAR));
 	}
 
-	public TypedOperator rtrim() {
+	default TypedOperator rtrim() {
 		return new TypedOperator(VARCHAR, function("RTRIM"), required(VARCHAR));
 	}
 	
-	public TypedOperator upper() {
+	default TypedOperator upper() {
 		return new TypedOperator(VARCHAR, function("UPPER"), required(VARCHAR));
 	}
 
-	public TypedOperator lower() {
+	default TypedOperator lower() {
 		return new TypedOperator(VARCHAR, function("LOWER"), required(VARCHAR));
 	}
 	
-	public TypedOperator initcap() {
+	default TypedOperator initcap() {
 		return new TypedOperator(VARCHAR, function("INITCAP"), required(VARCHAR));
 	}
 	
-	public TypedOperator reverse() {
+	default TypedOperator reverse() {
 		return new TypedOperator(VARCHAR, function("REVERSE"), required(VARCHAR));
 	}
 	
-	public TypedOperator left() {
+	default TypedOperator left() {
 		return new TypedOperator(VARCHAR, function("LEFT"), required(VARCHAR), required(INTEGER));
 	}
 	
-	public TypedOperator right() {
+	default TypedOperator right() {
 		return new TypedOperator(VARCHAR, function("RIGHT"), required(VARCHAR), required(INTEGER));
 	}
 	
-	public TypedOperator replace() {
+	default TypedOperator replace() {
 		return new TypedOperator(VARCHAR, function("REPLACE"), required(VARCHAR), required(VARCHAR), required(VARCHAR));
 	}
 	
-	public TypedOperator substring() { //int start, int length
+	default TypedOperator substring() { //int start, int length
 		return new TypedOperator(VARCHAR, function("SUBSTRING"), required(VARCHAR), required(INTEGER), required(INTEGER));
 	}
 	
-	public TypedOperator concat() {
+	default TypedOperator concat() {
 		return new TypedOperator(VARCHAR, function("CONCAT"), required(VARCHAR), required(VARCHAR), varargs(VARCHAR));
 	}
 	
-	public TypedOperator lpad() {
+	default TypedOperator lpad() {
 		return new TypedOperator(VARCHAR, function("LPAD"), required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
 	}
 	
-	public TypedOperator rpad() {
+	default TypedOperator rpad() {
 		return new TypedOperator(VARCHAR, function("RPAD"), required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
 	}
 
-	public TypedOperator age() { //td interval type
+	default TypedOperator age() { //td interval type
 		return new TypedOperator(VARCHAR, function("AGE"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE), optional(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	//temporal functions
 	
-	public TypedOperator year() {
+	default TypedOperator year() {
 		return new TypedOperator(INTEGER, extract("YEAR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public TypedOperator month() {
+	default TypedOperator month() {
 		return new TypedOperator(INTEGER, extract("MONTH"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
-	public TypedOperator week() {
+	default TypedOperator week() {
 		return new TypedOperator(INTEGER, extract("WEEK"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public TypedOperator day() {
+	default TypedOperator day() {
 		return new TypedOperator(INTEGER, extract("DAY"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public TypedOperator dow() {
+	default TypedOperator dow() {
 		return new TypedOperator(INTEGER, extract("DOW"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public TypedOperator doy() {
+	default TypedOperator doy() {
 		return new TypedOperator(INTEGER, extract("DOY"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
-	public TypedOperator hour() {
+	default TypedOperator hour() {
 		return new TypedOperator(INTEGER, extract("HOUR"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
-	public TypedOperator minute() {
+	default TypedOperator minute() {
 		return new TypedOperator(INTEGER, extract("MINUTE"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public TypedOperator second() {
+	default TypedOperator second() {
 		return new TypedOperator(INTEGER, extract("SECOND"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public TypedOperator epoch() {
+	default TypedOperator epoch() {
 		return new TypedOperator(BIGINT, extract("EPOCH"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
 	
 	//combined functions
 	
-	public TypedOperator semester() {//[1-2]
+	default TypedOperator semester() {//[1-2]
 		CombinedOperator op = args-> month().operation(requireNArgs(1, args, ()-> "semester")[0]).toCase()
 				.when(lt(7), 1)
 				.orElse(2);
 		return new TypedOperator(INTEGER, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public TypedOperator quarter() {//[1-4]
+	default TypedOperator quarter() {//[1-4]
 		CombinedOperator op = args-> month().operation(requireNArgs(1, args, ()-> "quarter")[0]).toCase()
 				.when(lt(4), 1)
 				.when(lt(7), 2)
@@ -240,7 +238,7 @@ public class Operators {
 		return new TypedOperator(INTEGER, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public TypedOperator yearSemester() {//YYYY-'S'S
+	default TypedOperator yearSemester() {//YYYY-'S'S
 		CombinedOperator op = args-> concat().operation(
 				varchar().operation(year().operation(args)),
 				"-S",
@@ -248,7 +246,7 @@ public class Operators {
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public TypedOperator yearQuarter() {//YYYY-'Q'Q
+	default TypedOperator yearQuarter() {//YYYY-'Q'Q
 		CombinedOperator op = args-> concat().operation(
 				varchar().operation(year().operation(args)),
 				"-Q",
@@ -256,7 +254,7 @@ public class Operators {
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public TypedOperator yearWeek() {//YYYY-'W'WW
+	default TypedOperator yearWeek() {//YYYY-'W'WW
 		CombinedOperator op = args-> {
 			var col = requireNArgs(1, args, ()-> "yearWeek")[0];
 			return concat().operation(varchar().operation(year().operation(col)), 
@@ -266,13 +264,13 @@ public class Operators {
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public TypedOperator yearMonth() {//YYYY-MM
+	default TypedOperator yearMonth() {//YYYY-MM
 		CombinedOperator op = args-> left().operation(varchar().operation(requireNArgs(1, args, ()-> "yearMonth")[0]), 7);
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
 	
-	public TypedOperator monthDay() {//MM-DD
+	default TypedOperator monthDay() {//MM-DD
 		CombinedOperator op = args-> {
 			var col = requireNArgs(1, args, ()-> "monthDay")[0];
 			return substring().operation(varchar().operation(col), 6, 5);
@@ -280,7 +278,7 @@ public class Operators {
 		return new TypedOperator(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public TypedOperator hourMinute() {//HH:MM
+	default TypedOperator hourMinute() {//HH:MM
 		CombinedOperator op = args-> {
 			var col = requireNArgs(1, args, ()-> "hourMinute")[0];
 			var tim = JDBCType.typeOf(col).filter(t-> t == TIME)
@@ -290,11 +288,11 @@ public class Operators {
 		return new TypedOperator(VARCHAR, op, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
-	public TypedOperator and() {
+	default TypedOperator and() {
 		return chain(AND);
 	}
 
-	public TypedOperator or() {
+	default TypedOperator or() {
 		return chain(OR);
 	}
 	
@@ -308,105 +306,105 @@ public class Operators {
 	
 	//cast functions
 
-	public TypedOperator varchar() {
+	default TypedOperator varchar() {
 		return new TypedOperator(VARCHAR, cast("VARCHAR"), required(), optional(INTEGER)); //any
 	}
 	
-	public TypedOperator timestamp() {
+	default TypedOperator timestamp() {
 		return new TypedOperator(TIMESTAMP, cast("TIMESTAMP"), required(VARCHAR, DATE)); 
 	}
 	
-	public TypedOperator date() {
+	default TypedOperator date() {
 		return new TypedOperator(DATE, cast("DATE"), required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 
-	public TypedOperator time() {
+	default TypedOperator time() {
 		return new TypedOperator(TIME, cast("TIME"), required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public TypedOperator integer() {
+	default TypedOperator integer() {
 		return new TypedOperator(INTEGER, cast("INTEGER"), required(VARCHAR, DOUBLE));
 	}
 	
-	public TypedOperator bigint() {
+	default TypedOperator bigint() {
 		return new TypedOperator(BIGINT, cast("BIGINT"), required(VARCHAR, DOUBLE)); // any number
 	}
 	
-	public TypedOperator decimal() {
+	default TypedOperator decimal() {
 		return new TypedOperator(DOUBLE, cast("DECIMAL"), required(VARCHAR, BIGINT), optional(INTEGER), optional(INTEGER));
 	}
 
-	public TypedOperator bool() {
+	default TypedOperator bool() {
 		return new TypedOperator(BOOLEAN, cast("BOOLEAN"), required(VARCHAR, BIGINT)); //any
 	}
 
 	//other functions
 	
-	public TypedOperator coalesce() {
+	default TypedOperator coalesce() {
 		return new TypedOperator(firstArgJdbcType(), function("COALESCE"), required(), required(firstArgJdbcType()));
 	}
 	
-	public TypedOperator distinct() {
+	default TypedOperator distinct() {
 		return new TypedOperator(firstArgJdbcType(), new DistinctOperator(), required());
 	}
 
 	//aggregate functions
 
-	public TypedOperator count() {
+	default TypedOperator count() {
 		return new TypedOperator(BIGINT, aggregation("COUNT"), required()); 
 	}
 	
-	public TypedOperator min() {
+	default TypedOperator min() {
 		return new TypedOperator(firstArgJdbcType(), aggregation("MIN"), required()); 
 	}
 
-	public TypedOperator max() {
+	default TypedOperator max() {
 		return new TypedOperator(firstArgJdbcType(), aggregation("MAX"), required()); 
 	}
 
-	public TypedOperator sum() {
+	default TypedOperator sum() {
 		return new TypedOperator(DOUBLE, aggregation("SUM"), required(DOUBLE));
 	}
 	
-	public TypedOperator avg() {
+	default TypedOperator avg() {
 		return new TypedOperator(DOUBLE, aggregation("AVG"), required(DOUBLE));
 	}
 	
 	//window functions
 	
-	public TypedOperator rank() {
+	default TypedOperator rank() {
 		return new TypedOperator(INTEGER, window("RANK")); // takes no args
 	}
 	
-	public TypedOperator rowNumber() {
+	default TypedOperator rowNumber() {
 		return new TypedOperator(INTEGER, window("ROW_NUMBER")); // takes no args
 	}
 	
-	public TypedOperator denseRank() {
+	default TypedOperator denseRank() {
 		return new TypedOperator(INTEGER, window("DENSE_RANK")); // takes no args
 	}
 
-	public TypedOperator percentRank() {
+	default TypedOperator percentRank() {
 		return new TypedOperator(INTEGER, window("PERCENT_RANK")); // takes no args
 	}
 
 	//pipe functions
 	
-	public TypedOperator over() {
+	default TypedOperator over() {
 		return new TypedOperator(firstArgJdbcType(), pipe("OVER"), required(), optional(PARTITION)); //optional !?
 	}
 	
 	// constant operators
 	
-	public TypedOperator cdate() {
+	default TypedOperator cdate() {
 		return new TypedOperator(DATE, constant("CURRENT_DATE"));
 	}
 	
-	public TypedOperator ctime() {
+	default TypedOperator ctime() {
 		return new TypedOperator(TIME, constant("CURRENT_TIME"));
 	}
 	
-	public TypedOperator ctimestamp() {
+	default TypedOperator ctimestamp() {
 		return new TypedOperator(TIMESTAMP, constant("CURRENT_TIMESTAMP"));
 	}
 
@@ -441,8 +439,4 @@ public class Operators {
 	public static ConstantOperator constant(String name) {
 		return ()-> name;
 	}	
-	
-	public static Operators of(ProductVendor db) {
-		return STD_OPERATORS;
-	}
 }

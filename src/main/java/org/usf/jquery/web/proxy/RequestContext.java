@@ -87,11 +87,11 @@ public final class RequestContext {
 	}
 	
 	public Optional<TypedOperator> lookupOperation(String name){
-		return tryInvokeMethod(store.operators(), TypedOperator.class, name);
+		return tryInvokeMethod(store.dialect(), TypedOperator.class, name);
 	}
 
 	public Optional<TypedComparator> lookupComparators(String name){
-		return tryInvokeMethod(store.comparators(), TypedComparator.class, name);
+		return tryInvokeMethod(store.dialect(), TypedComparator.class, name);
 	}
 
 	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, Entry... args) { 

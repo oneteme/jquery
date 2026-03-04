@@ -1,12 +1,12 @@
 package org.usf.jquery.web;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.ProductVendor.parseName;
+import static org.usf.jquery.core.Provider.parseName;
 
 import java.sql.DatabaseMetaData;
 import java.sql.SQLException;
 import java.util.Map;
 
-import org.usf.jquery.core.ProductVendor;
+import org.usf.jquery.core.Provider;
 
 import lombok.RequiredArgsConstructor;
 
@@ -19,9 +19,9 @@ import lombok.RequiredArgsConstructor;
 public final class DatabaseMetadata {
 
 	private final Map<String, ViewMetadata> views; //lazy loading
-	private ProductVendor type;
+	private Provider type;
 	
-	public ProductVendor getType() {
+	public Provider getType() {
 		return type;
 	}
 	

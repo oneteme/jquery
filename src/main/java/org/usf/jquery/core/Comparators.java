@@ -13,115 +13,113 @@ import java.util.function.UnaryOperator;
  * @author u$f
  *
  */
-public class Comparators {
+public interface Comparators {
 	
-	public static final Comparators STD_COMPARTORS = new Comparators();
-
 	//basic comparator
 	
-	public TypedComparator eq() {
+	default TypedComparator eq() {
 		return new TypedComparator(basicComparator("="), required(), required(firstArgJdbcType()));
 	}
 
-	public TypedComparator ne() {
+	default TypedComparator ne() {
 		return new TypedComparator(basicComparator("<>"), required(), required(firstArgJdbcType()));
 	}
 	
-	public TypedComparator lt() {
+	default TypedComparator lt() {
 		return new TypedComparator(basicComparator("<"), required(), required(firstArgJdbcType()));
 	}
 
-	public TypedComparator le() {
+	default TypedComparator le() {
 		return new TypedComparator(basicComparator("<="), required(), required(firstArgJdbcType()));
 	}
 
-	public TypedComparator gt() {
+	default TypedComparator gt() {
 		return new TypedComparator(basicComparator(">"), required(), required(firstArgJdbcType()));
 	}
 
-	public TypedComparator ge() {
+	default TypedComparator ge() {
 		return new TypedComparator(basicComparator(">="), required(), required(firstArgJdbcType()));
 	}
 	
-	public TypedComparator between() {
+	default TypedComparator between() {
 		return new TypedComparator(rangeComparator("BETWEEN"), required(), required(firstArgJdbcType()), required(firstArgJdbcType()));
 	}
 	
 	//string comparator
 	
-	public TypedComparator startsLike() {
+	default TypedComparator startsLike() {
 		return like(o-> o + "%");
 	}
 
-	public TypedComparator endsLike() {
+	default TypedComparator endsLike() {
 		return like(o-> "%" + o);
 	}
 
-	public TypedComparator contentLike() {
+	default TypedComparator contentLike() {
 		return like(o-> "%" + o + "%");
 	}
 	
-	public TypedComparator startsNotLike() {
+	default TypedComparator startsNotLike() {
 		return notLike(o-> o + "%");
 	}
 
-	public TypedComparator endsNotLike() {
+	default TypedComparator endsNotLike() {
 		return notLike(o-> "%" + o);
 	}
 
-	public TypedComparator contentNotLike() {
+	default TypedComparator contentNotLike() {
 		return notLike(o-> "%" + o + "%");
 	}
 
-	public TypedComparator like() {
+	default TypedComparator like() {
 		return like(null);
 	}
 	
-	public TypedComparator iLike() {
+	default TypedComparator iLike() {
 		return iLike(null);
 	}
 	
-	public TypedComparator notLike() {
+	default TypedComparator notLike() {
 		return notLike(null);
 	}
 
-	public TypedComparator notILike() {
+	default TypedComparator notILike() {
 		return notILike(null);
 	}
 	
-	public TypedComparator like(UnaryOperator<Object> wilcard) {
+	default TypedComparator like(UnaryOperator<Object> wilcard) {
 		return new TypedComparator(stringComparator("LIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	public TypedComparator iLike(UnaryOperator<Object> wilcard) {
+	default TypedComparator iLike(UnaryOperator<Object> wilcard) {
 		return new TypedComparator(stringComparator("ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	public TypedComparator notLike(UnaryOperator<Object> wilcard) {
+	default TypedComparator notLike(UnaryOperator<Object> wilcard) {
 		return new TypedComparator(stringComparator("NOT LIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	public TypedComparator notILike(UnaryOperator<Object> wilcard) {
+	default TypedComparator notILike(UnaryOperator<Object> wilcard) {
 		return new TypedComparator(stringComparator("NOT ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 	
 	//null comparator
 	
-	public TypedComparator isNull() {
+	default TypedComparator isNull() {
 		return new TypedComparator(nullComparator("IS NULL"), required());
 	}
 
-	public TypedComparator notNull() { //isNotNUll
+	default TypedComparator notNull() { //isNotNUll
 		return new TypedComparator(nullComparator("IS NOT NULL"), required());
 	}
 	
 	//in comparator
 
-	public TypedComparator in() {
+	default TypedComparator in() {
 		return new TypedComparator(inComparator("IN"), required(), required(firstArgJdbcType()), varargs(firstArgJdbcType()));
 	}
 	
-	public TypedComparator notIn() {
+	default TypedComparator notIn() {
 		return new TypedComparator(inComparator("NOT IN"), required(), required(firstArgJdbcType()), varargs(firstArgJdbcType()));
 	}
 	
@@ -158,9 +156,5 @@ public class Comparators {
 
 	static RangeComparator rangeComparator(final String name) {
 		return ()-> name;
-	}
-	
-	public static Comparators of(ProductVendor db) {
-		return STD_COMPARTORS;
 	}
 }

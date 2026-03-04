@@ -6,8 +6,10 @@ import static java.util.stream.Stream.concat;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
+import static org.usf.jquery.web.Parameters.CRITERIA_OPR;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 import static org.usf.jquery.web.Parameters.FIELD_PARAM;
+import static org.usf.jquery.web.Parameters.FILTER_OPR;
 import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
@@ -153,7 +155,7 @@ public interface QueryInterpreter {
 				return param[0];
 			}
 			if(param.length > 1) {
-				throw new IllegalArgumentException("Multiple values provided for parameter: " + paramName);
+				throw new IllegalArgumentException("multiple values provided for parameter: " + paramName);
 			}
 		}
 		return null;
@@ -164,12 +166,14 @@ public interface QueryInterpreter {
 	}
 	
 	private static void resolveColumnCompatibility(Map<String, String[]> modifiableMap) {
-		var columns = modifiableMap.remove(COLUMN_PARAM);
-		if(!isEmpty(columns)) {
-			log.warn("'{}' parameter is deprecated, use {} instead", COLUMN_PARAM, FIELD_PARAM);
-			modifiableMap.compute(FIELD_PARAM, (k, v)-> isEmpty(v) 
-					? columns 
-					: concat(stream(v), stream(columns)).toArray(String[]::new));
-		}
+		Map.of(COLUMN_PARAM, FIELD_PARAM, FILTER_OPR, CRITERIA_OPR).entrySet().forEach(e-> {
+			var args = modifiableMap.remove(e.getKey());
+			if(!isEmpty(args)) {
+				log.warn("'{}' parameter is deprecated, use {} instead", e.getKey(), e.getValue());
+				modifiableMap.compute(e.getValue(), (k, v)-> isEmpty(v) 
+						? args 
+						: concat(stream(v), stream(args)).toArray(String[]::new));
+			}
+		});
 	}
 }

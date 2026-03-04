@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import javax.sql.DataSource;
+
 /**
  * 
  * @author u$f
@@ -7,9 +9,7 @@ package org.usf.jquery.core;
  */
 public interface Store {
 	
-	StoreMetadata metadata();
-		
-	Operators operators();
-		
-	Comparators comparators();
+	Dialect dialect();
+	
+	DataSource dataSource();
 }

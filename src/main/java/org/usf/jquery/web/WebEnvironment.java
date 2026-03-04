@@ -37,7 +37,7 @@ import javax.sql.DataSource;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.Environment;
 import org.usf.jquery.core.JQueryException;
-import org.usf.jquery.core.ProductVendor;
+import org.usf.jquery.core.Provider;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryExecutor;
 
@@ -189,7 +189,7 @@ public final class WebEnvironment implements Environment {
 	}
 
 	@Override
-	public ProductVendor getProduct() {
+	public Provider getProduct() {
 		return metadata.getType();
 	}
 
