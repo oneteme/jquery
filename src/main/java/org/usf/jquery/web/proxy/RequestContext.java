@@ -16,6 +16,7 @@ import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,7 +28,7 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
-import org.usf.jquery.core.QueryView;
+import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -125,7 +126,7 @@ public final class RequestContext {
 			}
 			catch (NoSuchResourceException e) {
 				try {
-					return resolve(entry, QueryView.class);
+					return resolve(entry, SingleQueryColumn.class);
 				}
 				catch (NoSuchResourceException ex) {
 					//do nothing, try other types
@@ -173,12 +174,12 @@ public final class RequestContext {
 		if(entry.isVariable()) {
 			var prs = registry.getEvaluator(type);
 			if(nonNull(prs)) {
-				try {
+//				try {
 					return prs.evaluate(entry, this);
-				}
-				catch (Exception e) {
-					throw new EntryParseException("cannot evaluate '" + type.getSimpleName() + "' expression " + entry, e);
-				}
+//				}
+//				catch (Exception e) {
+//					throw new EntryParseException("cannot evaluate '" + type.getSimpleName() + "' expression " + entry, e);
+//				}
 			}
 		}// consider variable with no args, next or tag as value entry
 		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) { 
@@ -220,8 +221,11 @@ public final class RequestContext {
 					return Optional.of(type.cast(mth.invoke(obj)));
 				}
 			}
-		} catch (Exception e) {
+		} catch (IllegalAccessException | InvocationTargetException e) {
 			log.warn("failed to invoke method '{}' of type {} for lookup, reason: {}", name, type.getSimpleName(), e.getMessage());
+		}
+		catch (Exception e) {
+			//do nothing, return empty
 		}
 		return empty();
 	}
