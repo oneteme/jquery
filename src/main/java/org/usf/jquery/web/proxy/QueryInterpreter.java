@@ -6,10 +6,8 @@ import static java.util.stream.Stream.concat;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
-import static org.usf.jquery.web.Parameters.CRITERIA_OPR;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 import static org.usf.jquery.web.Parameters.FIELD_PARAM;
-import static org.usf.jquery.web.Parameters.FILTER_OPR;
 import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
@@ -49,7 +47,7 @@ public interface QueryInterpreter {
 				}
 			}
 		}
-		resolveColumnCompatibility(modifiableMap);
+		resolveParameterCompatibility(modifiableMap);
 		modifiableMap.computeIfAbsent(FIELD_PARAM, k-> qr.fields());		
 		var store = qr.store() == StoreResource.class 
 				? getInstance().getDefaultStore() //default schema if not specified
@@ -91,7 +89,7 @@ public interface QueryInterpreter {
 			parse(parameters).map(e-> ctx.resolve(e, NamedColumn.class)).forEach(query::columns);
 		}
 		else {
-			throw new IllegalArgumentException("Missing required parameter: " + FIELD_PARAM);
+			throw new IllegalArgumentException("missing required parameter: " + FIELD_PARAM);
 		}
 	}
 	
@@ -165,8 +163,8 @@ public interface QueryInterpreter {
 		return stream(values).flatMap(c-> stream(parseEntries(c)));
 	}
 	
-	private static void resolveColumnCompatibility(Map<String, String[]> modifiableMap) {
-		Map.of(COLUMN_PARAM, FIELD_PARAM, FILTER_OPR, CRITERIA_OPR).entrySet().forEach(e-> {
+	private static void resolveParameterCompatibility(Map<String, String[]> modifiableMap) {
+		Map.of(COLUMN_PARAM, FIELD_PARAM).entrySet().forEach(e-> {
 			var args = modifiableMap.remove(e.getKey());
 			if(!isEmpty(args)) {
 				log.warn("'{}' parameter is deprecated, use {} instead", e.getKey(), e.getValue());

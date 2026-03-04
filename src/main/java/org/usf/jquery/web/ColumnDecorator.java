@@ -4,9 +4,9 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 
-import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.JDBCType;
+import org.usf.jquery.core.Predicate;
 
 /**
  * 

@@ -12,8 +12,8 @@ import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.DBObject.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.datasetMetadata;
-import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 import static org.usf.jquery.web.proxy.DatasetMetadata.noMetadata;
+import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 
 import java.lang.reflect.Method;
 import java.util.Map;

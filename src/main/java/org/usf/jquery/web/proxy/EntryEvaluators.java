@@ -11,12 +11,15 @@ import static org.usf.jquery.core.JoinType.CROSS;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.ViewJoin.join;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
+import static org.usf.jquery.web.Parameters.CRITERIA_OPR;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
+import static org.usf.jquery.web.Parameters.FIELD_PARAM;
 import static org.usf.jquery.web.Parameters.FILTER_OPR;
 import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
+import static org.usf.jquery.web.Parameters.SELECT_OPR;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -141,7 +144,7 @@ public final class EntryEvaluators {
 	
 	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetResource view, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
-		if(COLUMN_PARAM.equals(entry.getValue())) {
+		if(SELECT_OPR.equals(entry.getValue()) || FIELD_PARAM.equals(entry.getValue())) {
 			view = evalQuery(itr, ctx.subContext(view));
 		}
 		if(view instanceof QueryResource query) {
@@ -155,13 +158,13 @@ public final class EntryEvaluators {
 
 	static DatasetResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
-		if(allowAnonymous && COLUMN_PARAM.equals(entry.getValue())) {
+		if(allowAnonymous && (SELECT_OPR.equals(entry.getValue()) || FIELD_PARAM.equals(entry.getValue()))) {
 			return evalQuery(itr, ctx.subContext(ctx.getDefaultDataset()));
 		} //parameterized view considered as anonymous view resource, not supported for direct lookup
 		var view = ctx.lookupView(allowAnonymous, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
 			itr.advance();
-			return allowAnonymous && itr.hasNext() && COLUMN_PARAM.equals(itr.peekNext().getValue()) //view.column().filter()..
+			return allowAnonymous && itr.hasNext() && (SELECT_OPR.equals(itr.peekNext().getValue()) || FIELD_PARAM.equals(itr.peekNext().getValue())) //view.column().filter()..
 					? evalQuery(itr, ctx.subContext(view.get())) : view.get();
 		}
 		return null;
@@ -212,8 +215,8 @@ public final class EntryEvaluators {
 			while(itr.hasNext()) {
 				var entry = itr.peekNext();
 				switch (entry.getValue()) {
-				case COLUMN_PARAM-> query.columns(ctx.resolveAll(entry.getArgs(), NamedColumn[].class));
-				case FILTER_OPR-> query.filters(ctx.resolveAll(entry.getArgs(), Criteria[].class)); 
+				case SELECT_OPR, FIELD_PARAM -> query.columns(ctx.resolveAll(entry.getArgs(), NamedColumn[].class));
+				case FILTER_OPR, CRITERIA_OPR-> query.filters(ctx.resolveAll(entry.getArgs(), Criteria[].class)); 
 				case ORDER_PARAM-> query.orders(ctx.resolveAll(entry.getArgs(), Order[].class));
 				case JOIN_PARAM-> query.joins2(ctx.resolveAll(entry.getArgs(), JoinsClause[].class));
 				case LIMIT_PARAM-> query.limit(resolveSingleArgValue(entry, Integer.class, ctx));
@@ -245,7 +248,7 @@ public final class EntryEvaluators {
 			while(itr.hasNext()) {
 				var entry = itr.peekNext();
 				switch (entry.getValue()) {
-				case COLUMN_PARAM-> addAll(cols, ctx.resolveAll(entry.getArgs(), Column[].class));
+				case COLUMN_PARAM, FIELD_PARAM -> addAll(cols, ctx.resolveAll(entry.getArgs(), Column[].class));
 				case ORDER_PARAM-> addAll(ords, ctx.resolveAll(entry.getArgs(), Order[].class));
 				default-> matched = false;
 				}
@@ -271,7 +274,7 @@ public final class EntryEvaluators {
 				if(isNull(jView)) {
 					throw new NoSuchResourceException("no such view : " + entry.getValue());
 				}
-				var filters = itr.hasNext() && FILTER_OPR.equals(itr.peekNext().getValue()) 
+				var filters = itr.hasNext() && (FILTER_OPR.equals(itr.peekNext().getValue()) || CRITERIA_OPR.equals(itr.peekNext().getValue()))
 						? ctx.resolveAll(itr.next().getArgs(), Criteria[].class) : null;
 				if(type != CROSS && isEmpty(filters)) {
 					throw new IllegalArgumentException("join type " + type + " requires at least one filter");
