@@ -20,6 +20,6 @@ public class Dialect implements Operators, Comparators {
 	
 	//allow specific query building for this dialect
 	public Query buildQuery(QueryView view){
-		return view.buildQuery(null, true); //TODO replace null
+		return view.build(); //TODO replace null
 	}
 }

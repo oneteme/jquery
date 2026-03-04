@@ -2,6 +2,8 @@ package org.usf.jquery.web.proxy;
 
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.web.proxy.Resource.Match.NONE;
+import static org.usf.jquery.web.proxy.Resource.Match.VALID;
 
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.NamedColumn;
@@ -39,9 +41,9 @@ public final class QueryResource implements DatasetResource {
 	}
 	
 	@Override
-	public boolean exposes(String id, Class<?> type) {
+	public Match exposes(String id, Class<?> type) {
 		return type.isAssignableFrom(NamedColumn.class) 
 				&& nonNull(query.getColumns())
-				&& stream(query.getColumns()).anyMatch(c-> id.equals(c.getTag()));
+				&& stream(query.getColumns()).anyMatch(c-> id.equals(c.getTag())) ? NONE : VALID;
 	}
 }

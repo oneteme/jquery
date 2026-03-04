@@ -11,6 +11,7 @@ import java.util.Map;
 
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.NoSuchResourceException;
+import org.usf.jquery.web.proxy.Resource.Match;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -69,9 +70,17 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 		return InvocationHandler.invokeDefault(proxy, method, args);
 	}
 	
-	boolean invokeExposesMethod(Object[] args) {
+	Match invokeExposesMethod(Object[] args) {
 		var m = exposedMethods.get(args[0]);
-		return nonNull(m) && ((Class<?>)args[1]).isAssignableFrom(m.getReturnType());
+		if(nonNull(m)) {
+			if(((Class<?>)args[1]).isAssignableFrom(m.getReturnType())) {
+				return Match.VALID;
+			}
+			else {
+				return Match.TYPE;
+			}
+		}
+		return exposedMethods.containsKey(args[0]) ? Match.HIDDEN : Match.NONE;
 	}
 	
 	Object invokeResourceMethod(Object proxy, Object[] args) {
@@ -100,7 +109,7 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 				throw new ResourceInvocationException(e);
 			}
 		}
-		throw new NoSuchResourceException("");		
+		throw new NoSuchResourceException("Resource '" + args[0] + "' not found or incompatible with type " + ((Class<?>)args[1]).getSimpleName());	
 	}
 	
 	boolean invokeEquals(Object proxy, Object[] args) {

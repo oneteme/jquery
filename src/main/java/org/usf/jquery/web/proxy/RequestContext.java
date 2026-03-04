@@ -15,6 +15,8 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.web.proxy.Resource.Match.HIDDEN;
+import static org.usf.jquery.web.proxy.Resource.Match.VALID;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -30,8 +32,6 @@ import org.usf.jquery.core.Column;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.core.TypedComparator;
-import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -86,12 +86,30 @@ public final class RequestContext {
 		return ofNullable(declaredColumns.get(name));
 	}
 	
-	public Optional<TypedOperator> lookupOperation(String name){
-		return tryInvokeMethod(store.dialect(), TypedOperator.class, name);
-	}
-
-	public Optional<TypedComparator> lookupComparators(String name){
-		return tryInvokeMethod(store.dialect(), TypedComparator.class, name);
+	public <T> Optional<T> lookupDialectResource(String name, Class<T> type) {
+		var match = store.exposes(name, type);
+		if(match == VALID) {
+			return lookupSchemaResource(name, type);
+		}
+		if(match == HIDDEN) {
+			log.warn("resource '{}' of type {} is hidden by store dialect, cannot be used", name, type.getSimpleName());
+			return empty();
+		}
+		try {
+			var mth = store.dialect().getClass().getMethod(name); //no parameter
+			if(nonNull(mth)) {
+				var mod = mth.getModifiers();
+				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod)) {
+					return Optional.of(type.cast(mth.invoke(store.dialect()))); //exposed ?
+				}
+			}
+		} catch (IllegalAccessException | InvocationTargetException e) {
+			log.warn("failed to invoke method '{}' of type {} for lookup, reason: {}", name, type.getSimpleName(), e.getMessage());
+		}
+		catch (Exception e) {
+			//do nothing, return empty
+		}
+		return empty();
 	}
 
 	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, Entry... args) { 
@@ -103,7 +121,7 @@ public final class RequestContext {
 	}
 	
 	<T> Optional<T> lookupResource(Resource resource, String name, Class<T> type, Entry... args) { 
-		return resource.exposes(name, type)
+		return resource.exposes(name, type) == VALID
 				? Optional.of(resource.invokeResource(name, type, args, this))
 				: Optional.empty();
 	}
@@ -208,32 +226,16 @@ public final class RequestContext {
 		throw new EntryParseException("no parser for type " + type.getSimpleName());
 	}
 
-	public RequestContext subContext(DatasetResource view) {
-		return new RequestContext(view, store, excludeViews, new HashMap<>(), new HashMap<>(), registry);
+	//inherit common properties, but not declared views and columns
+	public RequestContext subContext(DatasetResource dataset) {
+		return new RequestContext(dataset, store, excludeViews, new HashMap<>(), new HashMap<>(), registry);
 	}
 	
-	public RequestContext withView(DatasetResource view) { //inherit cache
-		if(view == defaultDataset) {
+	//inherit declared views and columns, but with different default view
+	public RequestContext withView(DatasetResource dataset) { 
+		if(dataset == defaultDataset) {
 			return this;
 		}
-		return new RequestContext(view, store, excludeViews, declaredViews, declaredColumns, registry);
-	}
-	
-	static <T> Optional<T> tryInvokeMethod(Object obj, Class<T> type, String name) {
-		try {
-			var mth = obj.getClass().getMethod(name); //no parameter
-			if(nonNull(mth)) {
-				var mod = mth.getModifiers();
-				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod)) {
-					return Optional.of(type.cast(mth.invoke(obj))); //exposed ?
-				}
-			}
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			log.warn("failed to invoke method '{}' of type {} for lookup, reason: {}", name, type.getSimpleName(), e.getMessage());
-		}
-		catch (Exception e) {
-			//do nothing, return empty
-		}
-		return empty();
+		return new RequestContext(dataset, store, excludeViews, declaredViews, declaredColumns, registry);
 	}
 }

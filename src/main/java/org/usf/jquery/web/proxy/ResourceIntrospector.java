@@ -17,6 +17,7 @@ import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
 import org.usf.jquery.web.proxy.Bind.BindType;
+import org.usf.jquery.web.proxy.Resource.Match;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -37,9 +38,7 @@ public final class ResourceIntrospector {
 			if(!isStatic(mod) && isPublic(mod)) {
 				validateBind(m, allowBind);
 				var exp = validateExpose(m);
-				if(isNull(exp) || exp.value()) {
-					c.accept(m);
-				}
+				c.accept(isNull(exp) || exp.value() ? m : null); //exclude method explicitly hidden by @Expose(value=false), but keep identifier in map
 			}
 		})
 		.collect(toMap(ResourceIntrospector::resolveIdentifier, identity(), 
@@ -94,6 +93,21 @@ public final class ResourceIntrospector {
 		return nonNull(exp) && !exp.identity().isEmpty() 
 				? exp.identity() 
 				: m.getName();
+	}
+	
+	static Match findResourceById(Object o, String name, Class<?> type) {
+		var match = stream(o.getClass().getMethods())
+				.filter(mth-> name.equals(resolveIdentifier(mth)))
+				.findFirst();
+		if(match.isPresent()) {
+			var mth = match.get();
+			if(mth.getReturnType() == type) {
+				var ann = mth.getAnnotation(Expose.class);
+				return isNull(ann) || ann.value() ? Match.VALID : Match.HIDDEN;
+			}
+			return Match.TYPE;
+		}
+		return Match.NONE;
 	}
 	
 	static void verifyIdentifier(String id, Supplier<String> message) {

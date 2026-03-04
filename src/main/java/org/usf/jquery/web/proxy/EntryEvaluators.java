@@ -39,6 +39,8 @@ import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.SingleQueryColumn;
+import org.usf.jquery.core.TypedComparator;
+import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -69,14 +71,17 @@ public final class EntryEvaluators {
 		var col = evalColumn(itr, ctx);
 		if(nonNull(col)) {
 			assertLastEntry(itr, true);
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareColumn(tag, col);
+				return col.as(tag);
+			}
 			if(col instanceof NamedColumn nc) {
 				return nc;
 			}
-			var tag = requireTag(itr.get());
-			ctx.declareColumn(tag, col);
-			return col.as(tag);
+			throw new EntryParseException("column resource must have a tag to be declared as named column");
 		}
-		throw new NoSuchResourceException("no such named column : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("expected tag after : " + entry);
 	}
 	
 	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
@@ -345,13 +350,13 @@ public final class EntryEvaluators {
 	}
 	
 	static Column invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupOperation(name)
+		return ctx.lookupDialectResource(name, TypedOperator.class)
 			.map(opr -> opr.operation(resolveArgs(opr.getParameterSet(), col, args, ctx)))
 			.orElse(null);
 	}
 	
 	static Criteria invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupComparators(name)
+		return ctx.lookupDialectResource(name, TypedComparator.class)
 				.map(cmp -> cmp.filter(resolveArgs(cmp.getParameterSet(), col, args, ctx)))
 				.orElse(null);
 	}
