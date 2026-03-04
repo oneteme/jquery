@@ -93,7 +93,10 @@ public final class DatabaseIntrospector {
 	static DatasetType datasetType(DatabaseMetaData meta, String schema, String table) {
 		try(var tm = meta.getTables(null, schema, table, new String[] {"TABLE", "VIEW"})) {
 			if(tm.next()) {
-				return "TABLE".equals(tm.getString("TABLE_TYPE")) ? TABLE : VIEW;
+				var type = tm.getString("TABLE_TYPE"); //'BASE TABLE' for H2
+				if(nonNull(type)) {
+					return type.contains("TABLE") ? TABLE : VIEW;
+				}
 			}
 		}
 		catch(Exception e) {

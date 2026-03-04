@@ -61,7 +61,7 @@ public enum ProductVendor {
 		}
 		var v = name.toUpperCase();
 		return stream(values())
-				.filter(d-> name.contains(v))
+				.filter(d-> d.name().contains(v))
 				.findAny()
 				.orElse(DEFAULT);
 	}

@@ -19,7 +19,6 @@ import javax.sql.DataSource;
 
 import org.usf.jquery.core.Comparators;
 import org.usf.jquery.core.Operators;
-import org.usf.jquery.core.ProductVendor;
 import org.usf.jquery.core.StoreMetadata;
 
 import lombok.Getter;
@@ -47,8 +46,8 @@ public final class StoreProxy extends ResourceProxy {
 	
 	@Override
 	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) { //bind method must return a resource handler
-		if(method.getReturnType() == ProductVendor.class && method.getParameterCount() == 0 && "product".equals(method.getName())) {
-			return metadata.product();
+		if(method.getReturnType() == StoreMetadata.class && method.getParameterCount() == 0 && "metadata".equals(method.getName())) {
+			return metadata;
 		}
 		if(Operators.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "operators".equals(method.getName())) {
 			return metadata.comparators();
