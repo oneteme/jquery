@@ -12,8 +12,4 @@ public interface Store {
 	Operators operators();
 		
 	Comparators comparators();
-	
-	default Query build(QueryComposer query) {
-		return query.compose().buildQuery(null, false);
-	}
 }

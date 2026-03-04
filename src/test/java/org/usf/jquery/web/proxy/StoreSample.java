@@ -1,11 +1,11 @@
 package org.usf.jquery.web.proxy;
 
 import static org.usf.jquery.core.Comparator.basicComparator;
+import static org.usf.jquery.core.JDBCType.VARCHAR;
+import static org.usf.jquery.core.Operators.function;
+import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Predicate.ge;
 import static org.usf.jquery.core.Predicate.lt;
-import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.Operator.function;
-import static org.usf.jquery.core.Parameter.required;
 
 import org.usf.jquery.core.ArgTypeRef;
 import org.usf.jquery.core.Chainable;

@@ -54,7 +54,7 @@ public final class StoreManager implements QueryExecutor2 {
 		throw new NoSuchResourceException("unable to determine default store");
 	}
 	
-	public <S extends StoreResource, T> T execute(Class<S> clazz, Function<S,QueryComposer> fn, ResultSetMapper<T> mapper) {
+	public <S extends StoreResource, T> T execute(Class<S> clazz, Function<S, QueryComposer> fn, ResultSetMapper<T> mapper) {
 		return withStore(clazz, s-> execute(clazz, fn.apply(s), mapper));
 	}
 	

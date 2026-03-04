@@ -1,9 +1,11 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Array.newInstance;
+import static java.lang.reflect.Modifier.isPublic;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.Optional.empty;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -32,7 +34,9 @@ import org.usf.jquery.web.NoSuchResourceException;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 @Getter
 @RequiredArgsConstructor
 public final class RequestContext {
@@ -41,8 +45,8 @@ public final class RequestContext {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
-	private final Resource schema;
-	private final DatasetResource defaultView;
+	private final StoreResource store;
+	private final DatasetResource defaultDataset;
 	private final Set<String> excludeViews;
 	private final Map<String, DatasetResource> declaredViews;
 	private final Map<String, Column> declaredColumns;
@@ -50,11 +54,11 @@ public final class RequestContext {
 
 	// SecurityPolicy(allowLiteralJoin, allowLiteralQuery, ..)
 	
-	public RequestContext(Resource schema, DatasetResource defaultView) {
+	public RequestContext(StoreResource schema, DatasetResource defaultView) {
 		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
 	}
 
-	public RequestContext(Resource schema, DatasetResource defaultView, TypeRegistry registry) {
+	public RequestContext(StoreResource schema, DatasetResource defaultView, TypeRegistry registry) {
 		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), registry);
 	}
 	
@@ -73,9 +77,17 @@ public final class RequestContext {
 		}
 		return Optional.of(view);
 	}
+	
+	public <T> Optional<T> lookupOperation(String name, Class<T> type){
+		return tryInvokeMethod(store.operators(), type, name);
+	}
+
+	public <T> Optional<T> lookupComparators(String name, Class<T> type){
+		return tryInvokeMethod(store.comparators(), type, name);
+	}
 
 	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, Entry... args) { 
-		return lookupResource(schema, name, type, args);
+		return lookupResource(store, name, type, args);
 	}
 	
 	public <T> Optional<T> lookupViewResource(Resource view, String name, Class<T> type, Entry... args) { 
@@ -189,13 +201,28 @@ public final class RequestContext {
 	}
 
 	public RequestContext subContext(DatasetResource view) {
-		return new RequestContext(schema, view, excludeViews, new HashMap<>(), new HashMap<>(), registry);
+		return new RequestContext(store, view, excludeViews, new HashMap<>(), new HashMap<>(), registry);
 	}
 	
 	public RequestContext withView(DatasetResource view) { //inherit cache
-		if(view == defaultView) {
+		if(view == defaultDataset) {
 			return this;
 		}
-		return new RequestContext(schema, view, excludeViews, declaredViews, declaredColumns, registry);
+		return new RequestContext(store, view, excludeViews, declaredViews, declaredColumns, registry);
+	}
+	
+	static <T> Optional<T> tryInvokeMethod(Object obj, Class<T> type, String name) {
+		try {
+			var mth = obj.getClass().getDeclaredMethod(name); //no parameter
+			if(nonNull(mth)) {
+				var mod = mth.getModifiers();
+				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod)) {
+					return Optional.of(type.cast(mth.invoke(obj)));
+				}
+			}
+		} catch (Exception e) {
+			log.warn("failed to invoke method '{}' of type {} for lookup, reason: {}", name, type.getSimpleName(), e.getMessage());
+		}
+		return empty();
 	}
 }

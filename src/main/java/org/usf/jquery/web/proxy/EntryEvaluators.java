@@ -26,13 +26,11 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.usf.jquery.core.Column;
-import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.JoinType;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.ParameterSet;
@@ -162,7 +160,7 @@ public final class EntryEvaluators {
 	static DatasetResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		if(allowAnonymous && COLUMN_PARAM.equals(entry.getValue())) {
-			return evalQuery(itr, ctx.subContext(ctx.getDefaultView()));
+			return evalQuery(itr, ctx.subContext(ctx.getDefaultDataset()));
 		} //parameterized view considered as anonymous view resource, not supported for direct lookup
 		var view = ctx.lookupView(allowAnonymous, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
@@ -295,8 +293,8 @@ public final class EntryEvaluators {
 				itr.resetToMark();
 			}
 		}
-		return lookupViewResource(ctx.getDefaultView(), type, itr, ctx)
-				.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(ctx.getDefaultView(), itr) : null);
+		return lookupViewResource(ctx.getDefaultDataset(), type, itr, ctx)
+				.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(ctx.getDefaultDataset(), itr) : null);
 	}
 
 	static <T> Optional<T> lookupViewResource(DatasetResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
@@ -339,32 +337,16 @@ public final class EntryEvaluators {
 	}
 	
 	static Column invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
-		var opr = ctx.lookupSchemaResource(name, TypedOperator.class, args) //check declared operator first, then static resource
-				.orElseGet(()-> tryInvokeStatic(Operator.class, TypedOperator.class, name));
-		return nonNull(opr) 
-				? opr.operation(resolveArgs(opr.getParameterSet(), col, args, ctx))
-				: null;
+		return ctx.lookupOperation(name, TypedOperator.class)
+			.map(opr -> opr.operation(resolveArgs(opr.getParameterSet(), col, args, ctx)))
+			.orElse(null);
 	}
 	
 	static Criteria invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
-		var cmp = ctx.lookupSchemaResource(name, TypedComparator.class, args) //check declared comparator first, then static resource
-				.orElseGet(()-> tryInvokeStatic(Comparator.class, TypedComparator.class, name));
-		return nonNull(cmp) 
-			? cmp.filter(resolveArgs(cmp.getParameterSet(), col, args, ctx))
-			: null;
-	}
-	
-	static <T> T tryInvokeStatic(Class<?> clazz, Class<T> type, String name) {
-		try {
-			var mth = clazz.getMethod(name); //no parameter
-			if(nonNull(mth)) {
-				var mod = mth.getModifiers();
-				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod) && isStatic(mod)) {
-					return type.cast(mth.invoke(null));
-				}
-			}
-		} catch (Exception e) {/* do not throw exception */}
-		return null;
+		
+		return ctx.lookupComparators(name, TypedComparator.class)
+				.map(cmp -> cmp.filter(resolveArgs(cmp.getParameterSet(), col, args, ctx)))
+				.orElse(null);
 	}
 	
 	static Object[] resolveArgs(ParameterSet ps, Object res, Entry[] args, RequestContext ctx){

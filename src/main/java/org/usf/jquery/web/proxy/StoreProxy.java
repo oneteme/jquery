@@ -50,7 +50,7 @@ public final class StoreProxy extends ResourceProxy {
 			return metadata;
 		}
 		if(Operators.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "operators".equals(method.getName())) {
-			return metadata.comparators();
+			return metadata.operators();
 		}
 		if(Comparators.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "comparators".equals(method.getName())) {
 			return metadata.comparators();

@@ -2,7 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
-import static org.usf.jquery.core.Operator.function;
+import static org.usf.jquery.core.Operators.function;
 
 import lombok.extern.slf4j.Slf4j;
 
