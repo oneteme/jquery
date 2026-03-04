@@ -55,11 +55,13 @@ public final class StoreManager implements QueryExecutor2 {
 	}
 	
 	public <S extends StoreResource, T> T execute(Class<S> clazz, Function<S,QueryComposer> fn, ResultSetMapper<T> mapper) {
-		return withStore(clazz, s->{
-			var query = fn.apply(s);
-			var exec = s instanceof QueryExecutor2 qe ? qe : this; //allow store to override default query executor
-			return exec.execute(query.compose().build(), mapper, s.metadata().dataSource());
-		});
+		return withStore(clazz, s-> execute(clazz, fn.apply(s), mapper));
+	}
+	
+	public <S extends StoreResource, T> T execute(Class<S> clazz, QueryComposer query, ResultSetMapper<T> mapper) {
+		var store = getStore(clazz);
+		var exec = store instanceof QueryExecutor2 qe ? qe : this; //allow store to override default query executor
+		return exec.execute(query.compose().build(), mapper, store.metadata().dataSource());
 	}
 	
 	public <S extends StoreResource, T> T withStore(Class<S> clazz, Function<S,T> fn) {
