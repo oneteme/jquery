@@ -273,7 +273,7 @@ public final class EntryEvaluators {
 				if(type != CROSS && isEmpty(filters)) {
 					throw new IllegalArgumentException("join type " + type + " requires at least one filter");
 				}
-				return JoinsClause.of(join(type, jView.getView(), filters));
+				return JoinsClause.joins(join(type, jView.getView(), filters));
 			}
 			catch (Exception e) {
 				throw new EntryParseException("cannot parse join arguments ", e);

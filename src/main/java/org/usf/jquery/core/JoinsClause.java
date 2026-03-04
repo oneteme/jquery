@@ -27,7 +27,7 @@ public final class JoinsClause implements DBObject {
 		}
 	}
 	
-	public static JoinsClause of(ViewJoin... joins) {
+	public static JoinsClause joins(ViewJoin... joins) {
 		return new JoinsClause(joins);
 	}
 	
