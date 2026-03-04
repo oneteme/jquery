@@ -6,6 +6,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
+import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
@@ -29,6 +30,8 @@ import org.usf.jquery.core.Column;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.SingleQueryColumn;
+import org.usf.jquery.core.TypedComparator;
+import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -38,7 +41,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
-@Getter
 @RequiredArgsConstructor
 public final class RequestContext {
 
@@ -46,8 +48,9 @@ public final class RequestContext {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
-	private final StoreResource store;
+	@Getter
 	private final DatasetResource defaultDataset;
+	private final StoreResource store;
 	private final Set<String> excludeViews;
 	private final Map<String, DatasetResource> declaredViews;
 	private final Map<String, Column> declaredColumns;
@@ -56,11 +59,11 @@ public final class RequestContext {
 	// SecurityPolicy(allowLiteralJoin, allowLiteralQuery, ..)
 	
 	public RequestContext(StoreResource schema, DatasetResource defaultView) {
-		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
+		this(defaultView, schema, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
 	}
 
 	public RequestContext(StoreResource schema, DatasetResource defaultView, TypeRegistry registry) {
-		this(schema, defaultView, emptySet(), new HashMap<>(), new HashMap<>(), registry);
+		this(defaultView, schema, emptySet(), new HashMap<>(), new HashMap<>(), registry);
 	}
 	
 	public Optional<DatasetResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
@@ -79,12 +82,16 @@ public final class RequestContext {
 		return Optional.of(view);
 	}
 	
-	public <T> Optional<T> lookupOperation(String name, Class<T> type){
-		return tryInvokeMethod(store.operators(), type, name);
+	public Optional<Column> lookupDeclaredColumn(String name) {
+		return ofNullable(declaredColumns.get(name));
+	}
+	
+	public Optional<TypedOperator> lookupOperation(String name){
+		return tryInvokeMethod(store.operators(), TypedOperator.class, name);
 	}
 
-	public <T> Optional<T> lookupComparators(String name, Class<T> type){
-		return tryInvokeMethod(store.comparators(), type, name);
+	public Optional<TypedComparator> lookupComparators(String name){
+		return tryInvokeMethod(store.comparators(), TypedComparator.class, name);
 	}
 
 	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, Entry... args) { 
@@ -202,14 +209,14 @@ public final class RequestContext {
 	}
 
 	public RequestContext subContext(DatasetResource view) {
-		return new RequestContext(store, view, excludeViews, new HashMap<>(), new HashMap<>(), registry);
+		return new RequestContext(view, store, excludeViews, new HashMap<>(), new HashMap<>(), registry);
 	}
 	
 	public RequestContext withView(DatasetResource view) { //inherit cache
 		if(view == defaultDataset) {
 			return this;
 		}
-		return new RequestContext(store, view, excludeViews, declaredViews, declaredColumns, registry);
+		return new RequestContext(view, store, excludeViews, declaredViews, declaredColumns, registry);
 	}
 	
 	static <T> Optional<T> tryInvokeMethod(Object obj, Class<T> type, String name) {
@@ -218,7 +225,7 @@ public final class RequestContext {
 			if(nonNull(mth)) {
 				var mod = mth.getModifiers();
 				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod)) {
-					return Optional.of(type.cast(mth.invoke(obj)));
+					return Optional.of(type.cast(mth.invoke(obj))); //exposed ?
 				}
 			}
 		} catch (IllegalAccessException | InvocationTargetException e) {

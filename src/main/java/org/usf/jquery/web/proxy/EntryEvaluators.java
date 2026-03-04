@@ -1,7 +1,5 @@
 package org.usf.jquery.web.proxy;
 
-import static java.lang.reflect.Modifier.isPublic;
-import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -38,8 +36,6 @@ import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.core.TypedComparator;
-import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -190,14 +186,23 @@ public final class EntryEvaluators {
 	}
 
 	static Column evalColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
-		var res = lookupResource(itr, Column.class, ctx, (v, e)->{
-			var entry = e.peekNext();
-			if("count".equals(entry.getValue())) {
-				return invokeOperator(entry.hasArgs() ? null : allColumns(v.getView()), entry.getValue(), entry.getArgs(), ctx);
-			}
-			return null;
-		}); //column or criteria resource
-		return chainResource(itr, res, ctx, outArgs);
+		var next = itr.peekNext();
+		var res = ctx.lookupDeclaredColumn(next.getValue());
+		Column col = null;
+		if(res.isPresent()) {
+			itr.advance();
+			col = res.get();
+		}
+		else {
+			col = lookupResource(itr, Column.class, ctx, (v, e)->{
+				var entry = e.peekNext();
+				if("count".equals(entry.getValue())) {
+					return invokeOperator(entry.hasArgs() ? null : allColumns(v.getView()), entry.getValue(), entry.getArgs(), ctx);
+				}
+				return null;
+			}); //column or criteria resource
+		}
+		return chainResource(itr, col, ctx, outArgs);
 	}
 
 	static QueryResource evalQuery(EntryIterator itr, RequestContext ctx) {
@@ -337,14 +342,13 @@ public final class EntryEvaluators {
 	}
 	
 	static Column invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupOperation(name, TypedOperator.class)
+		return ctx.lookupOperation(name)
 			.map(opr -> opr.operation(resolveArgs(opr.getParameterSet(), col, args, ctx)))
 			.orElse(null);
 	}
 	
 	static Criteria invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
-		
-		return ctx.lookupComparators(name, TypedComparator.class)
+		return ctx.lookupComparators(name)
 				.map(cmp -> cmp.filter(resolveArgs(cmp.getParameterSet(), col, args, ctx)))
 				.orElse(null);
 	}
