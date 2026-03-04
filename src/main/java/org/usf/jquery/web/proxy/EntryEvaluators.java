@@ -79,9 +79,9 @@ public final class EntryEvaluators {
 			if(col instanceof NamedColumn nc) {
 				return nc;
 			}
-			throw new EntryParseException("column resource must have a tag to be declared as named column");
+			throw new EntryParseException("expected tag after : " + entry);
 		}
-		throw new NoSuchResourceException("expected tag after : " + entry);
+		throw new NoSuchResourceException("no such named column : " + itr.peekNext().getValue());
 	}
 	
 	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
