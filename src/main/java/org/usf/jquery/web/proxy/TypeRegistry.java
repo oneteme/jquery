@@ -9,6 +9,7 @@ import static java.util.Objects.nonNull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.sql.Date;
+import java.sql.Time;
 import java.sql.Timestamp;
 import java.text.ParseException;
 import java.time.Instant;
@@ -96,9 +97,10 @@ public final class TypeRegistry {
 		prs.put(Instant.class, Instant::parse);
 		prs.put(YearMonth.class, YearMonth::parse);
 		prs.put(MonthDay.class, MonthDay::parse);
-		prs.put(java.util.Date.class, getDateInstance()::parse);
-		prs.put(Date.class, Date::valueOf);
-		prs.put(Timestamp.class, Timestamp::valueOf);
+		prs.put(java.util.Date.class, v-> Date.valueOf(LocalDate.parse(v)));
+		prs.put(Date.class, v-> Date.valueOf(LocalDate.parse(v)));
+		prs.put(Time.class, v-> Time.valueOf(LocalTime.parse(v)));
+		prs.put(Timestamp.class, v-> Timestamp.from(Instant.parse(v))); //zoned ?
 		prs.put(UUID.class, UUID::fromString);
 		//Object ?
 		DEF_PARSERS = unmodifiableMap(prs);

@@ -35,7 +35,7 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 	
 	static {
 		try {
-			INVOKE_METHOD = Resource.class.getMethod("invokeResource", String.class, Class.class, Entry[].class, RequestContext.class);
+			INVOKE_METHOD  = Resource.class.getMethod("invokeResource", String.class, Class.class, Entry[].class, RequestContext.class);
 			EXPOSES_METHOD = Resource.class.getMethod("exposes", String.class, Class.class);
 		} catch (Exception e) {
 			throw new NoSuchMethodError("failed to initialize ResourceProxy: " + e.getMessage());
