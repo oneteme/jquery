@@ -48,11 +48,11 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 			return invokeDefaultMethod(proxy, method, args);
 		}
 		if(isAbstract(method.getModifiers())) {
-			if(method.equals(EXPOSES_METHOD)) {
-				return invokeExposesMethod(assertArguments(EXPOSES_METHOD, args));
+			if(EXPOSES_METHOD.equals(method)) {
+				return invokeExposesMethod(assertArguments(method, args));
 			}
-			if(method.equals(INVOKE_METHOD)) {
-				return invokeResourceMethod(proxy, assertArguments(INVOKE_METHOD, args));
+			if(INVOKE_METHOD.equals(method)) {
+				return invokeResourceMethod(proxy, assertArguments(method, args));
 			}
 			else {
 				return invokeAbstractMethod(proxy, method, args);

@@ -12,12 +12,12 @@ import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
 
 import org.usf.jquery.web.proxy.Bind.BindType;
-import org.usf.jquery.web.proxy.Resource.Match;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -33,18 +33,27 @@ import lombok.extern.slf4j.Slf4j;
 public final class ResourceIntrospector {
 
 	public static Map<String, Method> discoverExposedMethods(Class<?> type, BiPredicate<BindType, Class<?>> allowBind) {
-		return stream(type.getDeclaredMethods()).<Method>mapMulti((m, c)-> {
+		var hidden = new ArrayList<Method>();
+		var map = stream(type.getDeclaredMethods()).<Method>mapMulti((m, c)-> {
 			var mod = m.getModifiers();
 			if(!isStatic(mod) && isPublic(mod)) {
 				validateBind(m, allowBind);
 				var exp = validateExpose(m);
-				c.accept(isNull(exp) || exp.value() ? m : null); //exclude method explicitly hidden by @Expose(value=false), but keep identifier in map
+				if(isNull(exp) || exp.value()) {
+					c.accept(m);
+				}
+				else {
+					hidden.add(m);
+				}
 			}
 		})
 		.collect(toMap(ResourceIntrospector::resolveIdentifier, identity(), 
 				(m1, m2) -> {
 			        throw new ResourceMappingException("duplicate resource identifier: " + m1.getName() + " vs " + m2.getName());
 			    }));
+		//exclude method explicitly hidden by @Expose(value=false), but keep it identifier in map
+		hidden.forEach(m-> map.put(resolveIdentifier(m), null)); 
+		return map;
 	}
 
 	public static Bind validateBind(Method m, BiPredicate<BindType, Class<?>> allowBind){
@@ -85,6 +94,7 @@ public final class ResourceIntrospector {
 				verifyIdentifier(exp.alias(), () -> "invalid @Expose.alias=["+exp.alias()+"] on " + m);
 			}
 		}
+		//TODO check reserved words
 		return exp;
 	}
 	
@@ -94,22 +104,7 @@ public final class ResourceIntrospector {
 				? exp.identity() 
 				: m.getName();
 	}
-	
-	static Match findResourceById(Object o, String name, Class<?> type) {
-		var match = stream(o.getClass().getMethods())
-				.filter(mth-> name.equals(resolveIdentifier(mth)))
-				.findFirst();
-		if(match.isPresent()) {
-			var mth = match.get();
-			if(mth.getReturnType() == type) {
-				var ann = mth.getAnnotation(Expose.class);
-				return isNull(ann) || ann.value() ? Match.VALID : Match.HIDDEN;
-			}
-			return Match.TYPE;
-		}
-		return Match.NONE;
-	}
-	
+		
 	static void verifyIdentifier(String id, Supplier<String> message) {
 		if(isNull(id) || !id.matches("[a-zA-Z_]\\w*")) {
 			throw new ResourceMappingException(message.get());
