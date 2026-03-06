@@ -1,9 +1,9 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Dialect.DEFAULT_META;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
+import static org.usf.jquery.core.Provider.DEFAULT;
 import static org.usf.jquery.core.Stores.getCurrentStore;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
@@ -17,6 +17,8 @@ import org.usf.jquery.core.JavaType.Typed;
  *
  */
 public interface Column extends DBObject, Typed {
+	
+	public static final Dialect DEFAULT_DIALECT = new Dialect(DEFAULT);
 	
 	void build(QueryBuilder query);
 	
@@ -520,6 +522,6 @@ public interface Column extends DBObject, Typed {
 	
 	private static Dialect dialect() {		
 		var store = getCurrentStore();
-		return nonNull(store) ? store.dialect() : DEFAULT_META;
+		return nonNull(store) ? store.dialect() : DEFAULT_DIALECT;
 	}
 }

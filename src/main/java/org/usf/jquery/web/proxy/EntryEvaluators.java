@@ -42,7 +42,6 @@ import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.core.Signature;
 import org.usf.jquery.core.SignatureMismatchException;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.web.EntryParseException;
@@ -354,13 +353,13 @@ public final class EntryEvaluators {
 	}
 	
 	static Column invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupDialectResource(name, OperatorDefinition.class)
+		return ctx.lookupDialectResource(name, Definition.class)
 			.map(opr -> opr.invoke(resolveArgs(opr, col, args, ctx)))
 			.orElse(null);
 	}
 	
 	static Criteria invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupDialectResource(name, ComparatorDefinition.class)
+		return ctx.lookupDialectResource(name, Definition.class)
 				.map(cmp -> cmp.invoke(resolveArgs(cmp, col, args, ctx)))
 				.orElse(null);
 	}

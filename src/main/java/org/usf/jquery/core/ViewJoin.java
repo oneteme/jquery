@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.stream;
+import static java.util.stream.Stream.concat;
 import static org.usf.jquery.core.JoinType.CROSS;
 import static org.usf.jquery.core.JoinType.FULL;
 import static org.usf.jquery.core.JoinType.INNER;
@@ -24,21 +26,21 @@ public final class ViewJoin implements DBObject {
 	
 	private final JoinType type;
 	private final DBView view;
-	private final Criteria[] criteria;
+	private final Criteria[] criterias;
 	
 	ViewJoin(JoinType type, DBView view, Criteria[] criteria) {
 		this.type = type;
 		this.view = view;
-		this.criteria = criteria;
+		this.criterias = criteria;
 	}
 	
 	@Override
 	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		if(type != CROSS) {
-			requireAtLeastNArgs(1, criteria, ViewJoin.class::getSimpleName);
+			requireAtLeastNArgs(1, criterias, ViewJoin.class::getSimpleName);
 		}
 		query.declare(view); //if filters is null
-		return DBObject.composeNested(query, groupKeys, criteria);
+		return DBObject.composeNested(query, groupKeys, criterias);
 	}
 
 	@Override
@@ -46,9 +48,19 @@ public final class ViewJoin implements DBObject {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
 		var res = view.resolveView(query);
 		query.append(type.name()).append(" JOIN ").append(res).appendSpace().appendViewAlias(res);
-		if(!isEmpty(criteria)) {
-			query.append(" ON ").appendEach(AND.sql(), criteria);
+		if(!isEmpty(criterias)) {
+			query.append(" ON ").appendEach(AND.sql(), criterias);
 		} //else cross join
+	}
+	
+	public ViewJoin criterias(Criteria... criterias) {
+		if(isEmpty(criterias)) {
+			return this;
+		}
+		if(isEmpty(this.criterias)) {
+			return new ViewJoin(type, view, criterias);
+		}
+		return new ViewJoin(type, view, concat(stream(this.criterias), stream(criterias)).toArray(Criteria[]::new));
 	}
 	
 	@Override
@@ -56,27 +68,27 @@ public final class ViewJoin implements DBObject {
 		return DBObject.toSQL(this);
 	}
 	
-	public static ViewJoin innerJoin(DBView view, Criteria... filters) {
-		return new ViewJoin(INNER, view, filters);
+	public static ViewJoin innerJoin(DBView view, Criteria... criterias) {
+		return new ViewJoin(INNER, view, criterias);
 	}
 	
-	public static ViewJoin leftJoin(DBView view, Criteria... filters) {
-		return new ViewJoin(LEFT, view, filters);
+	public static ViewJoin leftJoin(DBView view, Criteria... criterias) {
+		return new ViewJoin(LEFT, view, criterias);
 	}
 	
-	public static ViewJoin rightJoin(DBView view, Criteria... filters) {
-		return new ViewJoin(RIGHT, view, filters);
+	public static ViewJoin rightJoin(DBView view, Criteria... criterias) {
+		return new ViewJoin(RIGHT, view, criterias);
 	}
 
-	public static ViewJoin fullJoin(DBView view, Criteria... filters) {
-		return new ViewJoin(FULL, view, filters);
+	public static ViewJoin fullJoin(DBView view, Criteria... criterias) {
+		return new ViewJoin(FULL, view, criterias);
 	}
 
-	public static ViewJoin crossJoin(DBView view, Criteria... filters) {
-		return new ViewJoin(CROSS, view, filters);
+	public static ViewJoin crossJoin(DBView view, Criteria... criterias) {
+		return new ViewJoin(CROSS, view, criterias);
 	}
 
-	public static ViewJoin join(JoinType joinType, DBView view, Criteria... filters) {
-		return new ViewJoin(joinType, view, filters);
+	public static ViewJoin join(JoinType joinType, DBView view, Criteria... criterias) {
+		return new ViewJoin(joinType, view, criterias);
 	}
 }

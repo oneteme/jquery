@@ -15,7 +15,7 @@ public final class ComparatorDefinition extends Definition<SimpleCriteria> {
 	private final Comparator comparator;
 	
 	public ComparatorDefinition(Comparator comparator, Parameter... parameters) {
-		super(comparator.id(), o-> BOOLEAN, (type,args)-> comparator.filter(args), parameters);
+		super(comparator.id(), BOOLEAN, (type,args)-> comparator.filter(args), parameters);
 		this.comparator = comparator;
 	}
 	

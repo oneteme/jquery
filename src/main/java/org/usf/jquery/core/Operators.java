@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.TypeResolver.firstArgType;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -10,15 +9,10 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JQueryType.ORDER;
-import static org.usf.jquery.core.JQueryType.PARTITION;
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.Predicate.lt;
-import static org.usf.jquery.core.Validation.requireNArgs;
+import static org.usf.jquery.core.TypeResolver.firstArgType;
 
 /**
  * 
@@ -221,89 +215,6 @@ public interface Operators {
 		return new OperatorDefinition(BIGINT, extract("EPOCH"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
 	
-	//combined functions
-	
-	default OperatorDefinition semester() {//[1-2]
-		MacroOperator op = args-> month().invoke(requireNArgs(1, args, ()-> "semester")[0]).toCase()
-				.when(lt(7), 1)
-				.orElse(2);
-		return new OperatorDefinition(INTEGER, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
-	}
-	
-	default OperatorDefinition quarter() {//[1-4]
-		MacroOperator op = args-> month().invoke(requireNArgs(1, args, ()-> "quarter")[0]).toCase()
-				.when(lt(4), 1)
-				.when(lt(7), 2)
-				.when(lt(10), 3)
-				.orElse(4);
-		return new OperatorDefinition(INTEGER, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
-	}
-	
-	default OperatorDefinition yearSemester() {//YYYY-'S'S
-		MacroOperator op = args-> concat().invoke(
-				varchar().invoke(year().invoke(args)),
-				"-S",
-				varchar().invoke(semester().invoke(args)));
-		return new OperatorDefinition(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
-	}
-	
-	default OperatorDefinition yearQuarter() {//YYYY-'Q'Q
-		MacroOperator op = args-> concat().invoke(
-				varchar().invoke(year().invoke(args)),
-				"-Q",
-				varchar().invoke(quarter().invoke(args)));
-		return new OperatorDefinition(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
-	}
-	
-	default OperatorDefinition yearWeek() {//YYYY-'W'WW
-		MacroOperator op = args-> {
-			var col = requireNArgs(1, args, ()-> "yearWeek")[0];
-			return concat().invoke(varchar().invoke(year().invoke(col)), 
-					"-W", 
-					lpad().invoke(varchar().invoke(doy().invoke(col)), 2, "0"));
-		};
-		return new OperatorDefinition(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
-	}
-	
-	default OperatorDefinition yearMonth() {//YYYY-MM
-		MacroOperator op = args-> left().invoke(varchar().invoke(requireNArgs(1, args, ()-> "yearMonth")[0]), 7);
-		return new OperatorDefinition(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
-	}
-	
-	default OperatorDefinition monthDay() {//MM-DD
-		MacroOperator op = args-> {
-			var col = requireNArgs(1, args, ()-> "monthDay")[0];
-			return substring().invoke(varchar().invoke(col), 6, 5);
-		};
-		return new OperatorDefinition(VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
-	}
-	
-	default OperatorDefinition hourMinute() {//HH:MM
-		MacroOperator op = args-> {
-			var col = requireNArgs(1, args, ()-> "hourMinute")[0];
-			var tim = JDBCType.typeOf(col).filter(t-> t == TIME)
-					.map(t-> col).orElseGet(()-> time().invoke(col));
-			return left().invoke(varchar().invoke(tim), 5);
-		};
-		return new OperatorDefinition(VARCHAR, op, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
-	}
-
-	default OperatorDefinition and() {
-		return chain(AND);
-	}
-
-	default OperatorDefinition or() {
-		return chain(OR);
-	}
-	
-	private OperatorDefinition chain(LogicalOperator op) {
-		MacroOperator co = args-> {
-			requireNArgs(2, args, op::name);
-			return ((Criteria)args[0]).append(op, (Criteria)args[1]);
-		};
-		return new OperatorDefinition(BOOLEAN, co, required(BOOLEAN), required(BOOLEAN));
-	}
-	
 	//cast functions
 
 	default OperatorDefinition varchar() {
@@ -399,16 +310,6 @@ public interface Operators {
 	default OperatorDefinition percentRank() {
 		return new OperatorDefinition(INTEGER, window("PERCENT_RANK")); // takes no args
 	}
-
-	//pipe functions
-	
-	default OperatorDefinition over() {
-		return new OperatorDefinition(firstArgType(), pipe("OVER"), required(), optional(PARTITION)); 
-	}
-	
-	default OperatorDefinition within() {
-		return new OperatorDefinition(firstArgType(), pipe("WITHIN GROUP"), required(), varargs(ORDER));
-	}
 	
 	// constant operators
 	
@@ -449,11 +350,7 @@ public interface Operators {
 		return ()-> name;
 	}
 
-	public static PipeFunction pipe(String name) {
-		return ()-> name;
-	}
-
 	public static ConstantOperator constant(String name) {
 		return ()-> name;
-	}	
+	}
 }

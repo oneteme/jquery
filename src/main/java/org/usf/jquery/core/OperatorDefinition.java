@@ -10,7 +10,7 @@ import static java.util.Objects.isNull;
 public final class OperatorDefinition extends Definition<Column> {
 
 	public OperatorDefinition(JDBCType type, Operator operator, Parameter... parameter) {
-		this(o-> type, operator, parameter);
+		super(operator.id(), type, (t,args)-> apply(operator, t, args), parameter);
 	}
 
 	public OperatorDefinition(TypeResolver typeFn, Operator operator, Parameter... parameter) {

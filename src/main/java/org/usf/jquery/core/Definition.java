@@ -1,12 +1,14 @@
 package org.usf.jquery.core;
 
 import static java.lang.String.format;
+import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Signature.compile;
 
 import java.util.Arrays;
 import java.util.function.BiFunction;
 
 import lombok.Getter;
+import lombok.RequiredArgsConstructor;
 
 /**
  * 
@@ -14,22 +16,21 @@ import lombok.Getter;
  *
  */
 @Getter
+@RequiredArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class Definition<T> {
 
 	private final String name;
-	private final TypeResolver returnType;
+	private final JavaType returnType;
+	private final TypeResolver returnTypeResover;
 	private final BiFunction<JavaType, Object[], T> factory;
 	private final Signature signature;
 
-	public Definition(JavaType type, BiFunction<JavaType, Object[], T> builder, Parameter... parameter) {
-		this(nameOf(type), o-> type, builder, parameter);
+	public Definition(String name, JavaType type, BiFunction<JavaType, Object[], T> factory, Parameter... parameter) {
+		this(name, type, null, factory, compile(parameter));
 	}
 
-	public Definition(String name, TypeResolver returnType, BiFunction<JavaType, Object[], T> factory, Parameter... parameter) {
-		this.name = name;
-		this.factory = factory;
-		this.returnType = returnType;
-		this.signature = compile(parameter);
+	public Definition(String name, TypeResolver returnTypeResover, BiFunction<JavaType, Object[], T> factory, Parameter... parameter) {
+		this(name, null, returnTypeResover, factory, compile(parameter));
 	}
 	
 	public final T invoke(Object... args) {
@@ -38,7 +39,8 @@ public class Definition<T> {
 		} catch(SignatureMismatchException e) {
 			throw new InvocationException(format("cannot invoke %s with arguments %s", this, Arrays.toString(args)), e);
 		}
-		return factory.apply(returnType.apply(args), args);
+		var type = nonNull(returnType) ? returnType : returnTypeResover.apply(args);
+		return factory.apply(type, args);
 	}
 	
 	public String toString() {

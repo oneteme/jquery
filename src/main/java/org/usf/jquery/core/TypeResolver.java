@@ -14,7 +14,7 @@ import java.util.function.Function;
 public interface TypeResolver extends Function<Object[], JavaType> {
 
 	static TypeResolver firstArgType() {
-		return arr-> typeOf(requireAtLeastNArgs(1, arr, TypeResolver.class::getSimpleName)[0]).orElse(null);
+		return argTypeAt(0);
 	}
 	
 	static TypeResolver argTypeAt(int index) {

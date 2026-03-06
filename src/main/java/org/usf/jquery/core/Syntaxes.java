@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Arrays.copyOfRange;
-import static org.usf.jquery.core.TypeResolver.firstArgType;
+import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JQueryType.CASE;
 import static org.usf.jquery.core.JQueryType.COLUMN;
@@ -16,10 +16,14 @@ import static org.usf.jquery.core.JoinType.FULL;
 import static org.usf.jquery.core.JoinType.INNER;
 import static org.usf.jquery.core.JoinType.LEFT;
 import static org.usf.jquery.core.JoinType.RIGHT;
+import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
+import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
+import static org.usf.jquery.core.TypeResolver.firstArgType;
 
 import java.util.function.BiFunction;
 
@@ -29,133 +33,45 @@ import java.util.function.BiFunction;
  *
  */
 public interface Syntaxes {
-
-	//factory methods
 	
-	default Definition<PartitionBuilder> partition() { 
-		return new Definition<>(PARTITION, (t, args)-> {
-			var builder = new PartitionBuilder();
-			if(args.length > 0) {
-				return builder.columns((Column[])args);
-			}
-			throw new IllegalArgumentException("cannot append field " + args[0]);
-		}, varargs(COLUMN));
-	}
+	//join operators
 	
-	default Definition<QueryComposer> query() { 
-		return new Definition<>(QUERY, (t,args)-> new QueryComposer());
-	}
-
-	default Definition<CaseColumnBuilder> choice() { 
-		return new Definition<>(CASE, (t,args)-> new CaseColumnBuilder());
-	}
-	
-	default Definition<ViewJoinBuilder> innerJoin() {
+	default Definition<ViewJoin> innerJoin() {
 		return join(INNER);
 	}
 	
-	default Definition<ViewJoinBuilder> leftJoin() {
+	default Definition<ViewJoin> leftJoin() {
 		return join(LEFT);
 	}
 
-	default Definition<ViewJoinBuilder> rightJoin() {
+	default Definition<ViewJoin> rightJoin() {
 		return join(RIGHT);
 	}
 	
-	default Definition<ViewJoinBuilder> fullJoin() {
+	default Definition<ViewJoin> fullJoin() {
 		return join(FULL);
 	}
 	
-	private Definition<ViewJoinBuilder> join(JoinType type) {
-		return new Definition<>(JOIN, (t,args)-> {
-			if(args.length == 1 && args[0] instanceof DBView view) {
-				return new ViewJoinBuilder(type, view);
-			}
-			throw new IllegalArgumentException("cannot append join " + args[0]);
-		}, required(VIEW));
+	private Definition<ViewJoin> join(JoinType type) {
+		return new Definition<>(type.name().toLowerCase()+"Join", JOIN, 
+				(t,args)-> new ViewJoin(type, (DBView)args[0], null), 
+				required(VIEW));
+	}
+
+	//partition operators
+	
+	default Definition<Partition> partition() { 
+		return new Definition<>("partition", PARTITION, 
+				(t, args)-> new Partition((Column[])args, null), 
+				varargs(COLUMN)); //can be empty for window functions without partition
 	}
 	
-	default Definition<CaseColumnBuilder> when() { 
-		return new Definition<>(CASE, (t,args)-> {
-			if(args.length == 3 
-					&& args[0] instanceof CaseColumnBuilder part
-					&& args[1] instanceof Criteria crt
-					&& args[2] instanceof Column col) {
-				return part.when(crt, col);
-			}
-			throw new IllegalArgumentException("cannot append when " + args[0]);
-		}, required(CASE), required(FILTER), varargs(COLUMN));
-	}
+	//query operators
 	
-	default Definition<CaseColumnBuilder> otherwise() { 
-	    return new Definition<>(CASE, (t,args) -> {
-	        if(args.length == 2 && args[0] instanceof CaseColumnBuilder choice) {
-	            return choice.orElse2(args[1]);
-	        }
-	        throw new IllegalStateException();
-	    }, required(CASE), required());
-	}
-	
-	default Definition<Composer<?>> field() { 
-		return new Definition<>(QUERY, (t,args)-> {
-			if(args.length > 1) {
-				var fields = copyOfRange(args, 1, args.length, NamedColumn[].class);
-				if(args[0] instanceof PartitionBuilder part) {
-					return part.columns(fields);
-				}
-				if(args[0] instanceof QueryComposer query) {
-					return query.columns(fields);
-				}
-			}
-			throw new IllegalArgumentException("cannot append field " + args[0]);
-		}, required(QUERY), required(NAMED_COLUMN), varargs(NAMED_COLUMN));
-	}
-	
-	default Definition<Composer<?>> criteria() { 
-		return new Definition<>("criteria", firstArgType(), (t,args)-> {
-			if(args.length > 1) {
-				var criteria = copyOfRange(args, 1, args.length, Criteria[].class);
-				if(args[0] instanceof ViewJoinBuilder join) {
-					return join.filters(criteria);
-				}
-				if(args[0] instanceof QueryComposer query) {
-					return query.filters(criteria);
-				}
-			}
-			throw new IllegalArgumentException("cannot append criteria " + args[0]);
-		}, required(QUERY, JOIN), required(FILTER), varargs(FILTER));
-	}
-	
-	default Definition<Composer<?>> order() { 
-		return new Definition<>("order", firstArgType(), (t,args)-> {
-			if(args.length > 1) {
-				var order = copyOfRange(args, 1, args.length, Order[].class);
-				if(args[0] instanceof PartitionBuilder part) {
-					return part.orders(order);
-				}
-				if(args[0] instanceof QueryComposer query) {
-					return query.orders(order);
-				}
-			}
-			throw new IllegalStateException("cannot append order " + args[0]);
-		}, required(QUERY, PARTITION), required(ORDER), varargs(ORDER));
-	}
-	
-	default Definition<Order> asc() {
-		return orderBy(ASC);
-	}
-	
-	default Definition<Order> desc() {
-		return orderBy(DESC);
-	}
-	
-	private Definition<Order> orderBy(OrderType type) {
-		return new Definition<>(ORDER, (t,args)-> {
-			if(args.length > 1 && args[0] instanceof Column col) {
-				return col.order(type);
-			}
-			throw new IllegalStateException("cannot append order by " + args[0]);
-		}, required(COLUMN));
+	default Definition<QueryComposer> get() {
+		return new Definition<>("get", QUERY, 
+				(type,args)-> new QueryComposer().columns(copyOfRange(args, 1, args.length, NamedColumn[].class)), 
+				required(NAMED_COLUMN), varargs(NAMED_COLUMN));
 	}
 	
 	default Definition<QueryComposer> limit() {
@@ -167,12 +83,101 @@ public interface Syntaxes {
 	}
 	
 	private Definition<QueryComposer> queryIntFunction(String name, BiFunction<QueryComposer, Integer, QueryComposer> func) {
-		return new Definition<>(QUERY, (t,args)-> {
-			if(args.length == 2 && args[0] instanceof QueryComposer query && args[1] instanceof Integer v) {
-				return func.apply(query, v);
-			}
-			throw new IllegalStateException("cannot append " + name + " " + args[0]);
-		}, required(QUERY), required(INTEGER));
+		return new Definition<>(name, QUERY, 
+				(t,args)-> func.apply((QueryComposer)args[0], (Integer)args[1]),
+				required(QUERY), required(INTEGER));
 	}
 	
+	//case operators
+	
+	default Definition<CaseColumn> choice() { 
+		return new Definition<>("choice", CASE, 
+				(type,args)-> new CaseColumn());
+	}
+	
+	default Definition<CaseColumn> when() { 
+		return new Definition<>("when", CASE, 
+				(type,args)-> ((CaseColumn)args[0]).when(new WhenCase((Criteria)args[1], args[2])), 
+				required(CASE), required());
+	}
+	
+	default Definition<CaseColumn> orElse() { 
+	    return new Definition<>("orElse", CASE, 
+	    		(type,args) -> ((CaseColumn)args[0]).when(new WhenCase(null, args[1])), 
+	    		required(CASE), required());
+	}
+
+	//order operators
+	
+	default Definition<Order> asc() {
+		return orderBy(ASC);
+	}
+	
+	default Definition<Order> desc() {
+		return orderBy(DESC);
+	}
+	
+	private Definition<Order> orderBy(OrderType type) {
+		return new Definition<>(type.name().toLowerCase(), ORDER, 
+				(t,args)-> ((Column)args[0]).order(type),
+				required(COLUMN));
+	}
+
+	//logical operators
+	
+	default Definition<Criteria> and() {
+		return chain(AND);
+	}
+
+	default Definition<Criteria> or() {
+		return chain(OR);
+	}
+	
+	private Definition<Criteria> chain(LogicalOperator opr) {
+		return new Definition<>(opr.name().toLowerCase(), BOOLEAN, 
+				(type,args)-> ((Criteria)args[0]).append(opr, (Criteria)args[1]), 
+				required(BOOLEAN), required(BOOLEAN));
+	}
+	
+	//scope operators
+	
+	default Definition<Column> over() {
+		return new OperatorDefinition(firstArgType(), scope("OVER"), required(), optional(PARTITION)); 
+	}
+	
+	default Definition<Column> within() {
+		return new OperatorDefinition(firstArgType(), scope("WITHIN GROUP"), required(), varargs(ORDER));
+	}
+	
+	//common operators for query and join
+	
+	default Definition<Object> criteria() {
+		return new Definition<>("criteria", firstArgType(), (type,args)-> {
+			var criteria = copyOfRange(args, 1, args.length, Criteria[].class);
+			if(args[0] instanceof ViewJoin join) {
+				return join.criterias(criteria);
+			}
+			if(args[0] instanceof QueryComposer query) {
+				return query.filters(criteria);
+			}
+			throw new IllegalStateException("unexpected argument '" + args[0] + "' for criteria operator");
+		}, required(QUERY, JOIN), required(FILTER), varargs(FILTER));
+	}
+	
+	default Definition<Object> order() {
+		return new Definition<>("order", firstArgType(), (type,args)-> {
+			var order = copyOfRange(args, 1, args.length, Order[].class);
+			if(args[0] instanceof Partition part) {
+				return part.orders(order);
+			}
+			if(args[0] instanceof QueryComposer query) {
+				return query.orders(order);
+			}
+			throw new IllegalStateException("unexpected argument '" + args[0] + "' for order operator");
+		}, required(QUERY, PARTITION), required(ORDER), varargs(ORDER));
+	}
+
+	public static ScopeFunction scope(String name) {
+		return ()-> name;
+	}
 }

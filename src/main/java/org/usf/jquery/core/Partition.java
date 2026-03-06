@@ -1,6 +1,8 @@
 package org.usf.jquery.core;
 
 import static java.lang.Math.max;
+import static java.util.Arrays.stream;
+import static java.util.stream.Stream.concat;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -39,6 +41,16 @@ public final class Partition implements DBObject {
 			}
 			query.append("ORDER BY ").appendEach(SCOMA, orders);
 		}
+	}
+	
+	public Partition orders(Order... orders) {
+		if(isEmpty(orders)) {
+			return this;
+		}
+		if(isEmpty(this.orders)) {
+			return new Partition(columns, orders);
+		}
+		return new Partition(columns, concat(stream(this.orders), stream(orders)).toArray(Order[]::new));
 	}
 	
 	@Override
