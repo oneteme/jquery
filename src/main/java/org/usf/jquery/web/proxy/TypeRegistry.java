@@ -1,7 +1,6 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.Character.MIN_VALUE;
-import static java.text.DateFormat.getDateInstance;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -120,15 +119,18 @@ public final class TypeRegistry {
 		if(nonNull(v)) {
 			if(v.length() == 1) {
 				var c = v.charAt(0);
-				if(c=='1' || c=='t') {
+				if(c=='1' || c=='t' || c=='T') {
 					return true;
 				}
-				if(c=='0' || c=='f') {
+				if(c=='0' || c=='f' || c=='F') {
 					return false;
 				}
 			}
-			else if(v.matches("true|false")) {
-				return Boolean.parseBoolean(v); //not thrown exception
+			else if("true".equalsIgnoreCase(v)) {
+				return true;
+			}
+			else if("false".equalsIgnoreCase(v)) {
+				return false;
 			}
 			throw new ParseException("cannot parse boolean " + v, -1);
 		}

@@ -49,7 +49,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	default Criteria monthFilter() {
 		var mc = monthRevision();
 		return nonNull(mc) 
-				? column(mc).filter(in()
+				? column(mc).filter(in().getComparator()
 						.expression((m,v)-> ((YearMonths) requireNonNull(m, "revision")).months()))
 				: null;
 	}

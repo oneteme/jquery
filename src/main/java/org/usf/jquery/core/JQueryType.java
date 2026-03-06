@@ -18,7 +18,8 @@ public enum JQueryType implements JavaType {
 	ORDER(Order.class),
 	QUERY(QueryView.class),
 	JOIN(ViewJoin[].class),
-	PARTITION(Partition.class);
+	PARTITION(Partition.class),
+	CASE(CaseColumn.class);
 	
 	private final Class<?> type;
 	

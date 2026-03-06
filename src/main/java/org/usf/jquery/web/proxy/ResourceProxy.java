@@ -9,6 +9,7 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Map;
 
+import org.usf.jquery.core.InvocationException;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.NoSuchResourceException;
 import org.usf.jquery.web.proxy.Resource.Match;
@@ -100,13 +101,13 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 				}
 			}
 			else if(!isEmpty(entries)){
-				throw new ResourceInvocationException("method " + m.getName() + " does not expect arguments");
+				throw new InvocationException("method " + m.getName() + " does not expect arguments");
 			}
 			try {
 				return invoke(proxy, m, arr);
 			}
 			catch (Throwable e) {
-				throw new ResourceInvocationException(e);
+				throw new InvocationException(e);
 			}
 		}
 		throw new NoSuchResourceException("Resource '" + args[0] + "' not found or incompatible with type " + ((Class<?>)args[1]).getSimpleName());	

@@ -48,7 +48,6 @@ public final class SimplePredicate implements Predicate {
 
 	@Override
 	public String toString() {
-		var args = new Object[]{null}; //unknown type
-		return DBObject.toSQL(this, args);
+		return DBObject.toSQL(this, Column.column("$item"));
 	}
 }

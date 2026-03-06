@@ -11,6 +11,7 @@ import java.util.function.Function;
 
 import javax.sql.DataSource;
 
+import org.usf.jquery.core.Dialect;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryExecutor2;
 import org.usf.jquery.core.ResultSetMapper;
@@ -36,6 +37,10 @@ public final class StoreManager implements QueryExecutor2 {
 	
 	public void register(Class<? extends StoreResource> clazz, DataSource ds) {
 		stores.put(clazz, createStore(clazz, ds));
+	}
+	
+	public void register(Class<? extends StoreResource> clazz, DataSource ds, Dialect dialect) {
+		stores.put(clazz, createStore(clazz, ds, dialect));
 	}
 	
 	public <T extends StoreResource> T getStore(Class<T> clazz){

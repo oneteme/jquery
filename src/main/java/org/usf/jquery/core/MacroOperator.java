@@ -6,7 +6,7 @@ package org.usf.jquery.core;
  *
  */
 @FunctionalInterface
-public interface CombinedOperator extends Operator {
+public interface MacroOperator extends Operator {
 	
 	Column combine(Object... args);
 	
@@ -16,7 +16,7 @@ public interface CombinedOperator extends Operator {
 		if(type == c.getType()) {
 			return c;
 		}
-		throw new IllegalStateException("type mismatch : " + type);
+		throw new IllegalStateException("invalid type " + type + " for " + c);
 	}
 
 	@Override

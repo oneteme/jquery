@@ -14,6 +14,6 @@ public interface PipeFunction extends FunctionOperator {
 	default void buildOperator(QueryBuilder query, Object... args) {
 		requireAtLeastNArgs(1, args, PipeFunction.class::getSimpleName);
 		query.appendParameter(args[0]).appendSpace();
-		FunctionOperator.super.buildOperator(query, args, 1); //optional partition
+		FunctionOperator.super.buildOperator(query, args, 1); // partition for over & orders for within group
 	}
 }

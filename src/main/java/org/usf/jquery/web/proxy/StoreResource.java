@@ -15,8 +15,9 @@ public interface StoreResource extends Store, Resource {
 	//can override createContext to provide a custom TypeRegistry 
 	default RequestContext createContext(String defaultView) {
 		if(exposes(defaultView, DatasetResource.class) == VALID) {
-			return new RequestContext(this, invokeResource(defaultView, DatasetResource.class, null, null));
+			var defaultDataset = invokeResource(defaultView, DatasetResource.class, null, null);
+			return new RequestContext(this, defaultDataset, new TypeRegistry());
 		}
-		throw new NoSuchResourceException("");
+		throw new NoSuchResourceException("no default dataset found for " + defaultView);
 	}
 }

@@ -7,11 +7,11 @@ import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Predicate.ge;
 import static org.usf.jquery.core.Predicate.lt;
 
-import org.usf.jquery.core.ArgTypeRef;
+import org.usf.jquery.core.TypeResolver;
 import org.usf.jquery.core.Chainable;
 import org.usf.jquery.core.Predicate;
-import org.usf.jquery.core.TypedComparator;
-import org.usf.jquery.core.TypedOperator;
+import org.usf.jquery.core.ComparatorDefinition;
+import org.usf.jquery.core.OperatorDefinition;
 
 /**
  * 
@@ -30,13 +30,13 @@ interface StoreSample extends StoreResource {
 	DatasetSample view2(); 
 	
 	@Expose(identity="myFn", description="") 
-	default TypedOperator myFunction() {
-		return new TypedOperator(VARCHAR, function("myFn"), required(VARCHAR));
+	default OperatorDefinition myFunction() {
+		return new OperatorDefinition(VARCHAR, function("myFn"), required(VARCHAR));
 	}
 	
 	@Expose(identity="myCmp", description="") 
-	default TypedComparator myComparator() {
-		return new TypedComparator(basicComparator("<="), required(), required(ArgTypeRef.firstArgJdbcType()));
+	default ComparatorDefinition myComparator() {
+		return new ComparatorDefinition(basicComparator("<="), required(), required(TypeResolver.firstArgType()));
 	}
 
 	@Expose(identity="vitesse") 

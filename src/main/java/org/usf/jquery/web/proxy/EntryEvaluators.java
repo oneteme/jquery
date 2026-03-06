@@ -8,6 +8,8 @@ import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.Comparator.eq;
 import static org.usf.jquery.core.Comparator.in;
 import static org.usf.jquery.core.JoinType.CROSS;
+import static org.usf.jquery.core.Parameter.match;
+import static org.usf.jquery.core.Signature.badArgumentTypeException;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.ViewJoin.join;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
@@ -27,20 +29,22 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.usf.jquery.core.Column;
+import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.Definition;
 import org.usf.jquery.core.JoinType;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.OperatorDefinition;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
-import org.usf.jquery.core.ParameterSet;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.QueryComposer;
+import org.usf.jquery.core.Signature;
+import org.usf.jquery.core.SignatureMismatchException;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.core.TypedComparator;
-import org.usf.jquery.core.TypedOperator;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -344,40 +348,41 @@ public final class EntryEvaluators {
 		}
 		if(!itr.hasNext() && !isEmpty(outArgs) && itr.get() == entry) { //last entry, outArgs not yet applied
 			var cmp = outArgs.length == 1 ? eq() : in();
-			col = cmp.filter(resolveArgs(cmp.getParameterSet(), col, outArgs, ctx));
+			col = cmp.invoke(resolveArgs(cmp, col, outArgs, ctx));
 		}
 		return col;
 	}
 	
 	static Column invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupDialectResource(name, TypedOperator.class)
-			.map(opr -> opr.operation(resolveArgs(opr.getParameterSet(), col, args, ctx)))
+		return ctx.lookupDialectResource(name, OperatorDefinition.class)
+			.map(opr -> opr.invoke(resolveArgs(opr, col, args, ctx)))
 			.orElse(null);
 	}
 	
 	static Criteria invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupDialectResource(name, TypedComparator.class)
-				.map(cmp -> cmp.filter(resolveArgs(cmp.getParameterSet(), col, args, ctx)))
+		return ctx.lookupDialectResource(name, ComparatorDefinition.class)
+				.map(cmp -> cmp.invoke(resolveArgs(cmp, col, args, ctx)))
 				.orElse(null);
 	}
 	
-	static Object[] resolveArgs(ParameterSet ps, Object res, Entry[] args, RequestContext ctx){
+	static Object[] resolveArgs(Definition<?> def, Object res, Entry[] args, RequestContext ctx){
 		int shift = nonNull(res) ? 1 : 0;
-		var arr = new Object[shift + (nonNull(args) ? args.length : 0)];
-		ps.eachParameter(arr.length, (p,i)-> {
-			if(i==0 && nonNull(res)) {
-				if(p.accept(i, arr)) {
-					arr[i] = res;
+		try {
+			return def.getSignature().buildArgs(shift + (nonNull(args) ? args.length : 0), (idx,types)-> {
+				if(idx==0 && nonNull(res)) {
+					if(match(res, types)) {
+						return res;
+					}
+					throw badArgumentTypeException(res, types);
 				}
 				else {
-					throw new IllegalArgumentException(); //TODO better error message
+					return ctx.resolve(args[idx-shift]);
 				}
-			}
-			else {
-				arr[i] = ctx.resolve(args[i-shift], p.types(arr));
-			}
-		});
-		return arr;
+			});
+		}
+		catch (SignatureMismatchException e) {
+			throw new EntryParseException("cannot resolve arguments for " + def, e);
+		}
 	}
 	
 	static <T> T resolveSingleArgValue(Entry entry, Class<T> type, RequestContext ctx) {

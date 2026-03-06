@@ -4,7 +4,6 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.Column.allColumns;
-import static org.usf.jquery.core.Environment.NO_ENV;
 import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Role.JOIN;
@@ -40,7 +39,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-public final class QueryComposer {
+public final class QueryComposer implements Composer<QueryView> {
 	
 	static final Consumer<Column> DO_NOTHING = o->{};
 	
@@ -204,11 +203,7 @@ public final class QueryComposer {
 		return this;
 	}
 	
-	@Deprecated(forRemoval = true, since = "v4")
-	public Query build(){
-		return compose().buildQuery(NO_ENV, true, drivenModel);
-	}
-	
+	@Override
 	public QueryView compose() { //TD check this[clause].length = QueryView[clause].length
 		log.trace("composing query...");
 		var bg = currentTimeMillis();

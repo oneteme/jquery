@@ -1,7 +1,5 @@
 package org.usf.jquery.web.proxy;
 
-import static java.time.Instant.now;
-import static java.util.Collections.emptyMap;
 import static java.util.Objects.nonNull;
 
 import java.time.Instant;
@@ -37,7 +35,4 @@ public class DatasetMetadata {
 		return null;
 	}
 	
-	static DatasetMetadata noMetadata(String name) {
-		return new DatasetMetadata(name, null, emptyMap(), now());
-	}
 }

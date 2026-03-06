@@ -16,8 +16,8 @@ import org.usf.jquery.core.ColumnProxy;
 import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Operator;
-import org.usf.jquery.core.TypedComparator;
-import org.usf.jquery.core.TypedOperator;
+import org.usf.jquery.core.ComparatorDefinition;
+import org.usf.jquery.core.OperatorDefinition;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -56,12 +56,12 @@ public final class QueryContext {
 		return ofNullable(currentEnvironment().getColumns().get(name));
 	}
 
-	public Optional<TypedOperator> lookupOperator(String op) {
-		return lookup(Operator.class, TypedOperator.class, op);
+	public Optional<OperatorDefinition> lookupOperator(String op) {
+		return lookup(Operator.class, OperatorDefinition.class, op);
 	}
 	
-	public Optional<TypedComparator> lookupComparator(String cmp) {
-		return lookup(Comparator.class, TypedComparator.class, cmp);
+	public Optional<ComparatorDefinition> lookupComparator(String cmp) {
+		return lookup(Comparator.class, ComparatorDefinition.class, cmp);
 	}
 	
 	static <T,U> Optional<U> lookup(Class<T> clazz, Class<U> type, String name) {

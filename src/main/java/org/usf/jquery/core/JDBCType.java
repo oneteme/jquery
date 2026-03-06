@@ -44,6 +44,13 @@ public enum JDBCType implements JavaType {
 	TIME(Types.TIME, Time.class),
 	TIMESTAMP(Types.TIMESTAMP, Timestamp.class),
 	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class),
+	//check new types
+	UUID(Types.OTHER, java.util.UUID.class),
+	JSON(Types.OTHER, String.class),
+	CLOB(Types.CLOB, String.class),
+	BLOB(Types.BLOB, byte[].class),
+	BINARY(Types.BINARY, byte[].class),
+	//BLOB, CLOB, BINARY, JSON, ...
 	OTHER(Types.OTHER, Object.class) { //readonly
 		@Override
 		public boolean accept(Object o) {

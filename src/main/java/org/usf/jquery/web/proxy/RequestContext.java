@@ -2,6 +2,7 @@ package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -57,10 +58,6 @@ public final class RequestContext {
 	private final TypeRegistry registry;
 
 	// SecurityPolicy(allowLiteralJoin, allowLiteralQuery, ..)
-	
-	public RequestContext(StoreResource store, DatasetResource defaultDataset) {
-		this(defaultDataset, store, emptySet(), new HashMap<>(), new HashMap<>(), new TypeRegistry());
-	}
 
 	public RequestContext(StoreResource store, DatasetResource defaultDataset, TypeRegistry registry) {
 		this(defaultDataset, store, emptySet(), new HashMap<>(), new HashMap<>(), registry);
@@ -92,14 +89,14 @@ public final class RequestContext {
 			return lookupSchemaResource(name, type);
 		}
 		if(match == HIDDEN) {
-			log.warn("resource '{}' of type {} is hidden by store dialect, cannot be used", name, type.getSimpleName());
+			log.warn("resource '{}' of type {} is hidden by store, cannot be used", name, type.getSimpleName());
 			return empty();
 		}
 		try {
 			var mth = store.dialect().getClass().getMethod(name); //no parameter
 			if(nonNull(mth)) {
 				var mod = mth.getModifiers();
-				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod)) {
+				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod) && !isStatic(mod)) {
 					return Optional.of(type.cast(mth.invoke(store.dialect()))); //exposed ?
 				}
 			}

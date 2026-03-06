@@ -5,7 +5,6 @@ import static java.time.Instant.now;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Dialect.DEFAULT_META;
 import static org.usf.jquery.core.JDBCType.fromDataType;
 import static org.usf.jquery.core.Provider.DEFAULT;
 import static org.usf.jquery.core.Provider.parseName;
@@ -41,43 +40,53 @@ import lombok.extern.slf4j.Slf4j;
 public final class DatabaseIntrospector {
 	
 	public static Dialect storeDialect(DataSource ds) {
-		return switch (nonNull(ds) ? fetchProduct(ds) : DEFAULT) {
+		var provider = fetchProduct(ds);
+		return switch (provider) {
 		case H2 -> new H2Dialect();
 		case TERADATA -> new TeradataDialect();
-		default -> DEFAULT_META;
+		default -> new Dialect(provider);
 		};
-}
+	}
 	
 	public static Provider fetchProduct(DataSource ds) {
-		try(var conn = ds.getConnection()) {
-			var name = conn.getMetaData().getDatabaseProductName();
-			return parseName(name);
+		try(var cnx = ds.getConnection()) {
+			var name = cnx.getMetaData().getDatabaseProductName();
+			if(nonNull(name)) {
+				return parseName(name);
+			}
 		}
 		catch(Exception e) {
 			log.warn("error while fetching database product name", e);
-			return null;
 		}
+		return DEFAULT;
 	}
 	
 	public static DatasetMetadata datasetMetadata(String schema, String dataset, Set<String> columns, DataSource ds) {
-		Map<String, ColumnMetadata> map = new HashMap<>();
 		DatasetType type = null;
-		try(var cnx = ds.getConnection()) {
-			columns = insensitiveTreeSet(columns);
-			var meta = cnx.getMetaData();
-			type = datasetType(meta, schema, dataset);
-			if(nonNull(type)) {
-				map = fetchTableMetadata(schema, dataset, columns, meta);
-				if(map.isEmpty()) {
-					map = fetchViewMetadata(schema, dataset, columns, cnx);
+		Map<String, ColumnMetadata> map = new HashMap<>();
+		if(nonNull(ds)) {
+			try(var cnx = ds.getConnection()) {
+				columns = insensitiveTreeSet(columns);
+				var meta = cnx.getMetaData();
+				type = datasetType(meta, schema, dataset);
+				if(nonNull(type)) {
+					map = fetchTableMetadata(schema, dataset, columns, meta);
+					if(map.isEmpty()) {
+						map = fetchViewMetadata(schema, dataset, columns, cnx);
+					}
 				}
 			}
-			for(var col : columns) {
-				map.putIfAbsent(col, null); //if column metadata is missing, put null value to preserve column declaration 
+			catch (SQLException e) {
+				log.error("error while fetching metadata for dataset '{}'", dataset, e);
+			}
+			catch (Exception e) {
+				log.error("unexpected error while fetching metadata for dataset '{}'", dataset, e);
+				type = null;
+				map.clear();
 			}
 		}
-		catch (Exception e) {
-			log.error("error while fetching metadata for dataset '{}'", dataset, e);
+		for(var col : columns) {
+			map.putIfAbsent(col, null); //if column metadata is missing, put null value to preserve column declaration 
 		}
 		return new DatasetMetadata(dataset, type, unmodifiableMap(map), now());
 	}

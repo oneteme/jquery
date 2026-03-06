@@ -12,7 +12,6 @@ import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.DBObject.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.datasetMetadata;
-import static org.usf.jquery.web.proxy.DatasetMetadata.noMetadata;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 
 import java.lang.reflect.Method;
@@ -135,10 +134,7 @@ final class DatasetProxy extends ResourceProxy {
 			.map(m-> m.getAnnotation(Bind.class).value())
 			.collect(toSet());
 			
-			var meta = nonNull(ds) 
-					? datasetMetadata(store, view.getName(), cols, ds) 
-					: noMetadata(view.getName());
-			
+			var meta = datasetMetadata(store, view.getName(), cols, ds);
 			return type.cast(newProxyInstance(DatasetProxy.class.getClassLoader(), new Class<?>[]{type}, 
 					new DatasetProxy(view, map, meta)));
 		}

@@ -3,6 +3,7 @@ package org.usf.jquery.web.proxy;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 
+import java.lang.reflect.Method;
 import java.time.Instant;
 import java.time.LocalDate;
 
@@ -12,6 +13,7 @@ import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.web.proxy.Bind.BindType;
+import org.usf.jquery.web.proxy.Typed.TypeResolver;
 
 interface DatasetSample extends DatasetResource {
     
@@ -47,7 +49,7 @@ interface DatasetSample extends DatasetResource {
     }
 
     @Expose(identity="rattachement", description="")
-    default JoinsClause ratt(LocalDate o1, Instant o2) {
+    default JoinsClause ratt(LocalDate o2) {
     	return null;
     }
 
@@ -55,4 +57,7 @@ interface DatasetSample extends DatasetResource {
     default Partition latestEdit(){
     	return null;
     }    
+   
+    
+    
 }

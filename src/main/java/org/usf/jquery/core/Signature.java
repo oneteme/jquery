@@ -2,11 +2,10 @@ package org.usf.jquery.core;
 
 import static java.lang.Math.min;
 import static java.lang.String.format;
-import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.Utils.isEmpty;
 
+import java.util.function.BiFunction;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Stream;
 
@@ -23,29 +22,33 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class ParameterSet { //there is no Singleton implementation, dummy sonar rule
+public final class Signature { 
 
-	static final ParameterSet NO_PARAM = new ParameterSet(0, new Parameter[0]);
+	//there is no Singleton implementation, dummy sonar rule
+	static final Signature NO_PARAM = new Signature(0, new Parameter[0]);
 	
-	private final int nReqArgs;
+	private final int minArgs;
 	private final Parameter[] parameters;
 
-	public Object[] assertArguments(Object... args) {
-		var arr = isNull(args) ? new Object[0] : args;
-		eachParameter(arr.length, (p,i)-> {
-			if(!p.accept(i, arr)) {
-				throw badArgumentTypeException(arr[i], p.types(arr));
+	public void match(Object... args) {
+		var nArgs = isNull(args) ? 0 : args.length;
+		traverse(checkArgsCount(nArgs), (p,i)-> {
+			if(!p.accept(i, args)) {
+				throw badArgumentTypeException(args[i], p.types(args));
 			}
 		});
-		return arr;
 	}
 
-	public void eachParameter(int nArgs, ObjIntConsumer<Parameter> cons) {
-		if(nArgs < nReqArgs || (nArgs > parameters.length && !isVarags())) {
-			throw badArgumentCountException(nArgs, nReqArgs);
-		}
+	public Object[] buildArgs(int nArgs, BiFunction<Integer, JavaType[], Object> fn) {
+		var args = new Object[checkArgsCount(nArgs)];
+		traverse(args.length, (p,i)-> args[i] = fn.apply(i, p.types(args)));
+		return args;
+	}
+
+	void traverse(int nArgs, ObjIntConsumer<Parameter> cons) {
 		var i=0;
-		for(; i<min(nArgs, parameters.length); i++) {
+		var min = min(nArgs, parameters.length);
+		for(; i<min; i++) {
 			cons.accept(parameters[i], i);
 		}
 		if(i<nArgs) {
@@ -55,12 +58,19 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 			}
 		}
 	}
+	
+	int checkArgsCount(int nArgs) {
+		if(nArgs < minArgs || (nArgs > parameters.length && !isVarags())) {
+			throw new SignatureMismatchException(format("expected %d%s arguments, but was %d", minArgs, isVarags() ? "+" : "", nArgs));
+		}
+		return nArgs;
+	}
 
 	public boolean isVarags() {
 		return parameters.length > 0 && parameters[parameters.length-1].isVarargs(); 
 	}
 
-	public static ParameterSet ofParameters(Parameter... parameters) {
+	public static Signature compile(Parameter... parameters) {
 		if(isNull(parameters)) {
 			return NO_PARAM;
 		}
@@ -79,19 +89,19 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 		if(i<parameters.length) {
 			throw new IllegalArgumentException("required parameter cannot follow optional parameter");
 		}
-		return new ParameterSet(nReqArgs, parameters);
+		return new Signature(nReqArgs, parameters);
 	}
 
 	@Override
 	public String toString() {
 		var s = "";
 		if(parameters.length > 0) {
-			s = Stream.of(parameters).limit(nReqArgs).map(Parameter::toString).collect(joining(", "));
-			if(parameters.length > nReqArgs) {
-				if(nReqArgs > 0) {
+			s = Stream.of(parameters).limit(minArgs).map(Parameter::toString).collect(joining(", "));
+			if(parameters.length > minArgs) {
+				if(minArgs > 0) {
 					s += ", ";
 				}
-				s += "[" + Stream.of(parameters).skip(nReqArgs).map(Parameter::toString).collect(joining(", "));
+				s += "[" + Stream.of(parameters).skip(minArgs).map(Parameter::toString).collect(joining(", "));
 				if(parameters[parameters.length-1].isVarargs()) {
 					s += "...";
 				}
@@ -101,13 +111,9 @@ public final class ParameterSet { //there is no Singleton implementation, dummy 
 		return "(" + s + ")";
 	}
 	
-	private static BadArgumentException badArgumentCountException(int count, int expect) {
-		return new BadArgumentException(format("expected %d arguments, but was %d", expect, count));
-	}
-
-	private static BadArgumentException badArgumentTypeException(Object obj, JavaType[] types) {
-		var exp = isEmpty(types) ? "any" : stream(types).map(Object::toString).collect(joining("|"));
+	public static SignatureMismatchException badArgumentTypeException(Object obj, JavaType[] types) {
+		var exp = Parameter.toString(types);
 		var arg = obj instanceof Typed t ? t.getType() : JDBCType.typeOf(obj).orElse(null);
-		return new BadArgumentException(format("expected argument of type %s, but was %s [%s]", exp, obj, arg));
+		return new SignatureMismatchException(format("expected argument of type %s, but was %s [%s]", exp, obj, arg));
 	}
 }

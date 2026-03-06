@@ -23,52 +23,52 @@ public final class TeradataDialect extends Dialect {
 	}
 
 	@Override
-	public TypedOperator bitAnd() {
-		return new TypedOperator(BIGINT, function("BITAND"), required(BIGINT), required(BIGINT));
+	public OperatorDefinition bitAnd() {
+		return new OperatorDefinition(BIGINT, function("BITAND"), required(BIGINT), required(BIGINT));
 	}
 
 	@Override
-	public TypedOperator bitOr() {
-		return new TypedOperator(BIGINT, function("BITOR"), required(BIGINT), required(BIGINT));
+	public OperatorDefinition bitOr() {
+		return new OperatorDefinition(BIGINT, function("BITOR"), required(BIGINT), required(BIGINT));
 	}
 
 	@Override
-	public TypedOperator bitXor() {
-		return new TypedOperator(BIGINT, function("BITXOR"), required(BIGINT), required(BIGINT));
+	public OperatorDefinition bitXor() {
+		return new OperatorDefinition(BIGINT, function("BITXOR"), required(BIGINT), required(BIGINT));
 	}
 
 	@Override
-	public TypedOperator bitNot() {
-		return new TypedOperator(BIGINT, function("BITNOT"), required(BIGINT));
+	public OperatorDefinition bitNot() {
+		return new OperatorDefinition(BIGINT, function("BITNOT"), required(BIGINT));
 	}
 
 	@Override
-	public TypedOperator bitShiftLeft() {
-		return new TypedOperator(BIGINT, function("SHIFTLEFT"), required(BIGINT), required(INTEGER));
+	public OperatorDefinition bitShiftLeft() {
+		return new OperatorDefinition(BIGINT, function("SHIFTLEFT"), required(BIGINT), required(INTEGER));
 	}
 
 	@Override
-	public TypedOperator bitShiftRight() {
-		return new TypedOperator(BIGINT, function("SHIFTRIGHT"), required(BIGINT), required(INTEGER));
+	public OperatorDefinition bitShiftRight() {
+		return new OperatorDefinition(BIGINT, function("SHIFTRIGHT"), required(BIGINT), required(INTEGER));
 	}
 
 	@Override
-	public TypedOperator week() {
-		return new TypedOperator(INTEGER, function("TD_WEEK_OF_YEAR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	public OperatorDefinition week() {
+		return new OperatorDefinition(INTEGER, function("TD_WEEK_OF_YEAR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 
 	@Override
-	public TypedOperator dow() {
-		return new TypedOperator(INTEGER, function("TD_DAY_OF_WEEK"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	public OperatorDefinition dow() {
+		return new OperatorDefinition(INTEGER, function("TD_DAY_OF_WEEK"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	@Override
-	public TypedOperator doy() {
-		return new TypedOperator(INTEGER, function("TD_DAY_OF_YEAR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	public OperatorDefinition doy() {
+		return new OperatorDefinition(INTEGER, function("TD_DAY_OF_YEAR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	@Override
-	public TypedOperator replace() {
-		return new TypedOperator(VARCHAR, function("OREPLACE"), required(VARCHAR), required(VARCHAR), required(VARCHAR));
+	public OperatorDefinition replace() {
+		return new OperatorDefinition(VARCHAR, function("OREPLACE"), required(VARCHAR), required(VARCHAR), required(VARCHAR));
 	}
 }

@@ -24,20 +24,21 @@ public final class ViewJoin implements DBObject {
 	
 	private final JoinType type;
 	private final DBView view;
-	private final Criteria[] filters;
+	private final Criteria[] criteria;
 	
-	ViewJoin(JoinType type, DBView view, Criteria[] filters) {
+	ViewJoin(JoinType type, DBView view, Criteria[] criteria) {
 		this.type = type;
 		this.view = view;
-		this.filters = type == CROSS 
-				? filters 
-				: requireAtLeastNArgs(1, filters, ViewJoin.class::getSimpleName);
+		this.criteria = criteria;
 	}
 	
 	@Override
 	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
+		if(type != CROSS) {
+			requireAtLeastNArgs(1, criteria, ViewJoin.class::getSimpleName);
+		}
 		query.declare(view); //if filters is null
-		return DBObject.composeNested(query, groupKeys, filters);
+		return DBObject.composeNested(query, groupKeys, criteria);
 	}
 
 	@Override
@@ -45,8 +46,8 @@ public final class ViewJoin implements DBObject {
 		requireNoArgs(args, ViewJoin.class::getSimpleName);
 		var res = view.resolveView(query);
 		query.append(type.name()).append(" JOIN ").append(res).appendSpace().appendViewAlias(res);
-		if(!isEmpty(filters)) {
-			query.append(" ON ").appendEach(AND.sql(), filters);
+		if(!isEmpty(criteria)) {
+			query.append(" ON ").appendEach(AND.sql(), criteria);
 		} //else cross join
 	}
 	

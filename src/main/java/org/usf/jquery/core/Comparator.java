@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Arrays.copyOfRange;
-import static org.usf.jquery.core.ArgTypeRef.firstArgJdbcType;
+import static org.usf.jquery.core.TypeResolver.firstArgType;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -28,125 +28,126 @@ public interface Comparator extends DBProcessor {
 		return new SimpleCriteria(args[0], 
 				expression(copyOfRange(args, 1, args.length))); // no type
 	}
+
+	default SimplePredicate expression(Object... right) {
+		return new SimplePredicate(this, right, null);
+	}
+	
+	@Deprecated
+	default SimplePredicate expression(Adjuster<Object[]> adj, Object... initalValue) {
+		return new SimplePredicate(this, initalValue, adj);
+	}
 	
 	default boolean is(Class<? extends Comparator> type) { 
 		return type.isInstance(this);
 	}
 
-	default SimplePredicate expression(Adjuster<Object[]> adj, Object... initalValue) {
-		return new SimplePredicate(this, initalValue, adj);
-	}
-
-	default SimplePredicate expression(Object... right) {
-		return new SimplePredicate(this, right, null);
-	}
-
 	//basic comparator
 	
-	static TypedComparator eq() {
-		return new TypedComparator(basicComparator("="), required(), required(firstArgJdbcType()));
+	static ComparatorDefinition eq() {
+		return new ComparatorDefinition(basicComparator("="), required(), required(firstArgType()));
 	}
 
-	static TypedComparator ne() {
-		return new TypedComparator(basicComparator("<>"), required(), required(firstArgJdbcType()));
+	static ComparatorDefinition ne() {
+		return new ComparatorDefinition(basicComparator("<>"), required(), required(firstArgType()));
 	}
 	
-	static TypedComparator lt() {
-		return new TypedComparator(basicComparator("<"), required(), required(firstArgJdbcType()));
+	static ComparatorDefinition lt() {
+		return new ComparatorDefinition(basicComparator("<"), required(), required(firstArgType()));
 	}
 
-	static TypedComparator le() {
-		return new TypedComparator(basicComparator("<="), required(), required(firstArgJdbcType()));
+	static ComparatorDefinition le() {
+		return new ComparatorDefinition(basicComparator("<="), required(), required(firstArgType()));
 	}
 
-	static TypedComparator gt() {
-		return new TypedComparator(basicComparator(">"), required(), required(firstArgJdbcType()));
+	static ComparatorDefinition gt() {
+		return new ComparatorDefinition(basicComparator(">"), required(), required(firstArgType()));
 	}
 
-	static TypedComparator ge() {
-		return new TypedComparator(basicComparator(">="), required(), required(firstArgJdbcType()));
+	static ComparatorDefinition ge() {
+		return new ComparatorDefinition(basicComparator(">="), required(), required(firstArgType()));
 	}
 	
-	static TypedComparator between() {
-		return new TypedComparator(rangeComparator("BETWEEN"), required(), required(firstArgJdbcType()), required(firstArgJdbcType()));
+	static ComparatorDefinition between() {
+		return new ComparatorDefinition(rangeComparator("BETWEEN"), required(), required(firstArgType()), required(firstArgType()));
 	}
 	
 	//string comparator
 	
-	static TypedComparator startsLike() {
+	static ComparatorDefinition startsLike() {
 		return like(o-> o + "%");
 	}
 
-	static TypedComparator endsLike() {
+	static ComparatorDefinition endsLike() {
 		return like(o-> "%" + o);
 	}
 
-	static TypedComparator contentLike() {
+	static ComparatorDefinition contentLike() {
 		return like(o-> "%" + o + "%");
 	}
 	
-	static TypedComparator startsNotLike() {
+	static ComparatorDefinition startsNotLike() {
 		return notLike(o-> o + "%");
 	}
 
-	static TypedComparator endsNotLike() {
+	static ComparatorDefinition endsNotLike() {
 		return notLike(o-> "%" + o);
 	}
 
-	static TypedComparator contentNotLike() {
+	static ComparatorDefinition contentNotLike() {
 		return notLike(o-> "%" + o + "%");
 	}
 
-	static TypedComparator like() {
+	static ComparatorDefinition like() {
 		return like(null);
 	}
 	
-	static TypedComparator iLike() {
+	static ComparatorDefinition iLike() {
 		return iLike(null);
 	}
 	
-	static TypedComparator notLike() {
+	static ComparatorDefinition notLike() {
 		return notLike(null);
 	}
 
-	static TypedComparator notILike() {
+	static ComparatorDefinition notILike() {
 		return notILike(null);
 	}
 	
-	static TypedComparator like(UnaryOperator<Object> wilcard) {
-		return new TypedComparator(stringComparator("LIKE", wilcard), required(VARCHAR), required(VARCHAR));
+	static ComparatorDefinition like(UnaryOperator<Object> wilcard) {
+		return new ComparatorDefinition(stringComparator("LIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	static TypedComparator iLike(UnaryOperator<Object> wilcard) {
-		return new TypedComparator(stringComparator("ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
+	static ComparatorDefinition iLike(UnaryOperator<Object> wilcard) {
+		return new ComparatorDefinition(stringComparator("ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	static TypedComparator notLike(UnaryOperator<Object> wilcard) {
-		return new TypedComparator(stringComparator("NOT LIKE", wilcard), required(VARCHAR), required(VARCHAR));
+	static ComparatorDefinition notLike(UnaryOperator<Object> wilcard) {
+		return new ComparatorDefinition(stringComparator("NOT LIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	static TypedComparator notILike(UnaryOperator<Object> wilcard) {
-		return new TypedComparator(stringComparator("NOT ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
+	static ComparatorDefinition notILike(UnaryOperator<Object> wilcard) {
+		return new ComparatorDefinition(stringComparator("NOT ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 	
 	//null comparator
 	
-	static TypedComparator isNull() {
-		return new TypedComparator(nullComparator("IS NULL"), required());
+	static ComparatorDefinition isNull() {
+		return new ComparatorDefinition(nullComparator("IS NULL"), required());
 	}
 
-	static TypedComparator notNull() { //isNotNUll
-		return new TypedComparator(nullComparator("IS NOT NULL"), required());
+	static ComparatorDefinition notNull() { //isNotNUll
+		return new ComparatorDefinition(nullComparator("IS NOT NULL"), required());
 	}
 	
 	//in comparator
 
-	static TypedComparator in() {
-		return new TypedComparator(inComparator("IN"), required(), required(firstArgJdbcType()), varargs(firstArgJdbcType()));
+	static ComparatorDefinition in() {
+		return new ComparatorDefinition(inComparator("IN"), required(), required(firstArgType()), varargs(firstArgType()));
 	}
 	
-	static TypedComparator notIn() {
-		return new TypedComparator(inComparator("NOT IN"), required(), required(firstArgJdbcType()), varargs(firstArgJdbcType()));
+	static ComparatorDefinition notIn() {
+		return new ComparatorDefinition(inComparator("NOT IN"), required(), required(firstArgType()), varargs(firstArgType()));
 	}
 	
 	static BasicComparator basicComparator(final String name) {

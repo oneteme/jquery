@@ -1,9 +1,9 @@
 package org.usf.jquery.core;
 
 import static java.util.Arrays.stream;
-import static java.util.Objects.isNull;
 import static org.usf.jquery.core.Operators.function;
 
+import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -55,14 +55,11 @@ public enum Provider {
 		return op;
 	}
 	
-	public static Provider parseName(String name) {
-		if(isNull(name)) {
-			return DEFAULT;
-		}
+	public static Provider parseName(@NonNull String name) {
 		var v = name.toUpperCase();
 		return stream(values())
 				.filter(d-> d.name().contains(v))
 				.findAny()
-				.orElse(DEFAULT);
+				.orElseThrow(()-> new IllegalArgumentException("unsupported database product: " + name));
 	}
 }

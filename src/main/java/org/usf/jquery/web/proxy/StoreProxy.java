@@ -4,6 +4,7 @@ import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.storeDialect;
@@ -69,8 +70,12 @@ public final class StoreProxy extends ResourceProxy {
 		return name;
 	}
 
-	@SuppressWarnings("unchecked")
 	static <T extends StoreResource> T createStore(Class<T> clazz, DataSource ds) {
+		return createStore(clazz, ds, null);
+	}
+	
+	@SuppressWarnings("unchecked")
+	static <T extends StoreResource> T createStore(Class<T> clazz, DataSource ds, Dialect dialect) {
 		if(clazz.isInterface()) {
 			var bnd = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
 			var map = discoverExposedMethods(clazz, (t,c)-> DatasetResource.class.isAssignableFrom(c));
@@ -78,8 +83,11 @@ public final class StoreProxy extends ResourceProxy {
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
 					.parallel().collect(toMap(ResourceIntrospector::resolveIdentifier, 
 							m-> createDataset((Class<? extends DatasetResource>) m.getReturnType(), m.getAnnotation(Bind.class), bnd, ds)));
+			if(isNull(dialect)) {
+				dialect = storeDialect(ds);
+			}
 			return clazz.cast(newProxyInstance(StoreProxy.class.getClassLoader(), new Class<?>[]{clazz}, 
-					new StoreProxy(bnd, map, sub, storeDialect(ds), ds)));
+					new StoreProxy(bnd, map, sub, dialect, ds)));
 		}
 		throw new ResourceMappingException("schema must be an interface : " + clazz);
 	}
