@@ -18,27 +18,27 @@ public interface Comparators {
 	//basic comparator
 	
 	default ComparatorDefinition eq() {
-		return new ComparatorDefinition(basicComparator("="), required(), required(firstArgType()));
+		return new ComparatorDefinition("eq", basicComparator("="), required(), required(firstArgType()));
 	}
 
 	default ComparatorDefinition ne() {
-		return new ComparatorDefinition(basicComparator("<>"), required(), required(firstArgType()));
+		return new ComparatorDefinition("ne", basicComparator("<>"), required(), required(firstArgType()));
 	}
 	
 	default ComparatorDefinition lt() {
-		return new ComparatorDefinition(basicComparator("<"), required(), required(firstArgType()));
+		return new ComparatorDefinition("lt", basicComparator("<"), required(), required(firstArgType()));
 	}
 
 	default ComparatorDefinition le() {
-		return new ComparatorDefinition(basicComparator("<="), required(), required(firstArgType()));
+		return new ComparatorDefinition("le", basicComparator("<="), required(), required(firstArgType()));
 	}
 
 	default ComparatorDefinition gt() {
-		return new ComparatorDefinition(basicComparator(">"), required(), required(firstArgType()));
+		return new ComparatorDefinition("gt", basicComparator(">"), required(), required(firstArgType()));
 	}
 
 	default ComparatorDefinition ge() {
-		return new ComparatorDefinition(basicComparator(">="), required(), required(firstArgType()));
+		return new ComparatorDefinition("ge", basicComparator(">="), required(), required(firstArgType()));
 	}
 	
 	default ComparatorDefinition between() {
@@ -87,19 +87,19 @@ public interface Comparators {
 		return notILike(null);
 	}
 	
-	default ComparatorDefinition like(UnaryOperator<Object> wilcard) {
+	default ComparatorDefinition like(UnaryOperator<String> wilcard) {
 		return new ComparatorDefinition(stringComparator("LIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	default ComparatorDefinition iLike(UnaryOperator<Object> wilcard) {
+	default ComparatorDefinition iLike(UnaryOperator<String> wilcard) {
 		return new ComparatorDefinition(stringComparator("ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	default ComparatorDefinition notLike(UnaryOperator<Object> wilcard) {
+	default ComparatorDefinition notLike(UnaryOperator<String> wilcard) {
 		return new ComparatorDefinition(stringComparator("NOT LIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 
-	default ComparatorDefinition notILike(UnaryOperator<Object> wilcard) {
+	default ComparatorDefinition notILike(UnaryOperator<String> wilcard) {
 		return new ComparatorDefinition(stringComparator("NOT ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
 	}
 	
@@ -127,7 +127,7 @@ public interface Comparators {
 		return ()-> name;
 	}
 	
-	static StringComparator stringComparator(final String name, UnaryOperator<Object> wilcard) {
+	static StringComparator stringComparator(final String name, UnaryOperator<String> wilcard) {
 		if(Objects.isNull(wilcard)) {
 			return ()-> name;
 		}
@@ -137,11 +137,8 @@ public interface Comparators {
 				return name;
 			}
 			@Override
-			public Object wildcardArg(Object o) {
-				if(Objects.isNull(o) || o instanceof DBObject) {
-					throw new UnsupportedOperationException("cannot wildcards parameter: " + o);
-				}
-				return wilcard.apply(o);
+			public Object wildcardArg(String s) {
+				return wilcard.apply(s);
 			}
 		};
 	}

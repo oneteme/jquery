@@ -12,8 +12,7 @@ import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Column.allColumns;
-import static org.usf.jquery.core.Comparator.eq;
-import static org.usf.jquery.core.Comparator.in;
+import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.FILTER;
@@ -46,13 +45,13 @@ import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.OperatorDefinition;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
-import org.usf.jquery.core.Signature;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
+import org.usf.jquery.core.Signature;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.core.OperatorDefinition;
 import org.usf.jquery.core.ViewJoin;
 
 import lombok.AccessLevel;
@@ -318,7 +317,7 @@ final class EntryChain {
 			e = e.next;
 		}
 		if(!isEmpty(outerArgs)) {
-			var fn = outerArgs.length == 1 ? eq() : in();
+			var fn = outerArgs.length == 1 ? getDialect().eq() : getDialect().in();
 			e = new EntryChain(fn.getComparator().id(), false, outerArgs, null, null); 
 			r.col = fn.invoke(e.parseArgs(ctx, r.col, fn.getSignature())); //no chain
 		}

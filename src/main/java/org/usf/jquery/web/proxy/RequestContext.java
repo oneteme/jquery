@@ -15,6 +15,8 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
+import static org.usf.jquery.core.Parameter.match;
+import static org.usf.jquery.core.Signature.badArgumentTypeException;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.proxy.Resource.Match.HIDDEN;
 import static org.usf.jquery.web.proxy.Resource.Match.VALID;
@@ -30,8 +32,11 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.Column;
+import org.usf.jquery.core.Definition;
+import org.usf.jquery.core.Dialect;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JavaType;
+import org.usf.jquery.core.SignatureMismatchException;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
@@ -58,9 +63,13 @@ public final class RequestContext {
 	private final TypeRegistry registry;
 
 	// SecurityPolicy(allowLiteralJoin, allowLiteralQuery, ..)
-
+	
 	public RequestContext(StoreResource store, DatasetResource defaultDataset, TypeRegistry registry) {
 		this(defaultDataset, store, emptySet(), new HashMap<>(), new HashMap<>(), registry);
+	}
+	
+	public Dialect getDialect(){
+		return store.dialect();
 	}
 	
 	public Optional<DatasetResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
@@ -84,7 +93,11 @@ public final class RequestContext {
 	}
 	
 	public <T> Optional<T> lookupDialectResource(String name, Class<T> type) {
-		var match = store.exposes(name, type);
+		return lookupDialectResource(name, type, null);
+	}
+	
+	public <T> Optional<T> lookupDialectResource(String name, Class<T> type, Object composer) {
+		var match = store.exposes(name, type); //cannot override composer method
 		if(match == VALID) {
 			return lookupSchemaResource(name, type);
 		}
@@ -93,17 +106,23 @@ public final class RequestContext {
 			return empty();
 		}
 		try {
-			var mth = store.dialect().getClass().getMethod(name); //no parameter
+			var mth = nonNull(composer) 
+					? store.dialect().getClass().getMethod(name, composer.getClass())
+					: store.dialect().getClass().getMethod(name); //no parameter
 			if(nonNull(mth)) {
 				var mod = mth.getModifiers();
-				if(mth.getReturnType() == type && mth.getParameterCount()==0 && isPublic(mod) && !isStatic(mod)) {
-					return Optional.of(type.cast(mth.invoke(store.dialect()))); //exposed ?
+				var npr = nonNull(composer) ? 1 : 0;
+				if(type.isAssignableFrom(mth.getReturnType()) && mth.getParameterCount()== npr && isPublic(mod) && !isStatic(mod)) {
+					var res = nonNull(composer) 
+							? mth.invoke(store.dialect(), composer)
+							: mth.invoke(store.dialect());
+					return Optional.of(type.cast(res));
 				}
 			}
 		} catch (IllegalAccessException | InvocationTargetException e) {
 			log.warn("failed to invoke method '{}' of type {} for lookup, reason: {}", name, type.getSimpleName(), e.getMessage());
 		}
-		catch (Exception e) {
+		catch (Exception e) { //NoSuchMethodException, SecurityException
 			//do nothing, return empty
 		}
 		return empty();
@@ -141,7 +160,27 @@ public final class RequestContext {
 		});
 	}
 	
-	public Object resolve(Entry entry, JavaType... types) {
+	public Object[] resolveArgs(Entry[] args, Object res, Definition<?> def){ //TODO parse on demand
+		int shift = nonNull(res) ? 1 : 0;
+		try {
+			return def.getSignature().buildArgs(shift + (nonNull(args) ? args.length : 0), (idx,types)-> {
+				if(idx==0 && nonNull(res)) {
+					if(match(res, types)) {
+						return res;
+					}
+					throw badArgumentTypeException(res, types);
+				}
+				else {
+					return resolveEntry(args[idx-shift], types);
+				}
+			});
+		}
+		catch (SignatureMismatchException e) {
+			throw new EntryParseException("cannot resolve arguments for " + def, e);
+		}
+	}
+	
+	public Object resolveEntry(Entry entry, JavaType... types) {
 		if(entry.isVariable() && (isEmpty(types) || Stream.of(types).allMatch(JDBCType.class::isInstance))) {
 			try {
 				return resolve(entry, Column.class);
@@ -173,7 +212,7 @@ public final class RequestContext {
 	}
 
 	@SuppressWarnings("unchecked")
-	public <T> T resolveAll(Entry[] args, Class<T> type) {
+	public <T> T resolveArray(Entry[] args, Class<T> type) {
 		if(nonNull(args)) {
 			if(type.isArray()) {
 				var arr = newInstance(type.componentType(), args.length);

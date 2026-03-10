@@ -1,9 +1,9 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import lombok.NonNull;
-
 /**
  * 
  * @author u$f
@@ -20,60 +20,61 @@ public interface Predicate extends DBObject, Chainable<Predicate> {
 	}
 	
 	static Predicate eq(Object right) {
-		return Comparator.eq().applyAsExpression(right);
+		return getDialect().eq().invokeAsExpression(right);
 	}
 
 	static Predicate ne(Object right) {
-		return Comparator.ne().applyAsExpression(right);
+		return getDialect().ne().invokeAsExpression(right);
 	}
 	
 	static Predicate lt(Object right) {
-		return Comparator.lt().applyAsExpression(right);
+		return getDialect().lt().invokeAsExpression(right);
 	}
 
 	static Predicate le(Object right) {
-		return Comparator.le().applyAsExpression(right);
+		return getDialect().le().invokeAsExpression(right);
 	}
 
 	static Predicate gt(Object right) {
-		return Comparator.gt().applyAsExpression(right);
+		return getDialect().gt().invokeAsExpression(right);
 	}
 
 	static Predicate ge(Object right) {
-		return Comparator.ge().applyAsExpression(right);
+		return getDialect().ge().invokeAsExpression(right);
 	}
 	
 	static Predicate like(Object right) {
-		return Comparator.like().applyAsExpression(right);
+		return getDialect().like().invokeAsExpression(right);
 	}
 	
 	static Predicate iLike(Object right) {
-		return Comparator.iLike().applyAsExpression(right);
+		return getDialect().iLike().invokeAsExpression(right);
 	}
 
 	static Predicate notLike(Object right) {
-		return Comparator.notLike().applyAsExpression(right);
+		return getDialect().notLike().invokeAsExpression(right);
 	}
 
 	static Predicate notILike(Object right) {
-		return Comparator.notILike().applyAsExpression(right);
+		return getDialect().notILike().invokeAsExpression(right);
 	}
 
 	static Predicate isNull() {
-		return Comparator.isNull().applyAsExpression();
+		return getDialect().isNull().invokeAsExpression();
 	}
 
 	static Predicate isNotNull() {
-		return Comparator.notNull().applyAsExpression();
+		return getDialect().notNull().invokeAsExpression();
 	}
 
 	@SuppressWarnings("unchecked")
 	static <T> Predicate in(@NonNull T... right) {
-		return Comparator.in().applyAsExpression((Object[])right);
+		return getDialect().in().invokeAsExpression((Object[])right);
 	}
 	
 	@SuppressWarnings("unchecked")
 	static <T> Predicate notIn(@NonNull T... right) {
-		return Comparator.notIn().applyAsExpression((Object[])right);
+		return getDialect().notIn().invokeAsExpression((Object[])right);
 	}
+	
 }

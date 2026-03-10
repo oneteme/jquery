@@ -10,16 +10,21 @@ import lombok.Getter;
  *
  */
 @Getter
-public final class ComparatorDefinition extends Definition<SimpleCriteria> {
+public final class ComparatorDefinition extends Definition<Criteria> {
 
 	private final Comparator comparator;
 	
 	public ComparatorDefinition(Comparator comparator, Parameter... parameters) {
-		super(comparator.id(), BOOLEAN, (type,args)-> comparator.filter(args), parameters);
+		this(comparator.id(), comparator, parameters);
+	}
+
+	public ComparatorDefinition(String name, Comparator comparator, Parameter... parameters) {
+		super(name, BOOLEAN, comparator, parameters);
 		this.comparator = comparator;
 	}
 	
-	public SimplePredicate applyAsExpression(Object... right) {
-		return comparator.expression(right);  //cannot assertArguments because no left operand
+	//TODO cannot verify signature here, but it will be verified at runtime when invoked as criteria
+	public SimplePredicate invokeAsExpression(Object... right) {
+		return comparator.expression(right);  
 	}
 }

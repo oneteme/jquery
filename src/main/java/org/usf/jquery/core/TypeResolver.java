@@ -18,6 +18,6 @@ public interface TypeResolver extends Function<Object[], JavaType> {
 	}
 	
 	static TypeResolver argTypeAt(int index) {
-		return arr-> typeOf(requireAtLeastNArgs(index, arr, TypeResolver.class::getSimpleName)[index]).orElse(null);
+		return arr-> typeOf(requireAtLeastNArgs(index+1, arr, TypeResolver.class::getSimpleName)[index]).orElse(null);
 	}
 }

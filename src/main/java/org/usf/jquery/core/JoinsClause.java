@@ -6,11 +6,15 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 @Getter
-@RequiredArgsConstructor
 public final class JoinsClause implements DBObject {
 
 	private final ViewJoin[] joins;
 
+	public JoinsClause(ViewJoin... joins) {
+		super();
+		this.joins = joins;
+	}
+	
 	@Override
 	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
 		return 0; //TODO

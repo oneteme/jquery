@@ -26,7 +26,6 @@ public final class Parameters {
 	public static final String LIMIT_PARAM = "limit";
 	public static final String OFFSET_PARAM = "offset";
 	//query parameter
-	@Deprecated(since = "5.0.0", forRemoval = true)
 	public static final String SELECT_OPR = "select";
 	@Deprecated(since = "5.0.0", forRemoval = true)
 	public static final String FILTER_OPR = "filter";

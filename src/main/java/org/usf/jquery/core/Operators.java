@@ -24,19 +24,19 @@ public interface Operators {
 	//Arithmetic operations
 
 	default OperatorDefinition plus() {
-		return new OperatorDefinition(firstArgType(), operator("+"), required(), required(firstArgType()));
+		return new OperatorDefinition("plus", firstArgType(), operator("+"), required(), required(firstArgType()));
 	}
 
 	default OperatorDefinition minus() {
-		return new OperatorDefinition(firstArgType(), operator("-"), required(), required(firstArgType())); //date|datetime
+		return new OperatorDefinition("minus", firstArgType(), operator("-"), required(), required(firstArgType())); //date|datetime
 	}
 
 	default OperatorDefinition multiply() {
-		return new OperatorDefinition(firstArgType(), operator("*"), required(), required(firstArgType()));
+		return new OperatorDefinition("multiply", firstArgType(), operator("*"), required(), required(firstArgType()));
 	}
 	
 	default OperatorDefinition divide() {
-		return new OperatorDefinition(firstArgType(), operator("/"), required(), required(firstArgType()));
+		return new OperatorDefinition("divide", firstArgType(), operator("/"), required(), required(firstArgType()));
 	}
 	
 	//numeric functions
@@ -84,27 +84,27 @@ public interface Operators {
 	//bitwise functions
 	
 	default OperatorDefinition bitAnd() {
-		return new OperatorDefinition(BIGINT, operator("&"), required(BIGINT), required(BIGINT));
+		return new OperatorDefinition("bitAnd", BIGINT, operator("&"), required(BIGINT), required(BIGINT));
 	}
 	
 	default OperatorDefinition bitOr() {
-		return new OperatorDefinition(BIGINT, operator("|"), required(BIGINT), required(BIGINT));
+		return new OperatorDefinition("bitOr", BIGINT, operator("|"), required(BIGINT), required(BIGINT));
 	}
 	
 	default OperatorDefinition bitXor() {
-		return new OperatorDefinition(BIGINT, operator("^"), required(BIGINT), required(BIGINT));
+		return new OperatorDefinition("bitXor", BIGINT, operator("^"), required(BIGINT), required(BIGINT));
 	}
 	
 	default OperatorDefinition bitNot() {
-		return new OperatorDefinition(BIGINT, operator("~"), required(BIGINT));
+		return new OperatorDefinition("bitNot", BIGINT, operator("~"), required(BIGINT));
 	}
 	
 	default OperatorDefinition bitShiftLeft() {
-		return new OperatorDefinition(BIGINT, operator("<<"), required(BIGINT), required(INTEGER));
+		return new OperatorDefinition("bitShiftLeft", BIGINT, operator("<<"), required(BIGINT), required(INTEGER));
 	}
 	
 	default OperatorDefinition bitShiftRight() {
-		return new OperatorDefinition(BIGINT, operator(">>"), required(BIGINT), required(INTEGER));
+		return new OperatorDefinition("bitShiftRight", BIGINT, operator(">>"), required(BIGINT), required(INTEGER));
 	}
 	
 	//string functions
@@ -255,6 +255,7 @@ public interface Operators {
 		return new OperatorDefinition(firstArgType(), function("COALESCE"), required(), required(firstArgType()));
 	}
 	
+	//TODO syntax ? optional(columns)
 	default OperatorDefinition distinct() {
 		return new OperatorDefinition(firstArgType(), new DistinctOperator(), required());
 	}

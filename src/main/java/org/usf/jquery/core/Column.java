@@ -1,10 +1,9 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
-import static org.usf.jquery.core.Provider.DEFAULT;
-import static org.usf.jquery.core.Stores.getCurrentStore;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -17,8 +16,6 @@ import org.usf.jquery.core.JavaType.Typed;
  *
  */
 public interface Column extends DBObject, Typed {
-	
-	public static final Dialect DEFAULT_DIALECT = new Dialect(DEFAULT);
 	
 	void build(QueryBuilder query);
 	
@@ -42,378 +39,378 @@ public interface Column extends DBObject, Typed {
 	
 	// filters
 	
-	default SimpleCriteria eq(Object value) {
-		return dialect().eq().invoke(this, value);
+	default Criteria eq(Object value) {
+		return getDialect().eq().invoke(this, value);
 	}
 
-	default SimpleCriteria ne(Object value) {
-		return dialect().ne().invoke(this, value);
+	default Criteria ne(Object value) {
+		return getDialect().ne().invoke(this, value);
 	}
 
-	default SimpleCriteria lt(Object value) {
-		return dialect().lt().invoke(this, value);
+	default Criteria lt(Object value) {
+		return getDialect().lt().invoke(this, value);
 	}
 
-	default SimpleCriteria le(Object value) {
-		return dialect().le().invoke(this, value);
+	default Criteria le(Object value) {
+		return getDialect().le().invoke(this, value);
 	}
 
-	default SimpleCriteria gt(Object value) {
-		return dialect().gt().invoke(this, value);
+	default Criteria gt(Object value) {
+		return getDialect().gt().invoke(this, value);
 	}
 
-	default SimpleCriteria ge(Object value) {
-		return dialect().ge().invoke(this, value);
+	default Criteria ge(Object value) {
+		return getDialect().ge().invoke(this, value);
 	}
 
-	default SimpleCriteria between(Object min, Object max) { //included
-		return dialect().between().invoke(this, min, max);
+	default Criteria between(Object min, Object max) { //included
+		return getDialect().between().invoke(this, min, max);
 	}
 	
-	default SimpleCriteria like(Object value) {
-		return dialect().like().invoke(this, value);
+	default Criteria like(Object value) {
+		return getDialect().like().invoke(this, value);
 	}
 	
-	default SimpleCriteria startsLike(Object value) {
-		return dialect().startsLike().invoke(this, value);
+	default Criteria startsLike(Object value) {
+		return getDialect().startsLike().invoke(this, value);
 	}
 
-	default SimpleCriteria endsLike(Object value) {
-		return dialect().endsLike().invoke(this, value);
+	default Criteria endsLike(Object value) {
+		return getDialect().endsLike().invoke(this, value);
 	}
 
-	default SimpleCriteria contentLike(Object value) {
-		return dialect().contentLike().invoke(this, value);
+	default Criteria contentLike(Object value) {
+		return getDialect().contentLike().invoke(this, value);
 	}
 	
-	default SimpleCriteria startsNotLike(Object value) {
-		return dialect().startsNotLike().invoke(this, value);
+	default Criteria startsNotLike(Object value) {
+		return getDialect().startsNotLike().invoke(this, value);
 	}
 
-	default SimpleCriteria endsNotLike(Object value) {
-		return dialect().endsNotLike().invoke(this, value);
+	default Criteria endsNotLike(Object value) {
+		return getDialect().endsNotLike().invoke(this, value);
 	}
 
-	default SimpleCriteria contentNotLike(Object value) {
-		return dialect().contentNotLike().invoke(this, value);
+	default Criteria contentNotLike(Object value) {
+		return getDialect().contentNotLike().invoke(this, value);
 	}
 
-	default SimpleCriteria notLike(Object value) {
-		return dialect().notLike().invoke(this, value);
+	default Criteria notLike(Object value) {
+		return getDialect().notLike().invoke(this, value);
 	}
 
-	default SimpleCriteria ilike(Object value) {
-		return dialect().iLike().invoke(this, value);
+	default Criteria ilike(Object value) {
+		return getDialect().iLike().invoke(this, value);
 	}
 
-	default SimpleCriteria notILike(Object value) {
-		return dialect().notILike().invoke(this, value);
+	default Criteria notILike(Object value) {
+		return getDialect().notILike().invoke(this, value);
 	}
 
-	default SimpleCriteria isNull() {
-		return dialect().isNull().invoke(this);
+	default Criteria isNull() {
+		return getDialect().isNull().invoke(this);
 	}
 
-	default SimpleCriteria notNull() {
-		return dialect().notNull().invoke(this);
+	default Criteria notNull() {
+		return getDialect().notNull().invoke(this);
 	}
 
 	@SuppressWarnings("unchecked")
-	default <T> SimpleCriteria in(T... arr) {
-		return dialect().in().invoke(appendFirst(arr, this)); 
+	default <T> Criteria in(T... arr) {
+		return getDialect().in().invoke(appendFirst(arr, this)); 
 	}
 
 	@SuppressWarnings("unchecked")
-	default <T> SimpleCriteria notIn(T... arr) {
-		return dialect().notIn().invoke(appendFirst(arr, this));
+	default <T> Criteria notIn(T... arr) {
+		return getDialect().notIn().invoke(appendFirst(arr, this));
 	}
 	
-	default SimpleCriteria filter(Predicate exp) {
+	default Criteria filter(Predicate exp) {
 		return new SimpleCriteria(this, exp);
 	}
 	
 	// arithmetic operations
 	
 	default Column plus(Object o) {
-		return dialect().plus().invoke(this, o);
+		return getDialect().plus().invoke(this, o);
 	}
 
 	default Column minus(Object o) {
-		return dialect().minus().invoke(this, o);
+		return getDialect().minus().invoke(this, o);
 	}
 
 	default Column multiply(Object o) {
-		return dialect().multiply().invoke(this, o);
+		return getDialect().multiply().invoke(this, o);
 	}
 
 	default Column divide(Object o) {
-		return dialect().divide().invoke(this, o);
+		return getDialect().divide().invoke(this, o);
 	}
 	
 	//numeric functions
 	
 	default Column sqrt() {
-		return dialect().sqrt().invoke(this);
+		return getDialect().sqrt().invoke(this);
 	}
 	
 	default Column exp() {
-		return dialect().exp().invoke(this);
+		return getDialect().exp().invoke(this);
 	}
 	
 	default Column log() {
-		return dialect().log().invoke(this);
+		return getDialect().log().invoke(this);
 	}
 
 	default Column log(int base) {
-		return dialect().log().invoke(this, base);
+		return getDialect().log().invoke(this, base);
 	}
 	
 	default Column abs() {
-		return dialect().abs().invoke(this);
+		return getDialect().abs().invoke(this);
 	}
 
 	default Column ceil() {
-		return dialect().ceil().invoke(this);
+		return getDialect().ceil().invoke(this);
 	}
 
 	default Column floor() {
-		return dialect().floor().invoke(this);
+		return getDialect().floor().invoke(this);
 	}
 
 	default Column trunc() {
-		return dialect().trunc().invoke(this);
+		return getDialect().trunc().invoke(this);
 	}
 
 	default Column trunc(int digit) {
-		return dialect().trunc().invoke(this, digit);
+		return getDialect().trunc().invoke(this, digit);
 	}
 	
 	default Column round() {
-		return dialect().round().invoke(this);
+		return getDialect().round().invoke(this);
 	}
 	
 	default Column round(int digit) {
-		return dialect().round().invoke(this, digit);
+		return getDialect().round().invoke(this, digit);
 	}
 	
 	default Column mod(int value) {
-		return dialect().mod().invoke(this, value);
+		return getDialect().mod().invoke(this, value);
 	}
 	
 	default Column pow(int value) {
-		return dialect().pow().invoke(this, value);
+		return getDialect().pow().invoke(this, value);
 	}
 
 	//bitwise functions
 	
 	default Column bitAnd(int value) {
-		return dialect().bitAnd().invoke(this, value);
+		return getDialect().bitAnd().invoke(this, value);
 	}
 	
 	default Column bitOr(int value) {
-		return dialect().bitOr().invoke(this, value);
+		return getDialect().bitOr().invoke(this, value);
 	}
 	
 	default Column bitXor(int value) {
-		return dialect().bitXor().invoke(this, value);
+		return getDialect().bitXor().invoke(this, value);
 	}
 	
 	default Column bitNot(int value) {
-		return dialect().bitNot().invoke(this, value);
+		return getDialect().bitNot().invoke(this, value);
 	}
 	
 	default Column bitShiftLeft(int value) {
-		return dialect().bitShiftLeft().invoke(this, value);
+		return getDialect().bitShiftLeft().invoke(this, value);
 	}
 	
 	default Column bitShiftRight(int value) {
-		return dialect().bitShiftRight().invoke(this, value);
+		return getDialect().bitShiftRight().invoke(this, value);
 	}
 	
 	//string functions
 
 	default Column length() {
-		return dialect().length().invoke(this);
+		return getDialect().length().invoke(this);
 	}
 	
 	default Column trim() {
-		return dialect().trim().invoke(this);
+		return getDialect().trim().invoke(this);
 	}
 
 	default Column ltrim() {
-		return dialect().ltrim().invoke(this);
+		return getDialect().ltrim().invoke(this);
 	}
 
 	default Column rtrim() {
-		return dialect().rtrim().invoke(this);
+		return getDialect().rtrim().invoke(this);
 	}
 	
 	default Column upper() {
-		return dialect().upper().invoke(this);
+		return getDialect().upper().invoke(this);
 	}
 
 	default Column lower() {
-		return dialect().lower().invoke(this);
+		return getDialect().lower().invoke(this);
 	}
 	
 	default Column initcap() {
-		return dialect().initcap().invoke(this);
+		return getDialect().initcap().invoke(this);
 	}
 	
 	default Column reverse() {
-		return dialect().reverse().invoke(this);
+		return getDialect().reverse().invoke(this);
 	}
 	
 	default Column left(int n) {
-		return dialect().left().invoke(this, n);
+		return getDialect().left().invoke(this, n);
 	}
 	
 	default Column right(int n) {
-		return dialect().pow().invoke(this, n);
+		return getDialect().pow().invoke(this, n);
 	}
 	
 	default Column replace(String oldValue, String newValue) {
-		return dialect().replace().invoke(this, oldValue, newValue);
+		return getDialect().replace().invoke(this, oldValue, newValue);
 	}
 	
 	default Column substring(int start, int end) {
-		return dialect().substring().invoke(this, start, end);
+		return getDialect().substring().invoke(this, start, end);
 	}
 	
 	default Column concat(Object... str) {
-		return dialect().concat().invoke(appendFirst(str, this));
+		return getDialect().concat().invoke(appendFirst(str, this));
 	}
 	
 	default Column lpad(int n, String value) {
-		return dialect().lpad().invoke(this, n, value);
+		return getDialect().lpad().invoke(this, n, value);
 	}
 	
 	default Column rpad(int n, String value) {
-		return dialect().rpad().invoke(this, n, value);
+		return getDialect().rpad().invoke(this, n, value);
 	}
 
 	//temporal functions
 	
 	default Column year() {
-		return dialect().year().invoke(this);
+		return getDialect().year().invoke(this);
 	}
 	
 	default Column month() {
-		return dialect().month().invoke(this);
+		return getDialect().month().invoke(this);
 	}
 
 	default Column week() {
-		return dialect().week().invoke(this);
+		return getDialect().week().invoke(this);
 	}
 	
 	default Column day() {
-		return dialect().day().invoke(this);
+		return getDialect().day().invoke(this);
 	}
 	
 	default Column dow() {
-		return dialect().dow().invoke(this);
+		return getDialect().dow().invoke(this);
 	}
 	
 	default Column doy() {
-		return dialect().doy().invoke(this);
+		return getDialect().doy().invoke(this);
 	}
 
 	default Column hour() {
-		return dialect().hour().invoke(this);
+		return getDialect().hour().invoke(this);
 	}
 
 	default Column minute() {
-		return dialect().minute().invoke(this);
+		return getDialect().minute().invoke(this);
 	}
 	
 	default Column second() {
-		return dialect().second().invoke(this);
+		return getDialect().second().invoke(this);
 	}
 	
 	default Column epoch() {
-		return dialect().epoch().invoke(this);
+		return getDialect().epoch().invoke(this);
 	}
 	
 	default Column yearMonth() {
-		return dialect().yearMonth().invoke(this);
+		return getDialect().yearMonth().invoke(this);
 	}
 	
 	default Column yearWeek() {
-		return dialect().yearWeek().invoke(this);
+		return getDialect().yearWeek().invoke(this);
 	}
 	
 	default Column monthDay() {
-		return dialect().monthDay().invoke(this);
+		return getDialect().monthDay().invoke(this);
 	}
 	
 	default Column hourMinute() {
-		return dialect().hourMinute().invoke(this);
+		return getDialect().hourMinute().invoke(this);
 	}
 	
 	//cast functions
 
 	default Column varchar() {
-		return dialect().varchar().invoke(this);
+		return getDialect().varchar().invoke(this);
 	}
 	
 	default Column varchar(int size) {
-		return dialect().varchar().invoke(this, size);
+		return getDialect().varchar().invoke(this, size);
 	}
 	
 	default Column date() {
-		return dialect().date().invoke(this);
+		return getDialect().date().invoke(this);
 	}
 	
 	default Column timestamp() {
-		return dialect().timestamp().invoke(this);
+		return getDialect().timestamp().invoke(this);
 	}
 	
 	default Column integer() {
-		return dialect().integer().invoke(this);
+		return getDialect().integer().invoke(this);
 	}
 	
 	default Column bigint() {
-		return dialect().bigint().invoke(this);
+		return getDialect().bigint().invoke(this);
 	}
 	
 	default Column decimal() {
-		return dialect().decimal().invoke(this);
+		return getDialect().decimal().invoke(this);
 	}
 	
 	default Column decimal(int digit, int precision) {
-		return dialect().decimal().invoke(this, digit, precision);
+		return getDialect().decimal().invoke(this, digit, precision);
 	}
 
 	//other functions
 	
 	default Column distinct() {
-		return dialect().distinct().invoke(this);
+		return getDialect().distinct().invoke(this);
 	}
 	
 	default Column coalesce(Object o) {
-		return dialect().coalesce().invoke(this, o);
+		return getDialect().coalesce().invoke(this, o);
 	}
 	
 	//aggregate functions
 
 	default Column count() {
-		return dialect().count().invoke(this);
+		return getDialect().count().invoke(this);
 	}
 
 	default Column min() {
-		return dialect().min().invoke(this);
+		return getDialect().min().invoke(this);
 	}
 
 	default Column max() {
-		return dialect().max().invoke(this);
+		return getDialect().max().invoke(this);
 	}
 
 	default Column sum() {
-		return dialect().sum().invoke(this);
+		return getDialect().sum().invoke(this);
 	}
 	
 	default Column avg() {
-		return dialect().avg().invoke(this);
+		return getDialect().avg().invoke(this);
 	}
 
 	//pipe functions
@@ -423,7 +420,7 @@ public interface Column extends DBObject, Typed {
 	}
 	
 	default Column over(Partition part) {
-		return dialect().over().invoke(this, part);
+		return getDialect().over().invoke(this, part);
 	}
 
 	//orders
@@ -444,44 +441,44 @@ public interface Column extends DBObject, Typed {
 		return new Order(this, order);
 	}
 	
-	default CaseColumnBuilder toCase() {
-		return new CaseColumnBuilder(this);
+	default CaseColumnComposer toCase() {
+		return new CaseColumnComposer(this);
 	}
 	
-	static CaseColumnBuilder beginCase() {
-		return new CaseColumnBuilder(); //no column, append filter only
+	static CaseColumnComposer beginCase() {
+		return new CaseColumnComposer(); //no column, append filter only
 	}
 	
 	// constants
 	
 	static Column cdate() {
-		return dialect().cdate().invoke();
+		return getDialect().cdate().invoke();
 	}
 	
 	static Column ctime() {
-		return dialect().ctime().invoke();
+		return getDialect().ctime().invoke();
 	}
 	
 	static Column ctimestamp() {
-		return dialect().ctimestamp().invoke();
+		return getDialect().ctimestamp().invoke();
 	}
 
 	static Column countAll(DBView... view) {
-		return dialect().count().invoke(allColumns(view));
+		return getDialect().count().invoke(allColumns(view));
 	}
 	
 	//window functions
 	
 	static Column rank() {
-		return dialect().rank().invoke();
+		return getDialect().rank().invoke();
 	}
 	
 	static Column rowNumber() {
-		return dialect().rowNumber().invoke();
+		return getDialect().rowNumber().invoke();
 	}
 	
 	static Column denseRank() {
-		return dialect().denseRank().invoke();
+		return getDialect().denseRank().invoke();
 	}
 	
 	static ViewColumn column(String value) {
@@ -518,10 +515,5 @@ public interface Column extends DBObject, Typed {
 
 	static ValueColumn constant(JDBCType type, Adjuster<Object> adj) {
 		return new ValueColumn(null, type, adj);
-	}
-	
-	private static Dialect dialect() {		
-		var store = getCurrentStore();
-		return nonNull(store) ? store.dialect() : DEFAULT_DIALECT;
 	}
 }

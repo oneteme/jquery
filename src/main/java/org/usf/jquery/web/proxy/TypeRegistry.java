@@ -26,10 +26,9 @@ import java.util.UUID;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
-import org.usf.jquery.core.JoinsClause;
+import org.usf.jquery.core.JoinComposer;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Order;
-import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.SingleQueryColumn;
 
 /**
@@ -42,27 +41,28 @@ public final class TypeRegistry {
 	private static final Map<Class<?>, ValueParser<?>> DEF_PARSERS;
 	private static final Map<Class<?>, EntryEvaluator<?>> DEF_EVALUATORS;
 	
-	private final Map<Class<?>, ValueParser<?>> parsers;
-	private final Map<Class<?>, EntryEvaluator<?>> evaluators;
-	
-	public TypeRegistry() {
-		this.parsers = new HashMap<>();
-		this.evaluators = new HashMap<>();
-	}
+	private Map<Class<?>, ValueParser<?>> parsers;
+	private Map<Class<?>, EntryEvaluator<?>> evaluators;
 	
 	public <T> TypeRegistry register(Class<T> clazz, ValueParser<T> parser) {
+		if(isNull(parser)) {
+			parsers = new HashMap<>();
+		}
 		parsers.put(clazz, parser);
 		return this;
 	}
 	
 	public <T> TypeRegistry register(Class<T> clazz, EntryEvaluator<T> evaluator) {
+		if(isNull(evaluators)) {
+			evaluators = new HashMap<>();
+		}
 		evaluators.put(clazz, evaluator);
 		return this;
 	}
 	
 	@SuppressWarnings("unchecked")
 	public <T> ValueParser<T> getParser(Class<T> clazz){
-		var p = parsers.get(clazz);
+		var p = nonNull(parsers) ? parsers.get(clazz) : null;
 		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) { //strict | toUPPER
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
@@ -71,7 +71,7 @@ public final class TypeRegistry {
 	
 	@SuppressWarnings("unchecked")
 	public <T> EntryEvaluator<T> getEvaluator(Class<T> clazz){
-		var p = evaluators.get(clazz);
+		var p = nonNull(evaluators) ? evaluators.get(clazz) : null;
 		return (EntryEvaluator<T>) (nonNull(p) ? p : DEF_EVALUATORS.get(clazz));
 	}
 	
@@ -104,13 +104,13 @@ public final class TypeRegistry {
 		//Object ?
 		DEF_PARSERS = unmodifiableMap(prs);
 		var evl = new HashMap<Class<?>, EntryEvaluator<?>>();
+		evl.put(DBView.class, EntryEvaluators::evaluateView2);
 		evl.put(Column.class, EntryEvaluators::evaluateColumn);
 		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
 		evl.put(Criteria.class, EntryEvaluators::evaluateFilter);
 		evl.put(Order.class, EntryEvaluators::evaluateOrder);
-		evl.put(JoinsClause.class, EntryEvaluators::evaluateJoin);
-		evl.put(Partition.class, EntryEvaluators::evaluatePartition);
-		evl.put(DBView.class, EntryEvaluators::evaluateView);
+		evl.put(JoinComposer.class, EntryEvaluators::evaluateJoin);
+		evl.put(PartitionComposer.class, EntryEvaluators::evaluatePartition);
 		evl.put(SingleQueryColumn.class, EntryEvaluators::evaluateQueryColumn);
 		DEF_EVALUATORS = unmodifiableMap(evl);
 	}
@@ -139,10 +139,10 @@ public final class TypeRegistry {
 	
 	static Character parseChar(String v) throws ParseException {
 		if(nonNull(v)) {
-			if(v.length() > 1) {
-				throw new ParseException("cannot parse char " + v, 1);
+			if(v.length() == 1) {
+				return v.isEmpty() ? MIN_VALUE : v.charAt(0);
 			}
-			return v.isEmpty() ? MIN_VALUE : v.charAt(0);
+			throw new ParseException("cannot parse char " + v, 1);
 		}
 		return null;
 	}

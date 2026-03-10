@@ -5,7 +5,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.groupingBy;
 import static org.usf.jquery.core.Column.constant;
-import static org.usf.jquery.core.Comparator.in;
+import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
@@ -49,7 +49,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	default Criteria monthFilter() {
 		var mc = monthRevision();
 		return nonNull(mc) 
-				? column(mc).filter(in().getComparator()
+				? column(mc).filter(getDialect().in().getComparator()
 						.expression((m,v)-> ((YearMonths) requireNonNull(m, "revision")).months()))
 				: null;
 	}

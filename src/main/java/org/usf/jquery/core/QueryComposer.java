@@ -203,7 +203,6 @@ public final class QueryComposer implements Composer<QueryView> {
 		return this;
 	}
 	
-	@Override
 	public QueryView compose() { //TD check this[clause].length = QueryView[clause].length
 		log.trace("composing query...");
 		var bg = currentTimeMillis();

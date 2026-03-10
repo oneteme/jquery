@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.isNull;
-
 /**
  * 
  * @author u$f
@@ -10,18 +8,19 @@ import static java.util.Objects.isNull;
 public final class OperatorDefinition extends Definition<Column> {
 
 	public OperatorDefinition(JDBCType type, Operator operator, Parameter... parameter) {
-		super(operator.id(), type, (t,args)-> apply(operator, t, args), parameter);
+		super(operator.id(), type, operator, parameter);
+	}
+	
+	public OperatorDefinition(String name, JDBCType type, Operator operator, Parameter... parameter) {
+		super(name, type, operator, parameter);
 	}
 
 	public OperatorDefinition(TypeResolver typeFn, Operator operator, Parameter... parameter) {
-		super(operator.id(), typeFn, (t,args)-> apply(operator, t, args), parameter);
+		super(operator.id(), typeFn, operator, parameter);
 	}
-
-	static Column apply(Operator operator, JavaType type, Object[] args) {
-		if(isNull(type) || type instanceof JDBCType) {
-			return operator.operation((JDBCType)type, args);
-		}
-		throw new IllegalArgumentException("operator " + operator.id() + " cannot be applied to type " + type);
+	
+	public OperatorDefinition(String name, TypeResolver typeFn, Operator operator, Parameter... parameter) {
+		super(name, typeFn, operator, parameter);
 	}
 
 	@Deprecated(forRemoval = true)

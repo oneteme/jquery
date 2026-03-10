@@ -85,8 +85,9 @@ public final class DatabaseIntrospector {
 				map.clear();
 			}
 		}
+		//if column metadata is missing, put null value to preserve column declaration 
 		for(var col : columns) {
-			map.putIfAbsent(col, null); //if column metadata is missing, put null value to preserve column declaration 
+			map.putIfAbsent(col, null);
 		}
 		return new DatasetMetadata(dataset, type, unmodifiableMap(map), now());
 	}

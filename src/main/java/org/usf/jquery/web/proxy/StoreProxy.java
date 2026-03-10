@@ -47,7 +47,7 @@ public final class StoreProxy extends ResourceProxy {
 	
 	@Override
 	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) { //bind method must return a resource handler
-		if(method.getReturnType() == Dialect.class && method.getParameterCount() == 0 && "dialect".equals(method.getName())) {
+		if(Dialect.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "dialect".equals(method.getName())) {
 			return dialect;
 		}
 		if(DataSource.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "dataSource".equals(method.getName())) {
@@ -57,7 +57,7 @@ public final class StoreProxy extends ResourceProxy {
 		if(nonNull(handler)) {
 			return handler;	
 		}
-		throw new IllegalStateException("no resource handler found for " + method);
+		throw new IllegalStateException("unexpected method invocation : " + method);
 	}
 
 	@Override

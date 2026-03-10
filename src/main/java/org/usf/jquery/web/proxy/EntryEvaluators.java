@@ -1,49 +1,32 @@
 package org.usf.jquery.web.proxy;
 
-import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
-import static org.usf.jquery.core.Column.allColumns;
-import static org.usf.jquery.core.Comparator.eq;
-import static org.usf.jquery.core.Comparator.in;
-import static org.usf.jquery.core.JoinType.CROSS;
-import static org.usf.jquery.core.Parameter.match;
-import static org.usf.jquery.core.Signature.badArgumentTypeException;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.ViewJoin.join;
-import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
-import static org.usf.jquery.web.Parameters.CRITERIA_OPR;
-import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 import static org.usf.jquery.web.Parameters.FIELD_PARAM;
-import static org.usf.jquery.web.Parameters.FILTER_OPR;
-import static org.usf.jquery.web.Parameters.JOIN_PARAM;
-import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
-import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
-import static org.usf.jquery.web.Parameters.ORDER_PARAM;
+import static org.usf.jquery.web.Parameters.PARTITION_OPR;
 import static org.usf.jquery.web.Parameters.SELECT_OPR;
 
-import java.util.ArrayList;
 import java.util.Optional;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.ComparatorDefinition;
+import org.usf.jquery.core.Composer;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.Definition;
-import org.usf.jquery.core.JoinType;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.OperatorDefinition;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
-import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.core.SignatureMismatchException;
+import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.SingleQueryColumn;
+import org.usf.jquery.core.ViewJoin;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -64,6 +47,16 @@ public final class EntryEvaluators {
 		if(nonNull(view)) {
 			assertLastEntry(itr, true);
 			ctx.declareView(requireTag(itr.get()), view);
+			return view.getView();
+		}
+		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
+	}
+	
+	public static DBView evaluateView2(Entry entry, RequestContext ctx) {
+		var itr = entry.iterator();
+		var view = evalView(itr, ctx, true);
+		if(nonNull(view)) {
+			assertLastEntry(itr, false);
 			return view.getView();
 		}
 		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
@@ -122,7 +115,7 @@ public final class EntryEvaluators {
 
 	public static JoinsClause evaluateJoin(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var join = lookupResource(itr, JoinsClause.class, ctx, (v, e)-> evalJoin(e, ctx.withView(v)));
+		var join = lookupResource(itr, JoinsClause.class, ctx, (v, e)-> evalJoin(e, v, ctx));
 		if(nonNull(join)) {
 			assertLastEntry(itr, false);
 			return join;
@@ -132,7 +125,7 @@ public final class EntryEvaluators {
 	
 	public static Partition evaluatePartition(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var prt = lookupResource(itr, Partition.class, ctx, (v,e)-> evalPartition(e, ctx.withView(v)));
+		var prt = lookupResource(itr, Partition.class, ctx, (v,e)-> evalPartition(e, v, ctx));
 		if(nonNull(prt)) {
 			assertLastEntry(itr, false);
 			return prt;
@@ -153,7 +146,7 @@ public final class EntryEvaluators {
 	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetResource view, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		if(SELECT_OPR.equals(entry.getValue()) || FIELD_PARAM.equals(entry.getValue())) {
-			view = evalQuery(itr, ctx.subContext(view));
+			view = evalQuery(itr, view, ctx);
 		}
 		if(view instanceof QueryResource query) {
 			if(query.getQuery().getColumns().length == 1) {
@@ -167,13 +160,13 @@ public final class EntryEvaluators {
 	static DatasetResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		if(allowAnonymous && (SELECT_OPR.equals(entry.getValue()) || FIELD_PARAM.equals(entry.getValue()))) {
-			return evalQuery(itr, ctx.subContext(ctx.getDefaultDataset()));
+			return evalQuery(itr, ctx.getDefaultDataset(), ctx);
 		} //parameterized view considered as anonymous view resource, not supported for direct lookup
 		var view = ctx.lookupView(allowAnonymous, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
 			itr.advance();
 			return allowAnonymous && itr.hasNext() && (SELECT_OPR.equals(itr.peekNext().getValue()) || FIELD_PARAM.equals(itr.peekNext().getValue())) //view.column().filter()..
-					? evalQuery(itr, ctx.subContext(view.get())) : view.get();
+					? evalQuery(itr, view.get(), ctx) : view.get();
 		}
 		return null;
 	}
@@ -205,10 +198,13 @@ public final class EntryEvaluators {
 			col = res.get();
 		}
 		else {
-			col = lookupResource(itr, Column.class, ctx, (v, e)->{
+			col = lookupResource(itr, Column.class, ctx, (v, e)-> { //column | criteria
 				var entry = e.peekNext();
 				if("count".equals(entry.getValue())) {
-					return invokeOperator(entry.hasArgs() ? null : allColumns(v.getView()), entry.getValue(), entry.getArgs(), ctx);
+					//return invokeOperator(entry.hasArgs() ? null : allColumns(v.getView()), entry.getValue(), entry.getArgs(), ctx);
+				}
+				if("when".equals(entry.getValue())) { //view.when
+					return (Column) invokeDialectComposer(itr, ctx.withView(v)); 
 				}
 				return null;
 			}); //column or criteria resource
@@ -216,85 +212,60 @@ public final class EntryEvaluators {
 		return chainResource(itr, col, ctx, outArgs);
 	}
 
-	static QueryResource evalQuery(EntryIterator itr, RequestContext ctx) {
-		var query = new QueryComposer();
-		try {
-			var matched = true;
-			while(itr.hasNext()) {
-				var entry = itr.peekNext();
-				switch (entry.getValue()) {
-				case SELECT_OPR, FIELD_PARAM -> query.columns(ctx.resolveAll(entry.getArgs(), NamedColumn[].class));
-				case FILTER_OPR, CRITERIA_OPR-> query.filters(ctx.resolveAll(entry.getArgs(), Criteria[].class)); 
-				case ORDER_PARAM-> query.orders(ctx.resolveAll(entry.getArgs(), Order[].class));
-				case JOIN_PARAM-> query.joins2(ctx.resolveAll(entry.getArgs(), JoinsClause[].class));
-				case LIMIT_PARAM-> query.limit(resolveSingleArgValue(entry, Integer.class, ctx));
-				case OFFSET_PARAM-> query.offset(resolveSingleArgValue(entry, Integer.class, ctx));
-				case DISTINCT_PARAM-> query.distinct(resolveSingleArgValue(entry, Boolean.class, ctx));
-				//TODO union
-				default-> matched = false;
-				}
-				if(!matched) {
-					break;
-				}
-				itr.advance();
+	static QueryResource evalQuery(EntryIterator itr, DatasetResource dr, RequestContext ctx) { 
+		if(itr.hasNext() && SELECT_OPR.equals(itr.peekNext().getValue())) {
+			Object res = null;
+			try {
+				res = invokeDialectComposer(itr, ctx.subContext(dr));
 			}
+			catch (Exception e) {
+				throw new EntryParseException("cannot parse query arguments ", e);
+			}
+			if(res instanceof QueryView query) {
+				if(query.getColumns().length > 0) {
+					return new QueryResource(query);
+				}
+				throw new EntryParseException("query must have at least one column");
+			}
+			throw new EntryParseException("invalid query definition");
 		}
-		catch (Exception e) {
-			throw new EntryParseException("cannot parse query arguments ", e);
-		}
-		if(query.getColumns().isEmpty()) {
-			throw new EntryParseException("query must have at least one column");
-		}
-		return new QueryResource(query.compose());	
+		return null;	
 	}
 	
-	static Partition evalPartition(EntryIterator itr, RequestContext ctx) {
-		var cols = new ArrayList<Column>();
-		var ords = new ArrayList<Order>();
-		try {
-			var matched = true;
-			while(itr.hasNext()) {
-				var entry = itr.peekNext();
-				switch (entry.getValue()) {
-				case COLUMN_PARAM, FIELD_PARAM -> addAll(cols, ctx.resolveAll(entry.getArgs(), Column[].class));
-				case ORDER_PARAM-> addAll(ords, ctx.resolveAll(entry.getArgs(), Order[].class));
-				default-> matched = false;
-				}
-				if(!matched) {
-					break;
-				}
-				itr.advance();
+	static Partition evalPartition(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+		if(itr.hasNext() && PARTITION_OPR.equals(itr.peekNext().getValue())) {
+			Object res = null;
+			try {
+				res = invokeDialectComposer(itr, ctx.withView(dr));
 			}
+			catch (Exception e) {
+				throw new EntryParseException("cannot parse partition arguments ", e);
+			}
+			if(res instanceof Partition part) {
+				return part;
+			}
+			throw new EntryParseException("invalid partition definition");
 		}
-		catch (Exception e) {
-			throw new EntryParseException("cannot parse query arguments ", e);
-		} //optional partition args ?
-		return new Partition(cols.toArray(Column[]::new), ords.toArray(Order[]::new));
+		return null;
 	}
 
-	static JoinsClause evalJoin(EntryIterator itr, RequestContext ctx) {
-		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as join resource");
-		if(nonNull(entry.getValue()) && entry.getValue().matches("(inner|left|right|full|cross)Join")) {
-			entry = itr.next();
-			var type = JoinType.valueOf(entry.getValue().substring(0, entry.getValue().length()-4).toUpperCase());
+	static JoinsClause evalJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+		var v = itr.hasNext() ? itr.peekNext().getValue() : null;
+		if(nonNull(v) && v.matches("(inner|left|right|full|cross)Join")) {
+			Object res = null;
 			try {
-				var jView = resolveSingleArg(entry, arg-> evalView(arg, ctx, false));
-				if(isNull(jView)) {
-					throw new NoSuchResourceException("no such view : " + entry.getValue());
-				}
-				var filters = itr.hasNext() && (FILTER_OPR.equals(itr.peekNext().getValue()) || CRITERIA_OPR.equals(itr.peekNext().getValue()))
-						? ctx.resolveAll(itr.next().getArgs(), Criteria[].class) : null;
-				if(type != CROSS && isEmpty(filters)) {
-					throw new IllegalArgumentException("join type " + type + " requires at least one filter");
-				}
-				return JoinsClause.joins(join(type, jView.getView(), filters));
+				res = invokeDialectComposer(itr, ctx.withView(dr));
 			}
 			catch (Exception e) {
 				throw new EntryParseException("cannot parse join arguments ", e);
 			}
+			if(res instanceof ViewJoin join) {
+				return new JoinsClause(join);
+			}
+			throw new EntryParseException("invalid join definition");
 		}
 		return null;
-	}
+	}	
 	
 	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> anonymousResolver) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
@@ -325,64 +296,73 @@ public final class EntryEvaluators {
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
 	static Column chainResource(EntryIterator itr, Column res, RequestContext ctx, Entry... outArgs) {
 		var col = res;
-		Entry entry = itr.get();
 		while(itr.hasNext()) {
-			entry = itr.peekNext();
-			var tmp = invokeOperator(col, entry.getValue(), entry.getArgs(), ctx);
-			if(isNull(tmp)) {
-				if(!entry.hasNext() && !entry.hasArgs()) {
-					entry = entry.withArgs(outArgs);
-				}
-				tmp = invokeComparator(col, entry.getValue(), entry.getArgs(), ctx);
-				if(isNull(tmp) && nonNull(col)) {
-					tmp = ctx.lookupSchemaResource(entry.getValue(), Predicate.class, entry.getArgs())
-							.map(col::filter).orElse(null);
+			Entry entry = itr.peekNext();
+			var args = entry.getArgs();
+			if(isNull(args) && !entry.hasNext()) {
+				args = outArgs;
+			}
+			var r = ctx.lookupSchemaResource(entry.getValue(), Predicate.class, args);
+			if(r.isPresent()) {
+				itr.advance();
+				col = col.filter(r.get());
+				if(args == outArgs) {
+					outArgs = null;
 				}
 			}
-			if(isNull(tmp)) {
-				break;
+			else {
+				var opt = ctx.lookupDialectResource(entry.getValue(), Definition.class);
+				if(opt.isPresent()) {
+					itr.advance(); 
+					var def = opt.get();
+					if(def instanceof ComparatorDefinition) {
+						col = (Column) def.invoke(ctx.resolveArgs(args, col, def));
+						if(args == outArgs) {
+							outArgs = null;
+						}
+					}
+					else {
+						col = (Column) def.invoke(ctx.resolveArgs(entry.getArgs(), col, def));
+					}
+				}
+				else {
+					break;
+				}
 			}
-			itr.advance();
-			col = tmp;
 		}
-		if(!itr.hasNext() && !isEmpty(outArgs) && itr.get() == entry) { //last entry, outArgs not yet applied
-			var cmp = outArgs.length == 1 ? eq() : in();
-			col = cmp.invoke(resolveArgs(cmp, col, outArgs, ctx));
+		if(!itr.hasNext() && !isEmpty(outArgs)) { //last entry, outArgs not yet applied
+			var cmp = outArgs.length == 1 ? ctx.getDialect().eq() : ctx.getDialect().in();
+			col = cmp.invoke(ctx.resolveArgs(outArgs, col, cmp));
 		}
 		return col;
 	}
 	
-	static Column invokeOperator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupDialectResource(name, Definition.class)
-			.map(opr -> opr.invoke(resolveArgs(opr, col, args, ctx)))
-			.orElse(null);
-	}
-	
-	static Criteria invokeComparator(Object col, String name, Entry[] args, RequestContext ctx) {
-		return ctx.lookupDialectResource(name, Definition.class)
-				.map(cmp -> cmp.invoke(resolveArgs(cmp, col, args, ctx)))
-				.orElse(null);
-	}
-	
-	static Object[] resolveArgs(Definition<?> def, Object res, Entry[] args, RequestContext ctx){
-		int shift = nonNull(res) ? 1 : 0;
-		try {
-			return def.getSignature().buildArgs(shift + (nonNull(args) ? args.length : 0), (idx,types)-> {
-				if(idx==0 && nonNull(res)) {
-					if(match(res, types)) {
-						return res;
+	static Object invokeDialectComposer(EntryIterator itr, RequestContext ctx) {
+		if(itr.hasNext()) {
+			var entry = itr.peekNext();
+			var res = ctx.lookupDialectResource(entry.getValue(), Definition.class);
+			if(res.isPresent()) {
+				itr.advance();
+				var def = res.get(); 
+				var obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
+				while(itr.hasNext() && obj instanceof Composer<?>) {
+					entry = itr.peekNext();
+					res = ctx.lookupDialectResource(entry.getValue(), Definition.class, obj);
+					if(res.isPresent()) {
+						itr.advance();
+						def = res.get(); 
+						obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
 					}
-					throw badArgumentTypeException(res, types);
+					else {
+						break; //stop at first non applicable operator
+					}
 				}
-				else {
-					return ctx.resolve(args[idx-shift]);
-				}
-			});
+				return obj instanceof Composer<?> cmp ? cmp.compose() : obj; //compose if last operator is composer, otherwise return result as is
+			}
 		}
-		catch (SignatureMismatchException e) {
-			throw new EntryParseException("cannot resolve arguments for " + def, e);
-		}
+		return null;
 	}
+	
 	
 	static <T> T resolveSingleArgValue(Entry entry, Class<T> type, RequestContext ctx) {
 		return resolveSingleArg(entry, e-> ctx.parseValue(e.next().getValue(), type));

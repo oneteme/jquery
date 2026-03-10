@@ -13,11 +13,11 @@ import org.usf.jquery.web.NoSuchResourceException;
 public interface StoreResource extends Store, Resource {
 	
 	//can override createContext to provide a custom TypeRegistry 
-	default RequestContext createContext(String defaultView) {
-		if(exposes(defaultView, DatasetResource.class) == VALID) {
-			var defaultDataset = invokeResource(defaultView, DatasetResource.class, null, null);
-			return new RequestContext(this, defaultDataset, new TypeRegistry());
+	default RequestContext createContext(String defaultDataset) {
+		if(exposes(defaultDataset, DatasetResource.class) == VALID) {
+			var dataset = invokeResource(defaultDataset, DatasetResource.class, null, null);
+			return new RequestContext(this, dataset, new TypeRegistry());
 		}
-		throw new NoSuchResourceException("no default dataset found for " + defaultView);
+		throw new NoSuchResourceException("no dataset resource found for " + defaultDataset);
 	}
 }

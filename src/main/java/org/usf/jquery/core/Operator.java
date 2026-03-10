@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.util.function.Consumer;
@@ -9,7 +10,7 @@ import java.util.function.Consumer;
  * @author u$f
  *
  */
-public interface Operator extends DBProcessor {
+public interface Operator extends Processor<Column> {
 	
 	String id(); //nullable
 
@@ -30,8 +31,12 @@ public interface Operator extends DBProcessor {
 		op.buildOperator(builder, args);
 	}
 
-	default Column operation(JDBCType type, Object... args) {
-		return new OperationColumn(this, args, type);
+	@Override
+	default Column invoke(JavaType type, Object... args) {
+		if(isNull(type) || type instanceof JDBCType) {
+			return new OperationColumn(this, args, (JDBCType)type);
+		}
+		throw new IllegalArgumentException("operator " + id() + " cannot be applied to type " + type);
 	}
 	
 	default boolean is(Class<? extends Operator> type) {

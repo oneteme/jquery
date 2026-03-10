@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import org.usf.jquery.web.proxy.PartitionComposer;
+
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -17,9 +19,10 @@ public enum JQueryType implements JavaType {
 	FILTER(Criteria.class),
 	ORDER(Order.class),
 	QUERY(QueryView.class),
-	JOIN(ViewJoin[].class),
-	PARTITION(Partition.class),
-	CASE(CaseColumn.class);
+	JOIN(JoinComposer.class),
+	PARTITION(PartitionComposer.class),
+	CASE(CaseColumnComposer.class),
+	UNION(QueryUnion.class);
 	
 	private final Class<?> type;
 	
