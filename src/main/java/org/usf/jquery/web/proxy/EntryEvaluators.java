@@ -3,6 +3,7 @@ package org.usf.jquery.web.proxy;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Parameters.FIELD_PARAM;
 import static org.usf.jquery.web.Parameters.PARTITION_OPR;
@@ -201,7 +202,9 @@ public final class EntryEvaluators {
 			col = lookupResource(itr, Column.class, ctx, (v, e)-> { //column | criteria
 				var entry = e.peekNext();
 				if("count".equals(entry.getValue())) {
-					//return invokeOperator(entry.hasArgs() ? null : allColumns(v.getView()), entry.getValue(), entry.getArgs(), ctx);
+					itr.advance();
+					var def = ctx.getDialect().count();
+					return def.invoke(entry.hasArgs() ? ctx.resolveArgs(entry.getArgs(), null, def) : allColumns(v.getView()));
 				}
 				if("when".equals(entry.getValue())) { //view.when
 					return (Column) invokeDialectComposer(itr, ctx.withView(v)); 

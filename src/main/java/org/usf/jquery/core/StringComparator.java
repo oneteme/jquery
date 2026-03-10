@@ -19,7 +19,9 @@ public interface StringComparator extends Comparator {
 			.appendSpace().append(id()).appendSpace()
 			.appendParameter(wildcardArg(s), true);
 		}
-		throw new IllegalArgumentException(format("Invalid argument %s for %s", args[1], StringComparator.class.getSimpleName()));
+		else {
+			throw new IllegalArgumentException(format("Invalid argument %s for %s", args[1], StringComparator.class.getSimpleName()));
+		}
 	}
 	
 	default Object wildcardArg(String o) { //Entry<Srtring, Unary<String>>

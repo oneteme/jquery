@@ -83,9 +83,8 @@ public interface QueryInterpreter {
 	
 	default void parseColumns(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
-			//parse(parameters).map(e-> ctx.resolve(e, NamedColumn.class)).forEach(query::columns)
 			var def = ctx.getDialect().select(query);
-			def.invoke(query, ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
+			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}
 		else {
 			throw new IllegalArgumentException("missing required parameter: " + FIELD_PARAM);
@@ -94,9 +93,8 @@ public interface QueryInterpreter {
 	
 	default void parseOrders(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
-			//parse(parameters).map(e-> ctx.resolve(e, Order.class)).forEach(query::orders)
 			var def = ctx.getDialect().order(query);
-			def.invoke(query, ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), query, def));
+			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}
 	}
 	
@@ -104,7 +102,7 @@ public interface QueryInterpreter {
 		if(!isEmpty(parameters)) {
 			//parse(parameters).map(e-> ctx.resolve(e, JoinsClause.class)).forEach(query::joins2)
 			var def = ctx.getDialect().join(query);
-			def.invoke(query, ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), query, def));
+			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}
 	}
 	
@@ -120,7 +118,7 @@ public interface QueryInterpreter {
 		if(!isEmpty(arg)) {
 			try {
 				var def = ctx.getDialect().distinct(query);
-				def.invoke(query, ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), query, def));
+				def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 			} catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + DISTINCT_PARAM, e);
 			}
@@ -131,9 +129,8 @@ public interface QueryInterpreter {
 		var arg = optionalSingleArgument(parameters, LIMIT_PARAM);
 		if(!isEmpty(arg)) {
 			try {
-				//query.limit(ctx.parseValue(arg, Integer.class));
 				var limit = ctx.getDialect().limit(query);
-				limit.invoke(query, ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), query, limit));
+				limit.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, limit));
 			}
 			catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + LIMIT_PARAM, e);
@@ -145,9 +142,8 @@ public interface QueryInterpreter {
 		var arg = optionalSingleArgument(parameters, OFFSET_PARAM);
 		if(!isEmpty(arg)) {
 			try {
-//				query.offset(ctx.parseValue(arg, Integer.class))
 				var offset = ctx.getDialect().offset(query);
-				offset.invoke(query, ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), query, offset));
+				offset.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, offset));
 			}
 			catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + OFFSET_PARAM, e);

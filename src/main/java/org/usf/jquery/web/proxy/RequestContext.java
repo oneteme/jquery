@@ -160,15 +160,15 @@ public final class RequestContext {
 		});
 	}
 	
-	public Object[] resolveArgs(Entry[] args, Object res, Definition<?> def){ //TODO parse on demand
-		int shift = nonNull(res) ? 1 : 0;
+	public Object[] resolveArgs(Entry[] args, Object operand, Definition<?> def){ //TODO parse on demand
+		int shift = nonNull(operand) ? 1 : 0;
 		try {
 			return def.getSignature().buildArgs(shift + (nonNull(args) ? args.length : 0), (idx,types)-> {
-				if(idx==0 && nonNull(res)) {
-					if(match(res, types)) {
-						return res;
+				if(idx==0 && nonNull(operand)) {
+					if(match(operand, types)) {
+						return operand;
 					}
-					throw badArgumentTypeException(res, types);
+					throw badArgumentTypeException(operand, types);
 				}
 				else {
 					return resolveEntry(args[idx-shift], types);

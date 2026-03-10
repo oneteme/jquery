@@ -38,6 +38,7 @@ public interface Operators {
 	default OperatorDefinition divide() {
 		return new OperatorDefinition("divide", firstArgType(), operator("/"), required(), required(firstArgType()));
 	}
+	//TODO factorial: single arg
 	
 	//numeric functions
 	
@@ -92,7 +93,7 @@ public interface Operators {
 	}
 	
 	default OperatorDefinition bitXor() {
-		return new OperatorDefinition("bitXor", BIGINT, operator("^"), required(BIGINT), required(BIGINT));
+		return new OperatorDefinition("bitXor", BIGINT, operator("#"), required(BIGINT), required(BIGINT));
 	}
 	
 	default OperatorDefinition bitNot() {

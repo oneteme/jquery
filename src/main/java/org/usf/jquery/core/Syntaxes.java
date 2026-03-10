@@ -25,6 +25,7 @@ import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.TypeResolver.firstArgType;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.function.IntFunction;
 
@@ -131,7 +132,8 @@ public interface Syntaxes {
 	
 	default Definition<JoinComposer> criteria(JoinComposer composer) { //ViewJoin | QueryComposer
 		return new Definition<>("criteria", firstArgType(), 
-				(type,args)-> composer.criterias(convertArray(args, Criteria[].class)),
+				(type,args)-> 
+		composer.criterias(convertArray(args, Criteria[].class)),
 				required(FILTER), varargs(FILTER));
 	}
 	
@@ -143,7 +145,8 @@ public interface Syntaxes {
 	
 	default Definition<QueryComposer> select(QueryComposer composer) {
 		return new Definition<>("select", QUERY, 
-				(type,args)-> composer.columns((convertArray(args, NamedColumn[].class))), 
+				(type,args)-> 
+		composer.columns(convertArray(args, NamedColumn[].class)), 
 				required(NAMED_COLUMN), varargs(NAMED_COLUMN));
 	}
 	
@@ -173,8 +176,8 @@ public interface Syntaxes {
 	
 	default Definition<QueryComposer> distinct(QueryComposer composer) {
 		return new Definition<>("distinct", QUERY, 
-				(t,args)-> composer.distinct((Boolean)args[0]),
-				required(BOOLEAN)); //!variable
+				(t,args)-> composer.distinct(isEmpty(args) || (Boolean) args[0]),
+				optional(BOOLEAN));
 	}
 	
 	default Definition<QueryComposer> limit(QueryComposer composer) {
@@ -206,7 +209,7 @@ public interface Syntaxes {
 	}
 	
 	static <T> T[] convertArray(Object[] array, Class<T[]> type) {
-		return copyOf(array, 0, type);
+		return copyOf(array, array.length, type);
 	}
 	
 }
