@@ -43,21 +43,17 @@ import lombok.NoArgsConstructor;
 public final class EntryEvaluators {
 	
 	public static DBView evaluateView(Entry entry, RequestContext ctx) {
-		var itr = entry.iterator();
-		var view = evalView(itr, ctx, true);
-		if(nonNull(view)) {
-			assertLastEntry(itr, true);
-			ctx.declareView(requireTag(itr.get()), view);
-			return view.getView();
-		}
-		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
+		return evaluateView(entry, ctx, false);
 	}
 	
-	public static DBView evaluateView2(Entry entry, RequestContext ctx) {
+	public static DBView evaluateView(Entry entry, RequestContext ctx, boolean declare) {
 		var itr = entry.iterator();
-		var view = evalView(itr, ctx, true);
+		var view = evalView(itr, ctx, declare);
 		if(nonNull(view)) {
-			assertLastEntry(itr, false);
+			assertLastEntry(itr, declare);
+			if(declare) {
+				ctx.declareView(requireTag(itr.get()), view);
+			}
 			return view.getView();
 		}
 		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
@@ -315,21 +311,19 @@ public final class EntryEvaluators {
 			}
 			else {
 				var opt = ctx.lookupDialectResource(entry.getValue(), Definition.class);
-				if(opt.isPresent()) {
-					itr.advance(); 
-					var def = opt.get();
-					if(def instanceof ComparatorDefinition) {
-						col = (Column) def.invoke(ctx.resolveArgs(args, col, def));
-						if(args == outArgs) {
-							outArgs = null;
-						}
-					}
-					else {
-						col = (Column) def.invoke(ctx.resolveArgs(entry.getArgs(), col, def));
+				if(opt.isEmpty()) {
+					break;
+				}
+				itr.advance(); 
+				var def = opt.get();
+				if(def instanceof ComparatorDefinition) {
+					col = (Column) def.invoke(ctx.resolveArgs(args, col, def));
+					if(args == outArgs) {
+						outArgs = null;
 					}
 				}
 				else {
-					break;
+					col = (Column) def.invoke(ctx.resolveArgs(entry.getArgs(), col, def));
 				}
 			}
 		}

@@ -104,7 +104,7 @@ public final class TypeRegistry {
 		//Object ?
 		DEF_PARSERS = unmodifiableMap(prs);
 		var evl = new HashMap<Class<?>, EntryEvaluator<?>>();
-		evl.put(DBView.class, EntryEvaluators::evaluateView2);
+		evl.put(DBView.class, EntryEvaluators::evaluateView);
 		evl.put(Column.class, EntryEvaluators::evaluateColumn);
 		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
 		evl.put(Criteria.class, EntryEvaluators::evaluateFilter);
