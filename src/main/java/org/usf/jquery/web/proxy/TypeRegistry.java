@@ -119,17 +119,17 @@ public final class TypeRegistry {
 		if(nonNull(v)) {
 			if(v.length() == 1) {
 				var c = v.charAt(0);
-				if(c=='1' || c=='t' || c=='T') {
+				if(c=='1' || c=='t') {
 					return true;
 				}
-				if(c=='0' || c=='f' || c=='F') {
+				if(c=='0' || c=='f') {
 					return false;
 				}
 			}
-			else if("true".equalsIgnoreCase(v)) {
+			else if("true".equals(v)) {
 				return true;
 			}
-			else if("false".equalsIgnoreCase(v)) {
+			else if("false".equals(v)) {
 				return false;
 			}
 			throw new ParseException("cannot parse boolean " + v, -1);

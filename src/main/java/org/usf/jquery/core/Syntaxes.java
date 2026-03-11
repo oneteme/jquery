@@ -56,19 +56,19 @@ public interface Syntaxes {
 	
 	//order operators
 	
-	default Definition<Order> asc() {
-		return orderDefinition(ASC);
-	}
-	
-	default Definition<Order> desc() {
-		return orderDefinition(DESC);
-	}
-	
-	private Definition<Order> orderDefinition(OrderType type) {
-		return new Definition<>(type.name().toLowerCase(), ORDER, 
-				(t,args)-> ((Column)args[0]).order(type),
-				required(COLUMN));
-	}
+//	default Definition<Order> asc() {
+//		return orderDefinition(ASC);
+//	}
+//	
+//	default Definition<Order> desc() {
+//		return orderDefinition(DESC);
+//	}
+//	
+//	private Definition<Order> orderDefinition(OrderType type) {
+//		return new Definition<>(type.name().toLowerCase(), ORDER, 
+//				(t,args)-> ((Column)args[0]).order(type),
+//				required(COLUMN));
+//	}
 
 	//case operators
 	

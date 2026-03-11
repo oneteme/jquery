@@ -45,7 +45,7 @@ public interface QueryInterpreter {
 			}
 		}
 		resolveParameterCompatibility(modifiableMap);
-		modifiableMap.computeIfAbsent(FIELD_PARAM, k-> qr.fields());		
+		modifiableMap.computeIfAbsent(SELECT_OPR, k-> qr.fields());		
 		var store = qr.store() == StoreResource.class 
 				? getInstance().getDefaultStore() //default schema if not specified
 				: getInstance().getStore(qr.store());
@@ -155,7 +155,7 @@ public interface QueryInterpreter {
 	}
 	
 	private static void resolveParameterCompatibility(Map<String, String[]> modifiableMap) {
-		Map.of(COLUMN_PARAM, SELECT_OPR).entrySet().forEach(e-> {
+		Map.of(COLUMN_PARAM, SELECT_OPR, FIELD_PARAM, SELECT_OPR).entrySet().forEach(e-> {
 			var args = modifiableMap.remove(e.getKey());
 			if(!isEmpty(args)) {
 				log.warn("'{}' parameter is deprecated, use {} instead", e.getKey(), e.getValue());
