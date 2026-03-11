@@ -9,6 +9,7 @@ import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.JDBCType.BIGINT;
+import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.DOUBLE;
 import static org.usf.jquery.core.JDBCType.TIME;
@@ -51,7 +52,7 @@ import lombok.extern.slf4j.Slf4j;
 public final class RequestContext {
 
 	private static final JDBCType[] STD_TYPES = { 
-			BIGINT, DOUBLE, DATE, TIMESTAMP, 
+			BOOLEAN, BIGINT, DOUBLE, DATE, TIMESTAMP, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
 	@Getter
@@ -200,9 +201,6 @@ public final class RequestContext {
 		for(var t : types) {
 			try {
 				return resolve(entry, t.getCorrespondingClass());
-			}
-			catch (EntryParseException e) {
-				throw e; //cannot parse entry for this type, no need to try other types
 			}
 			catch (Exception e) {
 				//do nothing, try other types

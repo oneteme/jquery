@@ -78,7 +78,7 @@ public interface Syntaxes {
 	
 	default Definition<CaseColumnComposer> when(CaseColumnComposer composer) { 
 		return new Definition<>("when", CASE, 
-				(type,args)-> composer.when((Criteria)args[1], args[2]), 
+				(type,args)-> composer.when((Criteria)args[0], args[1]), 
 				required(FILTER), required());
 	}
 	
