@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import java.util.function.Consumer;
 
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 
 @Getter
 public final class JoinsClause implements DBObject {
@@ -17,7 +16,7 @@ public final class JoinsClause implements DBObject {
 	
 	@Override
 	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
-		return 0; //TODO
+		return DBObject.composeNested(composer, groupKeys, joins);
 	}
 
 	@Override
