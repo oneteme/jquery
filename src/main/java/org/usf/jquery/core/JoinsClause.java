@@ -4,13 +4,17 @@ import java.util.function.Consumer;
 
 import lombok.Getter;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Getter
 public final class JoinsClause implements DBObject {
 
 	private final ViewJoin[] joins;
 
 	public JoinsClause(ViewJoin... joins) {
-		super();
 		this.joins = joins;
 	}
 	

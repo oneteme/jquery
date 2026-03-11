@@ -187,11 +187,12 @@ public final class RequestContext {
 				return resolve(entry, Column.class);
 			}
 			catch (NoSuchResourceException e) {
+				log.trace("failed to resolve entry {} to type {}, reason: {}", entry, Column.class, e.getMessage());
 				try {
 					return resolve(entry, SingleQueryColumn.class);
 				}
 				catch (NoSuchResourceException ex) {
-					//do nothing, try other types
+					log.trace("failed to resolve entry {} to type {}, reason: {}", entry, SingleQueryColumn.class, e.getMessage());
 				}
 			}
 		}
@@ -203,8 +204,7 @@ public final class RequestContext {
 				return resolve(entry, t.getCorrespondingClass());
 			}
 			catch (Exception e) {
-				//do nothing, try other types
-				log.error("resolveEntry", e);
+				log.trace("failed to resolve entry {} to type {}, reason: {}", entry, t.getCorrespondingClass(), e.getMessage());
 			}
 		}
 		throw new NoSuchElementException("no parser for type " + Arrays.toString(types));
