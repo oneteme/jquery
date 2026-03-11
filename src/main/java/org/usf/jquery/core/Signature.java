@@ -3,8 +3,11 @@ package org.usf.jquery.core;
 import static java.lang.Math.min;
 import static java.lang.String.format;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
+import static org.usf.jquery.core.Parameter.varargs;
 
+import java.lang.reflect.Array;
 import java.util.function.BiFunction;
 import java.util.function.ObjIntConsumer;
 import java.util.stream.Stream;
@@ -40,9 +43,19 @@ public final class Signature {
 	}
 
 	public Object[] buildArgs(int nArgs, BiFunction<Integer, JavaType[], Object> fn) {
-		var args = new Object[checkArgsCount(nArgs)];
+		var args = createArgArray(checkArgsCount(nArgs));
 		traverse(args.length, (p,i)-> args[i] = fn.apply(i, p.types(args)));
 		return args;
+	}
+	
+	public Object[] createArgArray(int n) {
+		if(parameters.length == 1) {
+			var p = parameters[0];
+			if(p.isVarargs() && nonNull(p.getTypes()) && p.getTypes().length == 1) {
+				return (Object[]) Array.newInstance(p.getTypes()[0].getCorrespondingClass(), n);
+			}
+		}
+		return new Object[n];
 	}
 
 	void traverse(int nArgs, ObjIntConsumer<Parameter> cons) {
@@ -70,28 +83,6 @@ public final class Signature {
 		return parameters.length > 0 && parameters[parameters.length-1].isVarargs(); 
 	}
 
-	public static Signature compile(Parameter... parameters) {
-		if(isNull(parameters)) {
-			return NO_PARAM;
-		}
-		var i=0;
-		for(; i<parameters.length && parameters[i].isRequired(); i++) {
-			if(parameters[i].isVarargs() && i<parameters.length-1) {
-				throw new IllegalArgumentException("varargs should be the last parameter");
-			}
-		}
-		var nReqArgs = i;
-		for(; i<parameters.length && !parameters[i].isRequired(); i++) {
-			if(parameters[i].isVarargs() && i<parameters.length-1) {
-				throw new IllegalArgumentException("varargs should be the last parameter");
-			}
-		}
-		if(i<parameters.length) {
-			throw new IllegalArgumentException("required parameter cannot follow optional parameter");
-		}
-		return new Signature(nReqArgs, parameters);
-	}
-
 	@Override
 	public String toString() {
 		var s = "";
@@ -115,5 +106,35 @@ public final class Signature {
 		var exp = Parameter.toString(types);
 		var arg = obj instanceof Typed t ? t.getType() : JDBCType.typeOf(obj).orElse(null);
 		return new SignatureMismatchException(format("expected argument of type %s, but was %s [%s]", exp, obj, arg));
+	}
+	
+	public static Signature arrayOf(JavaType type) {
+		return arrayOf(type, 0);
+	}
+	
+	public static Signature arrayOf(JavaType type, int minArgs) {
+		return new Signature(minArgs, new Parameter[] { varargs(type) });
+	}
+
+	public static Signature compile(Parameter... parameters) {
+		if(isNull(parameters)) {
+			return NO_PARAM;
+		}
+		var i=0;
+		for(; i<parameters.length && parameters[i].isRequired(); i++) {
+			if(parameters[i].isVarargs() && i<parameters.length-1) {
+				throw new IllegalArgumentException("varargs should be the last parameter");
+			}
+		}
+		var nReqArgs = i;
+		for(; i<parameters.length && !parameters[i].isRequired(); i++) {
+			if(parameters[i].isVarargs() && i<parameters.length-1) {
+				throw new IllegalArgumentException("varargs should be the last parameter");
+			}
+		}
+		if(i<parameters.length) {
+			throw new IllegalArgumentException("required parameter cannot follow optional parameter");
+		}
+		return new Signature(nReqArgs, parameters);
 	}
 }

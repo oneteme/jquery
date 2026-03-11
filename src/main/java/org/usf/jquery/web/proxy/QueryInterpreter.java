@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
+import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.web.ResourceAccessException;
@@ -107,10 +108,10 @@ public interface QueryInterpreter {
 	
 	default void parseFilters(Map<String, String[]> parameterMap, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameterMap)) {
-			var def = ctx.getDialect().criteria(query);
-			def.invoke(parameterMap.entrySet().stream()
+			Object[] args = parameterMap.entrySet().stream()
 					.map(e-> evaluateFilter(parseEntry(e.getKey()), ctx, parse(e.getValue()).toArray(Entry[]::new)))
-					.toArray());
+					.toArray(Criteria[]::new);
+			ctx.getDialect().criteria(query).invoke(args);
 		}
 	}
 	

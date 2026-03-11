@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Arrays.copyOf;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JQueryType.CASE;
@@ -19,7 +18,7 @@ import static org.usf.jquery.core.JoinType.LEFT;
 import static org.usf.jquery.core.JoinType.RIGHT;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
-import static org.usf.jquery.core.Parameter.varargs;
+import static org.usf.jquery.core.Signature.arrayOf;
 import static org.usf.jquery.core.TypeResolver.firstArgType;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -77,13 +76,13 @@ public interface Composers {
 	default Definition<PartitionComposer> partition(PartitionComposer composer) { 
 		return new Definition<>("partition", PARTITION, 
 				(t, args)-> composer.columns((Column[])args), 
-				varargs(COLUMN)); //can be empty for window functions without partition
+				arrayOf(COLUMN)); //can be empty for window functions without partition
 	}
 	
 	default Definition<PartitionComposer> order(PartitionComposer composer) { //Partition | QueryComposer
 		return new Definition<>("order", firstArgType(), 
 				(type,args)-> composer.orders((Order[])args),
-				required(ORDER), varargs(ORDER));
+				arrayOf(ORDER, 1));
 	}
 	
 	//join operators
@@ -112,8 +111,8 @@ public interface Composers {
 	
 	default Definition<JoinComposer> criteria(JoinComposer composer) { //ViewJoin | QueryComposer
 		return new Definition<>("criteria", firstArgType(), 
-				(type,args)-> composer.criterias(convertArray(args, Criteria[].class)),
-				required(FILTER), varargs(FILTER));
+				(type,args)-> composer.criterias((Criteria[]) args),
+				arrayOf(FILTER, 1));
 	}
 	
 	//query operators
@@ -124,33 +123,33 @@ public interface Composers {
 	
 	default Definition<QueryComposer> select(QueryComposer composer) {
 		return new Definition<>("select", QUERY, 
-				(type,args)-> 
-		composer.columns(convertArray(args, NamedColumn[].class)), 
-				required(NAMED_COLUMN), varargs(NAMED_COLUMN));
+				(type,args)-> composer.columns((NamedColumn[]) args), 
+				arrayOf(NAMED_COLUMN, 1));
 	}
 	
 	default Definition<QueryComposer> criteria(QueryComposer composer) {
 		return new Definition<>("criteria", QUERY, 
-				(type,args)-> composer.filters(convertArray(args, Criteria[].class)), 
-				required(FILTER), varargs(FILTER));
+				(type,args)-> 
+		composer.filters((Criteria[]) args), 
+				arrayOf(FILTER, 1));
 	}
 	
 	default Definition<QueryComposer> order(QueryComposer composer) {
 		return new Definition<>("order", firstArgType(), 
-				(type,args)-> composer.orders(convertArray(args, Order[].class)), 
-				required(ORDER), varargs(ORDER));
+				(type,args)-> composer.orders((Order[]) args), 
+				arrayOf(ORDER, 1));
 	}
 	
 	default Definition<QueryComposer> join(QueryComposer composer){
 		return new Definition<>("join", QUERY, 
-				(t,args)-> composer.joins2(convertArray(args, JoinsClause[].class)), 
-				required(JOIN), varargs(JOIN));
+				(t,args)-> composer.joins2((JoinsClause[]) args), 
+				arrayOf(JOIN, 1));
 	}
 	
 	default Definition<QueryComposer> union(QueryComposer composer) {
 		return new Definition<>("union", QUERY, 
-				(t,args)-> composer.unions(convertArray(args, QueryUnion[].class)), 
-				required(UNION), varargs(UNION));
+				(t,args)-> composer.unions((QueryUnion[]) args), 
+				arrayOf(UNION, 1));
 	}
 	
 	default Definition<QueryComposer> distinct(QueryComposer composer) {
@@ -171,10 +170,5 @@ public interface Composers {
 		return new Definition<>(name, QUERY, 
 				(t,args)-> func.apply((Integer)args[0]),
 				required(INTEGER)); //!variable
-	}
-	
-	//TODO optimize args construction by creating right array type from signature and filling it directly instead of converting from Object[]
-	static <T> T[] convertArray(Object[] array, Class<T[]> type) {
-		return copyOf(array, array.length, type);
 	}
 }

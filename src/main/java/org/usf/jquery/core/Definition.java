@@ -27,9 +27,17 @@ public class Definition<T> {
 	public Definition(String name, JavaType type, Invocable<T> factory, Parameter... parameter) {
 		this(name, type, null, factory, compile(parameter));
 	}
+	
+	public Definition(String name, JavaType type, Invocable<T> factory, Signature signature) {
+		this(name, type, null, factory, signature);
+	}
 
 	public Definition(String name, TypeResolver returnTypeResover, Invocable<T> factory, Parameter... parameter) {
 		this(name, null, returnTypeResover, factory, compile(parameter));
+	}
+	
+	public Definition(String name, TypeResolver returnTypeResover, Invocable<T> factory, Signature signature) {
+		this(name, null, returnTypeResover, factory, signature);
 	}
 	
 	public final T invoke(Object... args) {

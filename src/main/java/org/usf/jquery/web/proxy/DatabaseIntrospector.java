@@ -49,14 +49,16 @@ public final class DatabaseIntrospector {
 	}
 	
 	public static Provider fetchProduct(DataSource ds) {
-		try(var cnx = ds.getConnection()) {
-			var name = cnx.getMetaData().getDatabaseProductName();
-			if(nonNull(name)) {
-				return parseName(name);
+		if(nonNull(ds)) {
+			try(var cnx = ds.getConnection()) {
+				var name = cnx.getMetaData().getDatabaseProductName();
+				if(nonNull(name)) {
+					return parseName(name);
+				}
 			}
-		}
-		catch(Exception e) {
-			log.warn("error while fetching database product name", e);
+			catch(Exception e) {
+				log.warn("error while fetching database product name", e);
+			}
 		}
 		return DEFAULT;
 	}
