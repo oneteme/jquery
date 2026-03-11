@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.util.ArrayList;
@@ -21,17 +22,23 @@ public final class CaseColumnComposer implements Composer<CaseColumn> {
 	public CaseColumnComposer() {
 		this(null);
 	}
-	
+
+	//column.when(predicate, then).when(predicate, then)...orElse(else)
 	public CaseColumnComposer when(Predicate predicate, Object then) {
 		if(nonNull(column)) {
-			return when(column.filter(predicate), then);
+			cases.add(new WhenCase(column.filter(predicate), then));
+			return this;
 		}
-		throw new IllegalArgumentException("cannot append expression " + predicate);
+		throw new IllegalArgumentException("cannot append predicate " + predicate);
 	}
 	
+	//when(criteria, then).when(criteria, then)...orElse(else)
 	public CaseColumnComposer when(Criteria criteria, Object then) {
-		cases.add(new WhenCase(criteria, then));
-		return this;
+		if(isNull(column)) {
+			cases.add(new WhenCase(criteria, then));
+			return this;
+		}
+		throw new IllegalArgumentException("cannot append criteria " + criteria);
 	}
 
 	public CaseColumn orElse(Object o) {

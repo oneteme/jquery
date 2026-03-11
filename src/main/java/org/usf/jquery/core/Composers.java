@@ -17,10 +17,6 @@ import static org.usf.jquery.core.JoinType.FULL;
 import static org.usf.jquery.core.JoinType.INNER;
 import static org.usf.jquery.core.JoinType.LEFT;
 import static org.usf.jquery.core.JoinType.RIGHT;
-import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.LogicalOperator.OR;
-import static org.usf.jquery.core.OrderType.ASC;
-import static org.usf.jquery.core.OrderType.DESC;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -36,24 +32,8 @@ import org.usf.jquery.web.proxy.PartitionComposer;
  * @author u$f
  *
  */
-public interface Syntaxes {
+public interface Composers {
 
-	//logical operators
-	
-	default Definition<Criteria> and() {
-		return logicalOprDefinition(AND);
-	}
-
-	default Definition<Criteria> or() {
-		return logicalOprDefinition(OR);
-	}
-	
-	private Definition<Criteria> logicalOprDefinition(LogicalOperator opr) {
-		return new Definition<>(opr.name().toLowerCase(), BOOLEAN, 
-				(type,args)-> ((Criteria)args[0]).append(opr, (Criteria)args[1]), 
-				required(BOOLEAN), required(BOOLEAN));
-	}
-	
 	//order operators
 	
 //	default Definition<Order> asc() {
@@ -164,7 +144,7 @@ public interface Syntaxes {
 	
 	default Definition<QueryComposer> join(QueryComposer composer){
 		return new Definition<>("join", QUERY, 
-				(t,args)-> composer.joins(convertArray(args, ViewJoin[].class)), 
+				(t,args)-> composer.joins2(convertArray(args, JoinsClause[].class)), 
 				required(JOIN), varargs(JOIN));
 	}
 	
@@ -194,22 +174,8 @@ public interface Syntaxes {
 				required(INTEGER)); //!variable
 	}
 	
-	//scope operators
-	
-	default OperatorDefinition over() {
-		return new OperatorDefinition(firstArgType(), scope("OVER"), required(), optional(PARTITION)); 
-	}
-	
-	default OperatorDefinition within() {
-		return new OperatorDefinition(firstArgType(), scope("WITHIN GROUP"), required(), varargs(ORDER));
-	}
-
-	public static ScopeFunction scope(String name) {
-		return ()-> name;
-	}
-	
+	//TODO optimize args construction by creating right array type from signature and filling it directly instead of converting from Object[]
 	static <T> T[] convertArray(Object[] array, Class<T[]> type) {
 		return copyOf(array, array.length, type);
 	}
-	
 }

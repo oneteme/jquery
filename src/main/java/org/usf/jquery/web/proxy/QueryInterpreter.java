@@ -100,7 +100,6 @@ public interface QueryInterpreter {
 	
 	default void parseJoins(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
-			//parse(parameters).map(e-> ctx.resolve(e, JoinsClause.class)).forEach(query::joins2)
 			var def = ctx.getDialect().join(query);
 			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}

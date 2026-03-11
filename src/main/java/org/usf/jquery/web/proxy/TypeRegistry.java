@@ -26,9 +26,10 @@ import java.util.UUID;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
-import org.usf.jquery.core.JoinComposer;
+import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Order;
+import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.SingleQueryColumn;
 
 /**
@@ -109,8 +110,8 @@ public final class TypeRegistry {
 		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
 		evl.put(Criteria.class, EntryEvaluators::evaluateFilter);
 		evl.put(Order.class, EntryEvaluators::evaluateOrder);
-		evl.put(JoinComposer.class, EntryEvaluators::evaluateJoin);
-		evl.put(PartitionComposer.class, EntryEvaluators::evaluatePartition);
+		evl.put(JoinsClause.class, EntryEvaluators::evaluateJoin);
+		evl.put(Partition.class, EntryEvaluators::evaluatePartition);
 		evl.put(SingleQueryColumn.class, EntryEvaluators::evaluateQueryColumn);
 		DEF_EVALUATORS = unmodifiableMap(evl);
 	}

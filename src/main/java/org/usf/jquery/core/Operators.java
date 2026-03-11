@@ -9,6 +9,8 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
+import static org.usf.jquery.core.JQueryType.ORDER;
+import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -327,7 +329,16 @@ public interface Operators {
 		return new OperatorDefinition(TIMESTAMP, constant("CURRENT_TIMESTAMP"));
 	}
 	
+	//scope operators
 	
+	default OperatorDefinition over() {
+		return new OperatorDefinition(firstArgType(), scope("OVER"), required(), optional(PARTITION)); 
+	}
+	
+	default OperatorDefinition within() {
+		return new OperatorDefinition(firstArgType(), scope("WITHIN GROUP"), required(), varargs(ORDER));
+	}
+
 	public static ArithmeticOperator operator(String symbol) {
 		return ()-> symbol;
 	}
@@ -355,4 +366,9 @@ public interface Operators {
 	public static ConstantOperator constant(String name) {
 		return ()-> name;
 	}
+
+	public static ScopeFunction scope(String name) {
+		return ()-> name;
+	}
+	
 }

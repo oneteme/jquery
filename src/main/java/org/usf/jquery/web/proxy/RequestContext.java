@@ -204,6 +204,7 @@ public final class RequestContext {
 			}
 			catch (Exception e) {
 				//do nothing, try other types
+				log.error("resolveEntry", e);
 			}
 		}
 		throw new NoSuchElementException("no parser for type " + Arrays.toString(types));

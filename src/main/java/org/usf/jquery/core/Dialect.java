@@ -21,7 +21,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public class Dialect implements Syntaxes, Operators, Comparators {
+public class Dialect implements Composers, Operators, Comparators {
 	
 	private static final Dialect DEFAULT_DIALECT = new Dialect(DEFAULT);
 	
