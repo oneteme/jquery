@@ -112,8 +112,7 @@ public interface Composers {
 	
 	default Definition<JoinComposer> criteria(JoinComposer composer) { //ViewJoin | QueryComposer
 		return new Definition<>("criteria", firstArgType(), 
-				(type,args)-> 
-		composer.criterias(convertArray(args, Criteria[].class)),
+				(type,args)-> composer.criterias(convertArray(args, Criteria[].class)),
 				required(FILTER), varargs(FILTER));
 	}
 	

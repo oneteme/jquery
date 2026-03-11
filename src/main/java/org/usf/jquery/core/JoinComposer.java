@@ -1,13 +1,20 @@
 package org.usf.jquery.core;
 
+import static java.util.Collections.addAll;
+import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 
-public class JoinComposer implements Composer<ViewJoin> {
+import lombok.NonNull;
+
+/**
+ * 
+ * @author u$f
+ * 
+ */
+public final class JoinComposer implements Composer<ViewJoin> {
 	
 	private final JoinType type;
 	private final DBView view;
@@ -18,11 +25,11 @@ public class JoinComposer implements Composer<ViewJoin> {
 		this.view = view;
 	}
 	
-	public JoinComposer criterias(Criteria... criterias) {
-		if(Objects.nonNull(criterias)) {
+	public JoinComposer criterias(@NonNull Criteria... criterias) {
+		if(isNull(this.criterias)) {
 			this.criterias = new ArrayList<>(criterias.length);
 		}
-		Collections.addAll(this.criterias, criterias);
+		addAll(this.criterias, criterias);
 		return this;
 	}
 	

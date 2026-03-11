@@ -12,21 +12,28 @@ import org.usf.jquery.core.Composer;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
 
+import lombok.NonNull;
+
+/**
+ * 
+ * @author u$f
+ * 
+ */
 public final class PartitionComposer implements Composer<Partition> {
 	
 	private List<Column> columns;
 	private List<Order> orders;
 
-	public PartitionComposer columns(Column... columns) {
-		if(isNull(columns)) {
+	public PartitionComposer columns(@NonNull Column... columns) {
+		if(isNull(this.columns)) {
 			this.columns = new ArrayList<>();
 		}
 		addAll(this.columns, columns);
 		return this;
 	}
 	
-	public PartitionComposer orders(Order... orders) {
-		if(isNull(orders)) {
+	public PartitionComposer orders(@NonNull Order... orders) {
+		if(isNull(this.orders)) {
 			this.orders = new ArrayList<>();
 		}
 		addAll(this.orders, orders);
@@ -39,5 +46,4 @@ public final class PartitionComposer implements Composer<Partition> {
 				nonNull(columns) ? columns.toArray(Column[]::new) : null, 
 				nonNull(orders) ? orders.toArray(Order[]::new) : null);
 	}
-
 }
