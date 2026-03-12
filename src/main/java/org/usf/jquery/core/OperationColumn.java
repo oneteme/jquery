@@ -1,6 +1,8 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.OperatorKind.AGGREGATE;
+import static org.usf.jquery.core.OperatorKind.WINDOW;
 import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
@@ -19,6 +21,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class OperationColumn implements Column {
 
+	private final String name;
+	private final OperatorKind kind;
 	private final Operator operator;
 	private final Object[] args; //optional
 	private final JDBCType type; //optional
@@ -26,11 +30,11 @@ public final class OperationColumn implements Column {
 
 	@Override
 	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
+		if(kind == AGGREGATE || kind == WINDOW) {
 			DBObject.tryComposeNested(query, c-> {}, args); //declare views only
 			return 1;
 		}
-		if(operator.is("OVER")) {
+		if(name.equals("OVER")) {
 			if(query.getRole() == FILTER) {
 				overColumn = replaceNestedView(query);
 				return overColumn.compose(query, groupKeys);
@@ -69,7 +73,7 @@ public final class OperationColumn implements Column {
 	}
 	
 	ViewColumn replaceNestedView(QueryComposer query) {
-		var col = new OperationColumn(operator, args, type).as("over_" + hashCode());
+		var col = new OperationColumn(name, kind, operator, args, type).as("over_" + hashCode());
 		var views = new QueryComposer().columns(col).getViews(); //scan column views
 		if(views.size() == 1) {
 			var view = views.iterator().next();

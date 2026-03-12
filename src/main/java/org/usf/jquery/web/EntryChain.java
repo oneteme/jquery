@@ -318,7 +318,7 @@ final class EntryChain {
 		}
 		if(!isEmpty(outerArgs)) {
 			var fn = outerArgs.length == 1 ? getDialect().eq() : getDialect().in();
-			e = new EntryChain(fn.getComparator().id(), false, outerArgs, null, null); 
+			e = new EntryChain(fn.getComparator().toString(), false, outerArgs, null, null); 
 			r.col = fn.invoke(e.parseArgs(ctx, r.col, fn.getSignature())); //no chain
 		}
 		return r;
@@ -357,8 +357,8 @@ final class EntryChain {
 	
 	//operator|[view.]operator
 	private Optional<EntryChainCursor> lookupViewOperation(QueryContext ctx, ViewDecorator vd, boolean prefixed) {
-		return ctx.lookupOperator(value).filter(prefixed ? OperatorDefinition::isCountFunction : o-> true).map(fn-> {
-			var col = isEmpty(args) && fn.isCountFunction() ? allColumns(vd.view()) : null;
+		return ctx.lookupOperator(value).filter(prefixed ? op -> op.getName().equals("count") : o-> true).map(fn-> {
+			var col = isEmpty(args) && fn.getName().equals("count") ? allColumns(vd.view()) : null;
 			return fn.invoke(parseArgs(ctx, col, fn.getSignature()));
 		}).map(oc-> new EntryChainCursor(this, vd, oc));
 	}

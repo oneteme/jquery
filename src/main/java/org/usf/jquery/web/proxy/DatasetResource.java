@@ -10,4 +10,5 @@ import org.usf.jquery.core.DBView;
 public interface DatasetResource extends Resource {
 	
 	DBView getView();
+	
 }

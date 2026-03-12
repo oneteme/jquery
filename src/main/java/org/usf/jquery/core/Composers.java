@@ -19,7 +19,6 @@ import static org.usf.jquery.core.JoinType.RIGHT;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Signature.arrayOf;
-import static org.usf.jquery.core.TypeResolver.firstArgType;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.function.IntFunction;
@@ -35,140 +34,140 @@ public interface Composers {
 
 	//order operators
 	
-//	default Definition<Order> asc() {
+//	default ComposerDefinition<Order> asc() {
 //		return orderDefinition(ASC);
 //	}
 //	
-//	default Definition<Order> desc() {
+//	default ComposerDefinition<Order> desc() {
 //		return orderDefinition(DESC);
 //	}
 //	
-//	private Definition<Order> orderDefinition(OrderType type) {
-//		return new Definition<>(type.name().toLowerCase(), ORDER, 
+//	private ComposerDefinition<Order> orderDefinition(OrderType type) {
+//		return new ComposerDefinition<>(type.name().toLowerCase(), ORDER, 
 //				(t,args)-> ((Column)args[0]).order(type),
 //				required(COLUMN));
 //	}
 
 	//case operators
 	
-	default Definition<CaseColumnComposer> when() { 
+	default ComposerDefinition<CaseColumnComposer> when() { 
 		return when(new CaseColumnComposer());
 	}
 	
-	default Definition<CaseColumnComposer> when(CaseColumnComposer composer) { 
-		return new Definition<>("when", CASE, 
-				(type,args)-> composer.when((Criteria)args[0], args[1]), 
+	default ComposerDefinition<CaseColumnComposer> when(CaseColumnComposer composer) { 
+		return new ComposerDefinition<>("when", CASE, 
+				args-> composer.when((Criteria)args[0], args[1]), 
 				required(FILTER), required());
 	}
 	
-	default Definition<CaseColumn> orElse(CaseColumnComposer composer) { 
-	    return new Definition<>("orElse", CASE, 
-	    		(type,args) -> composer.orElse(args[0]), 
+	default ComposerDefinition<CaseColumn> orElse(CaseColumnComposer composer) { 
+	    return new ComposerDefinition<>("orElse", CASE, 
+	    		args -> composer.orElse(args[0]), 
 	    		required());
 	}
 
 	//partition operators
 	
-	default Definition<PartitionComposer> partition() { 
+	default ComposerDefinition<PartitionComposer> partition() { 
 		return partition(new PartitionComposer());
 	}
 	
-	default Definition<PartitionComposer> partition(PartitionComposer composer) { 
-		return new Definition<>("partition", PARTITION, 
-				(t, args)-> composer.columns((Column[])args), 
+	default ComposerDefinition<PartitionComposer> partition(PartitionComposer composer) { 
+		return new ComposerDefinition<>("partition", PARTITION, 
+				args-> composer.columns((Column[])args), 
 				arrayOf(COLUMN)); //can be empty for window functions without partition
 	}
 	
-	default Definition<PartitionComposer> order(PartitionComposer composer) { //Partition | QueryComposer
-		return new Definition<>("order", firstArgType(), 
-				(type,args)-> composer.orders((Order[])args),
+	default ComposerDefinition<PartitionComposer> order(PartitionComposer composer) { //Partition | QueryComposer
+		return new ComposerDefinition<>("order", PARTITION, 
+				args-> composer.orders((Order[])args),
 				arrayOf(ORDER, 1));
 	}
 	
 	//join operators
 	
-	default Definition<JoinComposer> innerJoin() {
+	default ComposerDefinition<JoinComposer> innerJoin() {
 		return joinDefinition(INNER);
 	}
 	
-	default Definition<JoinComposer> leftJoin() {
+	default ComposerDefinition<JoinComposer> leftJoin() {
 		return joinDefinition(LEFT);
 	}
 
-	default Definition<JoinComposer> rightJoin() {
+	default ComposerDefinition<JoinComposer> rightJoin() {
 		return joinDefinition(RIGHT);
 	}
 	
-	default Definition<JoinComposer> fullJoin() {
+	default ComposerDefinition<JoinComposer> fullJoin() {
 		return joinDefinition(FULL);
 	}
 	
-	private Definition<JoinComposer> joinDefinition(JoinType type) {
-		return new Definition<>(type.name().toLowerCase()+"Join", JOIN, 
-				(t,args)-> new JoinComposer(type, (DBView)args[0]), 
+	private ComposerDefinition<JoinComposer> joinDefinition(JoinType type) {
+		return new ComposerDefinition<>(type.name().toLowerCase()+"Join", JOIN, 
+				args-> new JoinComposer(type, (DBView)args[0]), 
 				required(VIEW));
 	}
 	
-	default Definition<JoinComposer> criteria(JoinComposer composer) { //ViewJoin | QueryComposer
-		return new Definition<>("criteria", firstArgType(), 
-				(type,args)-> composer.criterias((Criteria[]) args),
+	default ComposerDefinition<JoinComposer> criteria(JoinComposer composer) { //ViewJoin | QueryComposer
+		return new ComposerDefinition<>("criteria", JOIN, 
+				args-> composer.criterias((Criteria[]) args),
 				arrayOf(FILTER, 1));
 	}
 	
 	//query operators
 	
-	default Definition<QueryComposer> select() {
+	default ComposerDefinition<QueryComposer> select() {
 		return select(new QueryComposer());
 	}
 	
-	default Definition<QueryComposer> select(QueryComposer composer) {
-		return new Definition<>("select", QUERY, 
-				(type,args)-> composer.columns((NamedColumn[]) args), 
+	default ComposerDefinition<QueryComposer> select(QueryComposer composer) {
+		return new ComposerDefinition<>("select", QUERY, 
+				args-> composer.columns((NamedColumn[]) args), 
 				arrayOf(NAMED_COLUMN, 1));
 	}
 	
-	default Definition<QueryComposer> criteria(QueryComposer composer) {
-		return new Definition<>("criteria", QUERY, 
-				(type,args)-> 
+	default ComposerDefinition<QueryComposer> criteria(QueryComposer composer) {
+		return new ComposerDefinition<>("criteria", QUERY, 
+				args-> 
 		composer.filters((Criteria[]) args), 
 				arrayOf(FILTER, 1));
 	}
 	
-	default Definition<QueryComposer> order(QueryComposer composer) {
-		return new Definition<>("order", firstArgType(), 
-				(type,args)-> composer.orders((Order[]) args), 
+	default ComposerDefinition<QueryComposer> order(QueryComposer composer) {
+		return new ComposerDefinition<>("order", QUERY, 
+				args-> composer.orders((Order[]) args), 
 				arrayOf(ORDER, 1));
 	}
 	
-	default Definition<QueryComposer> join(QueryComposer composer){
-		return new Definition<>("join", QUERY, 
-				(t,args)-> composer.joins2((JoinsClause[]) args), 
+	default ComposerDefinition<QueryComposer> join(QueryComposer composer){
+		return new ComposerDefinition<>("join", QUERY, 
+				args-> composer.joins2((JoinsClause[]) args), 
 				arrayOf(JOIN, 1));
 	}
 	
-	default Definition<QueryComposer> union(QueryComposer composer) {
-		return new Definition<>("union", QUERY, 
-				(t,args)-> composer.unions((QueryUnion[]) args), 
+	default ComposerDefinition<QueryComposer> union(QueryComposer composer) {
+		return new ComposerDefinition<>("union", QUERY, 
+				args-> composer.unions((QueryUnion[]) args), 
 				arrayOf(UNION, 1));
 	}
 	
-	default Definition<QueryComposer> distinct(QueryComposer composer) {
-		return new Definition<>("distinct", QUERY, 
-				(t,args)-> composer.distinct(isEmpty(args) || (Boolean) args[0]),
+	default ComposerDefinition<QueryComposer> distinct(QueryComposer composer) {
+		return new ComposerDefinition<>("distinct", QUERY, 
+				args-> composer.distinct(isEmpty(args) || (Boolean) args[0]),
 				optional(BOOLEAN));
 	}
 	
-	default Definition<QueryComposer> limit(QueryComposer composer) {
+	default ComposerDefinition<QueryComposer> limit(QueryComposer composer) {
 		return queryIntDefinition("limit", composer::limit);
 	}
 	
-	default Definition<QueryComposer> offset(QueryComposer composer) {
+	default ComposerDefinition<QueryComposer> offset(QueryComposer composer) {
 		return queryIntDefinition("offset", composer::offset);
 	}
 	
-	private Definition<QueryComposer> queryIntDefinition(String name, IntFunction<QueryComposer> func) {
-		return new Definition<>(name, QUERY, 
-				(t,args)-> func.apply((Integer)args[0]),
+	private ComposerDefinition<QueryComposer> queryIntDefinition(String name, IntFunction<QueryComposer> func) {
+		return new ComposerDefinition<>(name, QUERY, 
+				args-> func.apply((Integer)args[0]),
 				required(INTEGER)); //!variable
 	}
 }

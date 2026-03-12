@@ -34,68 +34,75 @@ public class Dialect implements Composers, Operators, Comparators {
 	
 	//combined functions
 	
-	public Definition<Column> semester() {//[1-2]
-		Macro op = args-> month().invoke(args).toCase()
+	public MacroDefinition semester() {//[1-2]
+		return new MacroDefinition("semester", INTEGER, 
+				args-> month().invoke(args).toCase()
 				.when(Predicate.lt(7), 1)
-				.orElse(2);
-		return new Definition<>("semester", INTEGER, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+				.orElse(2), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public Definition<Column> quarter() {//[1-4]
-		Macro mcr = args-> month().invoke(args).toCase()
+	public MacroDefinition quarter() {//[1-4]
+		return new MacroDefinition("quarter", INTEGER, 
+				args-> month().invoke(args).toCase()
 				.when(Predicate.lt(4), 1)
 				.when(Predicate.lt(7), 2)
 				.when(Predicate.lt(10), 3)
-				.orElse(4);
-		return new Definition<>("quarter", INTEGER, mcr, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+				.orElse(4), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public Definition<Column> yearSemester() {//YYYY-'S'S
+	public MacroDefinition yearSemester() {//YYYY-'S'S
 		var varchar = varchar();
-		Macro mcr = args-> concat().invoke(
+		return new MacroDefinition("yearSemester", VARCHAR,  
+				args-> concat().invoke(
 				varchar.invoke(year().invoke(args)),
 				"-S",
-				varchar.invoke(semester().invoke(args)));
-		return new Definition<>("yearSemester", VARCHAR, mcr, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+				varchar.invoke(semester().invoke(args))), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public Definition<Column> yearQuarter() {//YYYY-'Q'Q
+	public MacroDefinition yearQuarter() {//YYYY-'Q'Q
 		var varchar = varchar();
-		Macro mcr = args-> concat().invoke(
+		return new MacroDefinition("yearQuarter", VARCHAR, 
+				args-> concat().invoke(
 				varchar.invoke(year().invoke(args)),
 				"-Q",
-				varchar.invoke(quarter().invoke(args)));
-		return new Definition<>("yearQuarter", VARCHAR, mcr, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+				varchar.invoke(quarter().invoke(args))), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public Definition<Column> yearWeek() {//YYYY-'W'WW
+	public MacroDefinition yearWeek() {//YYYY-'W'WW
 		var varchar = varchar();
-		Macro op = args-> concat().invoke(
+		return new MacroDefinition("yearWeek", VARCHAR, 
+				args-> concat().invoke(
 				varchar.invoke(year().invoke(args[0])), 
 				"-W", 
-				lpad().invoke(varchar.invoke(doy().invoke(args[0])), 2, "0"));
-		return new Definition<>("yearWeek", VARCHAR, op, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+				lpad().invoke(varchar.invoke(doy().invoke(args[0])), 2, "0")), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public Definition<Column> yearMonth() {//YYYY-MM
-		Macro mcr = args-> left().invoke(varchar().invoke(args), 7);
-		return new Definition<>("yearMonth", VARCHAR, mcr, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	public MacroDefinition yearMonth() {//YYYY-MM
+		return new MacroDefinition("yearMonth", VARCHAR, 
+				args-> left().invoke(varchar().invoke(args), 7), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
-	public Definition<Column> monthDay() {//MM-DD
-		Macro mcr = args-> substring().invoke(varchar().invoke(args[0]), 6, 5);
-		return new Definition<>("monthDay", VARCHAR, mcr, required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	public MacroDefinition monthDay() {//MM-DD
+		return new MacroDefinition("monthDay", VARCHAR, 
+				args-> substring().invoke(varchar().invoke(args[0]), 6, 5), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public Definition<Column> hourMinute() {//HH:MM
-		Macro mcr = args-> {
-			var time = JDBCType.typeOf(args[0])
-					.filter(t-> t == TIME)
-					.map(t-> args[0])
-					.orElseGet(()-> time().invoke(args[0]));
-			return left().invoke(varchar().invoke(time), 5);
-		};
-		return new Definition<>("hourMinute", VARCHAR, mcr, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	public MacroDefinition hourMinute() {//HH:MM
+		return new MacroDefinition("hourMinute", VARCHAR, 
+				args-> {
+					var time = JDBCType.typeOf(args[0])
+							.filter(t-> t == TIME)
+							.map(t-> args[0])
+							.orElseGet(()-> time().invoke(args[0]));
+					return left().invoke(varchar().invoke(time), 5);
+					}, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	public static Dialect getDialect() {		

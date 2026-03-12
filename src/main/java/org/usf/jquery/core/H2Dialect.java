@@ -19,31 +19,31 @@ public final class H2Dialect extends Dialect {
 
 	@Override
 	public OperatorDefinition bitAnd() {
-		return new OperatorDefinition(BIGINT, function("BITAND"), required(BIGINT), required(BIGINT));
+		return function(BIGINT, "BITAND", required(BIGINT), required(BIGINT));
 	}
 
 	@Override
 	public OperatorDefinition bitOr() {
-		return new OperatorDefinition(BIGINT, function("BITOR"), required(BIGINT), required(BIGINT));
+		return function(BIGINT, "BITOR", required(BIGINT), required(BIGINT));
 	}
 
 	@Override
 	public OperatorDefinition bitXor() {
-		return new OperatorDefinition(BIGINT, function("BITXOR"), required(BIGINT), required(BIGINT));
+		return function(BIGINT, "BITXOR", required(BIGINT), required(BIGINT));
 	}
 
 	@Override
 	public OperatorDefinition bitNot() {
-		return new OperatorDefinition(BIGINT, function("BITNOT"), required(BIGINT));
+		return function(BIGINT, "BITNOT", required(BIGINT));
 	}
 
 	@Override
 	public OperatorDefinition bitShiftLeft() {
-		return new OperatorDefinition(BIGINT, function("LSHIFT"), required(BIGINT), required(INTEGER));
+		return function(BIGINT, "LSHIFT", required(BIGINT), required(INTEGER));
 	}
 
 	@Override
 	public OperatorDefinition bitShiftRight() {
-		return new OperatorDefinition(BIGINT, function("RSHIFT"), required(BIGINT), required(INTEGER));
+		return function(BIGINT, "RSHIFT", required(BIGINT), required(INTEGER));
 	}
 }

@@ -1,5 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.lang.String.format;
+import static java.util.Objects.isNull;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -11,10 +13,16 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.ORDER;
 import static org.usf.jquery.core.JQueryType.PARTITION;
+import static org.usf.jquery.core.OperatorKind.CAST;
+import static org.usf.jquery.core.OperatorKind.*;
+import static org.usf.jquery.core.OperatorKind.EXTRACT;
+import static org.usf.jquery.core.OperatorKind.OPR;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.TypeResolver.firstArgType;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 /**
  * 
@@ -23,352 +31,417 @@ import static org.usf.jquery.core.TypeResolver.firstArgType;
  */
 public interface Operators {
 	
+	static final String COUNT_FN = "COUNT";
+	static final String AVG_FN = "AVG";
+	static final String MAX_FN = "MAX";
+	static final String MIN_FN = "MIN";
+	static final String SUM_FN = "SUM";
+	static final String PERCENTILE_CONT_FN = "PERCENTILE_CONT";
+	static final String PERCENTILE_DISC_FN = "PERCENTILE_DISC";
+	static final String MEDIAN_FN = "MEDIAN";
+	static final String MODE_FN = "MODE";
+	
 	//Arithmetic operations
 
 	default OperatorDefinition plus() {
-		return new OperatorDefinition("plus", firstArgType(), operator("+"), required(), required(firstArgType()));
+		return operator(firstArgType(), "plus", "+", required(), required(firstArgType()));
 	}
 
 	default OperatorDefinition minus() {
-		return new OperatorDefinition("minus", firstArgType(), operator("-"), required(), required(firstArgType())); //date|datetime
+		return operator(firstArgType(), "minus", "-", required(), required(firstArgType())); //date|datetime
 	}
 
 	default OperatorDefinition multiply() {
-		return new OperatorDefinition("multiply", firstArgType(), operator("*"), required(), required(firstArgType()));
+		return operator(firstArgType(), "multiply", "*", required(), required(firstArgType()));
 	}
 	
 	default OperatorDefinition divide() {
-		return new OperatorDefinition("divide", firstArgType(), operator("/"), required(), required(firstArgType()));
+		return operator(firstArgType(), "divide", "/", required(), required(firstArgType()));
 	}
-	//TODO factorial: single arg
 	
 	//numeric functions
 	
 	default OperatorDefinition sqrt() {
-		return new OperatorDefinition(DOUBLE, function("SQRT"), required(DOUBLE)); 
+		return function(DOUBLE, "SQRT", required(DOUBLE)); 
 	}
 	
 	default OperatorDefinition exp() {
-		return new OperatorDefinition(DOUBLE, function("EXP"), required(DOUBLE)); 
+		return function(DOUBLE, "EXP", required(DOUBLE)); 
 	}
 	
 	default OperatorDefinition log() {
-		return new OperatorDefinition(DOUBLE, function("LOG"), required(DOUBLE), optional(INTEGER)); 
+		return function(DOUBLE, "LOG", required(DOUBLE), optional(INTEGER)); 
 	}
 	
 	default OperatorDefinition abs() {
-		return new OperatorDefinition(DOUBLE, function("ABS"), required(DOUBLE));
+		return function(DOUBLE, "ABS", required(DOUBLE));
 	}
 
 	default OperatorDefinition ceil() {
-		return new OperatorDefinition(BIGINT, function("CEIL"), required(DOUBLE)); 
+		return function(BIGINT, "CEIL", required(DOUBLE)); 
 	}
 
 	default OperatorDefinition floor() {
-		return new OperatorDefinition(BIGINT, function("FLOOR"), required(DOUBLE)); 
+		return function(BIGINT, "FLOOR", required(DOUBLE)); 
 	}
 
 	default OperatorDefinition trunc() {
-		return new OperatorDefinition(BIGINT, function("TRUNC"), required(DOUBLE), optional(INTEGER)); 
+		return function(BIGINT, "TRUNC", required(DOUBLE), optional(INTEGER)); 
 	}
 	
 	default OperatorDefinition round() {
-		return new OperatorDefinition(DOUBLE, function("ROUND"), required(DOUBLE), optional(INTEGER));
+		return function(DOUBLE, "ROUND", required(DOUBLE), optional(INTEGER));
 	}
 	
 	default OperatorDefinition mod() {
-		return new OperatorDefinition(BIGINT, function("MOD"), required(DOUBLE), required(DOUBLE));
+		return function(BIGINT, "MOD", required(DOUBLE), required(DOUBLE));
 	}	
 	
 	default OperatorDefinition pow() {
-		return new OperatorDefinition(DOUBLE, function("POW"), required(DOUBLE), required(DOUBLE));
+		return function(DOUBLE, "POW", required(DOUBLE), required(DOUBLE));
 	}
 
+	default OperatorDefinition factorial() {
+		return singleArgOperator(BIGINT, "factorial", "!", false, required(BIGINT));
+	}
+	
 	//bitwise functions
+
+	default OperatorDefinition bitNot() {
+		return singleArgOperator(BIGINT, "bitNot", "~", true, required(BIGINT));
+	}
 	
 	default OperatorDefinition bitAnd() {
-		return new OperatorDefinition("bitAnd", BIGINT, operator("&"), required(BIGINT), required(BIGINT));
+		return operator(BIGINT, "bitAnd", "&", required(BIGINT), required(BIGINT));
 	}
 	
 	default OperatorDefinition bitOr() {
-		return new OperatorDefinition("bitOr", BIGINT, operator("|"), required(BIGINT), required(BIGINT));
+		return operator(BIGINT, "bitOr", "|", required(BIGINT), required(BIGINT));
 	}
 	
 	default OperatorDefinition bitXor() {
-		return new OperatorDefinition("bitXor", BIGINT, operator("#"), required(BIGINT), required(BIGINT));
-	}
-	
-	default OperatorDefinition bitNot() {
-		return new OperatorDefinition("bitNot", BIGINT, operator("~"), required(BIGINT));
+		return operator(BIGINT, "bitXor", "#", required(BIGINT), required(BIGINT));
 	}
 	
 	default OperatorDefinition bitShiftLeft() {
-		return new OperatorDefinition("bitShiftLeft", BIGINT, operator("<<"), required(BIGINT), required(INTEGER));
+		return operator(BIGINT, "bitShiftLeft", "<<", required(BIGINT), required(INTEGER));
 	}
 	
 	default OperatorDefinition bitShiftRight() {
-		return new OperatorDefinition("bitShiftRight", BIGINT, operator(">>"), required(BIGINT), required(INTEGER));
+		return operator(BIGINT, "bitShiftRight", ">>", required(BIGINT), required(INTEGER));
 	}
 	
 	//string functions
 
 	default OperatorDefinition length() {
-		return new OperatorDefinition(INTEGER, function("LENGTH"), required(VARCHAR));
+		return function(INTEGER, "LENGTH", required(VARCHAR));
 	}
 	
 	default OperatorDefinition trim() {
-		return new OperatorDefinition(VARCHAR, function("TRIM"), required(VARCHAR));
+		return function(VARCHAR, "TRIM", required(VARCHAR));
 	}
 
 	default OperatorDefinition ltrim() {
-		return new OperatorDefinition(VARCHAR, function("LTRIM"), required(VARCHAR));
+		return function(VARCHAR, "LTRIM", required(VARCHAR));
 	}
 
 	default OperatorDefinition rtrim() {
-		return new OperatorDefinition(VARCHAR, function("RTRIM"), required(VARCHAR));
+		return function(VARCHAR, "RTRIM", required(VARCHAR));
 	}
 	
 	default OperatorDefinition upper() {
-		return new OperatorDefinition(VARCHAR, function("UPPER"), required(VARCHAR));
+		return function(VARCHAR, "UPPER", required(VARCHAR));
 	}
 
 	default OperatorDefinition lower() {
-		return new OperatorDefinition(VARCHAR, function("LOWER"), required(VARCHAR));
+		return function(VARCHAR, "LOWER", required(VARCHAR));
 	}
 	
 	default OperatorDefinition initcap() {
-		return new OperatorDefinition(VARCHAR, function("INITCAP"), required(VARCHAR));
+		return function(VARCHAR, "INITCAP", required(VARCHAR));
 	}
 	
 	default OperatorDefinition reverse() {
-		return new OperatorDefinition(VARCHAR, function("REVERSE"), required(VARCHAR));
+		return function(VARCHAR, "REVERSE", required(VARCHAR));
 	}
 	
 	default OperatorDefinition left() {
-		return new OperatorDefinition(VARCHAR, function("LEFT"), required(VARCHAR), required(INTEGER));
+		return function(VARCHAR, "LEFT", required(VARCHAR), required(INTEGER));
 	}
 	
 	default OperatorDefinition right() {
-		return new OperatorDefinition(VARCHAR, function("RIGHT"), required(VARCHAR), required(INTEGER));
+		return function(VARCHAR, "RIGHT", required(VARCHAR), required(INTEGER));
 	}
 	
 	default OperatorDefinition replace() {
-		return new OperatorDefinition(VARCHAR, function("REPLACE"), required(VARCHAR), required(VARCHAR), required(VARCHAR));
+		return function(VARCHAR, "REPLACE", required(VARCHAR), required(VARCHAR), required(VARCHAR));
 	}
 	
 	default OperatorDefinition substring() { //int start, int length
-		return new OperatorDefinition(VARCHAR, function("SUBSTRING"), required(VARCHAR), required(INTEGER), required(INTEGER));
+		return function(VARCHAR, "SUBSTRING", required(VARCHAR), required(INTEGER), required(INTEGER));
 	}
 	
 	default OperatorDefinition concat() {
-		return new OperatorDefinition(VARCHAR, function("CONCAT"), required(VARCHAR), required(VARCHAR), varargs(VARCHAR));
+		return function(VARCHAR, "CONCAT", required(VARCHAR), required(VARCHAR), varargs(VARCHAR));
 	}
 	
 	default OperatorDefinition lpad() {
-		return new OperatorDefinition(VARCHAR, function("LPAD"), required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
+		return function(VARCHAR, "LPAD", required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
 	}
 	
 	default OperatorDefinition rpad() {
-		return new OperatorDefinition(VARCHAR, function("RPAD"), required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
+		return function(VARCHAR, "RPAD", required(BIGINT, VARCHAR), required(INTEGER), required(VARCHAR));
 	}
 
 	default OperatorDefinition age() { //td interval type
-		return new OperatorDefinition(VARCHAR, function("AGE"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE), optional(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return function(VARCHAR, "AGE", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE), optional(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	//temporal functions
 	
 	default OperatorDefinition year() {
-		return new OperatorDefinition(INTEGER, extract("YEAR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return extract(INTEGER, "YEAR", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	default OperatorDefinition month() {
-		return new OperatorDefinition(INTEGER, extract("MONTH"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return extract(INTEGER, "MONTH", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	default OperatorDefinition week() {
-		return new OperatorDefinition(INTEGER, extract("WEEK"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+		return extract(INTEGER, "WEEK", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
 	default OperatorDefinition day() {
-		return new OperatorDefinition(INTEGER, extract("DAY"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return extract(INTEGER, "DAY", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	default OperatorDefinition dow() {
-		return new OperatorDefinition(INTEGER, extract("DOW"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return extract(INTEGER, "DOW", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	default OperatorDefinition doy() {
-		return new OperatorDefinition(INTEGER, extract("DOY"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return extract(INTEGER, "DOY", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	default OperatorDefinition hour() {
-		return new OperatorDefinition(INTEGER, extract("HOUR"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return extract(INTEGER, "HOUR", required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	default OperatorDefinition minute() {
-		return new OperatorDefinition(INTEGER, extract("MINUTE"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return extract(INTEGER, "MINUTE", required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	default OperatorDefinition second() {
-		return new OperatorDefinition(INTEGER, extract("SECOND"), required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return extract(INTEGER, "SECOND", required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	default OperatorDefinition epoch() {
-		return new OperatorDefinition(BIGINT, extract("EPOCH"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
+		return extract(INTEGER, "EPOCH", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); //!Teradata
 	}
 	
 	//cast functions
 
 	default OperatorDefinition varchar() {
-		return new OperatorDefinition(VARCHAR, cast("VARCHAR"), required(), optional(INTEGER)); //any
+		return cast(VARCHAR, "VARCHAR", required(), optional(INTEGER)); //any
 	}
 	
 	default OperatorDefinition timestamp() {
-		return new OperatorDefinition(TIMESTAMP, cast("TIMESTAMP"), required(VARCHAR, DATE)); 
+		return cast(TIMESTAMP, "TIMESTAMP", required(VARCHAR, DATE)); 
 	}
 	
 	default OperatorDefinition date() {
-		return new OperatorDefinition(DATE, cast("DATE"), required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+		return cast(DATE, "DATE", required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 
 	default OperatorDefinition time() {
-		return new OperatorDefinition(TIME, cast("TIME"), required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return cast(TIME, "TIME", required(VARCHAR, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	default OperatorDefinition integer() {
-		return new OperatorDefinition(INTEGER, cast("INTEGER"), required(VARCHAR, DOUBLE));
+		return cast(INTEGER, "INTEGER", required(VARCHAR, DOUBLE));
 	}
 	
 	default OperatorDefinition bigint() {
-		return new OperatorDefinition(BIGINT, cast("BIGINT"), required(VARCHAR, DOUBLE)); // any number
+		return cast(BIGINT, "BIGINT", required(VARCHAR, DOUBLE)); // any number
 	}
 	
 	default OperatorDefinition decimal() {
-		return new OperatorDefinition(DOUBLE, cast("DECIMAL"), required(VARCHAR, BIGINT), optional(INTEGER), optional(INTEGER));
+		return cast(DOUBLE, "DECIMAL", required(VARCHAR, BIGINT), optional(INTEGER), optional(INTEGER));
 	}
 
 	default OperatorDefinition bool() {
-		return new OperatorDefinition(BOOLEAN, cast("BOOLEAN"), required(VARCHAR, BIGINT)); //any
+		return cast(BOOLEAN, "BOOLEAN", required(VARCHAR, BIGINT)); //any
 	}
 
 	//other functions
 	
 	default OperatorDefinition coalesce() {
-		return new OperatorDefinition(firstArgType(), function("COALESCE"), required(), required(firstArgType()));
+		return function(firstArgType(), "COALESCE", required(), required(firstArgType()));
 	}
 	
-	//TODO syntax ? optional(columns)
 	default OperatorDefinition distinct() {
-		return new OperatorDefinition(firstArgType(), new DistinctOperator(), required());
+		return function(firstArgType(), "DISTINCT", required(), varargs());
 	}
 
 	//aggregate functions
 
 	default OperatorDefinition count() {
-		return new OperatorDefinition(BIGINT, aggregation("COUNT"), required()); 
+		return aggregate(BIGINT, "COUNT", required()); 
 	}
 	
 	default OperatorDefinition min() {
-		return new OperatorDefinition(firstArgType(), aggregation("MIN"), required()); 
+		return aggregate(firstArgType(), "MIN", required()); 
 	}
 
 	default OperatorDefinition max() {
-		return new OperatorDefinition(firstArgType(), aggregation("MAX"), required()); 
+		return aggregate(firstArgType(), "MAX", required()); 
 	}
 
 	default OperatorDefinition sum() {
-		return new OperatorDefinition(DOUBLE, aggregation("SUM"), required(DOUBLE));
+		return aggregate(DOUBLE, "SUM", required(DOUBLE));
 	}
 	
 	default OperatorDefinition avg() {
-		return new OperatorDefinition(DOUBLE, aggregation("AVG"), required(DOUBLE));
+		return aggregate(DOUBLE, "AVG", required(DOUBLE));
 	}
 	
-	default OperatorDefinition percentile() { //TODO continue|discrete
-		return new OperatorDefinition(DOUBLE, aggregation("PERCENTILE_CONT"), required(DOUBLE));
+	default OperatorDefinition percentileCont() {
+		return aggregate(DOUBLE, "PERCENTILE_CONT", required(DOUBLE));
+	}
+	
+	default OperatorDefinition percentileDisc() {
+		return aggregate(DOUBLE, "PERCENTILE_DISC", required(DOUBLE));
 	}
 	
 	default OperatorDefinition median() {
-		return new OperatorDefinition(DOUBLE, aggregation("MEDIAN"), required(DOUBLE));
+		return aggregate(DOUBLE, "MEDIAN", required(DOUBLE));
 	}
 	
 	default OperatorDefinition mode() {
-		return new OperatorDefinition(firstArgType(), aggregation("MODE"), required());
+		return aggregate(firstArgType(), "MODE", required());
 	}
 		
 	//window functions
 	
 	default OperatorDefinition rank() {
-		return new OperatorDefinition(INTEGER, window("RANK")); // takes no args
+		return window(INTEGER, "RANK"); // takes no args
 	}
 	
 	default OperatorDefinition rowNumber() {
-		return new OperatorDefinition(INTEGER, window("ROW_NUMBER")); // takes no args
+		return window(INTEGER, "ROW_NUMBER"); // takes no args
 	}
 	
 	default OperatorDefinition denseRank() {
-		return new OperatorDefinition(INTEGER, window("DENSE_RANK")); // takes no args
+		return window(INTEGER, "DENSE_RANK"); // takes no args
 	}
 
 	default OperatorDefinition percentRank() {
-		return new OperatorDefinition(INTEGER, window("PERCENT_RANK")); // takes no args
+		return window(INTEGER, "PERCENT_RANK"); // takes no args
 	}
 	
 	// constant operators
+
+	default OperatorDefinition pi() {
+		return constant(DOUBLE, "PI");
+	}
 	
+	default OperatorDefinition random() {
+		return constant(DOUBLE, "RANDOM");
+	}
+
 	default OperatorDefinition cdate() {
-		return new OperatorDefinition(DATE, constant("CURRENT_DATE"));
+		return constant(DATE, "CURRENT_DATE");
 	}
 	
 	default OperatorDefinition ctime() {
-		return new OperatorDefinition(TIME, constant("CURRENT_TIME"));
+		return constant(TIME, "CURRENT_TIME");
 	}
 	
 	default OperatorDefinition ctimestamp() {
-		return new OperatorDefinition(TIMESTAMP, constant("CURRENT_TIMESTAMP"));
+		return constant(TIMESTAMP, "CURRENT_TIMESTAMP");
 	}
 	
 	//scope operators
 	
 	default OperatorDefinition over() {
-		return new OperatorDefinition(firstArgType(), scope("OVER"), required(), optional(PARTITION)); 
+		return scope(firstArgType(), "OVER", required(), optional(PARTITION)); 
 	}
 	
 	default OperatorDefinition within() {
-		return new OperatorDefinition(firstArgType(), scope("WITHIN GROUP"), required(), varargs(ORDER));
+		return scope(firstArgType(), "WITHIN GROUP", required(), varargs(ORDER));
 	}
 
-	public static ArithmeticOperator operator(String symbol) {
-		return ()-> symbol;
-	}
-
-	public static FunctionOperator function(String name) {
-		return ()-> name;
+	public static OperatorDefinition operator(TypeResolver type, String name, String symbol, Parameter... parameters) {
+		if(isNull(parameters) || parameters.length != 2 || !parameters[0].isRequired() || !parameters[1].isRequired()) {
+			throw new IllegalArgumentException(format("'%s(%s)' must have exactly two required parameters", name, symbol));
+		}
+		return new OperatorDefinition(name, type, OPR,
+				(builder,args)-> builder.append("(").appendParameter(args[0]).append(symbol).appendParameter(args[1]).append(")"),
+				parameters);
 	}
 	
-	public static ExtractFunction extract(String field) {
-		return ()-> field;
+	public static OperatorDefinition singleArgOperator(TypeResolver type, String name, String symbol, boolean prefix, Parameter... parameters) {
+		if(isEmpty(parameters) || !parameters[0].isRequired()) {
+			throw new IllegalArgumentException(format("'%s(%s)' must have at least one required parameter", name, symbol));
+		}
+		return new OperatorDefinition(name, type, OPR, prefix
+				? (builder,args)-> builder.append(symbol).appendParameter(args[0])
+				: (builder,args)-> builder.appendParameter(args[0]).append(symbol),
+				parameters);
 	}
 
-	public static CastFunction cast(String type) {
-		return ()-> type;
-	}
-	
-	public static WindowFunction window(String name) {
-		return ()-> name;
-	}
-	
-	public static AggregateFunction aggregation(String name) {
-		return ()-> name;
+	public static OperatorDefinition function(TypeResolver type, String name, Parameter... parameters) {
+		return function(type, name, DEFAUTL, parameters);
 	}
 
-	public static ConstantOperator constant(String name) {
-		return ()-> name;
+	public static OperatorDefinition window(TypeResolver type, String name, Parameter... parameters) {
+		return function(type, name, WINDOW, parameters);
 	}
 
-	public static ScopeFunction scope(String name) {
-		return ()-> name;
+	public static OperatorDefinition aggregate(TypeResolver type, String name, Parameter... parameters) {
+		return function(type, name, AGGREGATE, parameters);
 	}
 	
+	public static OperatorDefinition function(TypeResolver type, String name, OperatorKind kind, Parameter... parameters) {
+		return new OperatorDefinition(name, type, kind,
+				(builder,args)-> builder.append(name).append("(").appendParameters(SCOMA, args, 0).append(")"),
+				parameters);
+	}
+	
+	public static OperatorDefinition extract(TypeResolver type, String field, Parameter... parameters) {
+		if(isEmpty(parameters) || !parameters[0].isRequired()) {
+			throw new IllegalArgumentException(format("'extract(%s)' must have at least one required parameter", field));
+		}
+		return new OperatorDefinition(field, type, EXTRACT,
+				(builder,args)-> builder.append("EXTRACT").append("(").append(field).append(" FROM ").appendParameter(args[0]).append(")"),
+				parameters);
+	}
+
+	public static OperatorDefinition cast(TypeResolver type, String target, Parameter... parameters) {
+		if(isEmpty(parameters) || !parameters[0].isRequired()) {
+			throw new IllegalArgumentException(format("'cast(%s)' must have at least one required parameter", target));
+		}
+		return new OperatorDefinition(target, type, CAST,
+				(builder,args)-> builder.append("CAST").appendParenthesis(()-> {
+					builder.appendParameter(args[0]).appendAs().append(target);
+					if(args.length > 1) { //varchar | decimal
+						builder.append("(").appendParameters(SCOMA, args, 1).append(")");
+					}
+				}), 
+				parameters);
+	}
+
+	public static OperatorDefinition constant(JDBCType type, String name) {
+		return new OperatorDefinition(name, type, DEFAUTL, (builder,args)-> builder.append(name));
+	}
+
+	public static OperatorDefinition scope(TypeResolver resolver, String name, Parameter... parameters) {
+		if(isEmpty(parameters) || !parameters[0].isRequired()) {
+			throw new IllegalArgumentException(format("'%s' must have at least one required parameter", name));
+		}
+		return new OperatorDefinition(name, resolver, SCOPE, 
+				(builder,args)-> builder.appendParameter(args[0]).appendSpace()
+				.append(name).append("(").appendParameters(SCOMA, args, 1).append(")"), 
+				parameters);
+	}
 }

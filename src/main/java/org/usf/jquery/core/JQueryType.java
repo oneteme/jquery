@@ -8,7 +8,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public enum JQueryType implements JavaType {
+public enum JQueryType implements JavaType, TypeResolver {
 
 	VIEW(DBView.class),
 	QUERY(QueryView.class),
@@ -27,5 +27,10 @@ public enum JQueryType implements JavaType {
 	@Override
 	public Class<?> getCorrespondingClass() {
 		return type;
+	}
+
+	@Override
+	public JavaType apply(Object[] t) {
+		return this;
 	}
 }

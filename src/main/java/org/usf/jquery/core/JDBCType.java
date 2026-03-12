@@ -23,7 +23,7 @@ import lombok.RequiredArgsConstructor;
  * 
  */
 @RequiredArgsConstructor
-public enum JDBCType implements JavaType {
+public enum JDBCType implements JavaType, TypeResolver {
 
 	BOOLEAN(Types.BOOLEAN, Boolean.class, JDBCType::isBoolean),
 	BIT(Types.BIT, Boolean.class, JDBCType::isBoolean),
@@ -156,5 +156,10 @@ public enum JDBCType implements JavaType {
 	
 	public static Optional<JDBCType> fromDataType(int value) {
 		return stream(values()).filter(t-> t.value == value).findAny();
+	}
+
+	@Override
+	public JDBCType apply(Object[] t) {
+		return this;
 	}
 }

@@ -24,51 +24,51 @@ public final class TeradataDialect extends Dialect {
 
 	@Override
 	public OperatorDefinition bitAnd() {
-		return new OperatorDefinition(BIGINT, function("BITAND"), required(BIGINT), required(BIGINT));
+		return function(BIGINT, "BITAND", required(BIGINT), required(BIGINT));
 	}
 
 	@Override
 	public OperatorDefinition bitOr() {
-		return new OperatorDefinition(BIGINT, function("BITOR"), required(BIGINT), required(BIGINT));
+		return function(BIGINT, "BITOR", required(BIGINT), required(BIGINT));
 	}
 
 	@Override
 	public OperatorDefinition bitXor() {
-		return new OperatorDefinition(BIGINT, function("BITXOR"), required(BIGINT), required(BIGINT));
+		return function(BIGINT, "BITXOR", required(BIGINT), required(BIGINT));
 	}
 
 	@Override
 	public OperatorDefinition bitNot() {
-		return new OperatorDefinition(BIGINT, function("BITNOT"), required(BIGINT));
+		return function(BIGINT, "BITNOT", required(BIGINT));
 	}
 
 	@Override
 	public OperatorDefinition bitShiftLeft() {
-		return new OperatorDefinition(BIGINT, function("SHIFTLEFT"), required(BIGINT), required(INTEGER));
+		return function(BIGINT, "SHIFTLEFT", required(BIGINT), required(INTEGER));
 	}
 
 	@Override
 	public OperatorDefinition bitShiftRight() {
-		return new OperatorDefinition(BIGINT, function("SHIFTRIGHT"), required(BIGINT), required(INTEGER));
+		return function(BIGINT, "SHIFTRIGHT", required(BIGINT), required(INTEGER));
 	}
 
 	@Override
 	public OperatorDefinition week() {
-		return new OperatorDefinition(INTEGER, function("TD_WEEK_OF_YEAR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+		return function(INTEGER, "TD_WEEK_OF_YEAR", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 
 	@Override
 	public OperatorDefinition dow() {
-		return new OperatorDefinition(INTEGER, function("TD_DAY_OF_WEEK"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return function(INTEGER, "TD_DAY_OF_WEEK", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 
 	@Override
 	public OperatorDefinition doy() {
-		return new OperatorDefinition(INTEGER, function("TD_DAY_OF_YEAR"), required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+		return function(INTEGER, "TD_DAY_OF_YEAR", required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
 	@Override
 	public OperatorDefinition replace() {
-		return new OperatorDefinition(VARCHAR, function("OREPLACE"), required(VARCHAR), required(VARCHAR), required(VARCHAR));
+		return function(VARCHAR, "OREPLACE", required(VARCHAR), required(VARCHAR), required(VARCHAR));
 	}
 }

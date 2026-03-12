@@ -31,12 +31,12 @@ interface StoreSample extends StoreResource {
 	
 	@Expose(identity="myFn", description="") 
 	default OperatorDefinition myFunction() {
-		return new OperatorDefinition(VARCHAR, function("myFn"), required(VARCHAR));
+		return function(VARCHAR, "myFn", required(VARCHAR));
 	}
 	
 	@Expose(identity="myCmp", description="") 
 	default ComparatorDefinition myComparator() {
-		return new ComparatorDefinition(basicComparator("<="), required(), required(TypeResolver.firstArgType()));
+		return basicComparator("<=", "");
 	}
 
 	@Expose(identity="vitesse") 

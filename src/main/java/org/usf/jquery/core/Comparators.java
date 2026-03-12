@@ -1,15 +1,13 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.TypeResolver.firstArgType;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-
-import java.util.Objects;
-import java.util.function.UnaryOperator;
+import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.TypeResolver.firstArgType;
 
 /**
  * 
@@ -21,109 +19,93 @@ public interface Comparators {
 	//basic comparator
 	
 	default ComparatorDefinition eq() {
-		return new ComparatorDefinition("eq", basicComparator("="), required(), required(firstArgType()));
+		return basicComparator("=", "eq");
 	}
 
 	default ComparatorDefinition ne() {
-		return new ComparatorDefinition("ne", basicComparator("<>"), required(), required(firstArgType()));
+		return basicComparator("<>", "ne");
 	}
 	
 	default ComparatorDefinition lt() {
-		return new ComparatorDefinition("lt", basicComparator("<"), required(), required(firstArgType()));
+		return basicComparator("<", "lt");
 	}
 
 	default ComparatorDefinition le() {
-		return new ComparatorDefinition("le", basicComparator("<="), required(), required(firstArgType()));
+		return basicComparator("<=", "le");
 	}
 
 	default ComparatorDefinition gt() {
-		return new ComparatorDefinition("gt", basicComparator(">"), required(), required(firstArgType()));
+		return basicComparator(">", "gt");
 	}
 
 	default ComparatorDefinition ge() {
-		return new ComparatorDefinition("ge", basicComparator(">="), required(), required(firstArgType()));
+		return basicComparator(">=", "ge");
 	}
 	
 	default ComparatorDefinition between() {
-		return new ComparatorDefinition(rangeComparator("BETWEEN"), required(), required(firstArgType()), required(firstArgType()));
+		return rangeComparator("BETWEEN");
 	}
 	
 	//string comparator
+
+	default ComparatorDefinition like() {
+		return stringComparator("LIKE", "", "");
+	}
 	
 	default ComparatorDefinition startsLike() {
-		return like(o-> o + "%");
+		return stringComparator("LIKE", "", "%");
 	}
 
 	default ComparatorDefinition endsLike() {
-		return like(o-> "%" + o);
+		return stringComparator("LIKE", "%", "");
 	}
 
 	default ComparatorDefinition contentLike() {
-		return like(o-> "%" + o + "%");
-	}
-	
-	default ComparatorDefinition startsNotLike() {
-		return notLike(o-> o + "%");
-	}
-
-	default ComparatorDefinition endsNotLike() {
-		return notLike(o-> "%" + o);
-	}
-
-	default ComparatorDefinition contentNotLike() {
-		return notLike(o-> "%" + o + "%");
-	}
-
-	default ComparatorDefinition like() {
-		return like(null);
-	}
-	
-	default ComparatorDefinition iLike() {
-		return iLike(null);
+		return stringComparator("LIKE", "%", "%");
 	}
 	
 	default ComparatorDefinition notLike() {
-		return notLike(null);
+		return stringComparator("NOT LIKE", "", "");
+	}
+	
+	default ComparatorDefinition startsNotLike() {
+		return stringComparator("NOT LIKE", "", "%");
+	}
+
+	default ComparatorDefinition endsNotLike() {
+		return stringComparator("NOT LIKE", "%", "");
+	}
+
+	default ComparatorDefinition contentNotLike() {
+		return stringComparator("NOT LIKE", "%", "%");
+	}
+	
+	default ComparatorDefinition iLike() {
+		return stringComparator("ILIKE", "", "");
 	}
 
 	default ComparatorDefinition notILike() {
-		return notILike(null);
-	}
-	
-	default ComparatorDefinition like(UnaryOperator<String> wilcard) {
-		return new ComparatorDefinition(stringComparator("LIKE", wilcard), required(VARCHAR), required(VARCHAR));
-	}
-
-	default ComparatorDefinition iLike(UnaryOperator<String> wilcard) {
-		return new ComparatorDefinition(stringComparator("ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
-	}
-
-	default ComparatorDefinition notLike(UnaryOperator<String> wilcard) {
-		return new ComparatorDefinition(stringComparator("NOT LIKE", wilcard), required(VARCHAR), required(VARCHAR));
-	}
-
-	default ComparatorDefinition notILike(UnaryOperator<String> wilcard) {
-		return new ComparatorDefinition(stringComparator("NOT ILIKE", wilcard), required(VARCHAR), required(VARCHAR));
+		return stringComparator("NOT ILIKE", "", "");
 	}
 	
 	//null comparator
 	
 	default ComparatorDefinition isNull() {
-		return new ComparatorDefinition(nullComparator("IS NULL"), required());
+		return nullComparator("IS NULL");
 	}
 
 	default ComparatorDefinition notNull() { //isNotNUll
-		return new ComparatorDefinition(nullComparator("IS NOT NULL"), required());
+		return nullComparator("IS NOT NULL");
 	}
 	
 	//in comparator
 
 	default ComparatorDefinition in() {
-		return new ComparatorDefinition(inComparator("IN"), required(), required(firstArgType()), varargs(firstArgType()));
+		return inComparator("IN");
 	}
 	
 	default ComparatorDefinition notIn() {
-		return new ComparatorDefinition(inComparator("NOT IN"), required(), required(firstArgType()), varargs(firstArgType()));
+		return inComparator("NOT IN");
 	}
 
 	//logical operators
@@ -137,40 +119,43 @@ public interface Comparators {
 	}
 	
 	private Definition<Criteria> logicalOprDefinition(LogicalOperator opr) {
-		return new Definition<>(opr.name().toLowerCase(), BOOLEAN, 
-				(type,args)-> ((Criteria)args[0]).append(opr, (Criteria)args[1]), 
+		return new ComposerDefinition<>(opr.name().toLowerCase(), BOOLEAN, 
+				args-> ((Criteria)args[0]).append(opr, (Criteria)args[1]), 
 				required(BOOLEAN), required(BOOLEAN));
 	}
 	
-	static BasicComparator basicComparator(final String name) {
-		return ()-> name;
+	static ComparatorDefinition basicComparator(final String symbol, final String name) {
+		return new ComparatorDefinition(name,
+				(builder,args)-> builder.appendParameter(args[0]).append(symbol).appendParameter(args[1], true),
+				required(), required(firstArgType()));
 	}
 	
-	static StringComparator stringComparator(final String name, UnaryOperator<String> wilcard) {
-		if(Objects.isNull(wilcard)) {
-			return ()-> name;
-		}
-		return new StringComparator() {
-			@Override
-			public String id() {
-				return name;
-			}
-			@Override
-			public Object wildcardArg(String s) {
-				return wilcard.apply(s);
-			}
-		};
+	static ComparatorDefinition stringComparator(final String name, final String prefix, final String suffix) {
+		return new ComparatorDefinition(name, 
+				(builder,args)-> builder.appendParameter(args[0])
+				.appendSpace().append(name).appendSpace()
+				.appendParameter(prefix + args[1] + suffix, true), 
+				required(VARCHAR), required(VARCHAR));
 	}
 	
-	static NullComparator nullComparator(final String name) {
-		return ()-> name;
+	static ComparatorDefinition nullComparator(final String name) {
+		return new ComparatorDefinition(name,
+				(builder,args)-> builder.appendParameter(args[0]).appendSpace().append(name),
+				required());
 	}
 	
-	static InComparator inComparator(final String name) {
-		return ()-> name;
+	static ComparatorDefinition inComparator(final String name) {
+		return new ComparatorDefinition(name, 
+				(builder,args)-> builder.appendParameter(args[0]).appendSpace().append(name)
+				.appendParenthesis(()-> builder.appendParameters(SCOMA, args, 1, true)), 
+				required(), required(firstArgType()), varargs(firstArgType()));
 	}
 
-	static RangeComparator rangeComparator(final String name) {
-		return ()-> name;
+	static ComparatorDefinition rangeComparator(final String name) {
+		return new ComparatorDefinition(name, 
+				(builder,args)-> builder.appendParameter(args[0])
+				.appendSpace().append(name).appendSpace()
+				.appendParameter(args[1], true).append(AND.sql()).appendParameter(args[2], true),
+				required(), required(firstArgType()), required(firstArgType()));
 	}
 }
