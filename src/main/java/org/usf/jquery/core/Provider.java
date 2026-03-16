@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Arrays.stream;
-import static org.usf.jquery.core.Operators.function;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

@@ -13,10 +13,13 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.JQueryType.ORDER;
 import static org.usf.jquery.core.JQueryType.PARTITION;
+import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.CAST;
-import static org.usf.jquery.core.OperatorKind.*;
+import static org.usf.jquery.core.OperatorKind.DEFAUTL;
 import static org.usf.jquery.core.OperatorKind.EXTRACT;
 import static org.usf.jquery.core.OperatorKind.OPR;
+import static org.usf.jquery.core.OperatorKind.SCOPE;
+import static org.usf.jquery.core.OperatorKind.WINDOW;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
@@ -30,16 +33,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
  *
  */
 public interface Operators {
-	
-	static final String COUNT_FN = "COUNT";
-	static final String AVG_FN = "AVG";
-	static final String MAX_FN = "MAX";
-	static final String MIN_FN = "MIN";
-	static final String SUM_FN = "SUM";
-	static final String PERCENTILE_CONT_FN = "PERCENTILE_CONT";
-	static final String PERCENTILE_DISC_FN = "PERCENTILE_DISC";
-	static final String MEDIAN_FN = "MEDIAN";
-	static final String MODE_FN = "MODE";
 	
 	//Arithmetic operations
 

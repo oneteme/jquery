@@ -45,7 +45,6 @@ import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBObject;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.OperatorDefinition;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.Partition;

@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -37,16 +36,6 @@ public final class CaseColumn implements Column {
 				.map(WhenCase::getType)
 				.filter(Objects::nonNull) // should have same type
 				.findAny().orElse(null);
-	}
-	
-	public CaseColumn when(WhenCase... cases) {
-		if(isEmpty(cases)) {
-			return this;
-		}
-		if(isEmpty(this.whenCases)) {
-			return new CaseColumn(cases);
-		}
-		return new CaseColumn(Stream.concat(Stream.of(this.whenCases), Stream.of(cases)).toArray(WhenCase[]::new));
 	}
 	
 	@Override

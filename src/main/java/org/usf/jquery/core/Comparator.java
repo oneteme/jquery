@@ -5,16 +5,12 @@ package org.usf.jquery.core;
  * @author u$f
  *
  */
+@Deprecated
 @FunctionalInterface
-public interface Comparator extends invocable {
+public interface Comparator extends Invocable {
 
 	default SimplePredicate expression(Object... right) {
-		return new SimplePredicate(this, right, null);
-	}
-	
-	@Deprecated
-	default SimplePredicate expression(Adjuster<Object[]> adj, Object... initalValue) {
-		return new SimplePredicate(this, initalValue, adj);
+		return new SimplePredicate(this, right);
 	}
 }
 	

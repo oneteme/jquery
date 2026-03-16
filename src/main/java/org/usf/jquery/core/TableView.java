@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 
 import lombok.Getter;
-import lombok.With;
 
 /**
  * 
@@ -18,18 +17,11 @@ public final class TableView implements DBView {
 	private final String name;
 	private final String schema; //optional
 	private final String tag; //optional
-	@With
-	private final Adjuster<String> adjuster; //view name adjuster
 
 	public TableView(String name, String schema, String tag) {
-		this(name, schema, tag, null);
-	}
-
-	public TableView(String name, String schema, String tag, Adjuster<String> adjuster) {
 		this.name = requireLegalVariable(name);
 		this.schema = nonNull(schema) ? requireLegalVariable(schema) : null;
 		this.tag = tag;
-		this.adjuster = adjuster;
 	}
 	
 	@Override
@@ -38,7 +30,7 @@ public final class TableView implements DBView {
 		if(nonNull(sch)) {
 			query.append(sch + '.');
 		}
-		query.append(nonNull(adjuster) ? adjuster.build(query, name) : name); 
+		query.append(name); 
 	}
 	
 	public String getSchemaOrElse(String defaultSchema) {

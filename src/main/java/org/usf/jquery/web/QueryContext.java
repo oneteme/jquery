@@ -14,9 +14,9 @@ import java.util.Optional;
 
 import org.usf.jquery.core.ColumnProxy;
 import org.usf.jquery.core.Comparator;
+import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Operator;
-import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.OperatorDefinition;
 
 import lombok.Getter;

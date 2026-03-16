@@ -10,10 +10,10 @@ import static java.util.Objects.isNull;
  */
 public final class OperatorDefinition extends Definition<Column> {
 	
-	private final Operator operator;
+	private final Invocable operator;
 	private final OperatorKind kind;
 	
-	public OperatorDefinition(String name, TypeResolver typeFn, OperatorKind kind, Operator operator, Parameter... parameter) {
+	public OperatorDefinition(String name, TypeResolver typeFn, OperatorKind kind, Invocable operator, Parameter... parameter) {
 		super(name, typeFn, parameter);
 		this.operator = operator;
 		this.kind = kind;

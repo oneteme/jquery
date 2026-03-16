@@ -512,8 +512,4 @@ public interface Column extends DBObject, Typed {
 	static ValueColumn constant(Object value, JDBCType type) {
 		return new ValueColumn(value, type);
 	}
-
-	static ValueColumn constant(JDBCType type, Adjuster<Object> adj) {
-		return new ValueColumn(null, type, adj);
-	}
 }

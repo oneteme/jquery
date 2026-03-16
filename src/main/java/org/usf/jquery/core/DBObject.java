@@ -7,6 +7,7 @@ import static java.util.stream.Stream.empty;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
 
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -16,6 +17,9 @@ import java.util.stream.Stream;
  *
  */
 public interface DBObject {
+
+	static final Consumer<Column> DECLARE_ONLY = o->{};
+	
 	
 	int compose(QueryComposer composer, Consumer<Column> groupKeys);
 	
@@ -42,21 +46,25 @@ public interface DBObject {
 	}
 
 	//0: groupKey, +1: aggregation, -1: constant  
-	static int composeNested(QueryComposer query, Consumer<Column> cons, Stream<DBObject> stream, Column col){
-		if(isNull(col)) {
-			return stream.mapToInt(o-> o.compose(query, cons)).max().orElse(-1);
+	static int composeNested(QueryComposer query, Consumer<Column> groupBy, Stream<DBObject> stream, Column orElse){
+		if(groupBy == DECLARE_ONLY) {
+			stream.forEach(o-> o.compose(query, groupBy));
+			return -1;
+		}
+		if(isNull(orElse)) {
+			return stream.mapToInt(o-> o.compose(query, groupBy)).max().orElse(-1);
 		}
 		var arr = new ArrayList<Column>();
 		var lvl = stream.mapToInt(o-> o.compose(query, arr::add)).max().orElse(-1);
 		if(lvl == 0) { //group keys
-			cons.accept(col);
+			groupBy.accept(orElse);
 		}
 		else if(lvl > 0 && !arr.isEmpty()) {
-			arr.forEach(cons);
+			arr.forEach(groupBy);
 		}
 		return lvl;
 	}
-
+	
 	static String toSQL(DBObject obj, Object... args) {
 		var query = addWithValue();
 		obj.build(query, args);

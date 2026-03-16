@@ -25,7 +25,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
-public final class Signature { 
+public final class Signature {
 
 	//there is no Singleton implementation, dummy sonar rule
 	static final Signature NO_PARAM = new Signature(0, new Parameter[0]);

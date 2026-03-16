@@ -33,4 +33,13 @@ public @interface QueryRequest {
 
 	/** Hard limit for the number of rows returned. */
 	int maxSize() default 0;
+	
+	/** Views to exclude from the query. */
+	String[] excludeViews() default {};
+
+	/** Resources to exclude from the query. */
+	String[] excludeResources() default {};
+	
+	/** Dialects to exclude from the query. */
+	String[] excludeDialects() default {};
 }

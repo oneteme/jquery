@@ -23,7 +23,7 @@ public final class OperationColumn implements Column {
 
 	private final String name;
 	private final OperatorKind kind;
-	private final Operator operator;
+	private final Invocable operator;
 	private final Object[] args; //optional
 	private final JDBCType type; //optional
 	private ViewColumn overColumn; 

@@ -7,7 +7,6 @@ import java.util.function.Consumer;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.With;
 
 /**
  * 
@@ -16,19 +15,13 @@ import lombok.With;
  */
 @Getter
 @RequiredArgsConstructor
-public class ViewColumn implements NamedColumn{
+public class ViewColumn implements NamedColumn {
 
 	private final String name;
 	private final DBView view; //optional
 	private final JDBCType type; //optional
 	private final String tag;  //optional
-	@With
-	private final Adjuster<String> adjuster; //column name adjuster
 
-	public ViewColumn(String name, DBView view, JDBCType type, String tag) {
-		this(name, view, type, tag, null);
-	}
-	
 	@Override
 	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		if(nonNull(view)) {
@@ -43,7 +36,7 @@ public class ViewColumn implements NamedColumn{
 		if(nonNull(view)) {
 			query.appendViewAlias(view, DOT);
 		}
-		query.append(nonNull(adjuster) ? adjuster.build(query, name) : name);
+		query.append(name);
 	}
 	
 	@Override

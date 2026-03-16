@@ -52,21 +52,28 @@ import lombok.extern.slf4j.Slf4j;
 public final class RequestContext {
 
 	private static final JDBCType[] STD_TYPES = { 
-			BOOLEAN, BIGINT, DOUBLE, DATE, TIMESTAMP, 
+			BIGINT, DOUBLE, DATE, TIMESTAMP, BOOLEAN, 
 			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
 
 	@Getter
 	private final DatasetResource defaultDataset;
 	private final StoreResource store;
+	private final TypeRegistry registry;
 	private final Set<String> excludeViews;
+	private final Set<String> excludeResources;
+	private final Set<String> excludeDialects;
+
 	private final Map<String, DatasetResource> declaredViews;
 	private final Map<String, Column> declaredColumns;
-	private final TypeRegistry registry;
-
-	// SecurityPolicy(allowLiteralJoin, allowLiteralQuery, ..)
+	//strict mode !? resolve order, groupBy, ..
 	
 	public RequestContext(StoreResource store, DatasetResource defaultDataset, TypeRegistry registry) {
-		this(defaultDataset, store, emptySet(), new HashMap<>(), new HashMap<>(), registry);
+		this(store, defaultDataset, registry, emptySet(), emptySet(), emptySet());
+	}
+	
+	public RequestContext(StoreResource store, DatasetResource defaultDataset, TypeRegistry registry, 
+			Set<String> excludeViews, Set<String> excludeResources, Set<String> excludeDialects) {
+		this(defaultDataset, store, registry, excludeViews, excludeResources, excludeDialects, new HashMap<>(), new HashMap<>());
 	}
 	
 	public Dialect getDialect(){
@@ -100,7 +107,7 @@ public final class RequestContext {
 	public <T> Optional<T> lookupDialectResource(String name, Class<T> type, Object composer) {
 		var match = store.exposes(name, type); //cannot override composer method
 		if(match == VALID) {
-			return lookupSchemaResource(name, type);
+			return lookupResource(store, name, type);
 		}
 		if(match == HIDDEN) {
 			log.warn("resource '{}' of type {} is hidden by store, cannot be used", name, type.getSimpleName());
@@ -113,7 +120,7 @@ public final class RequestContext {
 			if(nonNull(mth)) {
 				var mod = mth.getModifiers();
 				var npr = nonNull(composer) ? 1 : 0;
-				if(type.isAssignableFrom(mth.getReturnType()) && mth.getParameterCount()== npr && isPublic(mod) && !isStatic(mod)) {
+				if(type.isAssignableFrom(mth.getReturnType()) && mth.getParameterCount() == npr && isPublic(mod) && !isStatic(mod)) {
 					var res = nonNull(composer) 
 							? mth.invoke(store.dialect(), composer)
 							: mth.invoke(store.dialect());
@@ -204,6 +211,9 @@ public final class RequestContext {
 				return resolve(entry, t.getCorrespondingClass());
 			}
 			catch (Exception e) {
+				if(types.length == 1) {
+					throw e;
+				}
 				log.trace("failed to resolve entry {} to type {}, reason: {}", entry, t.getCorrespondingClass(), e.getMessage());
 			}
 		}
@@ -229,8 +239,8 @@ public final class RequestContext {
 		}
 		return null;
 	}
-
 	public <T> T resolve(Entry entry, Class<T> type) {
+
 		if(entry.isVariable()) {
 			var prs = registry.getEvaluator(type);
 			if(nonNull(prs)) {
@@ -263,7 +273,7 @@ public final class RequestContext {
 
 	//inherit common properties, but not declared views and columns
 	public RequestContext subContext(DatasetResource dataset) {
-		return new RequestContext(dataset, store, excludeViews, new HashMap<>(), new HashMap<>(), registry);
+		return new RequestContext(dataset, store, registry, excludeViews, excludeResources, excludeDialects, new HashMap<>(), new HashMap<>());
 	}
 	
 	//inherit declared views and columns, but with different default view
@@ -271,6 +281,6 @@ public final class RequestContext {
 		if(dataset == defaultDataset) {
 			return this;
 		}
-		return new RequestContext(dataset, store, excludeViews, declaredViews, declaredColumns, registry);
+		return new RequestContext(dataset, store, registry, excludeViews, excludeResources, excludeDialects, declaredViews, declaredColumns);
 	}
 }

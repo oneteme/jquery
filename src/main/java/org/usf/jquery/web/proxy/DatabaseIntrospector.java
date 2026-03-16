@@ -5,6 +5,7 @@ import static java.time.Instant.now;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.JDBCType.fromDataType;
 import static org.usf.jquery.core.Provider.DEFAULT;
 import static org.usf.jquery.core.Provider.parseName;
@@ -44,6 +45,7 @@ public final class DatabaseIntrospector {
 		return switch (provider) {
 		case H2 -> new H2Dialect();
 		case TERADATA -> new TeradataDialect();
+		case DEFAULT -> getDialect();
 		default -> new Dialect(provider);
 		};
 	}

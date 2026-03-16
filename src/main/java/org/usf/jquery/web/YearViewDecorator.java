@@ -18,16 +18,18 @@ import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.Column;
+import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.TableView;
+import org.usf.jquery.web.YearViewDecorator.YearMonths;
 
 /**
  * 
  * @author u$f
  * 
  */
-//@Deprecated(since = "4.0.0", forRemoval = true)
+@Deprecated(since = "5.0.0", forRemoval = true)
 public interface YearViewDecorator extends ViewDecorator {
 
 	static final YearMonth[] EMPTY_REVISION = new YearMonth[0];
@@ -37,28 +39,30 @@ public interface YearViewDecorator extends ViewDecorator {
 	@Override
 	default DBView view() {
 		var env = currentEnvironment();
-		return env.cacheView(identity(), ()-> {
-			var view = env.getDatabase().view(this);
-			if(view instanceof TableView t) {
-				return t.withAdjuster((m, v)-> nonNull(m) ? v + "_" + ((YearMonths)m).year() : v); //avoid NullPointerEx on toString call
-			}
-			throw new UnsupportedOperationException(requireNonNull(view).getClass().getSimpleName());
-		});
+//		return env.cacheView(identity(), ()-> {
+//			var view = env.getDatabase().view(this);
+//			if(view instanceof TableView t) {
+//				return t.withAdjuster((m, v)-> nonNull(m) ? v + "_" + ((YearMonths)m).year() : v); //avoid NullPointerEx on toString call
+//			}
+//			throw new UnsupportedOperationException(requireNonNull(view).getClass().getSimpleName());
+//		});
+		return null; //deprecated
 	}
 	
 	default Criteria monthFilter() {
 		var mc = monthRevision();
-		return nonNull(mc) 
-				? column(mc).filter(getDialect().in().getComparator()
-						.expression((m,v)-> ((YearMonths) requireNonNull(m, "revision")).months()))
-				: null;
+//		return nonNull(mc) 
+//				? column(mc).filter(((Comparator)getDialect().in().getComparator())
+//						.expression((m,v)-> ((YearMonths) requireNonNull(m, "revision")).months()))
+//				: null;
+		return null; //deprecated
 	}
 
 	static Builder<ViewDecorator, Column> yearRevision() {
 		return (view, args)-> {
-			if(view instanceof YearViewDecorator) {
-				return constant(INTEGER, (m, v)-> nonNull(m) ? ((YearMonths)m).year() : null);
-			}
+//			if(view instanceof YearViewDecorator) {
+//				return constant(INTEGER, (m, v)-> nonNull(m) ? ((YearMonths)m).year() : null);
+//			} deprecated
 			throw new IllegalStateException(view.getClass().getSimpleName() + " is not a YearView");
 		};
 	}

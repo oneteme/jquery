@@ -21,6 +21,7 @@ import static org.usf.jquery.web.proxy.StoreManager.getInstance;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
@@ -50,7 +51,7 @@ public interface QueryInterpreter {
 		var store = qr.store() == StoreResource.class 
 				? getInstance().getDefaultStore() //default schema if not specified
 				: getInstance().getStore(qr.store());
-		var query = parseQuery(modifiableMap, store.createContext(qr.dataset()));
+		var query = parseQuery(modifiableMap, store.createContext(qr.dataset(), Set.of(qr.excludeViews()), Set.of(qr.excludeResources()), Set.of(qr.excludeDialects())));
 		query.maxRows(qr.maxSize());
 		if(!qr.aggregate() || query.isAggregation()) {
 			return query; 
