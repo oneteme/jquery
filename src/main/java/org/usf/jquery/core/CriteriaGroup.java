@@ -29,7 +29,7 @@ public final class CriteriaGroup implements Criteria {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		query.appendParenthesis(()-> query.appendEach(operator.sql(), filters));
+		query.append("(").appendEach(operator.sql(), filters).append(")");
 	}
 
 	@Override

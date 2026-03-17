@@ -29,7 +29,7 @@ public final class PredicateGroup implements Predicate {
 
 	@Override
 	public void build(QueryBuilder query, Object operand) {
-		query.appendParenthesis(()-> query.appendEach(operator.sql(), expressions, e-> e.build(query, operand)));
+		query.append("(").appendEach(operator.sql(), expressions, e-> e.build(query, operand)).append(")");
 	}
 	
 	@Override

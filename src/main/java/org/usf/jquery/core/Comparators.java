@@ -147,7 +147,7 @@ public interface Comparators {
 	static ComparatorDefinition inComparator(final String name) {
 		return new ComparatorDefinition(name, 
 				(builder,args)-> builder.appendParameter(args[0]).appendSpace().append(name)
-				.appendParenthesis(()-> builder.appendParameters(SCOMA, args, 1, true)), 
+				.append("(").appendParameters(SCOMA, args, 1, true).append(")"), 
 				required(), required(firstArgType()), varargs(firstArgType()));
 	}
 
