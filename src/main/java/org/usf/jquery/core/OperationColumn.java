@@ -31,7 +31,7 @@ public final class OperationColumn implements Column {
 	@Override
 	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
 		if(kind == AGGREGATE || kind == WINDOW) {
-			DBObject.tryComposeNested(query, c-> {}, args); //declare views only
+			DBObject.tryComposeNested(query, DECLARE_ONLY, args); //declare views only
 			return 1;
 		}
 		if(name.equals("OVER")) {

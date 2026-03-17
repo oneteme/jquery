@@ -4,12 +4,12 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.Column.allColumns;
+import static org.usf.jquery.core.DBObject.DECLARE_ONLY;
 import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Role.FILTER;
 import static org.usf.jquery.core.Role.JOIN;
 import static org.usf.jquery.core.Role.ORDER;
 import static org.usf.jquery.core.Role.UNION;
-import static org.usf.jquery.core.Utils.computeIfAbsentElseThrow;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage; //TODO move to core package	
 
@@ -17,7 +17,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -41,8 +40,6 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public final class QueryComposer implements Composer<QueryView> {
 	
-	static final Consumer<Column> DO_NOTHING = o->{};
-	
 	private final Set<QueryView> ctes = new LinkedHashSet<>();
 	private final List<NamedColumn> columns = new ArrayList<>();
 	private final Set<DBView> views = new LinkedHashSet<>(); //preserve order
@@ -52,7 +49,6 @@ public final class QueryComposer implements Composer<QueryView> {
 	private final List<Criteria> having = new ArrayList<>();
 	private final List<Order> orders = new ArrayList<>();
 	private final List<QueryUnion> unions = new ArrayList<>();
-	private final Map<String, String[]> variables = new LinkedHashMap<>();
 	private boolean distinct;
 	private boolean aggregation;
 	private Integer limit;
@@ -67,10 +63,6 @@ public final class QueryComposer implements Composer<QueryView> {
 	
 	private final QueryView queryView = new QueryView(); //assume unique reference
 
-	public String[] getVariables(String key){
-		return variables.get(key);
-	}
-	
 	public QueryComposer ctes(@NonNull QueryView... ctes) {
 		for(var c : ctes) {
 			this.ctes.add(c); //unnecessary compose
@@ -107,6 +99,11 @@ public final class QueryComposer implements Composer<QueryView> {
 		return this;
 	}
 	
+	
+	public QueryComposer groups(Column... column) {
+		
+		return this;
+	}
 
 	public QueryComposer joins2(@NonNull JoinsClause... joins) {
 		for(var j : joins) {
@@ -118,7 +115,7 @@ public final class QueryComposer implements Composer<QueryView> {
 	public QueryComposer joins(@NonNull ViewJoin... joins) {
 		this.role = JOIN;
 		for(var j : joins) {
-			j.compose(this, DO_NOTHING); //declare views only, no aggregation
+			j.compose(this, DECLARE_ONLY); //declare views only, no aggregation
 			this.joins.add(j);
 		}
 		return this;
@@ -135,14 +132,9 @@ public final class QueryComposer implements Composer<QueryView> {
 	public QueryComposer unions(@NonNull QueryUnion... unions) {
 		this.role = UNION;
 		for(var o : unions) {
-			o.compose(this, DO_NOTHING); //declare views only, no aggregation
+			o.compose(this, DECLARE_ONLY); //declare views only, no aggregation
 			this.unions.add(o);
 		}
-		return this;
-	}
-	
-	public QueryComposer variable(@NonNull String key, String... values) {
-		variables.compute(key, computeIfAbsentElseThrow(values, ()-> resourceAlreadyExistsMessage("variable", key)));
 		return this;
 	}
 	
@@ -174,7 +166,7 @@ public final class QueryComposer implements Composer<QueryView> {
 	QueryComposer declare(@NonNull DBView... views) {
 		for(var v : views) {
 			if(this.views.add(v)) {
-				v.compose(this, DO_NOTHING); //look for nested ctes
+				v.compose(this, DECLARE_ONLY); //look for nested ctes
 			}
 		}
 		return this;

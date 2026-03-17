@@ -7,7 +7,6 @@ import static java.util.stream.Stream.empty;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
 
 import java.util.ArrayList;
-import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
@@ -19,7 +18,6 @@ import java.util.stream.Stream;
 public interface DBObject {
 
 	static final Consumer<Column> DECLARE_ONLY = o->{};
-	
 	
 	int compose(QueryComposer composer, Consumer<Column> groupKeys);
 	
@@ -48,7 +46,7 @@ public interface DBObject {
 	//0: groupKey, +1: aggregation, -1: constant  
 	static int composeNested(QueryComposer query, Consumer<Column> groupBy, Stream<DBObject> stream, Column orElse){
 		if(groupBy == DECLARE_ONLY) {
-			stream.forEach(o-> o.compose(query, groupBy));
+			stream.forEach(o-> o.compose(query, groupBy)); //declare views only, no group keys
 			return -1;
 		}
 		if(isNull(orElse)) {

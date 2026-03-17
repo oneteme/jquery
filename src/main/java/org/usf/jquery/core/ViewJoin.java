@@ -39,7 +39,7 @@ public final class ViewJoin implements DBObject {
 		if(type != CROSS) {
 			requireAtLeastNArgs(1, criterias, ViewJoin.class::getSimpleName);
 		}
-		query.declare(view); //if filters is null
+		query.declare(view);
 		return DBObject.composeNested(query, groupKeys, criterias);
 	}
 

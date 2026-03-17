@@ -126,6 +126,12 @@ public interface Composers {
 				arrayOf(NAMED_COLUMN, 1));
 	}
 	
+	default ComposerDefinition<QueryComposer> join(QueryComposer composer){
+		return new ComposerDefinition<>("join", QUERY, 
+				args-> composer.joins2((JoinsClause[]) args), 
+				arrayOf(JOIN, 1));
+	}
+	
 	default ComposerDefinition<QueryComposer> criteria(QueryComposer composer) {
 		return new ComposerDefinition<>("criteria", QUERY, 
 				args-> 
@@ -133,16 +139,17 @@ public interface Composers {
 				arrayOf(FILTER, 1));
 	}
 	
+	default ComposerDefinition<QueryComposer> group(QueryComposer composer) {
+		return new ComposerDefinition<>("group", QUERY, 
+				args-> 
+		composer.groups((Column[]) args), 
+				arrayOf(COLUMN, 1));
+	}
+	
 	default ComposerDefinition<QueryComposer> order(QueryComposer composer) {
 		return new ComposerDefinition<>("order", QUERY, 
 				args-> composer.orders((Order[]) args), 
 				arrayOf(ORDER, 1));
-	}
-	
-	default ComposerDefinition<QueryComposer> join(QueryComposer composer){
-		return new ComposerDefinition<>("join", QUERY, 
-				args-> composer.joins2((JoinsClause[]) args), 
-				arrayOf(JOIN, 1));
 	}
 	
 	default ComposerDefinition<QueryComposer> union(QueryComposer composer) {

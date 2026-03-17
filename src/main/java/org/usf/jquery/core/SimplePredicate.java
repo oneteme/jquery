@@ -1,9 +1,7 @@
 package org.usf.jquery.core;
 
-import static java.util.Collections.addAll;
-import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Utils.appendFirst;
 
-import java.util.ArrayList;
 import java.util.function.Consumer;
 
 import lombok.AccessLevel;
@@ -27,12 +25,7 @@ public final class SimplePredicate implements Predicate {
 	
 	@Override
 	public void build(QueryBuilder query, Object left) {
-		var param = new ArrayList<>();
-		param.add(left);
-		if(nonNull(right)) {
-			addAll(param, right);
-		}
-		comparator.build(query, param.toArray());
+		comparator.build(query, appendFirst(right, left));
 	}
 	
 	@Override

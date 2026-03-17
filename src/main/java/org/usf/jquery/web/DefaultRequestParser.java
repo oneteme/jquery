@@ -47,7 +47,7 @@ public class DefaultRequestParser implements RequestParser {
 			try {
 				if(!isEmpty(variables)) {
 					for(var v : variables) {
-						q.variable(v, parameterMap.remove(v));
+						//q.variable(v, parameterMap.remove(v));
 					}
 				}
 				parseViews(ctx, parameterMap.remove(VIEW_PARAM));

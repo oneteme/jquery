@@ -7,7 +7,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 import static org.usf.jquery.web.Parameters.FIELD_PARAM;
-import static org.usf.jquery.web.Parameters.JOIN_PARAM;
+import static org.usf.jquery.web.Parameters.*;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
@@ -64,6 +64,7 @@ public interface QueryInterpreter {
 		parseViews(parameterMap.remove(VIEW_PARAM), query, ctx);
 		parseColumns(parameterMap.remove(SELECT_OPR), query, ctx);
 		parseJoins(parameterMap.remove(JOIN_PARAM), query, ctx);
+		parseGroups(parameterMap.remove(GROUP_PARAM), query, ctx);
 		parseOrders(parameterMap.remove(ORDER_PARAM), query, ctx);
 		parseDistinct(parameterMap.remove(DISTINCT_PARAM), query, ctx);
 		parseLimit(parameterMap.remove(LIMIT_PARAM), query, ctx);
@@ -103,6 +104,13 @@ public interface QueryInterpreter {
 	default void parseJoins(String[] parameters, QueryComposer query, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			var def = ctx.getDialect().join(query);
+			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
+		}
+	}
+	
+	default void parseGroups(String[] parameters, QueryComposer query, RequestContext ctx) {
+		if(!isEmpty(parameters)) {
+			var def = ctx.getDialect().group(query);
 			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}
 	}

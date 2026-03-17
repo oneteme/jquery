@@ -20,6 +20,7 @@ public final class Parameters {
 	@Deprecated(since = "5.0.0", forRemoval = true)
 	public static final String COLUMN_PARAM = "column";
 	public static final String FIELD_PARAM = "field";
+	public static final String GROUP_PARAM = "group";
 	public static final String DISTINCT_PARAM = "distinct";
 	public static final String JOIN_PARAM = "join";
 	public static final String ORDER_PARAM = "order";

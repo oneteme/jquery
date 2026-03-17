@@ -61,9 +61,11 @@ public final class Utils {
 	}
 
 	public static Object[] appendFirst(Object[] arr, Object o) {
-		var res = new Object[arr.length+1];
+		var res = new Object[1+ (nonNull(arr) ? arr.length : 0)];
 		res[0] = o;
-		arraycopy(arr, 0, res, 1, arr.length);
+		if(nonNull(arr)) {
+			arraycopy(arr, 0, res, 1, arr.length);
+		}
 		return res;
 	}
 	
