@@ -92,7 +92,7 @@ public final class WebEnvironment implements Environment {
 	}
 
 	public <T> T exec(QueryComposer query, QueryExecutor<T> executor) {
-		var qry = apply(this, env-> query.compose().buildQuery(this, true, query.getDrivenModel()));
+		var qry = apply(this, env-> query.compose().buildQuery(this, true));
 		return executor.execute(qry); //outside context
 	}
 	

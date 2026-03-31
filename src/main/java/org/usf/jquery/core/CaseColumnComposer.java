@@ -48,6 +48,9 @@ public final class CaseColumnComposer implements Composer<CaseColumn> {
 	
 	@Override
 	public CaseColumn compose() {
-		return new CaseColumn(cases.toArray(WhenCase[]::new));
+		if(!cases.isEmpty()) {			
+			return new CaseColumn(cases.toArray(WhenCase[]::new));
+		}
+		throw new IllegalArgumentException("");
 	}
 }

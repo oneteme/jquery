@@ -32,22 +32,6 @@ import org.usf.jquery.web.proxy.PartitionComposer;
  */
 public interface Composers {
 
-	//order operators
-	
-//	default ComposerDefinition<Order> asc() {
-//		return orderDefinition(ASC);
-//	}
-//	
-//	default ComposerDefinition<Order> desc() {
-//		return orderDefinition(DESC);
-//	}
-//	
-//	private ComposerDefinition<Order> orderDefinition(OrderType type) {
-//		return new ComposerDefinition<>(type.name().toLowerCase(), ORDER, 
-//				(t,args)-> ((Column)args[0]).order(type),
-//				required(COLUMN));
-//	}
-
 	//case operators
 	
 	default ComposerDefinition<CaseColumnComposer> when() { 
@@ -135,7 +119,7 @@ public interface Composers {
 	default ComposerDefinition<QueryComposer> criteria(QueryComposer composer) {
 		return new ComposerDefinition<>("criteria", QUERY, 
 				args-> 
-		composer.filters((Criteria[]) args), 
+		composer.criterias((Criteria[]) args), 
 				arrayOf(FILTER, 1));
 	}
 	

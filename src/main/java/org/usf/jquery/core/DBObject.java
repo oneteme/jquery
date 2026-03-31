@@ -18,7 +18,8 @@ import java.util.stream.Stream;
 public interface DBObject {
 
 	static final Consumer<Column> DECLARE_ONLY = o->{};
-	
+
+	//0: groupKey, +1: aggregation, -1: constant
 	int compose(QueryComposer composer, Consumer<Column> groupKeys);
 	
 	void build(QueryBuilder query, Object... args);
@@ -43,7 +44,6 @@ public interface DBObject {
 		}), col);
 	}
 
-	//0: groupKey, +1: aggregation, -1: constant  
 	static int composeNested(QueryComposer query, Consumer<Column> groupBy, Stream<DBObject> stream, Column orElse){
 		if(groupBy == DECLARE_ONLY) {
 			stream.forEach(o-> o.compose(query, groupBy)); //declare views only, no group keys

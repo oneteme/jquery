@@ -230,7 +230,7 @@ final class EntryChain {
 					while(e[0].hasNext()) {
 						e[0] = e[0].next;
 						switch(e[0].value) {//column not allowed 
-						case FILTER_OPR: q.filters(parseAll(e[0].args, subCtx, FILTER)); break;
+						case FILTER_OPR: q.criterias(parseAll(e[0].args, subCtx, FILTER)); break;
 						case ORDER_PARAM: q.orders(parseAll(e[0].args, subCtx, ORDER)); break;
 						case JOIN_PARAM: q.joins(parseAll(e[0].args, subCtx, JOIN)); break;
 						case LIMIT_PARAM: q.limit(parseInt(requireNArgs(1, e[0].args, ()-> LIMIT_PARAM)[0].value)); break;

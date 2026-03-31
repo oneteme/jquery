@@ -23,7 +23,10 @@ final class WhenCase implements DBObject, Typed {
 
 	@Override
 	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		return DBObject.tryComposeNested(query, groupKeys, filter, value);
+		var v = value instanceof DBObject c ? c.compose(query, groupKeys) : -1;
+		return nonNull(filter)
+				? Math.max(v, filter.compose(query, groupKeys))
+				: v;
 	}
 	
 	@Override

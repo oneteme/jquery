@@ -133,7 +133,7 @@ public class DefaultRequestParser implements RequestParser {
     		var ec = parseEntry(e.getKey());
     		return Stream.of(e.getValue()).map(v-> ec.evalFilter(context, parseEntries(v)));
     	})
-    	.forEach(currentEnvironment().currentQuery()::filters);
+    	.forEach(currentEnvironment().currentQuery()::criterias);
 	}
 	
 	private static int requirePositiveInt(String[] values, String name) {

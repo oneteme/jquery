@@ -8,7 +8,7 @@ package org.usf.jquery.core;
 public enum Role {
 	
 	COLUMN,
-	FILTER,
+	CRITERIA,
 	ORDER,
 	JOIN,
 	UNION;

@@ -24,9 +24,5 @@ public final class ComposerDefinition<T> extends Definition<T> {
 	@Override
 	protected T internalInvoke(JavaType type, Object... args) {
 		return composer.apply(args);
-//		if(type.getCorrespondingClass().isInstance(col)) {
-//			return col;
-//		}
-//		throw new IllegalStateException(format("composer '%s' cannot be applied to type %s", getName(), type));
 	}
 }

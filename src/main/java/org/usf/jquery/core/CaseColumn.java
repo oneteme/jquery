@@ -6,18 +6,17 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 
+import lombok.RequiredArgsConstructor;
+
 /**
  * 
  * @author u$f
  *
  */
+@RequiredArgsConstructor
 public final class CaseColumn implements Column {
 
 	private final WhenCase[] whenCases;
-
-	public CaseColumn(WhenCase... cases) {
-		this.whenCases = cases;
-	}
 	
 	@Override
 	public int compose(QueryComposer query, Consumer<Column> groupKeys) {

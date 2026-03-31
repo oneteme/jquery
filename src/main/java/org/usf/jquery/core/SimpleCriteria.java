@@ -17,7 +17,11 @@ public class SimpleCriteria implements Criteria {
 
 	@Override
 	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		return DBObject.tryComposeNested(query, groupKeys, left, expression);
+		var v = expression.compose(query, groupKeys);
+		if(left instanceof DBObject c) {
+			return Math.max(v, c.compose(query, groupKeys));
+		}
+		return v;
 	}
 	
 	@Override

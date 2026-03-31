@@ -62,9 +62,9 @@ public final class QueryView implements DBView {
 	}
 
 	@Override
-	public void build(QueryBuilder query) {
-		var ovr = query.isCte(this) ? overView : assign(query.getOverViews(), overView);
-		var sub = query.subQuery(views, unmodifiableMap(ovr));
+	public void build(QueryBuilder builder) {
+		var ovr = builder.isCte(this) ? overView : assign(builder.getOverViews(), overView);
+		var sub = builder.subQuery(views, unmodifiableMap(ovr));
 		sub.appendParenthesis(()-> buildClauses(sub));
 	}
 

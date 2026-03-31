@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.WINDOW;
-import static org.usf.jquery.core.Role.FILTER;
+import static org.usf.jquery.core.Role.CRITERIA;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.function.Consumer;
@@ -35,8 +35,10 @@ public final class OperationColumn implements Column {
 			return 1;
 		}
 		if(name.equals("OVER")) {
-			if(query.getRole() == FILTER) {
-				overColumn = replaceNestedView(query);
+			if(query.getRole() == CRITERIA) {
+				var col = new OperationColumn(name, kind, operator, args, type).as("over_" + hashCode());
+				var sub = new SubView(new QueryComposer().columns(Column.allColumns(), col).compose2());
+				this.overColumn = sub.column(col.getTag(), col.getType());
 				return overColumn.compose(query, groupKeys);
 			}
 			return resolveOverColumns(query, groupKeys);
@@ -70,16 +72,5 @@ public final class OperationColumn implements Column {
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this);
-	}
-	
-	ViewColumn replaceNestedView(QueryComposer query) {
-		var col = new OperationColumn(name, kind, operator, args, type).as("over_" + hashCode());
-		var views = new QueryComposer().columns(col).getViews(); //scan column views
-		if(views.size() == 1) {
-			var view = views.iterator().next();
-			return query.subViewQuery(view, sub-> sub.columns(col))
-					.getSubView(view).column(col.getTag(), col.getType());
-		}
-		throw new UnsupportedOperationException("overview require only one view");
 	}
 }

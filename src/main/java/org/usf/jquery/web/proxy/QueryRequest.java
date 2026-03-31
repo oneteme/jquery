@@ -29,10 +29,12 @@ public @interface QueryRequest {
 	String[] ignore() default {};
 	
 	/** If true, ensures the query is an aggregation. */
-	boolean aggregate() default false;
+	boolean aggregate() default false; //??
 
 	/** Hard limit for the number of rows returned. */
 	int maxSize() default 0;
+	
+	int maxColumns() default 0;
 	
 	/** Views to exclude from the query. */
 	String[] excludeViews() default {};

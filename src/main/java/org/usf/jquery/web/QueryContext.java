@@ -13,11 +13,11 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.usf.jquery.core.ColumnProxy;
-import org.usf.jquery.core.Comparator;
 import org.usf.jquery.core.ComparatorDefinition;
+import org.usf.jquery.core.Comparators;
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.Operator;
 import org.usf.jquery.core.OperatorDefinition;
+import org.usf.jquery.core.Operators;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -57,11 +57,11 @@ public final class QueryContext {
 	}
 
 	public Optional<OperatorDefinition> lookupOperator(String op) {
-		return lookup(Operator.class, OperatorDefinition.class, op);
+		return lookup(Operators.class, OperatorDefinition.class, op);
 	}
 	
 	public Optional<ComparatorDefinition> lookupComparator(String cmp) {
-		return lookup(Comparator.class, ComparatorDefinition.class, cmp);
+		return lookup(Comparators.class, ComparatorDefinition.class, cmp);
 	}
 	
 	static <T,U> Optional<U> lookup(Class<T> clazz, Class<U> type, String name) {

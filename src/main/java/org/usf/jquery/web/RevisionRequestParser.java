@@ -42,10 +42,10 @@ public final class RevisionRequestParser extends DefaultRequestParser {
 		var revs = mod.apply(values);
 		if(!isEmpty(revs)) {
     		var query = currentEnvironment().currentQuery();
-    		query.repeat(groupByYear(revs));
+    		//query.repeat(groupByYear(revs));
     		var filter = vd.monthFilter();
     		if(nonNull(filter)) {  //optional month revision
-    			query.filters(filter);
+    			query.criterias(filter);
     		}
 		}
 		else {
