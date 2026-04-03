@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.lang.Math.max;
 import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -190,14 +191,15 @@ public final class QueryComposer implements Composer<QueryView> {
 			groups = new HashSet<>();
 			cons = groups::add;
 		}
+		int mask = -1;
 		var declare = new QueryDeclaration(new HashSet<>(), cons);
-		composeColumn(query, declare);
+		mask = max(composeColumn(query, declare), mask);
+		mask = max(composeCriteria(query, declare), mask); //where | having
+		mask = max(composeOrder(query, declare), mask);
 		composeJoin(query, declare);
-		composeCriteria(query, declare); //where | having
-		composeOrder(query, declare);
 		composeUnion(query);
 		composeView(query, declare);
-		if(!isEmpty(groups)) {			
+		if(mask > 0 && !isEmpty(groups)) {			
 			query.setGroups(groups.toArray(Column[]::new));
 		}
 		if(!isEmpty(declare.getViews())) {	
@@ -258,35 +260,36 @@ public final class QueryComposer implements Composer<QueryView> {
 		}
 	}
 	
-	void composeColumn(QueryView view, QueryDeclaration declare) {
+	int composeColumn(QueryView view, QueryDeclaration declare) {
 		if(!columns.isEmpty()) {
 			var cols = columns.toArray(NamedColumn[]::new);
-			declare.composeNested(cols);
 			view.setSelects(cols);
+			return declare.composeNested(cols);
 		}
-		else {
-			throw new IllegalArgumentException("no columns defined in query");
-		}
+		throw new IllegalArgumentException("no columns defined in query");
 	}
 	
 	void composeJoin(QueryView view, QueryDeclaration declare) {
 		if(nonNull(joins)) {
 			var jns = joins.toArray(ViewJoin[]::new);
-			declare.sub(DECLARE_ONLY).composeNested(jns);
 			view.setJoins(jns);
+			declare.sub(DECLARE_ONLY).composeNested(jns);
 		}
 	}
 
-	void composeCriteria(QueryView view, QueryDeclaration declare) {
+	int composeCriteria(QueryView view, QueryDeclaration declare) {
+		var mask = -1;
 		if(nonNull(criterias)) {
 			Set<Criteria> hvn = null;
 			for(var c : criterias) {
-				if(c.compose(declare) > 0) {
+				var v = c.compose(declare);
+				if(v > 0) {
 					if(isNull(hvn)) {
 						hvn = new HashSet<>();
 					}
 					hvn.add(c);
 				}
+				mask = max(mask, v);
 			}
 			if(nonNull(hvn)) {
 				view.setHavings(hvn.toArray(Criteria[]::new));
@@ -294,14 +297,16 @@ public final class QueryComposer implements Composer<QueryView> {
 			}
 			view.setWheres(criterias.toArray(Criteria[]::new));
 		}
+		return mask;
 	}
 	
-	void composeOrder(QueryView view, QueryDeclaration declare) {
+	int composeOrder(QueryView view, QueryDeclaration declare) {
 		if(nonNull(orders)) {
 			var ords = orders.toArray(Order[]::new);
-			declare.composeNested(ords);
 			view.setOrders(ords);
+			return declare.composeNested(ords);
 		}
+		return -1;
 	}
 	
 	void composeUnion(QueryView view) {
