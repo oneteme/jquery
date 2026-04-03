@@ -31,8 +31,8 @@ public final class QueryResource implements DatasetResource {
 
 	@Override
 	public <T> T invokeResource(String id, Class<T> type, Entry[] args, RequestContext ctx) {
-		if(type.isAssignableFrom(NamedColumn.class) && nonNull(query.getColumns())) {
-			return stream(query.getColumns())
+		if(type.isAssignableFrom(NamedColumn.class) && nonNull(query.getSelects())) {
+			return stream(query.getSelects())
 					.filter(c-> id.equals(c.getTag()))
 					.findFirst().map(type::cast)
 					.orElse(null);
@@ -43,7 +43,7 @@ public final class QueryResource implements DatasetResource {
 	@Override
 	public Match exposes(String id, Class<?> type) {
 		return type.isAssignableFrom(NamedColumn.class) 
-				&& nonNull(query.getColumns())
-				&& stream(query.getColumns()).anyMatch(c-> id.equals(c.getTag())) ? NONE : VALID;
+				&& nonNull(query.getSelects())
+				&& stream(query.getSelects()).anyMatch(c-> id.equals(c.getTag())) ? NONE : VALID;
 	}
 }

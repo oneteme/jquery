@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import java.util.function.Consumer;
-
 /**
  * 
  * @author u$f
@@ -11,7 +9,7 @@ import java.util.function.Consumer;
 public interface Invocable extends DBObject {
 	
 	@Override
-	default int compose(QueryComposer composer, Consumer<Column> groupKeys) {
+	default int compose(QueryDeclaration composer) {
 		throw new UnsupportedOperationException("compose operator");
 	}
 }

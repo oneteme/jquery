@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import java.util.function.Consumer;
-
 import lombok.Getter;
 
 /**
@@ -19,8 +17,8 @@ public final class JoinsClause implements DBObject {
 	}
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
-		return DBObject.composeNested(composer, groupKeys, joins);
+	public int compose(QueryDeclaration declare) {
+		return declare.composeNested(joins);
 	}
 
 	@Override

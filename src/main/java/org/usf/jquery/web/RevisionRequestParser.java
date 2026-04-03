@@ -8,7 +8,6 @@ import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.YearViewDecorator.YearMonths.groupByYear;
 
 import java.time.Year;
 import java.time.YearMonth;

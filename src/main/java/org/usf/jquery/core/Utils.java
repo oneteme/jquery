@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.arraycopy;
+import static java.lang.reflect.Array.newInstance;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
@@ -66,6 +67,14 @@ public final class Utils {
 		if(nonNull(arr)) {
 			arraycopy(arr, 0, res, 1, arr.length);
 		}
+		return res;
+	}
+	
+	@SuppressWarnings("unchecked")
+	public static <T> T[] appendLast(T[] arr, T o) {
+		var res = (T[])newInstance(arr.getClass().getComponentType(), arr.length+1);
+		arraycopy(arr, 0, res, 0, arr.length);
+		res[res.length-1] = o;
 		return res;
 	}
 	

@@ -3,10 +3,9 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.WINDOW;
+import static org.usf.jquery.core.QueryDeclaration.DECLARE_ONLY;
 import static org.usf.jquery.core.Role.CRITERIA;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
-
-import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -29,21 +28,21 @@ public final class OperationColumn implements Column {
 	private ViewColumn overColumn; 
 
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
+	public int compose(QueryDeclaration declare) {
 		if(kind == AGGREGATE || kind == WINDOW) {
-			DBObject.tryComposeNested(query, DECLARE_ONLY, args); //declare views only
+			declare.sub(DECLARE_ONLY).tryComposeNested(args); //declare views only
 			return 1;
 		}
 		if(name.equals("OVER")) {
-			if(query.getRole() == CRITERIA) {
+			if(declare.getRole() == CRITERIA) {
 				var col = new OperationColumn(name, kind, operator, args, type).as("over_" + hashCode());
-				var sub = new SubView(new QueryComposer().columns(Column.allColumns(), col).compose2());
+				var sub = new SubView(new QueryComposer().columns(Column.allColumns(), col).compose());
 				this.overColumn = sub.column(col.getTag(), col.getType());
-				return overColumn.compose(query, groupKeys);
+				return overColumn.compose(declare);
 			}
-			return resolveOverColumns(query, groupKeys);
+			return resolveOverColumns(declare);
 		}
-		return DBObject.tryComposeNestedOrElse(query, groupKeys, args, this);
+		return declare.tryComposeNestedOrElse(args, this);
 	}
 
 	@Override
@@ -61,12 +60,12 @@ public final class OperationColumn implements Column {
 		return nonNull(overColumn) ? overColumn.getType() : type;
 	}
 	
-	private int resolveOverColumns(QueryComposer composer, Consumer<Column> groupKeys) {
+	private int resolveOverColumns(QueryDeclaration declare) {
 		requireAtLeastNArgs(1, args, ()-> "over"); //partition
-		var lvl = DBObject.tryComposeNested(composer, groupKeys, args[0])-1; //nested aggregate function
+		var lvl = declare.tryComposeNested(args[0])-1; //nested aggregate function
 		return args.length == 1
 				? lvl
-				: Math.max(lvl, DBObject.tryComposeNested(composer, groupKeys, args[1])); //partition
+				: Math.max(lvl, declare.tryComposeNested(args[1])); //partition
 	}
 		
 	@Override

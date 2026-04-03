@@ -6,8 +6,6 @@ import static org.usf.jquery.core.SqlStringBuilder.DOT;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.function.Consumer;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -22,9 +20,11 @@ public final class AllColumns implements NamedColumn {
 	private final DBView[] views;
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> cons) {
+	public int compose(QueryDeclaration query) {
 		if(nonNull(views)) {
-			query.declare(views); //declare views
+			for(var v : views) {
+				query.declare(v); //declare views
+			}
 		}
 		return -1;
 	}

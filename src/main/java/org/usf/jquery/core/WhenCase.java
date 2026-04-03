@@ -4,8 +4,6 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.function.Consumer;
-
 import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.RequiredArgsConstructor;
@@ -22,10 +20,10 @@ final class WhenCase implements DBObject, Typed {
 	private final Object value; //then|else
 
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		var v = value instanceof DBObject c ? c.compose(query, groupKeys) : -1;
+	public int compose(QueryDeclaration query) {
+		var v = value instanceof DBObject c ? c.compose(query) : -1;
 		return nonNull(filter)
-				? Math.max(v, filter.compose(query, groupKeys))
+				? Math.max(v, filter.compose(query))
 				: v;
 	}
 	

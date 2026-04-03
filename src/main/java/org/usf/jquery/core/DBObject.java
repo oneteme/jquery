@@ -1,14 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.Arrays.stream;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
-import static java.util.stream.Stream.empty;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
-
-import java.util.ArrayList;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 /**
  * 
@@ -17,59 +9,14 @@ import java.util.stream.Stream;
  */
 public interface DBObject {
 
-	static final Consumer<Column> DECLARE_ONLY = o->{};
-
 	//0: groupKey, +1: aggregation, -1: constant
-	int compose(QueryComposer composer, Consumer<Column> groupKeys);
+	int compose(QueryDeclaration composer);
 	
 	void build(QueryBuilder query, Object... args);
-
-	static int composeNested(QueryComposer query, Consumer<Column> cons, DBObject[] args){
-		return composeNested(query, cons, null, args);
-	}
-	
-	static int composeNested(QueryComposer query, Consumer<Column> cons, Column col, DBObject[] args){
-		return composeNested(query, cons, streamOrEmpty(args), col);
-	}
-
-	static int tryComposeNested(QueryComposer query, Consumer<Column> cons, Object... args){
-		return tryComposeNestedOrElse(query, cons, args, null);
-	}
-
-	static int tryComposeNestedOrElse(QueryComposer query, Consumer<Column> cons, Object[] args, Column col){
-		return composeNested(query, cons, streamOrEmpty(args).mapMulti((o, acc)->{
-			if(o instanceof DBObject n) {
-				acc.accept(n);
-			}
-		}), col);
-	}
-
-	static int composeNested(QueryComposer query, Consumer<Column> groupBy, Stream<DBObject> stream, Column orElse){
-		if(groupBy == DECLARE_ONLY) {
-			stream.forEach(o-> o.compose(query, groupBy)); //declare views only, no group keys
-			return -1;
-		}
-		if(isNull(orElse)) {
-			return stream.mapToInt(o-> o.compose(query, groupBy)).max().orElse(-1);
-		}
-		var arr = new ArrayList<Column>();
-		var lvl = stream.mapToInt(o-> o.compose(query, arr::add)).max().orElse(-1);
-		if(lvl == 0) { //group keys
-			groupBy.accept(orElse);
-		}
-		else if(lvl > 0 && !arr.isEmpty()) {
-			arr.forEach(groupBy);
-		}
-		return lvl;
-	}
 	
 	static String toSQL(DBObject obj, Object... args) {
 		var query = addWithValue();
 		obj.build(query, args);
 		return query.build().sql();
-	}
-	
-	private static <T> Stream<T> streamOrEmpty(T[] arr) {
-		return nonNull(arr) ? stream(arr) : empty();
-	}
+	}	
 }

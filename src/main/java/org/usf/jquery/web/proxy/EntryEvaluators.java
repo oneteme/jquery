@@ -146,7 +146,7 @@ public final class EntryEvaluators {
 			view = evalQuery(itr, view, ctx);
 		}
 		if(view instanceof QueryResource query) {
-			if(query.getQuery().getColumns().length == 1) {
+			if(query.getQuery().getSelects().length == 1) {
 				return query.getQuery().asColumn();
 			}
 			throw new EntryParseException(""); //TODO
@@ -221,7 +221,7 @@ public final class EntryEvaluators {
 				throw new EntryParseException("cannot parse query arguments ", e);
 			}
 			if(res instanceof QueryView query) {
-				if(query.getColumns().length > 0) {
+				if(query.getSelects().length > 0) {
 					return new QueryResource(query);
 				}
 				throw new EntryParseException("query must have at least one column");

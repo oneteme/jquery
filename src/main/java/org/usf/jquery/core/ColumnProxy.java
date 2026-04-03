@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,8 +21,8 @@ public final class ColumnProxy implements NamedColumn {
 	private final String tag; //optional
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> cons) {
-		return column.compose(query, cons);
+	public int compose(QueryDeclaration query) {
+		return column.compose(query);
 	}
 
 	@Override

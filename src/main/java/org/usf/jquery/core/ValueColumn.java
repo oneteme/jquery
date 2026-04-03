@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import java.util.function.Consumer;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -16,7 +14,7 @@ public class ValueColumn implements Column {
 	private final JDBCType type;
 
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
+	public int compose(QueryDeclaration query) {
 		return -1;
 	}
 	

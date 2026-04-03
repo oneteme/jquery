@@ -2,8 +2,6 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.function.Consumer;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -19,8 +17,8 @@ public final class QueryUnion implements DBObject {
 	private final QueryView view;
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
-		return view.compose(composer, groupKeys);
+	public int compose(QueryDeclaration composer) {
+		return view.compose(composer);
 	}
 	
 	@Override

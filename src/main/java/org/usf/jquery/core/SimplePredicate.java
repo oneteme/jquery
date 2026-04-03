@@ -2,8 +2,6 @@ package org.usf.jquery.core;
 
 import static org.usf.jquery.core.Utils.appendFirst;
 
-import java.util.function.Consumer;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -19,8 +17,8 @@ public final class SimplePredicate implements Predicate {
 	private final Object[] right; //optional
 
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		return DBObject.tryComposeNested(query, groupKeys, right);
+	public int compose(QueryDeclaration declare) {
+		return declare.tryComposeNested(right);
 	}
 	
 	@Override

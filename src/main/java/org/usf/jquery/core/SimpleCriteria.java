@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import java.util.function.Consumer;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -16,10 +14,10 @@ public class SimpleCriteria implements Criteria {
 	private final Predicate expression;
 
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		var v = expression.compose(query, groupKeys);
+	public int compose(QueryDeclaration query) {
+		var v = expression.compose(query);
 		if(left instanceof DBObject c) {
-			return Math.max(v, c.compose(query, groupKeys));
+			return Math.max(v, c.compose(query));
 		}
 		return v;
 	}

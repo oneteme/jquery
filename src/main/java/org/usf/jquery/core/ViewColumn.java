@@ -3,8 +3,6 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.DOT;
 
-import java.util.function.Consumer;
-
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
@@ -23,11 +21,11 @@ public class ViewColumn implements NamedColumn {
 	private final String tag;  //optional
 
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
+	public int compose(QueryDeclaration query) {
 		if(nonNull(view)) {
 			query.declare(view);
 		}
-		groupKeys.accept(this);
+		query.groupBy(this);
 		return 0;
 	}
 	

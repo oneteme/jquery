@@ -12,8 +12,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.function.Consumer;
-
 import lombok.Getter;
 
 /**
@@ -35,12 +33,12 @@ public final class ViewJoin implements DBObject {
 	}
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
+	public int compose(QueryDeclaration query) {
 		if(type != CROSS) {
 			requireAtLeastNArgs(1, criterias, ViewJoin.class::getSimpleName);
 		}
 		query.declare(view);
-		return DBObject.composeNested(query, groupKeys, criterias);
+		return query.composeNested(criterias);
 	}
 
 	@Override

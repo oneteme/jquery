@@ -17,7 +17,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -38,10 +37,10 @@ import lombok.extern.slf4j.Slf4j;
 public final class QueryView implements DBView {
 
 	private QueryView[] ctes;
-	private NamedColumn[] columns;
-	private Column[] group;
-	private Criteria[] where; 
-	private Criteria[] having;
+	private NamedColumn[] selects;
+	private Column[] groups;
+	private Criteria[] wheres; 
+	private Criteria[] havings;
 	private ViewJoin[] joins; 
 	private Order[] orders;
 	private DBView[] views; //preserve order
@@ -51,12 +50,14 @@ public final class QueryView implements DBView {
 	private Integer limit;
 	private Integer offset;
 	private Integer maxRows;
-	private Map<DBView, QueryView> overView;
+	private Map<DBView, QueryView> overView = emptyMap();
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
+	public int compose(QueryDeclaration composer) {
 		if(!isEmpty(ctes)) { // subQuery
-			composer.ctes(ctes);
+			for(var c : ctes) {
+				composer.cte(c);
+			}
 		}
 		return -1;
 	}
@@ -76,8 +77,9 @@ public final class QueryView implements DBView {
 		log.trace("building query...");
 		var bg = currentTimeMillis();
 		var flatCTE = flatCte().distinct().toArray(QueryView[]::new);
+		Map<DBView, QueryView> over = isEmpty(overView) ? emptyMap() : unmodifiableMap(overView);
 		var builder = parameterized 
-				? parameterized(env, flatCTE, views, unmodifiableMap(overView))
+				? parameterized(env, flatCTE, views, over)
 				: addWithValue(env, flatCTE, views, unmodifiableMap(overView));
 		if(!isEmpty(flatCTE)) {
 			builder.append("WITH ") // do not resolveView => ViewRef
@@ -122,7 +124,7 @@ public final class QueryView implements DBView {
 	    		builder.append("TOP " + limit);
 	    	}
 		}
-    	builder.appendEach(SCOMA, columns, o-> {
+    	builder.appendEach(SCOMA, selects, o-> {
     		builder.append(o);
     		var tag = o.getTag();
     		if(nonNull(tag)) {
@@ -155,15 +157,15 @@ public final class QueryView implements DBView {
 	}
 
 	void where(QueryBuilder builder){
-		if(!isEmpty(where)) {
-    		builder.append(" WHERE ").appendEach(AND.sql(), where);
+		if(!isEmpty(wheres)) {
+    		builder.append(" WHERE ").appendEach(AND.sql(), wheres);
 		}
 	}
 	
 	void groupBy(QueryBuilder builder){
-		if(aggregation && !isEmpty(group)) {
-			var cols = Stream.of(columns).collect(toSet());
-    		builder.append(" GROUP BY ").appendEach(SCOMA, group, c-> {
+		if(!isEmpty(groups)) {
+			var cols = Stream.of(selects).collect(toSet());
+    		builder.append(" GROUP BY ").appendEach(SCOMA, groups, c-> {
     			if(!(c instanceof ViewColumn) && cols.contains(c)) {
     				builder.append(((NamedColumn)c).getTag());
     			}
@@ -175,8 +177,8 @@ public final class QueryView implements DBView {
 	}
 
 	void having(QueryBuilder builder){
-		if(!isEmpty(having)) {
-    		builder.append(" HAVING ").appendEach(AND.sql(), having);
+		if(!isEmpty(havings)) {
+    		builder.append(" HAVING ").appendEach(AND.sql(), havings);
 		}
 	}
 	

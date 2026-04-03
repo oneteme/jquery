@@ -7,8 +7,6 @@ import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.function.Consumer;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -23,10 +21,8 @@ public final class Partition implements DBObject {
 	private final  Order[] orders; //optional
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		return max(
-				DBObject.composeNested(query, groupKeys, columns), 
-				DBObject.composeNested(query, groupKeys, orders));
+	public int compose(QueryDeclaration query) {
+		return max(query.composeNested(columns), query.composeNested(orders));
 	}
 	
 	@Override

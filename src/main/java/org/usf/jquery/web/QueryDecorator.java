@@ -36,7 +36,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 
 	public Optional<NamedColumn> column(String id) {
-		return stream(query.getColumns()) //do not use declaredColumn
+		return stream(query.getSelects()) //do not use declaredColumn
 		.filter(c-> id.equals(c.getTag()))
 		.findAny()
 		.map(c-> view().column(doubleQuote(c.getTag()), c.getType(), null));

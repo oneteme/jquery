@@ -4,7 +4,6 @@ import static java.util.Collections.addAll;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.ArrayList;
-import java.util.function.Consumer;
 
 /**
  * 
@@ -23,8 +22,8 @@ public final class CriteriaGroup implements Criteria {
 	}
 
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		return DBObject.composeNested(query, groupKeys, filters);
+	public int compose(QueryDeclaration query) {
+		return query.composeNested(filters);
 	}
 	
 	@Override

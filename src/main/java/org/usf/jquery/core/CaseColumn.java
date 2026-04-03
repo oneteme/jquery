@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 
 import java.util.Objects;
-import java.util.function.Consumer;
 import java.util.stream.Stream;
 
 import lombok.RequiredArgsConstructor;
@@ -19,8 +18,8 @@ public final class CaseColumn implements Column {
 	private final WhenCase[] whenCases;
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<Column> groupKeys) {
-		return DBObject.composeNested(query, groupKeys, this, whenCases);
+	public int compose(QueryDeclaration declare) {
+		return declare.composeNestedOrElse(whenCases, this);
 	}
 
 	@Override

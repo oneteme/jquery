@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import java.util.function.Consumer;
-
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
 
@@ -16,7 +14,7 @@ public final class ViewRef implements DBView {
 	private final DBView view;
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<Column> groupKeys) {
+	public int compose(QueryDeclaration composer) {
 		throw new IllegalStateException("ViewRef cannot be composed");
 	}
 

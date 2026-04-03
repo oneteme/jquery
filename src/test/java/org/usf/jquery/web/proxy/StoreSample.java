@@ -11,7 +11,6 @@ import org.usf.jquery.core.Chainable;
 import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.OperatorDefinition;
 import org.usf.jquery.core.Predicate;
-import org.usf.jquery.core.TypeResolver;
 
 /**
  * 

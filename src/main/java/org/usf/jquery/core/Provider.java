@@ -18,7 +18,7 @@ public enum Provider {
 	TERADATA, H2;
 	
 	@Deprecated
-	public Operator replace(Operator op) {
+	public Operators replace(Operators op) {
 		return op;
 	}
 	
