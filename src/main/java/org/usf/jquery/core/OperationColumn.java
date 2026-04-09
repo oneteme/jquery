@@ -3,7 +3,7 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.WINDOW;
-import static org.usf.jquery.core.QueryDeclaration.DECLARE_ONLY;
+import static org.usf.jquery.core.QueryDeclaration.DECLARE_VIEW_ONLY;
 import static org.usf.jquery.core.Role.CRITERIA;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
@@ -30,12 +30,12 @@ public final class OperationColumn implements Column {
 	@Override
 	public int compose(QueryDeclaration declare) {
 		if(kind == AGGREGATE || kind == WINDOW) {
-			declare.sub(DECLARE_ONLY).tryComposeNested(args); //declare views only
+			declare.sub(DECLARE_VIEW_ONLY).tryComposeNested(args); //declare views only
 			return 1;
 		}
-		if(name.equals("OVER")) {
+		if("OVER".equals(name)) {
 			if(declare.getRole() == CRITERIA) {
-				var col = new OperationColumn(name, kind, operator, args, type).as("over_" + hashCode());
+				var col = new OperationColumn(name, kind, operator, args, type).as(name + '_' + hashCode());
 				var sub = new SubView(new QueryComposer().columns(Column.allColumns(), col).compose());
 				this.overColumn = sub.column(col.getTag(), col.getType());
 				return overColumn.compose(declare);

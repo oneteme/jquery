@@ -37,7 +37,7 @@ public interface Column extends DBObject, Typed {
 		return new ColumnProxy(this, type, nonNull(name) ? requireLegalVariable(name) : null);
 	}
 	
-	// filters
+	//criteria
 	
 	default Criteria eq(Object value) {
 		return getDialect().eq().invoke(this, value);
@@ -413,7 +413,7 @@ public interface Column extends DBObject, Typed {
 		return getDialect().avg().invoke(this);
 	}
 
-	//pipe functions
+	//scope functions
 	
 	default Column over(Column[] cols, Order[] orders) {
 		return over(new Partition(cols, orders));
@@ -421,6 +421,14 @@ public interface Column extends DBObject, Typed {
 	
 	default Column over(Partition part) {
 		return getDialect().over().invoke(this, part);
+	}
+	
+	default Column within(Order[] orders) {
+		return within(new Group(orders));
+	}
+	
+	default Column within(Group group) {
+		return getDialect().within().invoke(this, group);
 	}
 
 	//orders
@@ -450,6 +458,10 @@ public interface Column extends DBObject, Typed {
 	}
 	
 	// constants
+	
+	static Column pi() {
+		return getDialect().pi().invoke();
+	}
 	
 	static Column cdate() {
 		return getDialect().cdate().invoke();

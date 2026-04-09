@@ -11,7 +11,7 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
-import static org.usf.jquery.core.JQueryType.ORDER;
+import static org.usf.jquery.core.JQueryType.GROUP;
 import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.CAST;
@@ -361,7 +361,7 @@ public interface Operators {
 	}
 	
 	default OperatorDefinition within() {
-		return scope(firstArgType(), "WITHIN GROUP", required(), varargs(ORDER));
+		return scope(firstArgType(), "WITHIN GROUP", required(), optional(GROUP));
 	}
 
 	public static OperatorDefinition operator(TypeResolver type, String name, String symbol, Parameter... parameters) {

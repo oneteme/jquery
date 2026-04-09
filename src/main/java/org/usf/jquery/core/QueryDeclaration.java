@@ -22,7 +22,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class QueryDeclaration {
 
-	static final Consumer<Column> DECLARE_ONLY = o->{};
+	static final Consumer<Column> DECLARE_VIEW_ONLY = o->{};
 
 	private final Set<DBView> views; //views
 	private final Consumer<Column> groups;
@@ -40,7 +40,6 @@ public class QueryDeclaration {
 	}
 	
 	public QueryDeclaration cte(DBView view) {
-		//TODO 
 		return this;
 	}
 	
@@ -65,14 +64,12 @@ public class QueryDeclaration {
 	}
 
 	int composeNested(Stream<DBObject> stream, Column orElse){
-		if(groups == DECLARE_ONLY) {
+		if(groups == DECLARE_VIEW_ONLY) {
 			stream.forEach(o-> o.compose(this)); //declare views only, no group keys
 			return -1;
 		}
 		if(isNull(orElse)) {
-			return stream.mapToInt(o-> 
-			o.compose(this))
-					.max().orElse(-1);
+			return stream.mapToInt(o-> o.compose(this)).max().orElse(-1);
 		}
 		var arr = new ArrayList<Column>();
 		var sub = sub(arr::add);

@@ -2,6 +2,7 @@ package org.usf.jquery.web.proxy;
 
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
+import static org.usf.jquery.web.proxy.StoreManager.getInstance;
 
 import java.time.LocalDate;
 
@@ -41,8 +42,9 @@ interface DatasetSample extends DatasetResource {
     NamedColumn elapsedtime2();
     
     @Expose(description="")
-    default Criteria active(LocalDate date) {
-    	return null;
+    default Criteria active(LocalDate date, int x) {
+    	var dialect = getInstance().getDefaultStore().dialect();
+    	return size().lt(x).and(dialect.cdate().invoke().eq(date));
     }
 
     @Expose(identity="rattachement", description="")

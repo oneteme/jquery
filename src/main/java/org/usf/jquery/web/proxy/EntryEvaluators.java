@@ -28,6 +28,7 @@ import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.QueryView;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.ViewJoin;
+import org.usf.jquery.core.Group;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -128,6 +129,16 @@ public final class EntryEvaluators {
 			return prt;
 		}
 		throw new NoSuchResourceException("no such partition : " + itr.peekNext().getValue());
+	}
+	
+	public static Group evaluateGroup(Entry entry, RequestContext ctx) {
+		var itr = entry.iterator();
+		var prt = lookupResource(itr, Group.class, ctx, (v,e)-> evalGroup(e, v, ctx));
+		if(nonNull(prt)) {
+			assertLastEntry(itr, false);
+			return prt;
+		}
+		throw new NoSuchResourceException("no such within group : " + itr.peekNext().getValue());
 	}
 
 	public static SingleQueryColumn evaluateQueryColumn(Entry entry, RequestContext ctx) {
@@ -238,7 +249,7 @@ public final class EntryEvaluators {
 				res = invokeDialectComposer(itr, ctx.withView(dr));
 			}
 			catch (Exception e) {
-				throw new EntryParseException("cannot parse partition arguments ", e);
+				throw new EntryParseException("cannot parse partition arguments", e);
 			}
 			if(res instanceof Partition part) {
 				return part;
@@ -247,7 +258,24 @@ public final class EntryEvaluators {
 		}
 		return null;
 	}
-
+	
+	static Group evalGroup(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+		if(itr.hasNext() && "group".equals(itr.peekNext().getValue())) {
+			Object res = null;
+			try {
+				res = invokeDialectComposer(itr, ctx.withView(dr));
+			}
+			catch (Exception e) {
+				throw new EntryParseException("cannot parse withing arguments ", e);
+			}
+			if(res instanceof Group wth) {
+				return wth;
+			}
+			throw new EntryParseException("invalid withing definition");
+		}
+		return null;
+	}
+	
 	static JoinsClause evalJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
 		var v = itr.hasNext() ? itr.peekNext().getValue() : null;
 		if(nonNull(v) && v.matches("(inner|left|right|full|cross)Join")) {

@@ -14,7 +14,7 @@ import lombok.NonNull;
  * @author u$f
  * 
  */
-public final class JoinComposer implements Composer<ViewJoin> {
+public class JoinComposer implements Composer<ViewJoin> {
 	
 	private final JoinType type;
 	private final DBView view;

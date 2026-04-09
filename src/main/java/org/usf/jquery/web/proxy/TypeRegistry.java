@@ -31,6 +31,7 @@ import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.SingleQueryColumn;
+import org.usf.jquery.core.Group;
 
 /**
  * 
@@ -112,6 +113,7 @@ public final class TypeRegistry {
 		evl.put(Order.class, EntryEvaluators::evaluateOrder);
 		evl.put(JoinsClause.class, EntryEvaluators::evaluateJoin);
 		evl.put(Partition.class, EntryEvaluators::evaluatePartition);
+		evl.put(Group.class, EntryEvaluators::evaluateGroup);
 		evl.put(SingleQueryColumn.class, EntryEvaluators::evaluateQueryColumn);
 		DEF_EVALUATORS = unmodifiableMap(evl);
 	}

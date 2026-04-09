@@ -20,7 +20,8 @@ public enum JQueryType implements JavaType, TypeResolver {
 	JOIN(JoinsClause.class),
 	PARTITION(Partition.class),
 	CASE(CaseColumn.class),
-	UNION(QueryUnion.class);
+	UNION(QueryUnion.class),
+	GROUP(Group.class);
 	
 	private final Class<?> type;
 	

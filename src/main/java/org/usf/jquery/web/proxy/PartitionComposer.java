@@ -19,7 +19,7 @@ import lombok.NonNull;
  * @author u$f
  * 
  */
-public final class PartitionComposer implements Composer<Partition> {
+public class PartitionComposer implements Composer<Partition> {
 	
 	private List<Column> columns;
 	private List<Order> orders;

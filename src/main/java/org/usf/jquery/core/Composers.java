@@ -12,6 +12,7 @@ import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.JQueryType.QUERY;
 import static org.usf.jquery.core.JQueryType.UNION;
 import static org.usf.jquery.core.JQueryType.VIEW;
+import static org.usf.jquery.core.JQueryType.GROUP;
 import static org.usf.jquery.core.JoinType.FULL;
 import static org.usf.jquery.core.JoinType.INNER;
 import static org.usf.jquery.core.JoinType.LEFT;
@@ -64,6 +65,19 @@ public interface Composers {
 	
 	default ComposerDefinition<PartitionComposer> order(PartitionComposer composer) { //Partition | QueryComposer
 		return new ComposerDefinition<>("order", PARTITION, 
+				args-> composer.orders((Order[])args),
+				arrayOf(ORDER, 1));
+	}
+	
+	//within operators
+	
+	default ComposerDefinition<GroupComposer> group() {  
+		return new ComposerDefinition<>("group", GROUP, 
+				args-> new GroupComposer());
+	}
+	
+	default ComposerDefinition<GroupComposer> order(GroupComposer composer) { //Partition | QueryComposer
+		return new ComposerDefinition<>("order", GROUP, 
 				args-> composer.orders((Order[])args),
 				arrayOf(ORDER, 1));
 	}

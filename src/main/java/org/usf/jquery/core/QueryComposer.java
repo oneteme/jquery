@@ -5,7 +5,7 @@ import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Column.allColumns;
-import static org.usf.jquery.core.QueryDeclaration.DECLARE_ONLY;
+import static org.usf.jquery.core.QueryDeclaration.DECLARE_VIEW_ONLY;
 import static org.usf.jquery.core.Role.COLUMN;
 import static org.usf.jquery.core.Utils.appendLast;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -186,18 +186,18 @@ public final class QueryComposer implements Composer<QueryView> {
 	
 	public QueryView compose() {
 		var query = new QueryView();
-		Consumer<Column> cons = DECLARE_ONLY;
+		Consumer<Column> cons = DECLARE_VIEW_ONLY;
 		if(isNull(groups)) { //!explicit
 			groups = new HashSet<>();
 			cons = groups::add;
 		}
-		int mask = -1;
 		var declare = new QueryDeclaration(new HashSet<>(), cons);
+		int mask = -1;
 		mask = max(composeColumn(query, declare), mask);
 		mask = max(composeCriteria(query, declare), mask); //where | having
 		mask = max(composeOrder(query, declare), mask);
 		composeJoin(query, declare);
-		composeUnion(query);
+		composeUnion(query); 
 		composeView(query, declare);
 		if(mask > 0 && !isEmpty(groups)) {			
 			query.setGroups(groups.toArray(Column[]::new));
@@ -273,7 +273,7 @@ public final class QueryComposer implements Composer<QueryView> {
 		if(nonNull(joins)) {
 			var jns = joins.toArray(ViewJoin[]::new);
 			view.setJoins(jns);
-			declare.sub(DECLARE_ONLY).composeNested(jns);
+			declare.sub(DECLARE_VIEW_ONLY).composeNested(jns);
 		}
 	}
 

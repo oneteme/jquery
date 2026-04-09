@@ -21,9 +21,8 @@ public final class ComparatorDefinition extends Definition<Criteria> {
 		this.comparator = comparator;
 	}
 	
-	//TODO cannot verify signature here, but it will be verified at runtime when invoked as criteria
 	public SimplePredicate invokeAsExpression(Object... right) {
-		return new SimplePredicate(comparator, right);
+		return new SimplePredicate((b,args)-> invoke(args).build(b), right); //lazy arguments validation
 	}
 	
 	@Override

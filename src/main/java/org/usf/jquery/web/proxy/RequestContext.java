@@ -249,7 +249,7 @@ public final class RequestContext {
 //				}
 //				catch (Exception e) { this hide original exception
 //					throw new EntryParseException("cannot evaluate '" + type.getSimpleName() + "' expression " + entry, e);
-//				}
+//				}²
 			}
 		}// consider variable with no args, next or tag as value entry
 		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) { 

@@ -14,7 +14,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public final class CaseColumnComposer implements Composer<CaseColumn> {
+public class CaseColumnComposer implements Composer<CaseColumn> {
 
 	private final Column column;
 	private final List<WhenCase> cases = new ArrayList<>(); //required at least one case
