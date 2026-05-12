@@ -28,8 +28,8 @@ public final class SingleQueryColumn implements DBObject, Typed {
 	}
 	
 	@Override
-	public int compose(QueryDeclaration composer) {
-		return view.compose(composer);
+	public int prepare(QueryManifest composer) {
+		return view.prepare(composer);
 	}
 	
 	@Override

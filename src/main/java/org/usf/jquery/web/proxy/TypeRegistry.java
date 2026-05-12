@@ -26,12 +26,12 @@ import java.util.UUID;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.Group;
 import org.usf.jquery.core.JoinsClause;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.core.Group;
 
 /**
  * 

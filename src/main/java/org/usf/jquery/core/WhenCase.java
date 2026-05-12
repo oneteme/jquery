@@ -17,13 +17,13 @@ import lombok.RequiredArgsConstructor;
 final class WhenCase implements DBObject, Typed {
 	
 	private final Criteria filter; //optional
-	private final Object value; //then|else
+	private final Object result; //then|else
 
 	@Override
-	public int compose(QueryDeclaration query) {
-		var v = value instanceof DBObject c ? c.compose(query) : -1;
+	public int prepare(QueryManifest query) {
+		var v = result instanceof DBObject c ? c.prepare(query) : SCALAR;
 		return nonNull(filter)
-				? Math.max(v, filter.compose(query))
+				? Math.max(v, filter.prepare(query))
 				: v;
 	}
 	
@@ -33,12 +33,12 @@ final class WhenCase implements DBObject, Typed {
 		(nonNull(filter) 
 				? query.append("WHEN ").append(filter).append(" THEN ") 
 				: query.append("ELSE "))
-		.appendParameter(value);
+		.appendParameter(result);
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return typeOf(value).orElse(null);
+		return typeOf(result).orElse(null);
 	}
 	
 	@Override

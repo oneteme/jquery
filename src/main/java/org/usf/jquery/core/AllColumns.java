@@ -20,13 +20,13 @@ public final class AllColumns implements NamedColumn {
 	private final DBView[] views;
 	
 	@Override
-	public int compose(QueryDeclaration query) {
+	public int prepare(QueryManifest query) {
 		if(nonNull(views)) {
 			for(var v : views) {
-				query.declare(v); //declare views
+				query.from(v); //declare views
 			}
 		}
-		return -1;
+		return SCALAR;
 	}
 	
 	@Override

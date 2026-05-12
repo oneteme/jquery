@@ -4,10 +4,11 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toSet;
+import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.Environment.NO_ENV;
 import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.Provider.TERADATA;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
 import static org.usf.jquery.core.QueryBuilder.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
@@ -16,7 +17,10 @@ import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -34,38 +38,37 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 @Setter(value = AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class QueryView implements DBView {
+public class QueryView implements DBView {
 
 	private QueryView[] ctes;
-	private NamedColumn[] selects;
+	private Column[] selects;
 	private Column[] groups;
 	private Criteria[] wheres; 
 	private Criteria[] havings;
 	private ViewJoin[] joins; 
 	private Order[] orders;
-	private DBView[] views; //preserve order
+	private DBView[] froms; //preserve order
 	private QueryUnion[] unions;
 	private boolean distinct;
 	private boolean aggregation;
-	private Integer limit;
-	private Integer offset;
-	private Integer maxRows;
+	private int limit = -1;
+	private int offset = -1;
 	private Map<DBView, QueryView> overView = emptyMap();
 	
 	@Override
-	public int compose(QueryDeclaration composer) {
+	public int prepare(QueryManifest manifest) {
 		if(!isEmpty(ctes)) { // subQuery
 			for(var c : ctes) {
-				composer.cte(c);
+				manifest.cte(c);
 			}
 		}
-		return -1;
+		return SCALAR;
 	}
 
 	@Override
 	public void build(QueryBuilder builder) {
-		var ovr = builder.isCte(this) ? overView : assign(builder.getOverViews(), overView);
-		var sub = builder.subQuery(views, unmodifiableMap(ovr));
+		var ovr = builder.isCte(this) ? overView : assign(builder.getOverViews(), overView); //TODO merge 
+		var sub = builder.subQuery(froms, unmodifiableMap(ovr));
 		sub.appendParenthesis(()-> buildClauses(sub));
 	}
 
@@ -73,25 +76,20 @@ public final class QueryView implements DBView {
 		return buildQuery(NO_ENV, true);
 	}
 	
-	public Query buildQuery(Environment env, boolean parameterized, Object... drivenModel) {
+	public Query buildQuery(Environment env, boolean parameterized) {
 		log.trace("building query...");
 		var bg = currentTimeMillis();
 		var flatCTE = flatCte().distinct().toArray(QueryView[]::new);
 		Map<DBView, QueryView> over = isEmpty(overView) ? emptyMap() : unmodifiableMap(overView);
 		var builder = parameterized 
-				? parameterized(env, flatCTE, views, over)
-				: addWithValue(env, flatCTE, views, unmodifiableMap(overView));
+				? parameterized(env, flatCTE, froms, over)
+				: addWithValue(env, flatCTE, froms, unmodifiableMap(overView));
 		if(!isEmpty(flatCTE)) {
 			builder.append("WITH ") // do not resolveView => ViewRef
 			.appendEach(SCOMA, flatCTE, v-> builder.appendViewAlias(v).appendAs().append(v)) 
 			.appendSpace();
 		}
-		if(isEmpty(drivenModel)) {
-			buildClauses(builder);
-		}
-		else {
-			builder.appendEach(" UNION ALL ", drivenModel, o-> buildClauses(builder.withModel(o)));
-		}
+		buildClauses(builder);
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
 		return builder.build(env);
 	}
@@ -104,7 +102,7 @@ public final class QueryView implements DBView {
     	groupBy(builder);
     	having(builder);
     	orderBy(builder);
-    	fetch(builder);
+    	pagination(builder);
     	union(builder);
 	}
 
@@ -113,29 +111,20 @@ public final class QueryView implements DBView {
 		if(distinct) {
 			builder.append("DISTINCT ");
 		}
-		if(builder.getEnvironment().getProduct() == TERADATA) {
-			if(nonNull(offset)) {
-				throw new UnsupportedOperationException("OFFSET option is not supported in Teradata.");
-			}
-	    	if(nonNull(limit)){
-				if(distinct) {
-					throw new UnsupportedOperationException("Top N option is not supported with DISTINCT option.");
-				}
-	    		builder.append("TOP " + limit);
-	    	}
-		}
+    	if(limit > -1 && getDialect().supportTopClause()){
+    		builder.append("TOP " + limit);
+    	}
     	builder.appendEach(SCOMA, selects, o-> {
     		builder.append(o);
-    		var tag = o.getTag();
-    		if(nonNull(tag)) {
-    			builder.appendAs().append(doubleQuote(tag));
+    		if(o instanceof NamedColumn nc && nonNull(nc.getTag())) {
+    			builder.appendAs().append(doubleQuote(nc.getTag()));
     		}
     	});
 	}
 	
 	void from(QueryBuilder query) {
-		if(!isEmpty(views)) {
-			var from = Stream.of(views).map(v-> overView.containsKey(v) ? overView.get(v) : v).collect(toSet());
+		if(!isEmpty(froms)) {
+			var from = Stream.of(froms).map(v-> overView.containsKey(v) ? overView.get(v) : v).collect(toSet());
 			if(!isEmpty(joins)) {
 				Stream.of(joins) //exclude join views
 				.map(ViewJoin::getView)
@@ -164,37 +153,47 @@ public final class QueryView implements DBView {
 	
 	void groupBy(QueryBuilder builder){
 		if(!isEmpty(groups)) {
-			var cols = Stream.of(selects).collect(toSet());
-    		builder.append(" GROUP BY ").appendEach(SCOMA, groups, c-> {
-    			if(!(c instanceof ViewColumn) && cols.contains(c)) {
-    				builder.append(((NamedColumn)c).getTag());
-    			}
-    			else {
-    				 c.build(builder);
-    			}
-    		});
+			Consumer<Column> cons = builder::append;
+			if(getDialect().supportGroupByIndex()) {
+				cons = appendEachByIndex(builder, identity());
+			}
+			else if(getDialect().supportGroupByAlias()) {
+				cons = appendEachByRef(builder, identity());
+			}
+    		builder.append(" GROUP BY ").appendEach(SCOMA, groups, cons);
 		}
 	}
 
 	void having(QueryBuilder builder){
 		if(!isEmpty(havings)) {
-    		builder.append(" HAVING ").appendEach(AND.sql(), havings);
+    		builder.append(" HAVING ").appendEach(AND.sql(), havings, appendEachByIndex(builder, Function.identity()));
 		}
 	}
 	
 	void orderBy(QueryBuilder builder) {
     	if(!isEmpty(orders)) {
-    		builder.append(" ORDER BY ").appendEach(SCOMA, orders);
+    		builder.append(" ORDER BY ").appendEach(SCOMA, orders, appendEachByIndex(builder, Order::getColumn));
     	}
 	}
 	
-	void fetch(QueryBuilder builder) {
-		if(builder.getEnvironment().getProduct() != TERADATA) { // TOP n
-			if(nonNull(limit)) {
-				builder.append(" LIMIT " + limit);
+	void pagination(QueryBuilder builder) {
+		if(limit > -1) {
+			if(getDialect().supportLimitClause()) {
+				builder.append(" LIMIT ").append(limit);
 			}
-			if(nonNull(offset)) {
-				builder.append(" OFFSET " + offset);
+			else if(getDialect().supportFetchClause()) {
+				builder.append(" FETCH NEXT ").append(limit).append(" ROWS ONLY");
+			}
+			else if(!getDialect().supportTopClause()) {
+				throw new UnsupportedOperationException("limit="+limit);
+			}
+		}
+		if(offset > -1) {
+			if(getDialect().supportOffsetClause()) {
+				builder.append(" OFFSET ").append(offset); //.append(" ROWS")  //.append(" ROWS ONLY") H2 not support it
+			}
+			else {
+				throw new UnsupportedOperationException("offset="+limit);
 			}
 		}
 	}
@@ -222,6 +221,32 @@ public final class QueryView implements DBView {
 		return isEmpty(ctes)
 				? Stream.empty()
 				: Stream.concat(Stream.of(ctes).flatMap(QueryView::flatCte), Stream.of(ctes));
+	}
+
+	<T extends DBObject> Consumer<T> appendEachByIndex(QueryBuilder builder, Function<T, Column> fn){
+		var cols = List.of(selects);
+		return o-> {
+			var idx = cols.indexOf(fn.apply(o));
+			if(idx > -1) {
+				builder.append(idx+1); 
+			}
+			else {
+				builder.append(o);
+			}
+		};
+	}
+	
+	<T extends DBObject> Consumer<T> appendEachByRef(QueryBuilder builder, Function<T, Column> fn){
+		var cols = List.of(selects);
+		return o-> {
+			var c = fn.apply(o);
+			if(c instanceof NamedColumn nc && cols.contains(c)) {
+				builder.append(doubleQuote(nc.getTag()));
+			}
+			else {
+				builder.append(o);
+			}
+		};
 	}
 
 	static <K,V> Map<K,V> assign(Map<K,V> m1, Map<K,V> m2){

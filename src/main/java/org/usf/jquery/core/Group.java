@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.QueryDeclaration.DECLARE_VIEW_ONLY;
-
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -15,8 +13,8 @@ public class Group implements DBObject {
 	private final Order[] orders;
 
 	@Override
-	public int compose(QueryDeclaration composer) {
-		return composer.sub(DECLARE_VIEW_ONLY).composeNested(orders); //check this
+	public int prepare(QueryManifest composer) {
+		return composer.ignoreGroups(d-> d.prepareNested(orders));
 	}
 
 	@Override

@@ -21,8 +21,8 @@ public final class ColumnProxy implements NamedColumn {
 	private final String tag; //optional
 	
 	@Override
-	public int compose(QueryDeclaration query) {
-		return column.compose(query);
+	public int prepare(QueryManifest query) {
+		return column.prepare(query);
 	}
 
 	@Override

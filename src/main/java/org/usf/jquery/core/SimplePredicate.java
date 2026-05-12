@@ -17,8 +17,8 @@ public final class SimplePredicate implements Predicate {
 	private final Object[] right; //optional
 
 	@Override
-	public int compose(QueryDeclaration declare) {
-		return declare.tryComposeNested(right);
+	public int prepare(QueryManifest declare) {
+		return declare.tryPrepareNested(right);
 	}
 	
 	@Override

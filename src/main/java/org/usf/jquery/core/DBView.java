@@ -17,7 +17,7 @@ public interface DBView extends DBObject {
 	 * do not declare self on composer
 	 */
 	@Override
-	default int compose(QueryDeclaration composer) {
+	default int prepare(QueryManifest composer) {
 		return -1; 
 	}
 	

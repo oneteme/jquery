@@ -14,8 +14,8 @@ public class ValueColumn implements Column {
 	private final JDBCType type;
 
 	@Override
-	public int compose(QueryDeclaration query) {
-		return -1;
+	public int prepare(QueryManifest query) {
+		return SCALAR;
 	}
 	
 	@Override

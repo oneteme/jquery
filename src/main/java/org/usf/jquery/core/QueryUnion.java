@@ -17,8 +17,8 @@ public final class QueryUnion implements DBObject {
 	private final QueryView view;
 	
 	@Override
-	public int compose(QueryDeclaration composer) {
-		return view.compose(composer);
+	public int prepare(QueryManifest composer) {
+		return view.prepare(composer);
 	}
 	
 	@Override

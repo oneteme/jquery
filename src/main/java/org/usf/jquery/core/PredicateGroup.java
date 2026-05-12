@@ -22,8 +22,8 @@ public final class PredicateGroup implements Predicate {
 	}
 	
 	@Override
-	public int compose(QueryDeclaration query) {
-		return query.composeNested(expressions);
+	public int prepare(QueryManifest query) {
+		return query.prepareNested(expressions);
 	}
 
 	@Override

@@ -21,8 +21,8 @@ public final class Partition implements DBObject {
 	private final  Order[] orders; //optional
 	
 	@Override
-	public int compose(QueryDeclaration query) {
-		return max(query.composeNested(columns), query.composeNested(orders));
+	public int prepare(QueryManifest query) {
+		return max(query.prepareNested(columns), query.prepareNested(orders));
 	}
 	
 	@Override

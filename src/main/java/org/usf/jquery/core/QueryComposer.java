@@ -4,24 +4,24 @@ import static java.lang.Math.max;
 import static java.util.Collections.addAll;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Column.allColumns;
-import static org.usf.jquery.core.QueryDeclaration.DECLARE_VIEW_ONLY;
-import static org.usf.jquery.core.Role.COLUMN;
-import static org.usf.jquery.core.Utils.appendLast;
+import static org.usf.jquery.core.DBObject.MEASURE;
+import static org.usf.jquery.core.DBObject.SCALAR;
+import static org.usf.jquery.core.Dialect.getDialect;
+import static org.usf.jquery.core.QueryManifest.Section.COLUMN;
+import static org.usf.jquery.core.QueryManifest.Section.CRITERIA;
+import static org.usf.jquery.core.QueryManifest.Section.ORDER;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.MessageUtils.resourceAlreadyExistsMessage; //TODO move to core package	
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.function.Consumer;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -33,25 +33,25 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public final class QueryComposer implements Composer<QueryView> {
 	
-	private final List<NamedColumn> columns = new ArrayList<>();
+	private final List<Column> columns = new ArrayList<>();
+	private List<Criteria> criterias;
+	private List<Order> orders;
 	private Set<QueryView> ctes; //views
 	private List<ViewJoin> joins; 
-	private Set<Column> groups; 
-	private List<Criteria> criterias; 
-	private List<Order> orders;
 	private List<QueryUnion> unions;
+	@Setter	private Set<Column> groups; //explicit group-by columns
+	@Setter private Set<DBView> froms; // explicit from views
 	private boolean distinct;
 	private boolean aggregation;
 	private int limit  = -1;
 	private int offset = -1;
 	private int maxRows = -1; //security
 	
-	private final Map<DBView, QueryComposer> overView = new HashMap<>();
-	
-	private Role role;
-	
-	private final QueryView queryView = new QueryView(); //assume unique reference
+	private final Map<DBView, QueryView> overView = new HashMap<>();
 
+	@Deprecated
+	private final QueryView queryView = new QueryView(); //assume unique reference
+	
 	public QueryComposer ctes(QueryView... ctes) {
 		if(!isEmpty(ctes)) {
 			if(isNull(this.ctes)) {
@@ -62,19 +62,12 @@ public final class QueryComposer implements Composer<QueryView> {
 		return this;
 	}
 	
-	public QueryComposer columns(@NonNull NamedColumn... columns) {
-		this.role = COLUMN;
-		for(var col : columns) { //optional tag
-			if(nonNull(col.getTag()) && this.columns.stream()
-					.filter(c-> nonNull(c.getTag()))
-					.anyMatch(nc-> nc.getTag().equals(col.getTag()))) { //tag is null !!
-				throw new IllegalArgumentException(resourceAlreadyExistsMessage("column", col.getTag()));
-			}
-			this.columns.add(col);
+	public QueryComposer columns(NamedColumn... columns) {
+		if(!isEmpty(columns)) {
+			addAll(this.columns, columns);
 		}
 		return this;
 	}
-
 
 	public QueryComposer criterias(Criteria... criterias){
 		if(!isEmpty(criterias)) {
@@ -97,8 +90,10 @@ public final class QueryComposer implements Composer<QueryView> {
 	}
 
 	public QueryComposer joins2(@NonNull JoinsClause... joins) {
-		for(var j : joins) {
-			this.joins(j.getJoins());
+		if(!isEmpty(joins)) {
+			for(var j : joins) {
+				this.joins(j.getJoins());
+			}
 		}
 		return this;
 	}
@@ -123,7 +118,7 @@ public final class QueryComposer implements Composer<QueryView> {
 		return this;
 	}
 	
-	public QueryComposer unions(@NonNull QueryUnion... unions) {
+	public QueryComposer unions(QueryUnion... unions) {
 		if(!isEmpty(unions)) {
 			if(isNull(this.unions)) {
 				this.unions = new ArrayList<>();
@@ -156,163 +151,148 @@ public final class QueryComposer implements Composer<QueryView> {
 		return this;
 	}
 	
-	public QueryView getSubView(DBView view) {
-		var sub = overView.get(view);
-		return nonNull(sub) ? sub.getQueryView() : null;
+//	public QueryView getSubView(DBView view) {
+//		var sub = overView.get(view);
+//		return nonNull(sub) ? sub.getQueryView() : null;
+//	}
+//
+//	@Deprecated
+//	public QueryComposer subViewQuery(DBView view, Consumer<QueryComposer> consumer) {
+//		return subViewQuery(view, true, consumer);
+//	}
+//
+//	@Deprecated
+//	public QueryComposer subViewQuery(DBView view, boolean allColumn, Consumer<QueryComposer> consumer) {
+//		var q = overView.computeIfAbsent(view, k-> {
+//			var sub = new QueryComposer();
+//			if(allColumn) {
+//				sub.columns(allColumns(k));
+//			}
+//			ctes(sub.getQueryView());
+//			return sub;
+//		});
+//		consumer.accept(q);
+//		q.compose(); //!important compose sub query each time after change
+//		return this;
+//	}
+	
+	@Override
+	public QueryView compose() {
+		var view = getDialect().newQueryView();
+		var manf = new QueryManifest(ctes, froms, groups, overView);
+		var aggr = composeColumn(view, manf);
+		aggr = max(composeCriteria(view, manf), aggr); //where & having
+		aggr = max(composeOrder(view, manf), aggr);
+		composeGroupBy(view, manf, aggr);
+		composeJoin(view);
+		composeUnion(view);
+		composeCte(view, manf);
+		composeFrom(view, manf);
+		if(distinct) {
+			view.setDistinct(distinct);
+		}
+		if(limit > -1) {
+			view.setLimit(limit);
+		}
+		if(offset > -1) {
+			view.setOffset(offset);
+		}
+		return view;
 	}
-
-	public QueryComposer subViewQuery(DBView view, Consumer<QueryComposer> consumer) {
-		return subViewQuery(view, true, consumer);
+	
+	void composeCte(QueryView view, QueryManifest manifest) {
+		if(!isEmpty(manifest.getCtes())) {
+			view.setCtes(manifest.getCtes().toArray(QueryView[]::new));
+		}
+		if(!isEmpty(manifest.getOverViews())) {
+			view.setOverView(manifest.getOverViews());
+		}
 	}
-
-	public QueryComposer subViewQuery(DBView view, boolean allColumn, Consumer<QueryComposer> consumer) {
-		var q = overView.computeIfAbsent(view, k-> {
-			var sub = new QueryComposer();
-			if(allColumn) {
-				sub.columns(allColumns(k));
+	
+	int composeColumn(QueryView view, QueryManifest manifest) {
+		if(!isEmpty(columns)) {
+			manifest.setRole(COLUMN);
+			var cols = columns.toArray(Column[]::new);
+			view.setSelects(cols);
+			return manifest.prepareNested(cols);
+		}
+		throw new IllegalArgumentException("no columns defined in query");
+	}
+	
+	void composeFrom(QueryView view, QueryManifest manifest) {
+		var views = manifest.getFroms();
+		if(!isEmpty(views)) {
+			if(manifest.isScanFroms() && nonNull(joins)) { //modifiable set 
+				for(var j : joins) {
+					views.remove(j.getView());
+				}	
 			}
-			ctes(sub.getQueryView());
-			return sub;
-		});
-		consumer.accept(q);
-		q.compose(); //!important compose sub query each time after change
-		return this;
+			view.setFroms(views.toArray(DBView[]::new));
+		}
+	}
+
+	int composeCriteria(QueryView view, QueryManifest manifest) {
+		var isAgg = isNull(groups) ? SCALAR : MEASURE;
+		if(!isEmpty(criterias)) {
+			manifest.setRole(CRITERIA);
+			List<Criteria> whr = null;
+			List<Criteria> hvn = null;
+			for(var c : criterias) {
+				var v = c.prepare(manifest);
+				if(v == MEASURE) {
+					if(isNull(hvn)) {
+						hvn = new ArrayList<>();
+					}
+					hvn.add(c);
+				}
+				else {
+					if(isNull(whr)) {
+						whr = new ArrayList<>();
+					}
+					whr.add(c);
+				}
+				isAgg = max(isAgg, v);
+			}
+			if(nonNull(whr)) {
+				view.setWheres(whr.toArray(Criteria[]::new));
+			}
+			if(nonNull(hvn)) {
+				view.setHavings(hvn.toArray(Criteria[]::new));
+			}
+		}
+		return isAgg;
+	}
+	
+	int composeOrder(QueryView view, QueryManifest manifest) {
+		if(!isEmpty(orders)) {
+			manifest.setRole(ORDER);
+			var ords = orders.toArray(Order[]::new);
+			view.setOrders(ords);
+			return manifest.prepareNested(ords);
+		}
+		return -1;
+	}
+
+	void composeGroupBy(QueryView view, QueryManifest manifest, int aggr) {
+		if(!isEmpty(manifest.getGroups()) && (aggr == MEASURE || !manifest.isScanGroups())) {			
+			view.setGroups(manifest.getGroups().toArray(Column[]::new));
+		}
+	}
+	
+	void composeJoin(QueryView view) {
+		if(!isEmpty(joins)) {
+			view.setJoins(joins.toArray(ViewJoin[]::new));
+		}
+	}
+	
+	void composeUnion(QueryView view) {
+		if(!isEmpty(unions)) {
+			view.setUnions(unions.toArray(QueryUnion[]::new)); 
+		}
 	}
 	
 	@Override
 	public String toString() {
 		return compose().toString();
 	}
-	
-	public QueryView compose() {
-		var query = new QueryView();
-		Consumer<Column> cons = DECLARE_VIEW_ONLY;
-		if(isNull(groups)) { //!explicit
-			groups = new HashSet<>();
-			cons = groups::add;
-		}
-		var declare = new QueryDeclaration(new HashSet<>(), cons);
-		int mask = -1;
-		mask = max(composeColumn(query, declare), mask);
-		mask = max(composeCriteria(query, declare), mask); //where | having
-		mask = max(composeOrder(query, declare), mask);
-		composeJoin(query, declare);
-		composeUnion(query); 
-		composeView(query, declare);
-		if(mask > 0 && !isEmpty(groups)) {			
-			query.setGroups(groups.toArray(Column[]::new));
-		}
-		if(!isEmpty(declare.getViews())) {	
-			query.setViews(declare.getViews().toArray(DBView[]::new));
-		}
-		if(distinct) {
-			query.setDistinct(distinct);
-		}
-		if(limit > -1) {
-			query.setLimit(limit);
-		}
-		if(offset > -1) {
-			query.setOffset(offset);
-		}
-		return query;
-	}
-	
-	void composeView(QueryView query, QueryDeclaration declare) {
-		List<DBView> from = null;
-		Map<DBView, QueryView> map = null;
-		for(var view : declare.getViews()) {
-			if(view instanceof SubView sub) {
-				if(isNull(map)) {
-					map = new LinkedHashMap<>();
-				}
-				var over = sub.getQuery();
-				for(var s : over.getViews()) {
-					map.compute(s, (k,v)->{
-						if(isNull(v) || v == over) {
-							return over;
-						}//else merge
-						throw new IllegalStateException();
-					});
-				}
-				if(!isEmpty(over.getViews()) && !isEmpty(joins)) {
-					var set = Set.of(over.getViews());
-					for(var it=joins.listIterator(); it.hasNext();) {
-						var v = it.next();
-						if(set.contains(v.getView())) {
-							over.setJoins(appendLast(over.getJoins(), v));
-							it.remove();
-						}
-					}
-				}
-			}
-			else {
-				if(isNull(from)) {
-					from = new ArrayList<>();
-				}
-				from.add(view);
-			}
-		}
-		if(nonNull(map)) {
-			query.setOverView(map);
-		}
-		if(nonNull(from)) {
-			query.setViews(from.toArray(DBView[]::new));
-		}
-	}
-	
-	int composeColumn(QueryView view, QueryDeclaration declare) {
-		if(!columns.isEmpty()) {
-			var cols = columns.toArray(NamedColumn[]::new);
-			view.setSelects(cols);
-			return declare.composeNested(cols);
-		}
-		throw new IllegalArgumentException("no columns defined in query");
-	}
-	
-	void composeJoin(QueryView view, QueryDeclaration declare) {
-		if(nonNull(joins)) {
-			var jns = joins.toArray(ViewJoin[]::new);
-			view.setJoins(jns);
-			declare.sub(DECLARE_VIEW_ONLY).composeNested(jns);
-		}
-	}
-
-	int composeCriteria(QueryView view, QueryDeclaration declare) {
-		var mask = -1;
-		if(nonNull(criterias)) {
-			Set<Criteria> hvn = null;
-			for(var c : criterias) {
-				var v = c.compose(declare);
-				if(v > 0) {
-					if(isNull(hvn)) {
-						hvn = new HashSet<>();
-					}
-					hvn.add(c);
-				}
-				mask = max(mask, v);
-			}
-			if(nonNull(hvn)) {
-				view.setHavings(hvn.toArray(Criteria[]::new));
-				criterias.removeAll(hvn);
-			}
-			view.setWheres(criterias.toArray(Criteria[]::new));
-		}
-		return mask;
-	}
-	
-	int composeOrder(QueryView view, QueryDeclaration declare) {
-		if(nonNull(orders)) {
-			var ords = orders.toArray(Order[]::new);
-			view.setOrders(ords);
-			return declare.composeNested(ords);
-		}
-		return -1;
-	}
-	
-	void composeUnion(QueryView view) {
-		if(nonNull(unions)) {
-			view.setUnions(unions.toArray(QueryUnion[]::new)); 
-		}
-	}
-	
 }

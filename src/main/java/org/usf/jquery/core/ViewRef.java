@@ -14,7 +14,7 @@ public final class ViewRef implements DBView {
 	private final DBView view;
 	
 	@Override
-	public int compose(QueryDeclaration composer) {
+	public int prepare(QueryManifest composer) {
 		throw new IllegalStateException("ViewRef cannot be composed");
 	}
 

@@ -14,10 +14,10 @@ public class SimpleCriteria implements Criteria {
 	private final Predicate expression;
 
 	@Override
-	public int compose(QueryDeclaration query) {
-		var v = expression.compose(query);
+	public int prepare(QueryManifest query) {
+		var v = expression.prepare(query);
 		if(left instanceof DBObject c) {
-			return Math.max(v, c.compose(query));
+			return Math.max(v, c.prepare(query));
 		}
 		return v;
 	}

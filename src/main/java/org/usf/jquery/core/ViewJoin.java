@@ -33,12 +33,13 @@ public final class ViewJoin implements DBObject {
 	}
 	
 	@Override
-	public int compose(QueryDeclaration query) {
+	public int prepare(QueryManifest declaration) {
 		if(type != CROSS) {
 			requireAtLeastNArgs(1, criterias, ViewJoin.class::getSimpleName);
 		}
-		query.declare(view);
-		return query.composeNested(criterias);
+		view.prepare(declaration);
+		//aggregate after join, no need to declare groups
+		return SCALAR;
 	}
 
 	@Override

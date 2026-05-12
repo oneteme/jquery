@@ -71,4 +71,19 @@ public final class TeradataDialect extends Dialect {
 	public OperatorDefinition replace() {
 		return function(VARCHAR, "OREPLACE", required(VARCHAR), required(VARCHAR), required(VARCHAR));
 	}
+
+	@Override
+	public boolean supportGroupByIndex() {
+		return false;
+	}
+	
+	@Override
+	public boolean supportGroupByAlias() {
+		return false;
+	}
+
+	@Override
+	public boolean supportHavingByAlias() {
+		return false;
+	}
 }

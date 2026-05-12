@@ -22,8 +22,8 @@ public final class CriteriaGroup implements Criteria {
 	}
 
 	@Override
-	public int compose(QueryDeclaration query) {
-		return query.composeNested(filters);
+	public int prepare(QueryManifest query) {
+		return query.prepareNested(filters);
 	}
 	
 	@Override

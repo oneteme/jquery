@@ -17,8 +17,8 @@ public final class JoinsClause implements DBObject {
 	}
 	
 	@Override
-	public int compose(QueryDeclaration declare) {
-		return declare.composeNested(joins);
+	public int prepare(QueryManifest declare) {
+		return declare.prepareNested(joins);
 	}
 
 	@Override

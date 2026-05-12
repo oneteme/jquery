@@ -21,12 +21,12 @@ public class ViewColumn implements NamedColumn {
 	private final String tag;  //optional
 
 	@Override
-	public int compose(QueryDeclaration query) {
+	public int prepare(QueryManifest query) {
 		if(nonNull(view)) {
-			query.declare(view);
+			query.from(view);
 		}
 		query.groupBy(this);
-		return 0;
+		return DIMENSION;
 	}
 	
 	@Override

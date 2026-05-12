@@ -12,4 +12,8 @@ public interface Store {
 	Dialect dialect();
 	
 	DataSource dataSource();
+	
+	default QueryComposer newQuery() {
+		return dialect().newQueryComposer();
+	}
 }

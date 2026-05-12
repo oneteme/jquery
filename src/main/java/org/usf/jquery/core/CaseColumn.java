@@ -18,8 +18,8 @@ public final class CaseColumn implements Column {
 	private final WhenCase[] whenCases;
 	
 	@Override
-	public int compose(QueryDeclaration declare) {
-		return declare.composeNestedOrElse(whenCases, this);
+	public int prepare(QueryManifest declare) {
+		return declare.prepareNestedOrElse(whenCases, this);
 	}
 
 	@Override

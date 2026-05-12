@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
+@Getter
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class Order implements DBObject {
 
@@ -18,8 +20,8 @@ public final class Order implements DBObject {
 	private final OrderType type;
 	
 	@Override
-	public int compose(QueryDeclaration declare) {
-		return column.compose(declare);
+	public int prepare(QueryManifest declare) {
+		return column.prepare(declare);
 	}
 	
 	@Override

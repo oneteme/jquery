@@ -9,7 +9,7 @@ package org.usf.jquery.core;
 public interface Invocable extends DBObject {
 	
 	@Override
-	default int compose(QueryDeclaration composer) {
+	default int prepare(QueryManifest composer) {
 		throw new UnsupportedOperationException("compose operator");
 	}
 }

@@ -26,10 +26,15 @@ public class Dialect implements Composers, Operators, Comparators {
 	private static final Dialect DEFAULT_DIALECT = new Dialect(DEFAULT);
 	
 	private final Provider provider;
-	
+
+	//allow specific query composer for this dialect
+	public QueryComposer newQueryComposer(){
+		return new QueryComposer();
+	}
+
 	//allow specific query building for this dialect
-	public Query buildQuery(QueryView view){
-		return view.build();
+	public QueryView newQueryView(){
+		return new QueryView();
 	}
 	
 	//combined functions
@@ -103,6 +108,34 @@ public class Dialect implements Composers, Operators, Comparators {
 							.orElseGet(()-> time().invoke(args[0]));
 					return left().invoke(varchar().invoke(time), 5);
 					}, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	}
+	
+	public boolean supportGroupByIndex() {
+		return true;
+	}
+
+	public boolean supportGroupByAlias() {
+		return true;
+	}
+
+	public boolean supportHavingByAlias() {
+		return true;
+	}
+	
+	public boolean supportFetchClause() { //ORACLE
+		return false;
+	}
+	
+	public boolean supportTopClause() { //TERADATA & SQL SERVER
+		return false;
+	}
+	
+	public boolean supportLimitClause() { //PG & MYSQL
+		return true;
+	}
+	
+	public boolean supportOffsetClause() { //PG & MYSQL
+		return true;
 	}
 	
 	public static Dialect getDialect() {		

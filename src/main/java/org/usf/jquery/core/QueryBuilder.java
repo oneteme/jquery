@@ -73,6 +73,11 @@ public final class QueryBuilder {
 		return this;
 	}
 	
+	public QueryBuilder append(int value) {
+		query.append(value);
+		return this;
+	}
+	
 	public QueryBuilder append(DBObject o) {
 		o.build(this);
 		return this;
