@@ -14,6 +14,7 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
+@Deprecated
 public interface Environment {
 	
 	static SimpleEnvironment NO_ENV = new SimpleEnvironment(null, null, null);

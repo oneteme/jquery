@@ -23,22 +23,10 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class Dialect implements Composers, Operators, Comparators {
 	
-	private static final Dialect DEFAULT_DIALECT = new Dialect(DEFAULT);
+	static final Dialect DEFAULT_DIALECT = new Dialect(DEFAULT);
 	
 	private final Provider provider;
 
-	//allow specific query composer for this dialect
-	public QueryComposer newQueryComposer(){
-		return new QueryComposer();
-	}
-
-	//allow specific query building for this dialect
-	public QueryView newQueryView(){
-		return new QueryView();
-	}
-	
-	//combined functions
-	
 	public MacroDefinition semester() {//[1-2]
 		return new MacroDefinition("semester", INTEGER, 
 				args-> month().invoke(args).toCase()
@@ -135,6 +123,10 @@ public class Dialect implements Composers, Operators, Comparators {
 	}
 	
 	public boolean supportOffsetClause() { //PG & MYSQL
+		return true;
+	}
+	
+	public boolean supportWilcardPrefix() {
 		return true;
 	}
 	

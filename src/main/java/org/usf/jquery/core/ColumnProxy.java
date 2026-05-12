@@ -21,8 +21,8 @@ public final class ColumnProxy implements NamedColumn {
 	private final String tag; //optional
 	
 	@Override
-	public int prepare(QueryManifest query) {
-		return column.prepare(query);
+	public int prepare(QueryManifest manifest) {
+		return manifest.prepareNestedOrElse(this, column);
 	}
 
 	@Override

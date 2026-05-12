@@ -13,7 +13,7 @@ public interface DBObject {
 	static final int DIMENSION = 0;
 	static final int MEASURE = 1;
 	
-	//0: groupKey, +1: aggregation, -1: constant
+	//SCALAR | DIMENSION | MEASURE
 	int prepare(QueryManifest manifest);
 	
 	void build(QueryBuilder builder, Object... args);

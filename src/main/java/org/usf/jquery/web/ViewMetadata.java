@@ -114,7 +114,7 @@ public class ViewMetadata {
 	}
 
 	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
-		var query = new QueryComposer().columns(allColumns(qr)).criterias(constant(1).eq(constant(0))); //no data
+		var query = new QueryComposer(null).columns(allColumns(qr)).criterias(constant(1).eq(constant(0))); //no data
 		query.compose().buildQuery(new SimpleEnvironment(null, null, schema), true).execute(rs->{
 			var db = reverseMapKeys();
 			var meta = rs.getMetaData();

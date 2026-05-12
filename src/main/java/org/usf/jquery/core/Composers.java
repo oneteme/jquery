@@ -20,11 +20,13 @@ import static org.usf.jquery.core.JoinType.RIGHT;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Signature.arrayOf;
+import static org.usf.jquery.core.Stores.getCurrentStore;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.function.IntFunction;
 
 import org.usf.jquery.web.proxy.PartitionComposer;
+import org.usf.jquery.web.proxy.StoreManager;
 
 /**
  * 
@@ -115,7 +117,7 @@ public interface Composers {
 	//query operators
 	
 	default ComposerDefinition<QueryComposer> select() {
-		return select(new QueryComposer());
+		return select(getCurrentStore().newQueryComposer());
 	}
 	
 	default ComposerDefinition<QueryComposer> select(QueryComposer composer) {

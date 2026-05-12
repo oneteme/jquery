@@ -26,7 +26,7 @@ public final class TableView implements DBView {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		var sch = getSchemaOrElse(query.getEnvironment().getSchema());
+		var sch = getSchemaOrElse(query.getStore().name());
 		if(nonNull(sch)) {
 			query.append(sch + '.');
 		}

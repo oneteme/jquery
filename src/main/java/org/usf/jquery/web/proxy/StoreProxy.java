@@ -54,6 +54,9 @@ public final class StoreProxy extends ResourceProxy {
 		if(DataSource.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "dataSource".equals(method.getName())) {
 			return dataSource;
 		}
+		if(method.getReturnType() == String.class && method.getParameterCount() == 0 && "name".equals(method.getName())) {
+			return name;
+		}
 		var handler = views.get(resolveIdentifier(method));
 		if(nonNull(handler)) {
 			return handler;	

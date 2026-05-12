@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Provider.TERADATA;
 import static org.usf.jquery.core.SqlStringBuilder.DOT;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -31,11 +30,11 @@ public final class AllColumns implements NamedColumn {
 	
 	@Override
 	public void build(QueryBuilder query) {
-		if(isEmpty(views) || query.getEnvironment().getProduct() != TERADATA) {
-			query.append(ASTR);
+		if(!isEmpty(views) && query.getStore().dialect().supportWilcardPrefix()) {
+			query.appendEach(SCOMA, views, v-> query.appendViewAlias(v, DOT).append(ASTR));
 		}
 		else {
-			query.appendEach(SCOMA, views, v-> query.appendViewAlias(v, DOT).append(ASTR));
+			query.append(ASTR);
 		}
 	}
 	

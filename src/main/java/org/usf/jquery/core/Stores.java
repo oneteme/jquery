@@ -1,6 +1,9 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Dialect.DEFAULT_DIALECT;
+
+import javax.sql.DataSource;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -27,4 +30,22 @@ public final class Stores {
 			currentStore.remove();
 		}
 	}
+	
+	static final Store NO_STORE = new Store() {
+		
+		@Override
+		public String name() {
+			return null;
+		}
+		
+		@Override
+		public Dialect dialect() {
+			return DEFAULT_DIALECT;
+		}
+		
+		@Override
+		public DataSource dataSource() {
+			return null;
+		}
+	};
 }

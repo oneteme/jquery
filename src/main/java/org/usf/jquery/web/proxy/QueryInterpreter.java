@@ -61,7 +61,7 @@ public interface QueryInterpreter {
 	}
 	
 	default QueryComposer parseQuery(Map<String, String[]> parameterMap, RequestContext ctx) {
-		var query = new QueryComposer();
+		var query = ctx.getStore().newQueryComposer();
 		parseViews(parameterMap.remove(VIEW_PARAM), query, ctx);
 		parseColumns(parameterMap.remove(SELECT_OPR), query, ctx);
 		parseJoins(parameterMap.remove(JOIN_PARAM), query, ctx);
@@ -71,6 +71,7 @@ public interface QueryInterpreter {
 		parseLimit(parameterMap.remove(LIMIT_PARAM), query, ctx);
 		parseOffset(parameterMap.remove(OFFSET_PARAM), query, ctx);
 		parseFilters(parameterMap, query, ctx);
+		//TODO parse group & from
 		return query;
 	}
 	

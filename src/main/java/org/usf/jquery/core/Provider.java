@@ -17,11 +17,6 @@ public enum Provider {
 	
 	TERADATA, H2;
 	
-	@Deprecated
-	public Operators replace(Operators op) {
-		return op;
-	}
-	
 	public static Provider parseName(@NonNull String name) {
 		var v = name.toUpperCase();
 		return stream(values())

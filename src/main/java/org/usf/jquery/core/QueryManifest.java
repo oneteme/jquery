@@ -32,6 +32,8 @@ import lombok.Setter;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class QueryManifest {
 
+	private final Store store;
+	
 	private final Set<QueryView> ctes;
 	private final Set<DBView> froms; //views
 	private final Set<Column> groups;
@@ -42,11 +44,13 @@ public final class QueryManifest {
 	@Setter(AccessLevel.PACKAGE)
 	private Section role;
 	
-	QueryManifest(Set<QueryView> ctes, Set<DBView> froms, Set<Column> groups, Map<DBView, QueryView> overViews) {
-		this(secureSet(ctes), 
+	QueryManifest(Store store, Set<QueryView> ctes, Set<DBView> froms, Set<Column> groups, Map<DBView, QueryView> overViews) {
+		this(store,
+				secureSet(ctes), 
 				secureSet(froms), 
 				secureSet(groups), 
-				requireNonNullElseGet(overViews, LinkedHashMap::new), isNull(froms), isNull(groups), null);
+				requireNonNullElseGet(overViews, LinkedHashMap::new), 
+				isNull(froms), isNull(groups), null);
 	}
 
 	public QueryManifest cte(QueryView cte) {
@@ -83,18 +87,18 @@ public final class QueryManifest {
 	}
 	
 	public int prepareNested(DBObject... args){
-		return prepareNestedOrElse(args, null);
+		return prepareNestedOrElse(null, args);
 	}
 	
-	public int prepareNestedOrElse(DBObject[] args, Column col){
+	public int prepareNestedOrElse(Column col, DBObject... args){
 		return prepareNested(streamOrEmpty(args), col);
 	}
 
 	public int tryPrepareNested(Object... args){
-		return tryPrepareNestedOrElse(args, null);
+		return tryPrepareNestedOrElse(null, args);
 	}
 
-	public int tryPrepareNestedOrElse(Object[] args, Column col){
+	public int tryPrepareNestedOrElse(Column col, Object... args){
 		return prepareNested(streamOrEmpty(args).mapMulti((o, acc)->{
 			if(o instanceof DBObject n) {
 				acc.accept(n);
@@ -110,7 +114,7 @@ public final class QueryManifest {
 		if(isNull(elseGroupBy)) {
 			return stream.mapToInt(o-> o.prepare(this)).max().orElse(SCALAR);
 		}
-		var sub = new QueryManifest(ctes, froms, new LinkedHashSet<>(), overViews, scanFroms, scanGroups, role);
+		var sub = new QueryManifest(store, ctes, froms, new LinkedHashSet<>(), overViews, scanFroms, scanGroups, role);
 		var lvl = stream.mapToInt(o-> o.prepare(sub)).max().orElse(SCALAR);
 		if(lvl == DIMENSION) { //group keys
 			groups.add(elseGroupBy);

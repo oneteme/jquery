@@ -98,7 +98,7 @@ public final class WebEnvironment implements Environment {
 	
 	public QueryComposer query(Consumer<QueryComposer> fn) {
 		return apply(this, env-> { //no query
-			var q = new QueryComposer();
+			var q = new QueryComposer(null);
 			var list = stack.get();
 			if(list.add(q)) {
 				try {

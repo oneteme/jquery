@@ -9,11 +9,18 @@ import javax.sql.DataSource;
  */
 public interface Store {
 	
+	//TODO auto-implent
+	String name();
+
 	Dialect dialect();
 	
 	DataSource dataSource();
 	
-	default QueryComposer newQuery() {
-		return dialect().newQueryComposer();
+	default QueryComposer newQueryComposer() {
+		return new QueryComposer(this);
+	}
+	
+	default QueryView newQueryView() {
+		return new QueryView(this);
 	}
 }

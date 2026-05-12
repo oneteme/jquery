@@ -6,8 +6,6 @@ import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toSet;
-import static org.usf.jquery.core.Dialect.getDialect;
-import static org.usf.jquery.core.Environment.NO_ENV;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
 import static org.usf.jquery.core.QueryBuilder.parameterized;
@@ -40,6 +38,8 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class QueryView implements DBView {
 
+	private final Store store;
+	
 	private QueryView[] ctes;
 	private Column[] selects;
 	private Column[] groups;
@@ -73,17 +73,17 @@ public class QueryView implements DBView {
 	}
 
 	public Query build() {
-		return buildQuery(NO_ENV, true);
+		return buildQuery(true);
 	}
 	
-	public Query buildQuery(Environment env, boolean parameterized) {
+	public Query buildQuery(boolean parameterized) {
 		log.trace("building query...");
 		var bg = currentTimeMillis();
 		var flatCTE = flatCte().distinct().toArray(QueryView[]::new);
 		Map<DBView, QueryView> over = isEmpty(overView) ? emptyMap() : unmodifiableMap(overView);
 		var builder = parameterized 
-				? parameterized(env, flatCTE, froms, over)
-				: addWithValue(env, flatCTE, froms, unmodifiableMap(overView));
+				? parameterized(store, flatCTE, froms, over)
+				: addWithValue(store, flatCTE, froms, unmodifiableMap(overView));
 		if(!isEmpty(flatCTE)) {
 			builder.append("WITH ") // do not resolveView => ViewRef
 			.appendEach(SCOMA, flatCTE, v-> builder.appendViewAlias(v).appendAs().append(v)) 
@@ -91,7 +91,7 @@ public class QueryView implements DBView {
 		}
 		buildClauses(builder);
 		log.trace("query built in {} ms", currentTimeMillis() - bg);
-		return builder.build(env);
+		return builder.build();
 	}
 	
 	private void buildClauses(QueryBuilder builder) {
@@ -111,7 +111,7 @@ public class QueryView implements DBView {
 		if(distinct) {
 			builder.append("DISTINCT ");
 		}
-    	if(limit > -1 && getDialect().supportTopClause()){
+    	if(limit > -1 && store.dialect().supportTopClause()){
     		builder.append("TOP " + limit);
     	}
     	builder.appendEach(SCOMA, selects, o-> {
@@ -154,10 +154,10 @@ public class QueryView implements DBView {
 	void groupBy(QueryBuilder builder){
 		if(!isEmpty(groups)) {
 			Consumer<Column> cons = builder::append;
-			if(getDialect().supportGroupByIndex()) {
+			if(store.dialect().supportGroupByIndex()) {
 				cons = appendEachByIndex(builder, identity());
 			}
-			else if(getDialect().supportGroupByAlias()) {
+			else if(store.dialect().supportGroupByAlias()) {
 				cons = appendEachByRef(builder, identity());
 			}
     		builder.append(" GROUP BY ").appendEach(SCOMA, groups, cons);
@@ -178,18 +178,18 @@ public class QueryView implements DBView {
 	
 	void pagination(QueryBuilder builder) {
 		if(limit > -1) {
-			if(getDialect().supportLimitClause()) {
+			if(store.dialect().supportLimitClause()) {
 				builder.append(" LIMIT ").append(limit);
 			}
-			else if(getDialect().supportFetchClause()) {
+			else if(store.dialect().supportFetchClause()) {
 				builder.append(" FETCH NEXT ").append(limit).append(" ROWS ONLY");
 			}
-			else if(!getDialect().supportTopClause()) {
+			else if(!store.dialect().supportTopClause()) {
 				throw new UnsupportedOperationException("limit="+limit);
 			}
 		}
 		if(offset > -1) {
-			if(getDialect().supportOffsetClause()) {
+			if(store.dialect().supportOffsetClause()) {
 				builder.append(" OFFSET ").append(offset); //.append(" ROWS")  //.append(" ROWS ONLY") H2 not support it
 			}
 			else {

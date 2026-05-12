@@ -334,14 +334,6 @@ public interface Operators {
 	
 	// constant operators
 
-	default OperatorDefinition pi() {
-		return constant(DOUBLE, "PI");
-	}
-	
-	default OperatorDefinition random() {
-		return constant(DOUBLE, "RANDOM");
-	}
-
 	default OperatorDefinition cdate() {
 		return constant(DATE, "CURRENT_DATE");
 	}
@@ -352,6 +344,14 @@ public interface Operators {
 	
 	default OperatorDefinition ctimestamp() {
 		return constant(TIMESTAMP, "CURRENT_TIMESTAMP");
+	}
+
+	default OperatorDefinition pi() {
+		return constant(DOUBLE, "PI", true);
+	}
+	
+	default OperatorDefinition random() {
+		return constant(DOUBLE, "RANDOM", true);
 	}
 	
 	//scope operators
@@ -425,7 +425,16 @@ public interface Operators {
 	}
 
 	public static OperatorDefinition constant(JDBCType type, String name) {
-		return new OperatorDefinition(name, type, DEFAUTL, (builder,args)-> builder.append(name));
+		return constant(type, name, false);
+	}
+	
+	public static OperatorDefinition constant(JDBCType type, String name, boolean parenthes) {
+		return new OperatorDefinition(name, type, DEFAUTL, (builder,args)-> {
+			builder.append(name);
+			if(parenthes) {
+				builder.append("()");
+			}
+		});
 	}
 
 	public static OperatorDefinition scope(TypeResolver resolver, String name, Parameter... parameters) {

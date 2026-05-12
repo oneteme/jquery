@@ -19,7 +19,7 @@ public final class CaseColumn implements Column {
 	
 	@Override
 	public int prepare(QueryManifest declare) {
-		return declare.prepareNestedOrElse(whenCases, this);
+		return declare.prepareNestedOrElse(this, whenCases);
 	}
 
 	@Override

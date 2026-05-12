@@ -57,6 +57,7 @@ public final class RequestContext {
 
 	@Getter
 	private final DatasetResource defaultDataset;
+	@Getter
 	private final StoreResource store;
 	private final TypeRegistry registry;
 	private final Set<String> excludeViews;

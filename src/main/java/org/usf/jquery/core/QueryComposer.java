@@ -6,7 +6,6 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.DBObject.MEASURE;
 import static org.usf.jquery.core.DBObject.SCALAR;
-import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.QueryManifest.Section.COLUMN;
 import static org.usf.jquery.core.QueryManifest.Section.CRITERIA;
 import static org.usf.jquery.core.QueryManifest.Section.ORDER;
@@ -21,6 +20,7 @@ import java.util.Set;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
@@ -31,7 +31,10 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
+@RequiredArgsConstructor
 public final class QueryComposer implements Composer<QueryView> {
+	
+	private final Store store;
 	
 	private final List<Column> columns = new ArrayList<>();
 	private List<Criteria> criterias;
@@ -49,9 +52,6 @@ public final class QueryComposer implements Composer<QueryView> {
 	
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 
-	@Deprecated
-	private final QueryView queryView = new QueryView(); //assume unique reference
-	
 	public QueryComposer ctes(QueryView... ctes) {
 		if(!isEmpty(ctes)) {
 			if(isNull(this.ctes)) {
@@ -178,8 +178,8 @@ public final class QueryComposer implements Composer<QueryView> {
 	
 	@Override
 	public QueryView compose() {
-		var view = getDialect().newQueryView();
-		var manf = new QueryManifest(ctes, froms, groups, overView);
+		var view = store.newQueryView();
+		var manf = new QueryManifest(store, ctes, froms, groups, overView);
 		var aggr = composeColumn(view, manf);
 		aggr = max(composeCriteria(view, manf), aggr); //where & having
 		aggr = max(composeOrder(view, manf), aggr);

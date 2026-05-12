@@ -22,7 +22,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 public final record Query (
-		Environment env,
+		Store store,
 		@NonNull String sql,
 		TypedArg[] args){
 
@@ -34,7 +34,7 @@ public final record Query (
 	@Deprecated
 	public <T> T execute(ResultSetMapper<T> mapper) {
 		try {
-			try(var cn = requireNonNull(env.getDataSource(), "require datasource").getConnection()){
+			try(var cn = requireNonNull(store.dataSource(), "require datasource").getConnection()){
 				return execute(mapper, cn);
 			}
 		}

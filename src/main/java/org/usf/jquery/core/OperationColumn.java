@@ -4,6 +4,7 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.WINDOW;
 import static org.usf.jquery.core.QueryManifest.Section.CRITERIA;
+import static org.usf.jquery.core.Stores.getCurrentStore;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import lombok.AccessLevel;
@@ -27,22 +28,22 @@ public final class OperationColumn implements Column {
 	private ViewColumn overColumn; 
 
 	@Override
-	public int prepare(QueryManifest declare) {
+	public int prepare(QueryManifest manifest) {
 		if(kind == AGGREGATE || kind == WINDOW) {
-			declare.ignoreGroups(d-> d.tryPrepareNested(args)); //declare views only
+			manifest.ignoreGroups(d-> d.tryPrepareNested(args)); //declare views only
 			return MEASURE;
 		}
 		if("OVER".equals(name)) {
-			if(declare.getRole() == CRITERIA) {
+			if(manifest.getRole() == CRITERIA) {
 				var col = new OperationColumn(name, kind, operator, args, type).as(name + '_' + hashCode());
-				var sub = new QueryComposer().columns(Column.allColumns(), col).compose();
+				var sub = manifest.getStore().newQueryComposer().columns(Column.allColumns(), col).compose();
 				this.overColumn = sub.column(col.getTag(), col.getType());
-				declare.cte(sub, true);
-				return overColumn.prepare(declare);
+				manifest.cte(sub, true);
+				return overColumn.prepare(manifest);
 			}
-			return resolveOverColumns(declare);
+			return resolveOverColumns(manifest);
 		}
-		return declare.tryPrepareNestedOrElse(args, this);
+		return manifest.tryPrepareNestedOrElse(this, args);
 	}
 
 	@Override
