@@ -71,7 +71,7 @@ public interface QueryInterpreter {
 		parseLimit(parameterMap.remove(LIMIT_PARAM), query, ctx);
 		parseOffset(parameterMap.remove(OFFSET_PARAM), query, ctx);
 		parseFilters(parameterMap, query, ctx);
-		//TODO parse group & from
+		//TODO parse group, from, union
 		return query;
 	}
 	

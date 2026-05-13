@@ -126,7 +126,12 @@ public interface Composers {
 	
 	default ComposerDefinition<QueryComposer> join(QueryComposer composer){
 		return new ComposerDefinition<>("join", QUERY, 
-				args-> composer.joins2((JoinsClause[]) args), 
+				args-> {
+					for(var jc : (JoinsClause[]) args) {
+						composer.joins(jc.getJoins());
+					}
+					return composer;
+				},
 				arrayOf(JOIN, 1));
 	}
 	

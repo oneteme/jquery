@@ -13,8 +13,8 @@ public class Group implements DBObject {
 	private final Order[] orders;
 
 	@Override
-	public int prepare(QueryManifest composer) {
-		return composer.ignoreGroups(d-> d.prepareNested(orders));
+	public int prepare(QueryManifest manifest) {
+		return manifest.ignoreGroups(d-> d.prepareNested(orders));
 	}
 
 	@Override

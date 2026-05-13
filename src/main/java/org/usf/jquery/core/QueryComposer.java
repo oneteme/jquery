@@ -13,16 +13,14 @@ import static org.usf.jquery.core.Stores.NO_STORE;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import lombok.Getter;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
-import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -31,100 +29,195 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-@Getter
 @RequiredArgsConstructor
 public final class QueryComposer implements Composer<QueryView> {
 	
-	private final List<Column> columns = new ArrayList<>();
-	private Set<QueryView> ctes; //views
-	private List<ViewJoin> joins; 
-	private List<Criteria> criterias;
-	private List<Order> orders;
-	private List<QueryUnion> unions;
-	@Setter	private Set<Column> groups; //explicit group-by columns
-	@Setter private Set<DBView> froms; // explicit from views
+	private final Collection<Column> columns = new ArrayList<>();
+	private Collection<QueryView> ctes; //
+	private Collection<ViewJoin> joins; 
+	private Collection<Criteria> criterias;
+	private Collection<Order> orders;
+	private Collection<QueryUnion> unions;
+	private Collection<Column> groups; 
+	private Collection<DBView> froms; // explicit from views
 	private boolean distinct;
-	private boolean aggregation; //check this
 	private int limit  = -1;
 	private int offset = -1;
 	private int maxRows = -1; //security
 	
 	private final Map<DBView, QueryView> overView = new HashMap<>();
 
-	public QueryComposer ctes(QueryView... ctes) {
-		if(!isEmpty(ctes)) {
-			if(isNull(this.ctes)) {
-				this.ctes = new HashSet<>();
-			}
-			addAll(this.ctes, ctes);
-		}
+	public QueryComposer cte(@NonNull QueryView cte) {
+		getCtes().add(cte);
 		return this;
 	}
 	
-	public QueryComposer columns(NamedColumn... columns) {
-		if(!isEmpty(columns)) {
-			addAll(this.columns, columns);
-		}
-		return this;
-	}
-
-	public QueryComposer criterias(Criteria... criterias){
-		if(!isEmpty(criterias)) {
-			if(isNull(this.criterias)) {
-				this.criterias = new ArrayList<>();
-			}
-			addAll(this.criterias, criterias);
-		}
+	public QueryComposer ctes(@NonNull QueryView... ctes) {
+		addAll(getCtes(), ctes);
 		return this;
 	}
 	
-	public QueryComposer groups(Column... columns) {
-		if(!isEmpty(columns)) {
-			if(isNull(this.groups)) {
-				this.groups = new HashSet<>();
-			}
-			addAll(this.groups, columns);
+	public QueryComposer ctes(@NonNull Collection<QueryView> ctes) {
+		getCtes().addAll(ctes);
+		return this;
+	}
+	
+	private Collection<QueryView> getCtes(){
+		if(isNull(ctes)) {
+			ctes = new ArrayList<>();
 		}
+		return ctes;
+	}
+	
+	public QueryComposer column(@NonNull Column column) {
+		getColumns().add(column);
+		return this;
+	}
+	
+	public QueryComposer columns(@NonNull Column... columns) {
+		addAll(getColumns(), columns);
+		return this;
+	}
+	
+	public QueryComposer columns(@NonNull Collection<Column> columns) {
+		getColumns().addAll(columns);
+		return this;
+	}
+	
+	private Collection<Column> getColumns(){
+		return columns;
+	}
+	
+	public QueryComposer criteria(@NonNull Criteria criteria){
+		getCriterias().add(criteria);
 		return this;
 	}
 
-	public QueryComposer joins2(@NonNull JoinsClause... joins) {
-		if(!isEmpty(joins)) {
-			for(var j : joins) {
-				this.joins(j.getJoins());
-			}
+	public QueryComposer criterias(@NonNull Criteria... criterias){
+		addAll(getCriterias(), criterias);
+		return this;
+	}
+	
+	public QueryComposer criterias(@NonNull Collection<Criteria> criterias){
+		getCriterias().addAll(criterias);
+		return this;
+	}
+	
+	private Collection<Criteria> getCriterias(){
+		if(isNull(this.criterias)) {
+			this.criterias = new ArrayList<>();
 		}
+		return criterias;
+	}
+	
+	public QueryComposer group(@NonNull Column group) {
+		getGroups().add(group);
+		return this;
+	}
+	
+	public QueryComposer groups(@NonNull Column... groups) {
+		addAll(getGroups(), groups);
+		return this;
+	}
+	
+	public QueryComposer groups(@NonNull Collection<Column> groups) {
+		getGroups().addAll(groups);
+		return this;
+	}
+	
+	private Collection<Column> getGroups(){
+		if(isNull(groups)) {
+			groups = new ArrayList<>();
+		}
+		return groups;
+	}
+	
+	public QueryComposer from(@NonNull DBView view) {
+		getForms().add(view);
 		return this;
 	}
 
+	public QueryComposer froms(@NonNull DBView... views) {
+		addAll(getForms(), views);
+		return this;
+	}
+	
+	public QueryComposer froms(@NonNull Collection<DBView> views) {
+		getForms().addAll(views);
+		return this;
+	}
+	
+	private Collection<DBView> getForms(){
+		if(isNull(froms)) {
+			froms = new ArrayList<>();
+		}
+		return froms;
+	}
+	
+	public QueryComposer join(@NonNull ViewJoin join) {
+		getJoins().add(join);
+		return this;
+	}
+	
 	public QueryComposer joins(@NonNull ViewJoin... joins) {
-		if(!isEmpty(joins)) {
-			if(isNull(this.joins)) {
-				this.joins = new ArrayList<>();
-			}
-			addAll(this.joins, joins);
-		}
+		addAll(getJoins(), joins);
 		return this;
 	}
 	
-	public QueryComposer orders(Order... orders) {
-		if(!isEmpty(orders)) {
-			if(isNull(this.orders)) {
-				this.orders = new ArrayList<>();
-			}
-			addAll(this.orders, orders);
-		}
+	public QueryComposer joins(@NonNull List<ViewJoin> joins) {
+		getJoins().addAll(joins);
 		return this;
 	}
 	
-	public QueryComposer unions(QueryUnion... unions) {
-		if(!isEmpty(unions)) {
-			if(isNull(this.unions)) {
-				this.unions = new ArrayList<>();
-			}
-			addAll(this.unions, unions);
+	private Collection<ViewJoin> getJoins(){
+		if(isNull(joins)) {
+			joins = new ArrayList<>();
 		}
+		return joins;
+	}
+	
+	public QueryComposer order(@NonNull Order order) {
+		getOrders().add(order);
 		return this;
+	}
+	
+	public QueryComposer orders(@NonNull Order... orders) {
+		addAll(getOrders(), orders);
+		return this;
+	}
+	
+	public QueryComposer orders(@NonNull Collection<Order> orders) {
+		getOrders().addAll(orders);
+		return this;
+	}
+	
+	private Collection<Order> getOrders(){
+		if(isNull(orders)) {
+			orders = new ArrayList<>();
+		}
+		return orders;
+	}
+	
+	public QueryComposer union(@NonNull QueryUnion union) {
+		addAll(getUnions(), union);
+		return this;
+	}
+	
+	public QueryComposer unions(@NonNull QueryUnion... unions) {
+		addAll(getUnions(), unions);
+		return this;
+	}
+	
+	public QueryComposer unions(@NonNull Collection<QueryUnion> unions) {
+		getUnions().addAll(unions);
+		return this;
+	}
+	
+	private Collection<QueryUnion> getUnions(){
+		if(isNull(unions)) {
+			unions = new ArrayList<>();
+		}
+		return unions;
 	}
 	
 	public QueryComposer limit(int limit) {
@@ -178,15 +271,19 @@ public final class QueryComposer implements Composer<QueryView> {
 	}
 	
 	QueryView compose(QueryView view) {
-		var manf = new QueryManifest(view.getStore(), ctes, froms, groups, overView);
-		var aggr = composeColumn(view, manf);
-		aggr = max(composeCriteria(view, manf), aggr); //where & having
-		aggr = max(composeOrder(view, manf), aggr);
-		composeGroupBy(view, manf, aggr);
-		composeJoin(view);
-		composeUnion(view);
-		composeCte(view, manf);
-		composeFrom(view, manf);
+		var mnf = new QueryManifest(view.getStore(), 
+				isNull(ctes) ? new LinkedHashSet<>() : new LinkedHashSet<>(ctes),
+				isNull(froms) ? new LinkedHashSet<>() : null, //explicit from views
+				isNull(groups) ? new LinkedHashSet<>() : null, //explicit group-by columns
+				overView);
+		var aggr = composeColumn(view, mnf);
+		aggr = max(composeCriteria(view, mnf), aggr); //where & having
+		aggr = max(composeOrder(view, mnf), aggr);
+		composeGroupBy(view, mnf, aggr);
+		composeJoin(view, mnf);
+		composeUnion(view, mnf);
+		composeCte(view, mnf);
+		composeFrom(view, mnf);
 		view.setDistinct(distinct);
 		view.setLimit(max(-1, limit));
 		view.setOffset(max(-1, offset));
@@ -195,7 +292,9 @@ public final class QueryComposer implements Composer<QueryView> {
 	
 	void composeCte(QueryView view, QueryManifest manifest) {
 		if(!isEmpty(manifest.getCtes())) {
-			view.setCtes(manifest.getCtes().toArray(QueryView[]::new));
+			var arr = manifest.getCtes().toArray(QueryView[]::new);
+			view.setCtes(arr);
+			manifest.prepareNested(arr);
 		}
 		if(!isEmpty(manifest.getOverViews())) {
 			view.setOverView(manifest.getOverViews());
@@ -205,25 +304,13 @@ public final class QueryComposer implements Composer<QueryView> {
 	int composeColumn(QueryView view, QueryManifest manifest) {
 		if(!isEmpty(columns)) {
 			manifest.setRole(COLUMN);
-			var cols = columns.toArray(Column[]::new);
-			view.setSelects(cols);
-			return manifest.prepareNested(cols);
+			var arr = columns.toArray(Column[]::new);
+			view.setSelects(arr);
+			return manifest.prepareNested(arr);
 		}
 		throw new IllegalArgumentException("no columns defined in query");
 	}
 	
-	void composeFrom(QueryView view, QueryManifest manifest) {
-		var views = manifest.getFroms();
-		if(!isEmpty(views)) {
-			if(manifest.isScanFroms() && nonNull(joins)) { //modifiable set 
-				for(var j : joins) {
-					views.remove(j.getView());
-				}	
-			}
-			view.setFroms(views.toArray(DBView[]::new));
-		}
-	}
-
 	int composeCriteria(QueryView view, QueryManifest manifest) {
 		var isAgg = SCALAR;
 		if(!isEmpty(criterias)) {
@@ -259,33 +346,60 @@ public final class QueryComposer implements Composer<QueryView> {
 	int composeOrder(QueryView view, QueryManifest manifest) {
 		if(!isEmpty(orders)) {
 			manifest.setRole(ORDER);
-			var ords = orders.toArray(Order[]::new);
-			view.setOrders(ords);
-			return manifest.prepareNested(ords);
+			var arr = orders.toArray(Order[]::new);
+			view.setOrders(arr);
+			return manifest.prepareNested(arr);
 		}
 		return -1;
 	}
+	
+	void composeJoin(QueryView view, QueryManifest manifest) {
+		if(!isEmpty(joins)) {
+			var arr = joins.toArray(ViewJoin[]::new);
+			manifest.prepareNested(arr);
+			view.setJoins(arr);
+		}
+	}
+	
+	void composeUnion(QueryView view, QueryManifest manifest) {
+		if(!isEmpty(unions)) {
+			var arr = unions.toArray(QueryUnion[]::new);
+			manifest.prepareNested(arr);
+			view.setUnions(arr); 
+		}
+	}
+
+	void composeFrom(QueryView view, QueryManifest manifest) {
+		if(nonNull(froms)) {
+			view.setFroms(froms.toArray(DBView[]::new));
+		}
+		else if(!isEmpty(manifest.getFroms()))  {
+			var arr = manifest.getFroms();
+			if(nonNull(joins)) {
+				for(var j : joins) {
+					arr.remove(j.getView());
+				}
+			}
+			view.setFroms(arr.toArray(DBView[]::new));
+		}
+	}
 
 	void composeGroupBy(QueryView view, QueryManifest manifest, int aggr) {
-		if(!isEmpty(manifest.getGroups()) && (aggr == MEASURE || !manifest.isScanGroups())) {			
+		if(nonNull(groups)) {
+			view.setGroups(groups.toArray(Column[]::new));
+		}
+		else if(aggr == MEASURE && nonNull(manifest.getGroups())) {
 			view.setGroups(manifest.getGroups().toArray(Column[]::new));
-		}
-	}
-	
-	void composeJoin(QueryView view) {
-		if(!isEmpty(joins)) {
-			view.setJoins(joins.toArray(ViewJoin[]::new));
-		}
-	}
-	
-	void composeUnion(QueryView view) {
-		if(!isEmpty(unions)) {
-			view.setUnions(unions.toArray(QueryUnion[]::new)); 
 		}
 	}
 	
 	@Override
 	public String toString() {
 		return compose(NO_STORE).toString();
+	}
+
+	@Deprecated
+	public boolean isAggregation() {
+		return false;
 	}
 }

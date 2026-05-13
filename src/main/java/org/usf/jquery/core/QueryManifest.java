@@ -29,28 +29,21 @@ import lombok.Setter;
  *
  */
 @Getter
-@AllArgsConstructor(access = AccessLevel.PACKAGE)
+@AllArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryManifest {
 
 	private final Store store; //?????
-	
 	private final Set<QueryView> ctes;
 	private final Set<DBView> froms; //views
 	private final Set<Column> groups;
 	private final Map<DBView, QueryView> overViews;
-	
-	private boolean scanFroms;
-	private boolean scanGroups;
+
+	private boolean appendGroup;
 	@Setter(AccessLevel.PACKAGE)
 	private Section role;
 	
 	QueryManifest(Store store, Set<QueryView> ctes, Set<DBView> froms, Set<Column> groups, Map<DBView, QueryView> overViews) {
-		this(store,
-				resolveSet(ctes), 
-				resolveSet(froms), 
-				resolveSet(groups), 
-				requireNonNullElseGet(overViews, LinkedHashMap::new), 
-				isNull(froms), isNull(groups), null);
+		this(store, ctes, froms, groups, requireNonNullElseGet(overViews, LinkedHashMap::new), nonNull(groups), null);
 	}
 
 	public QueryManifest cte(QueryView cte) {
@@ -73,14 +66,14 @@ public final class QueryManifest {
 	}
 	
 	public QueryManifest from(DBView view) {
-		if(scanFroms) {
+		if(nonNull(froms)) {
 			froms.add(view);
 		}
 		return this;
 	}
 
 	public QueryManifest groupBy(Column column) {
-		if(scanGroups) {
+		if(nonNull(groups) && appendGroup) {
 			groups.add(column);
 		}
 		return this;
@@ -107,14 +100,14 @@ public final class QueryManifest {
 	}
 
 	int prepareNested(Stream<DBObject> stream, Column elseGroupBy){
-		if(!scanGroups) {
+		if(isNull(groups) || !appendGroup) {
 			stream.forEach(o-> o.prepare(this)); //declare views only, no group keys
 			return SCALAR;
 		}
 		if(isNull(elseGroupBy)) {
 			return stream.mapToInt(o-> o.prepare(this)).max().orElse(SCALAR);
 		}
-		var sub = new QueryManifest(store, ctes, froms, new LinkedHashSet<>(), overViews, scanFroms, scanGroups, role);
+		var sub = new QueryManifest(store, ctes, froms, new LinkedHashSet<>(), overViews, appendGroup, role);
 		var lvl = stream.mapToInt(o-> o.prepare(sub)).max().orElse(SCALAR);
 		if(lvl == DIMENSION) { //group keys
 			groups.add(elseGroupBy);
@@ -126,13 +119,13 @@ public final class QueryManifest {
 	}
 	
 	public <T> T ignoreGroups(Function<QueryManifest, T> declaration) {
-		if(scanGroups) {
+		if(nonNull(groups) && appendGroup) {
 			try {
-				scanGroups = false;
+				appendGroup = false;
 				return declaration.apply(this);
 			}
 			finally {
-				scanGroups = true;
+				appendGroup = true;
 			}
 		}
 		return declaration.apply(this);
