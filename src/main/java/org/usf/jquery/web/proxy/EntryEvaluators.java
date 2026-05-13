@@ -382,7 +382,7 @@ public final class EntryEvaluators {
 						break; //stop at first non applicable operator
 					}
 				}
-				return obj instanceof Composer<?> cmp ? cmp.compose() : obj; //compose if last operator is composer, otherwise return result as is
+				return obj instanceof Composer<?> cmp ? cmp.compose(ctx.getStore()) : obj; //compose if last operator is composer, otherwise return result as is
 			}
 		}
 		return null;

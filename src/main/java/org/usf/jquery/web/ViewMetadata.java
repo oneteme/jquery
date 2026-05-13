@@ -22,6 +22,7 @@ import java.util.Set;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.Environment.SimpleEnvironment;
 import org.usf.jquery.core.QueryComposer;
+import org.usf.jquery.core.Stores;
 import org.usf.jquery.core.TableView;
 
 import lombok.AccessLevel;
@@ -114,8 +115,8 @@ public class ViewMetadata {
 	}
 
 	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
-		var query = new QueryComposer(null).columns(allColumns(qr)).criterias(constant(1).eq(constant(0))); //no data
-		query.compose().buildQuery(new SimpleEnvironment(null, null, schema), true).execute(rs->{
+		var query = new QueryComposer().columns(allColumns(qr)).criterias(constant(1).eq(constant(0))); //no data
+		query.compose(Stores.getCurrentStore()).buildQuery(true).execute(rs->{
 			var db = reverseMapKeys();
 			var meta = rs.getMetaData();
 			for(var i=1; i<=meta.getColumnCount(); i++) {

@@ -6,9 +6,9 @@ import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNullElseGet;
 import static java.util.stream.Stream.empty;
-import static org.usf.jquery.core.DBObject.SCALAR;
 import static org.usf.jquery.core.DBObject.DIMENSION;
 import static org.usf.jquery.core.DBObject.MEASURE;
+import static org.usf.jquery.core.DBObject.SCALAR;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.LinkedHashMap;
@@ -32,7 +32,7 @@ import lombok.Setter;
 @AllArgsConstructor(access = AccessLevel.PACKAGE)
 public final class QueryManifest {
 
-	private final Store store;
+	private final Store store; //?????
 	
 	private final Set<QueryView> ctes;
 	private final Set<DBView> froms; //views

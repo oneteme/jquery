@@ -9,6 +9,7 @@ import static org.usf.jquery.core.DBObject.SCALAR;
 import static org.usf.jquery.core.QueryManifest.Section.COLUMN;
 import static org.usf.jquery.core.QueryManifest.Section.CRITERIA;
 import static org.usf.jquery.core.QueryManifest.Section.ORDER;
+import static org.usf.jquery.core.Stores.NO_STORE;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
@@ -34,13 +35,11 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor
 public final class QueryComposer implements Composer<QueryView> {
 	
-	private final Store store;
-	
 	private final List<Column> columns = new ArrayList<>();
-	private List<Criteria> criterias;
-	private List<Order> orders;
 	private Set<QueryView> ctes; //views
 	private List<ViewJoin> joins; 
+	private List<Criteria> criterias;
+	private List<Order> orders;
 	private List<QueryUnion> unions;
 	@Setter	private Set<Column> groups; //explicit group-by columns
 	@Setter private Set<DBView> froms; // explicit from views
@@ -174,9 +173,12 @@ public final class QueryComposer implements Composer<QueryView> {
 //	}
 	
 	@Override
-	public QueryView compose() {
-		var view = store.newQueryView();
-		var manf = new QueryManifest(store, ctes, froms, groups, overView);
+	public QueryView compose(Store store) {
+		return compose(new QueryView(store));
+	}
+	
+	QueryView compose(QueryView view) {
+		var manf = new QueryManifest(view.getStore(), ctes, froms, groups, overView);
 		var aggr = composeColumn(view, manf);
 		aggr = max(composeCriteria(view, manf), aggr); //where & having
 		aggr = max(composeOrder(view, manf), aggr);
@@ -185,9 +187,9 @@ public final class QueryComposer implements Composer<QueryView> {
 		composeUnion(view);
 		composeCte(view, manf);
 		composeFrom(view, manf);
+		view.setDistinct(distinct);
 		view.setLimit(max(-1, limit));
 		view.setOffset(max(-1, offset));
-		view.setDistinct(distinct);
 		return view;
 	}
 	
@@ -223,24 +225,24 @@ public final class QueryComposer implements Composer<QueryView> {
 	}
 
 	int composeCriteria(QueryView view, QueryManifest manifest) {
-		var isAgg = isNull(groups) ? SCALAR : MEASURE;
+		var isAgg = SCALAR;
 		if(!isEmpty(criterias)) {
 			manifest.setRole(CRITERIA);
 			List<Criteria> whr = null;
 			List<Criteria> hvn = null;
-			for(var c : criterias) {
-				var v = c.prepare(manifest);
+			for(var crt : criterias) {
+				var v = crt.prepare(manifest);
 				if(v == MEASURE) {
 					if(isNull(hvn)) {
 						hvn = new ArrayList<>();
 					}
-					hvn.add(c);
+					hvn.add(crt);
 				}
 				else {
 					if(isNull(whr)) {
 						whr = new ArrayList<>();
 					}
-					whr.add(c);
+					whr.add(crt);
 				}
 				isAgg = max(isAgg, v);
 			}
@@ -284,6 +286,6 @@ public final class QueryComposer implements Composer<QueryView> {
 	
 	@Override
 	public String toString() {
-		return compose().toString();
+		return compose(NO_STORE).toString();
 	}
 }

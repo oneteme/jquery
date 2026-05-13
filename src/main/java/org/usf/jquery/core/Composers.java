@@ -20,13 +20,11 @@ import static org.usf.jquery.core.JoinType.RIGHT;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Signature.arrayOf;
-import static org.usf.jquery.core.Stores.getCurrentStore;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.function.IntFunction;
 
 import org.usf.jquery.web.proxy.PartitionComposer;
-import org.usf.jquery.web.proxy.StoreManager;
 
 /**
  * 
@@ -117,12 +115,12 @@ public interface Composers {
 	//query operators
 	
 	default ComposerDefinition<QueryComposer> select() {
-		return select(getCurrentStore().newQueryComposer());
+		return select(new QueryComposer());
 	}
 	
 	default ComposerDefinition<QueryComposer> select(QueryComposer composer) {
 		return new ComposerDefinition<>("select", QUERY, 
-				args-> composer.columns((NamedColumn[]) args), 
+				args-> composer.columns((NamedColumn[]) args),
 				arrayOf(NAMED_COLUMN, 1));
 	}
 	
@@ -134,15 +132,13 @@ public interface Composers {
 	
 	default ComposerDefinition<QueryComposer> criteria(QueryComposer composer) {
 		return new ComposerDefinition<>("criteria", QUERY, 
-				args-> 
-		composer.criterias((Criteria[]) args), 
+				args-> composer.criterias((Criteria[]) args), 
 				arrayOf(FILTER, 1));
 	}
 	
 	default ComposerDefinition<QueryComposer> group(QueryComposer composer) {
 		return new ComposerDefinition<>("group", QUERY, 
-				args-> 
-		composer.groups((Column[]) args), 
+				args-> composer.groups((Column[]) args), 
 				arrayOf(COLUMN, 1));
 	}
 	

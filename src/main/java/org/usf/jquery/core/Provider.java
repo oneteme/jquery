@@ -22,6 +22,6 @@ public enum Provider {
 		return stream(values())
 				.filter(d-> d.name().contains(v))
 				.findAny()
-				.orElseThrow(()-> new IllegalArgumentException("unsupported database product: " + name));
+				.orElse(DEFAULT);
 	}
 }

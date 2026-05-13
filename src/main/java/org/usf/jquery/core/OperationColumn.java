@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.WINDOW;
 import static org.usf.jquery.core.QueryManifest.Section.CRITERIA;
-import static org.usf.jquery.core.Stores.getCurrentStore;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import lombok.AccessLevel;
@@ -36,7 +35,7 @@ public final class OperationColumn implements Column {
 		if("OVER".equals(name)) {
 			if(manifest.getRole() == CRITERIA) {
 				var col = new OperationColumn(name, kind, operator, args, type).as(name + '_' + hashCode());
-				var sub = manifest.getStore().newQueryComposer().columns(Column.allColumns(), col).compose();
+				var sub = new QueryComposer().columns(Column.allColumns(), col).compose(manifest.getStore());
 				this.overColumn = sub.column(col.getTag(), col.getType());
 				manifest.cte(sub, true);
 				return overColumn.prepare(manifest);

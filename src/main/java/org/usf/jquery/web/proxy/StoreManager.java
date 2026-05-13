@@ -66,7 +66,7 @@ public final class StoreManager implements QueryExecutor2 {
 	public <S extends StoreResource, T> T execute(Class<S> clazz, QueryComposer query, ResultSetMapper<T> mapper) {
 		var store = getStore(clazz);
 		var exec = store instanceof QueryExecutor2 qe ? qe : this; //allow stores to override default execution strategy
-		return exec.execute(query.compose().build(), mapper, store.dataSource());
+		return exec.execute(query.compose(store).build(), mapper, store.dataSource());
 	}
 	
 	public <S extends StoreResource, T> T withStore(Class<S> clazz, Function<S,T> fn) {

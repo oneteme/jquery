@@ -27,7 +27,7 @@ public class GroupComposer implements Composer<Group> {
 	}
 	
 	@Override
-	public Group compose() {
+	public Group compose(Store store) {
 		return new Group(nonNull(orders) ? orders.toArray(Order[]::new) : null);
 	}
 }

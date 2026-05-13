@@ -43,11 +43,11 @@ public class CaseColumnComposer implements Composer<CaseColumn> {
 
 	public CaseColumn orElse(Object o) {
 		cases.add(new WhenCase(null, o));
-		return compose();
+		return compose(null);
 	}
 	
 	@Override
-	public CaseColumn compose() {
+	public CaseColumn compose(Store store) {
 		if(!cases.isEmpty()) {			
 			return new CaseColumn(cases.toArray(WhenCase[]::new));
 		}

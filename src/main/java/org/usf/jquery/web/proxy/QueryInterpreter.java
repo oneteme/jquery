@@ -61,7 +61,7 @@ public interface QueryInterpreter {
 	}
 	
 	default QueryComposer parseQuery(Map<String, String[]> parameterMap, RequestContext ctx) {
-		var query = ctx.getStore().newQueryComposer();
+		var query = new QueryComposer();
 		parseViews(parameterMap.remove(VIEW_PARAM), query, ctx);
 		parseColumns(parameterMap.remove(SELECT_OPR), query, ctx);
 		parseJoins(parameterMap.remove(JOIN_PARAM), query, ctx);

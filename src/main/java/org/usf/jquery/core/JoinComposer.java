@@ -34,7 +34,7 @@ public class JoinComposer implements Composer<ViewJoin> {
 	}
 	
 	@Override
-	public ViewJoin compose() {
+	public ViewJoin compose(Store store) {
 		return new ViewJoin(type, view, 
 				nonNull(criterias) ? criterias.toArray(Criteria[]::new) : null);
 	}

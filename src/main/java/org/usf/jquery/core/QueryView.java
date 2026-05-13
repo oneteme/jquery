@@ -107,14 +107,14 @@ public class QueryView implements DBView {
 	}
 
 	void select(QueryBuilder builder){
-		builder.append("SELECT ");
+		builder.append("SELECT");
 		if(distinct) {
-			builder.append("DISTINCT ");
+			builder.append(" DISTINCT");
 		}
     	if(limit > -1 && store.dialect().supportTopClause()){
-    		builder.append("TOP " + limit);
+    		builder.append(" TOP ").append(limit);
     	}
-    	builder.appendEach(SCOMA, selects, o-> {
+    	builder.append(SPACE).appendEach(SCOMA, selects, o-> {
     		builder.append(o);
     		if(o instanceof NamedColumn nc && nonNull(nc.getTag())) {
     			builder.appendAs().append(doubleQuote(nc.getTag()));

@@ -11,6 +11,7 @@ import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Composer;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.Store;
 
 import lombok.NonNull;
 
@@ -41,7 +42,7 @@ public class PartitionComposer implements Composer<Partition> {
 	}
 	
 	@Override
-	public Partition compose() {
+	public Partition compose(Store store) {
 		return new Partition(
 				nonNull(columns) ? columns.toArray(Column[]::new) : null, 
 				nonNull(orders) ? orders.toArray(Order[]::new) : null);
