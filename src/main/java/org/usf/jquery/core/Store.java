@@ -9,7 +9,6 @@ import javax.sql.DataSource;
  */
 public interface Store {
 	
-	//TODO auto-implent
 	String name();
 
 	Dialect dialect();

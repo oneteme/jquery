@@ -46,9 +46,9 @@ public final class QueryManifest {
 	
 	QueryManifest(Store store, Set<QueryView> ctes, Set<DBView> froms, Set<Column> groups, Map<DBView, QueryView> overViews) {
 		this(store,
-				secureSet(ctes), 
-				secureSet(froms), 
-				secureSet(groups), 
+				resolveSet(ctes), 
+				resolveSet(froms), 
+				resolveSet(groups), 
 				requireNonNullElseGet(overViews, LinkedHashMap::new), 
 				isNull(froms), isNull(groups), null);
 	}
@@ -142,7 +142,7 @@ public final class QueryManifest {
 		return isEmpty(arr) ? empty() : stream(arr);
 	}
 	
-	static <T> Set<T> secureSet(Set<T> set) {
+	static <T> Set<T> resolveSet(Set<T> set) {
 		return nonNull(set) ? unmodifiableSet(set) : new LinkedHashSet<>();
 	}
 	

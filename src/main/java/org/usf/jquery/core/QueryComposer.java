@@ -45,7 +45,7 @@ public final class QueryComposer implements Composer<QueryView> {
 	@Setter	private Set<Column> groups; //explicit group-by columns
 	@Setter private Set<DBView> froms; // explicit from views
 	private boolean distinct;
-	private boolean aggregation;
+	private boolean aggregation; //check this
 	private int limit  = -1;
 	private int offset = -1;
 	private int maxRows = -1; //security
@@ -144,9 +144,6 @@ public final class QueryComposer implements Composer<QueryView> {
 	}
 	
 	public QueryComposer maxRows(int maxRows) {
-		if(maxRows < 0) {
-			throw new IllegalArgumentException("max rows must be greater than 0");
-		}
 		this.maxRows = maxRows;
 		return this;
 	}
@@ -188,15 +185,9 @@ public final class QueryComposer implements Composer<QueryView> {
 		composeUnion(view);
 		composeCte(view, manf);
 		composeFrom(view, manf);
-		if(distinct) {
-			view.setDistinct(distinct);
-		}
-		if(limit > -1) {
-			view.setLimit(limit);
-		}
-		if(offset > -1) {
-			view.setOffset(offset);
-		}
+		view.setLimit(max(-1, limit));
+		view.setOffset(max(-1, offset));
+		view.setDistinct(distinct);
 		return view;
 	}
 	
