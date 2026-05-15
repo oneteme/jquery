@@ -15,6 +15,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -33,13 +34,13 @@ import lombok.extern.slf4j.Slf4j;
 public final class QueryComposer implements Composer<QueryView> {
 	
 	private final Collection<Column> columns = new ArrayList<>();
-	private Collection<QueryView> ctes; //
+	private Collection<QueryView> ctes;
 	private Collection<ViewJoin> joins; 
 	private Collection<Criteria> criterias;
 	private Collection<Order> orders;
 	private Collection<QueryUnion> unions;
 	private Collection<Column> groups; 
-	private Collection<DBView> froms; // explicit from views
+	private Collection<DBView> froms;
 	private boolean distinct;
 	private int limit  = -1;
 	private int offset = -1;
@@ -271,11 +272,11 @@ public final class QueryComposer implements Composer<QueryView> {
 	}
 	
 	QueryView compose(QueryView view) {
-		var mnf = new QueryManifest(view.getStore(), 
-				isNull(ctes) ? new LinkedHashSet<>() : new LinkedHashSet<>(ctes),
+		var mnf = new QueryManifest(view.getStore(),
+				isNull(ctes) ? new LinkedHashSet<>() : new LinkedHashSet<>(ctes), 
 				isNull(froms) ? new LinkedHashSet<>() : null, //explicit from views
-				isNull(groups) ? new LinkedHashSet<>() : null, //explicit group-by columns
-				overView);
+				isNull(groups) ? new LinkedHashSet<>() : null, //explicit group by columns
+				new LinkedHashMap<>(overView));
 		var aggr = composeColumn(view, mnf);
 		aggr = max(composeCriteria(view, mnf), aggr); //where & having
 		aggr = max(composeOrder(view, mnf), aggr);
