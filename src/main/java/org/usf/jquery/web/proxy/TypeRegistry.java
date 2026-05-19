@@ -28,7 +28,6 @@ import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.Group;
 import org.usf.jquery.core.JoinsClause;
-import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.SingleQueryColumn;
@@ -108,7 +107,7 @@ public final class TypeRegistry {
 		var evl = new HashMap<Class<?>, EntryEvaluator<?>>();
 		evl.put(DBView.class, EntryEvaluators::evaluateView);
 		evl.put(Column.class, EntryEvaluators::evaluateColumn);
-		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
+//		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
 		evl.put(Criteria.class, EntryEvaluators::evaluateFilter);
 		evl.put(Order.class, EntryEvaluators::evaluateOrder);
 		evl.put(JoinsClause.class, EntryEvaluators::evaluateJoin);

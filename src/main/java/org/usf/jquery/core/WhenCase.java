@@ -16,23 +16,21 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 final class WhenCase implements DBObject, Typed {
 	
-	private final Criteria filter; //optional
+	private final Criteria criteria; //optional
 	private final Object result; //then|else
 
 	@Override
-	public int prepare(QueryManifest query) {
-		var v = result instanceof DBObject c ? c.prepare(query) : SCALAR;
-		return nonNull(filter)
-				? Math.max(v, filter.prepare(query))
-				: v;
+	public int prepare(QueryManifest manifest) {
+		var v = result instanceof DBObject c ? c.prepare(manifest) : SCALAR;
+		return nonNull(criteria) ? Math.max(v, criteria.prepare(manifest)) : v;
 	}
 	
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public void build(QueryBuilder builder, Object... args) {
 		requireNoArgs(args, WhenCase.class::getSimpleName);
-		(nonNull(filter) 
-				? query.append("WHEN ").append(filter).append(" THEN ") 
-				: query.append("ELSE "))
+		(nonNull(criteria) 
+				? builder.append("WHEN ").append(criteria).append(" THEN ") 
+				: builder.append("ELSE "))
 		.appendParameter(result);
 	}
 	

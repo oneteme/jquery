@@ -22,14 +22,14 @@ public final class SingleQueryColumn implements DBObject, Typed {
 	}
 
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public void build(QueryBuilder builder, Object... args) {
 		requireNoArgs(args, SingleQueryColumn.class::getSimpleName);
-		view.build(query);
+		view.build(builder);
 	}
 	
 	@Override
-	public int prepare(QueryManifest composer) {
-		return view.prepare(composer);
+	public int prepare(QueryManifest manifest) {
+		return view.prepare(manifest);
 	}
 	
 	@Override

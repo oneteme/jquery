@@ -5,6 +5,8 @@ import static org.usf.jquery.core.SqlStringBuilder.DOT;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 
+import java.util.Collection;
+
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -13,28 +15,28 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public final class AllColumns implements NamedColumn {
+public final class AsteriskColumn implements Column {
 	
-	private static final String ASTR = "*";
-	private final DBView[] views;
+	private static final String SYMBOL = "*";
+	private final Collection<DBView> views;
 	
 	@Override
-	public int prepare(QueryManifest query) {
+	public int prepare(QueryManifest manifest) {
 		if(nonNull(views)) {
 			for(var v : views) {
-				query.from(v); //declare views
+				manifest.from(v); //declare views
 			}
 		}
 		return SCALAR;
 	}
 	
 	@Override
-	public void build(QueryBuilder query) {
-		if(!isEmpty(views) && query.getStore().dialect().supportWilcardPrefix()) {
-			query.appendEach(SCOMA, views, v-> query.appendViewAlias(v, DOT).append(ASTR));
+	public void build(QueryBuilder builder) {
+		if(!isEmpty(views) && builder.getStore().dialect().supportWilcardPrefix()) {
+			builder.appendEach(SCOMA, views, v-> builder.appendViewAlias(v, DOT).append(SYMBOL));
 		}
 		else {
-			query.append(ASTR);
+			builder.append(SYMBOL);
 		}
 	}
 	
@@ -46,6 +48,11 @@ public final class AllColumns implements NamedColumn {
 	@Override //!important: it does not takes tag
 	public String getTag() {
 		return null; 
+	}
+	
+	@Override
+	public Column as(String alias, JDBCType type) {
+		throw new UnsupportedOperationException();
 	}
 	
 	@Override

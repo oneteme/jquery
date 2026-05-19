@@ -1,9 +1,13 @@
 package org.usf.jquery.core;
 
-import static java.util.Collections.addAll;
+import static java.util.Collections.unmodifiableCollection;
+import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.ArrayList;
+import java.util.Collection;
+
+import lombok.NonNull;
 
 /**
  * 
@@ -14,43 +18,46 @@ import java.util.ArrayList;
 public final class PredicateGroup implements Predicate {
 	
 	private final LogicalOperator operator;
-	private final Predicate[] expressions;
+	private final Collection<Predicate> predicates;
 	
-	PredicateGroup(LogicalOperator operator, Predicate... expressions) {
+	PredicateGroup(LogicalOperator operator, Predicate... predicates) {
+		if(isEmpty(predicates)) {
+			throw new ComposeException("PredicateGroup requires at least one predicate");
+		}
 		this.operator = operator;
-		this.expressions = chain(operator, requireAtLeastNArgs(1, expressions, PredicateGroup.class::getSimpleName));
+		this.predicates = chain(operator, predicates);
 	}
 	
 	@Override
-	public int prepare(QueryManifest query) {
-		return query.prepareNested(expressions);
+	public int prepare(QueryManifest manifest) {
+		return manifest.prepareNested(predicates);
 	}
 
 	@Override
-	public void build(QueryBuilder query, Object operand) {
-		query.append("(").appendEach(operator.sql(), expressions, e-> e.build(query, operand)).append(")");
+	public void build(QueryBuilder builder, Object operand) {
+		builder.append("(").appendEach(operator.sql(), predicates, e-> e.build(builder, operand)).append(")");
 	}
 	
 	@Override
-	public Predicate append(LogicalOperator op, Predicate exp) {
+	public PredicateGroup append(LogicalOperator op, Predicate exp) {
 		return new PredicateGroup(op, this, exp);
 	}
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this, "<left>");
+		return DBObject.toSQL(this, Column.column("$item"));
 	}
 
-	static Predicate[] chain(LogicalOperator op, Predicate... filters) {
+	static Collection<Predicate> chain(LogicalOperator op, @NonNull Predicate... filters) {
 		var res = new ArrayList<Predicate>(filters.length);
 		for(var f : filters) {
-			if(f instanceof PredicateGroup fg && fg.operator == op) {
-				addAll(res, fg.expressions);
+			if(f instanceof PredicateGroup pg && pg.operator == op) {
+				res.addAll(pg.predicates);
 			}
 			else {
 				res.add(f);
 			}
 		}
-		return res.toArray(Predicate[]::new);
+		return unmodifiableCollection(res);
 	}
 }

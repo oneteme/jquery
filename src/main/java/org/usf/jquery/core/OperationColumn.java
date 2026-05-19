@@ -1,10 +1,13 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.asList;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.WINDOW;
 import static org.usf.jquery.core.QueryManifest.Section.CRITERIA;
 import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
+
+import java.util.List;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -22,9 +25,9 @@ public final class OperationColumn implements Column {
 	private final String name;
 	private final OperatorKind kind;
 	private final Invocable operator;
-	private final Object[] args; //optional
+	private final List<Object> args; //optional
 	private final JDBCType type; //optional
-	private ViewColumn overColumn; 
+	private ViewColumn overColumn;
 
 	@Override
 	public int prepare(QueryManifest manifest) {
@@ -42,16 +45,16 @@ public final class OperationColumn implements Column {
 			}
 			return resolveOverColumns(manifest);
 		}
-		return manifest.tryPrepareNestedOrElse(this, args);
+		return manifest.tryPrepareNestedOrElse(args, this);
 	}
 
 	@Override
-	public void build(QueryBuilder query) {
+	public void build(QueryBuilder builder) {
 		if(nonNull(overColumn)) {
-			query.append(overColumn); //no args
+			builder.append(overColumn); //no args
 		}
 		else {
-			operator.build(query, args);
+			operator.build(builder, args.toArray());
 		}
 	}
 	
@@ -62,10 +65,10 @@ public final class OperationColumn implements Column {
 	
 	private int resolveOverColumns(QueryManifest declare) {
 		requireAtLeastNArgs(1, args, ()-> "over"); //partition
-		var lvl = declare.tryPrepareNested(args[0])-1; //nested aggregate function
-		return args.length == 1
+		var lvl = declare.tryPrepareNested(asList(args.get(0)))-1; //nested aggregate function
+		return args.size() == 1
 				? lvl
-				: Math.max(lvl, declare.tryPrepareNested(args[1])); //partition
+				: Math.max(lvl, declare.tryPrepareNested(asList(args.get(1)))); //partition
 	}
 		
 	@Override

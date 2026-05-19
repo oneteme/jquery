@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.asList;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.OrderType.ASC;
@@ -7,6 +8,8 @@ import static org.usf.jquery.core.OrderType.DESC;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
+
+import java.util.Objects;
 
 import org.usf.jquery.core.JavaType.Typed;
 
@@ -17,24 +20,37 @@ import org.usf.jquery.core.JavaType.Typed;
  */
 public interface Column extends DBObject, Typed {
 	
-	void build(QueryBuilder query);
+	void build(QueryBuilder builder);
 	
 	@Override
-	default void build(QueryBuilder query, Object... args) {
+	default void build(QueryBuilder builder, Object... args) {
 		requireNoArgs(args, Column.class::getSimpleName);
-		build(query);
+		var ref = builder.aliasFor(this);
+		if(nonNull(ref)) {
+			builder.append(ref);
+		}
+		else {
+			build(builder);
+		}
 	}
 	
-	default ColumnProxy as(JDBCType type) {
-		throw new UnsupportedOperationException("not impl");
+	default String getTag() {
+		return null;
 	}
 	
-	default ColumnProxy as(String name) {
-		return as(name, null);
+	default Column as(JDBCType type) {
+		return as(getTag(), getType());
 	}
 	
-	default ColumnProxy as(String name, JDBCType type) {
-		return new ColumnProxy(this, type, nonNull(name) ? requireLegalVariable(name) : null);
+	default Column as(String alias) {
+		return as(alias, getType());
+	}
+	
+	default Column as(String alias, JDBCType type) {
+		if(type != getType() || !Objects.equals(alias, getTag())) {
+			return new ColumnProxy(this, type, nonNull(alias) ? requireLegalVariable(alias) : null);
+		}
+		return this;
 	}
 	
 	//criteria
@@ -416,15 +432,15 @@ public interface Column extends DBObject, Typed {
 	//scope functions
 	
 	default Column over(Column[] cols, Order[] orders) {
-		return over(new Partition(cols, orders));
+		return over(new Partition(asList(cols), asList(orders)));
 	}
 	
 	default Column over(Partition part) {
 		return getDialect().over().invoke(this, part);
 	}
 	
-	default Column within(Order[] orders) {
-		return within(new Group(orders));
+	default Column within(Order... orders) {
+		return within(new Group(asList(orders)));
 	}
 	
 	default Column within(Group group) {
@@ -513,8 +529,8 @@ public interface Column extends DBObject, Typed {
 		return new ViewColumn(value, view, type, tag);
 	}
 
-	static AllColumns allColumns(DBView... views) {
-		return new AllColumns(views);
+	static AsteriskColumn allColumns(DBView... views) {
+		return new AsteriskColumn(nonNull(views) ? asList(views) : null);
 	}
 	
 	static ValueColumn constant(Object value) {

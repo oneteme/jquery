@@ -25,11 +25,11 @@ public final class Order implements DBObject {
 	}
 	
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public void build(QueryBuilder builder, Object... args) {
 		requireNoArgs(args, Order.class::getSimpleName);
-		query.append(column);
+		builder.append(column);
 		if(nonNull(type)) {
-			query.appendSpace().append(type.name());
+			builder.appendSpace().append(type.name());
 		}
 	}
 	

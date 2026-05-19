@@ -17,15 +17,18 @@ public final class QueryUnion implements DBObject {
 	private final QueryView view;
 	
 	@Override
-	public int prepare(QueryManifest composer) {
-		return view.prepare(composer);
+	public int prepare(QueryManifest manifest) {
+		return view.prepare(manifest);
 	}
 	
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public void build(QueryBuilder builder, Object... args) {
 		requireNoArgs(args, QueryUnion.class::getSimpleName);
-		query.append(" UNION ");
-		(all ? query.append("ALL ") : query).append(view);
+		builder.append(" UNION ");
+		if(all) {
+			builder.append("ALL ");
+		}
+		builder.append(view);
 	}
 	
 	@Override

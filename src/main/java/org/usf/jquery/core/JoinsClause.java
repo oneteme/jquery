@@ -1,5 +1,11 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.asList;
+import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.Utils.isEmpty;
+
+import java.util.Collection;
+
 import lombok.Getter;
 
 /**
@@ -10,26 +16,23 @@ import lombok.Getter;
 @Getter
 public final class JoinsClause implements DBObject {
 
-	private final ViewJoin[] joins;
-
-	public JoinsClause(ViewJoin... joins) {
-		this.joins = joins;
-	}
+	private final Collection<ViewJoin> joins;
 	
+	public JoinsClause(ViewJoin... joins) {
+		if(isEmpty(joins)) {
+			throw new ComposeException("JoinsClause requires at least one join");
+		}
+		this.joins = asList(joins);
+	}
+
 	@Override
 	public int prepare(QueryManifest declare) {
 		return declare.prepareNested(joins);
 	}
 
 	@Override
-	public void build(QueryBuilder query, Object... args) {
-		if(joins.length > 0) {
-			joins[0].build(query, args);
-			for(var j : joins) {
-				query.append(" ");
-				j.build(query, args);
-			}
-		}
+	public void build(QueryBuilder builder, Object... args) {
+		builder.appendEach(SPACE, joins);
 	}
 	
 	public static JoinsClause joins(ViewJoin... joins) {
@@ -38,10 +41,6 @@ public final class JoinsClause implements DBObject {
 	
 	@Override
 	public String toString() {
-		var sb = new StringBuilder();
-		for(var j : joins) {
-			sb.append(j.toString()).append(" ");
-		}
-		return sb.toString();
+		return DBObject.toSQL(this);
 	}
 }

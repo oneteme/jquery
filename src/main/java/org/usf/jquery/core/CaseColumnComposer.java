@@ -1,10 +1,12 @@
 package org.usf.jquery.core;
 
+import static java.util.Collections.unmodifiableCollection;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
-import java.util.List;
+import java.util.Collection;
 
 import lombok.RequiredArgsConstructor;
 
@@ -17,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class CaseColumnComposer implements Composer<CaseColumn> {
 
 	private final Column column;
-	private final List<WhenCase> cases = new ArrayList<>(); //required at least one case
+	private Collection<WhenCase> cases;
 	
 	public CaseColumnComposer() {
 		this(null);
@@ -26,7 +28,7 @@ public class CaseColumnComposer implements Composer<CaseColumn> {
 	//column.when(predicate, then).when(predicate, then)...orElse(else)
 	public CaseColumnComposer when(Predicate predicate, Object then) {
 		if(nonNull(column)) {
-			cases.add(new WhenCase(column.filter(predicate), then));
+			getCases().add(new WhenCase(column.filter(predicate), then));
 			return this;
 		}
 		throw new IllegalArgumentException("cannot append predicate " + predicate);
@@ -35,22 +37,29 @@ public class CaseColumnComposer implements Composer<CaseColumn> {
 	//when(criteria, then).when(criteria, then)...orElse(else)
 	public CaseColumnComposer when(Criteria criteria, Object then) {
 		if(isNull(column)) {
-			cases.add(new WhenCase(criteria, then));
+			getCases().add(new WhenCase(criteria, then));
 			return this;
 		}
 		throw new IllegalArgumentException("cannot append criteria " + criteria);
 	}
 
 	public CaseColumn orElse(Object o) {
-		cases.add(new WhenCase(null, o));
+		getCases().add(new WhenCase(null, o));
 		return compose(null);
+	}
+	
+	private Collection<WhenCase> getCases() {
+		if(isNull(cases)) {
+			cases = new ArrayList<>();
+		}
+		return cases;
 	}
 	
 	@Override
 	public CaseColumn compose(Store store) {
-		if(!cases.isEmpty()) {			
-			return new CaseColumn(cases.toArray(WhenCase[]::new));
+		if(!isEmpty(cases)) {			
+			return new CaseColumn(unmodifiableCollection(cases));
 		}
-		throw new IllegalArgumentException("");
+		throw new ComposeException("case column requires at least one when case");
 	}
 }

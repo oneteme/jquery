@@ -98,16 +98,8 @@ public class Dialect implements Composers, Operators, Comparators {
 					}, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
 	}
 	
-	public boolean supportGroupByIndex() {
-		return true;
-	}
-
-	public boolean supportGroupByAlias() {
-		return true;
-	}
-
-	public boolean supportHavingByAlias() {
-		return true;
+	public boolean supportAliasReference() {
+		return true; //groupBy, orderBy
 	}
 	
 	public boolean supportFetchClause() { //ORACLE

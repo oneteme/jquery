@@ -113,7 +113,7 @@ final class DatasetProxy extends ResourceProxy {
 	static <T extends DatasetResource> T createDataset(Class<T> type, Bind bind, String store, DataSource ds) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
-			case REF-> new TableView(bind.value(), store, null);
+			case REF-> new TableView(bind.value(), store);
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};

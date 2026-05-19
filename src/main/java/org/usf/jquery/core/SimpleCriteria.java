@@ -8,28 +8,25 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public class SimpleCriteria implements Criteria {
+public final class SimpleCriteria implements Criteria {
 
 	private final Object left;
-	private final Predicate expression;
+	private final Predicate predicate;
 
 	@Override
-	public int prepare(QueryManifest query) {
-		var v = expression.prepare(query);
-		if(left instanceof DBObject c) {
-			return Math.max(v, c.prepare(query));
-		}
-		return v;
+	public int prepare(QueryManifest manifest) {
+		var v = predicate.prepare(manifest);
+		return left instanceof DBObject c ? Math.max(v, c.prepare(manifest)) : v;
 	}
 	
 	@Override
-	public void build(QueryBuilder query) {
-		expression.build(query, left);
+	public void build(QueryBuilder builder) {
+		predicate.build(builder, left);
 	}
 
 	@Override
-	public CriteriaGroup append(LogicalOperator op, Criteria filter) {
-		return new CriteriaGroup(op, this, filter);
+	public CriteriaGroup append(LogicalOperator op, Criteria criteria) {
+		return new CriteriaGroup(op, this, criteria);
 	}
 	
 	@Override

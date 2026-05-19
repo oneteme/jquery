@@ -7,7 +7,6 @@ import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.FILTER;
 import static org.usf.jquery.core.JQueryType.GROUP;
 import static org.usf.jquery.core.JQueryType.JOIN;
-import static org.usf.jquery.core.JQueryType.NAMED_COLUMN;
 import static org.usf.jquery.core.JQueryType.ORDER;
 import static org.usf.jquery.core.JQueryType.PARTITION;
 import static org.usf.jquery.core.JQueryType.QUERY;
@@ -120,8 +119,8 @@ public interface Composers {
 	
 	default ComposerDefinition<QueryComposer> select(QueryComposer composer) {
 		return new ComposerDefinition<>("select", QUERY, 
-				args-> composer.columns((NamedColumn[]) args),
-				arrayOf(NAMED_COLUMN, 1));
+				args-> composer.columns((Column[]) args),
+				arrayOf(COLUMN, 1));
 	}
 	
 	default ComposerDefinition<QueryComposer> join(QueryComposer composer){

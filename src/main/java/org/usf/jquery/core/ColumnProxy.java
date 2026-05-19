@@ -1,8 +1,7 @@
 package org.usf.jquery.core;
 
+import static java.util.Arrays.asList;
 import static java.util.Objects.nonNull;
-
-import java.util.Objects;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -13,7 +12,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class ColumnProxy implements NamedColumn {
+public final class ColumnProxy implements Column {
 
 	//do not @Delegate
 	private final Column column;
@@ -22,12 +21,12 @@ public final class ColumnProxy implements NamedColumn {
 	
 	@Override
 	public int prepare(QueryManifest manifest) {
-		return manifest.prepareNestedOrElse(this, column);
+		return manifest.prepareNestedOrElse(asList(column), this);
 	}
 
 	@Override
-	public void build(QueryBuilder query) {
-		query.append(column);
+	public void build(QueryBuilder builder) {
+		builder.append(column);
 	}
 	
 	@Override
@@ -38,18 +37,6 @@ public final class ColumnProxy implements NamedColumn {
 	@Override
 	public String getTag() {
 		return tag;
-	}
-
-	@Override // do not delegate this
-	public ColumnProxy as(String name) { 
-		return NamedColumn.super.as(name);
-	}
-	
-	@Override
-	public ColumnProxy as(String name, JDBCType type) { // map
-		return Objects.equals(this.tag, name) && Objects.equals(this.type, type) 
-				? this 
-				: new ColumnProxy(column, type, name);
 	}
 	
 	@Override

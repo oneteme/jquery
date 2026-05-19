@@ -4,25 +4,17 @@ import static java.lang.System.currentTimeMillis;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
-import static java.util.function.Function.identity;
-import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.QueryBuilder.addWithValue;
 import static org.usf.jquery.core.QueryBuilder.parameterized;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.HashMap;
-import java.util.List;
+import java.util.Collection;
 import java.util.Map;
-import java.util.function.Consumer;
-import java.util.function.Function;
-import java.util.stream.Stream;
 
 import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.Setter;
@@ -41,20 +33,20 @@ public class QueryView implements DBView {
 
 	private final Store store;
 	
-	private QueryView[] ctes;
-	private Column[] selects;
-	private Column[] groups;
-	private Criteria[] wheres; 
-	private Criteria[] havings;
-	private ViewJoin[] joins; 
-	private Order[] orders;
-	private DBView[] froms; //preserve order
-	private QueryUnion[] unions;
+	private Collection<QueryView> ctes;
+	private Collection<Column> selects;
+	private Collection<Column> groups;
+	private Collection<Criteria> wheres; 
+	private Collection<Criteria> havings;
+	private Collection<ViewJoin> joins; 
+	private Collection<Order> orders;
+	private Collection<DBView> froms; //preserve order
+	private Collection<QueryUnion> unions;
 	private boolean distinct;
 	private boolean aggregation;
 	private int limit = -1;
 	private int offset = -1;
-	private Map<DBView, QueryView> overView = emptyMap();
+	private Map<DBView, QueryView> overView;
 	
 	@Override
 	public int prepare(QueryManifest manifest) {
@@ -68,9 +60,11 @@ public class QueryView implements DBView {
 
 	@Override
 	public void build(QueryBuilder builder) {
-		var ovr = builder.isCte(this) ? overView : assign(builder.getOverViews(), overView); //TODO merge 
+		var ovr = builder.isCte(this) ? overView : builder.getOverViews();
 		var sub = builder.subQuery(froms, unmodifiableMap(ovr));
-		sub.appendParenthesis(()-> buildClauses(sub));
+		sub.append("(");
+		buildClauses(sub);
+		sub.append(")");
 	}
 
 	public Query build() {
@@ -80,14 +74,13 @@ public class QueryView implements DBView {
 	public Query buildQuery(boolean parameterized) {
 		log.trace("building query...");
 		var bg = currentTimeMillis();
-		var flatCTE = flatCte().distinct().toArray(QueryView[]::new);
 		Map<DBView, QueryView> over = isEmpty(overView) ? emptyMap() : unmodifiableMap(overView);
 		var builder = parameterized 
-				? parameterized(store, flatCTE, froms, over)
-				: addWithValue(store, flatCTE, froms, unmodifiableMap(overView));
-		if(!isEmpty(flatCTE)) {
-			builder.append("WITH ") // do not resolveView => ViewRef
-			.appendEach(SCOMA, flatCTE, v-> builder.appendViewAlias(v).appendAs().append(v)) 
+				? parameterized(store, ctes, froms, over)
+				: addWithValue(store, ctes, froms, unmodifiableMap(overView));
+		if(!isEmpty(ctes)) {
+			builder.append("WITH ")
+			.appendEach(SCOMA, ctes, v-> builder.appendViewAlias(v).appendAs().append(v)) 
 			.appendSpace();
 		}
 		buildClauses(builder);
@@ -100,6 +93,7 @@ public class QueryView implements DBView {
 		from(builder);
 		join(builder);
     	where(builder);
+    	builder.setUseReference(store.dialect().supportAliasReference());
     	groupBy(builder);
     	having(builder);
     	orderBy(builder);
@@ -115,28 +109,23 @@ public class QueryView implements DBView {
     	if(limit > -1 && store.dialect().supportTopClause()){
     		builder.append(" TOP ").append(limit);
     	}
-    	builder.append(SPACE).appendEach(SCOMA, selects, o-> {
-    		builder.append(o);
-    		if(o instanceof NamedColumn nc && nonNull(nc.getTag())) {
-    			builder.appendAs().append(doubleQuote(nc.getTag()));
+    	var map = builder.getColumnMap();
+    	builder.append(SPACE).appendEach(SCOMA, map.entrySet(), o-> {
+    		builder.append(o.getKey());
+    		if(nonNull(o.getValue())) { //e.g AsteriskColumn
+    			builder.appendAs().append(o.getValue());
     		}
     	});
 	}
 	
-	void from(QueryBuilder query) {
+	void from(QueryBuilder builder) {
 		if(!isEmpty(froms)) {
-			var from = Stream.of(froms).map(v-> overView.containsKey(v) ? overView.get(v) : v).collect(toSet());
-			if(!isEmpty(joins)) {
-				Stream.of(joins) //exclude join views
-				.map(ViewJoin::getView)
-				.forEach(v-> from.remove(overView.containsKey(v) ? overView.get(v) : v));
-			}
-			if(!from.isEmpty()) {
-				query.append(" FROM ").appendEach(SCOMA, from.toArray(DBView[]::new), v-> {
-					var res = v.resolveView(query);
-					query.append(res).appendSpace().appendViewAlias(res);
-				});
-			}
+			builder.append(" FROM ").appendEach(SCOMA, froms, v-> {
+				if(!builder.isCte(v)) {
+					builder.append(v).appendSpace();
+				}
+				builder.appendViewAlias(v);
+			});
 		}
 	}
 	
@@ -154,26 +143,19 @@ public class QueryView implements DBView {
 	
 	void groupBy(QueryBuilder builder){
 		if(!isEmpty(groups)) {
-			Consumer<Column> cons = builder::append;
-			if(store.dialect().supportGroupByIndex()) {
-				cons = appendEachByIndex(builder, identity());
-			}
-			else if(store.dialect().supportGroupByAlias()) {
-				cons = appendEachByRef(builder, identity());
-			}
-    		builder.append(" GROUP BY ").appendEach(SCOMA, groups, cons);
+			builder.append(" GROUP BY ").appendEach(SCOMA, groups);
 		}
 	}
 
 	void having(QueryBuilder builder){
 		if(!isEmpty(havings)) {
-    		builder.append(" HAVING ").appendEach(AND.sql(), havings, appendEachByIndex(builder, Function.identity()));
+    		builder.append(" HAVING ").appendEach(AND.sql(), havings);
 		}
 	}
 	
 	void orderBy(QueryBuilder builder) {
     	if(!isEmpty(orders)) {
-    		builder.append(" ORDER BY ").appendEach(SCOMA, orders, appendEachByIndex(builder, Order::getColumn));
+    		builder.append(" ORDER BY ").appendEach(SCOMA, orders);
     	}
 	}
 	
@@ -216,49 +198,5 @@ public class QueryView implements DBView {
 	@Override
 	public String toString() {
 		return DBObject.toSQL(this); 
-	}
-	
-	Stream<QueryView> flatCte(){
-		return isEmpty(ctes)
-				? Stream.empty()
-				: Stream.concat(Stream.of(ctes).flatMap(QueryView::flatCte), Stream.of(ctes));
-	}
-
-	<T extends DBObject> Consumer<T> appendEachByIndex(QueryBuilder builder, Function<T, Column> fn){
-		var cols = List.of(selects);
-		return o-> {
-			var idx = cols.indexOf(fn.apply(o));
-			if(idx > -1) {
-				builder.append(idx+1); 
-			}
-			else {
-				builder.append(o);
-			}
-		};
-	}
-	
-	<T extends DBObject> Consumer<T> appendEachByRef(QueryBuilder builder, Function<T, Column> fn){
-		var cols = List.of(selects);
-		return o-> {
-			var c = fn.apply(o);
-			if(c instanceof NamedColumn nc && cols.contains(c)) {
-				builder.append(doubleQuote(nc.getTag()));
-			}
-			else {
-				builder.append(o);
-			}
-		};
-	}
-
-	static <K,V> Map<K,V> assign(Map<K,V> m1, Map<K,V> m2){
-		if(!isEmpty(m1) && !isEmpty(m2)) {
-			var map = new HashMap<>(m1);
-			map.putAll(m2);
-			return map;
-		}
-		if(isEmpty(m1)) {
-			return m2;
-		}
-		return isEmpty(m2) ? m1 : emptyMap();
 	}
 }

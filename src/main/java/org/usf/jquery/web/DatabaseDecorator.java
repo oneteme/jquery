@@ -36,10 +36,10 @@ public interface DatabaseDecorator {
 		if(nonNull(tn)){
 		var idx = tn.indexOf('.');
 		return idx == -1
-				? new TableView(requireLegalVariable(tn), null, identity()) 
+				? new TableView(requireLegalVariable(tn), null) 
 				: new TableView(
 							requireLegalVariable(tn.substring(idx+1, tn.length())), //schema
-							requireLegalVariable(tn.substring(0, idx)), identity()); //view
+							requireLegalVariable(tn.substring(0, idx))); //view
 		}
 		var b = vd.builder();
 		if(nonNull(b)) {

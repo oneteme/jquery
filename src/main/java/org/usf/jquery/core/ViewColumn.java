@@ -13,7 +13,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public class ViewColumn implements NamedColumn {
+public class ViewColumn implements Column {
 
 	private final String name;
 	private final DBView view; //optional
@@ -21,20 +21,20 @@ public class ViewColumn implements NamedColumn {
 	private final String tag;  //optional
 
 	@Override
-	public int prepare(QueryManifest query) {
+	public int prepare(QueryManifest manifest) {
 		if(nonNull(view)) {
-			query.from(view);
+			manifest.from(view);
 		}
-		query.groupBy(this);
+		manifest.groupBy(this);
 		return DIMENSION;
 	}
 	
 	@Override
-	public void build(QueryBuilder query) {
+	public void build(QueryBuilder builder) {
 		if(nonNull(view)) {
-			query.appendViewAlias(view, DOT);
+			builder.appendViewAlias(view, DOT);
 		}
-		query.append(name);
+		builder.append(name);
 	}
 	
 	@Override

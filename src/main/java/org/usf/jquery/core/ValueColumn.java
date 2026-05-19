@@ -14,13 +14,13 @@ public class ValueColumn implements Column {
 	private final JDBCType type;
 
 	@Override
-	public int prepare(QueryManifest query) {
+	public int prepare(QueryManifest manifest) {
 		return SCALAR;
 	}
 	
 	@Override
-	public void build(QueryBuilder query) {
-		query.appendParameter(value);
+	public void build(QueryBuilder builder) {
+		builder.appendParameter(value);
 	}
 	
 	@Override

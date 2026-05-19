@@ -46,19 +46,4 @@ public final class H2Dialect extends Dialect {
 	public OperatorDefinition bitShiftRight() {
 		return function(BIGINT, "RSHIFT", required(BIGINT), required(INTEGER));
 	}
-	
-	@Override
-	public boolean supportGroupByIndex() {
-		return false;
-	}
-	
-	@Override
-	public boolean supportGroupByAlias() {
-		return true;
-	}
-	
-	@Override
-	public boolean supportHavingByAlias() {
-		return true;
-	}
 }

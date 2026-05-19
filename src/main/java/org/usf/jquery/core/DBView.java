@@ -11,31 +11,20 @@ import static org.usf.jquery.core.Validation.requireNoArgs;
 @FunctionalInterface
 public interface DBView extends DBObject {
 
-	void build(QueryBuilder query);
+	void build(QueryBuilder builder);
 	
 	/**
 	 * do not declare self on composer
 	 */
 	@Override
-	default int prepare(QueryManifest composer) {
-		return -1; 
+	default int prepare(QueryManifest manifest) {
+		return SCALAR; 
 	}
 	
 	@Override
-	default void build(QueryBuilder query, Object... args) {
+	default void build(QueryBuilder builder, Object... args) {
 		requireNoArgs(args, DBView.class::getSimpleName);
-		build(query);
-	}
-	
-	default DBView resolveView(QueryBuilder query) {
-		var sub = query.subView(this);
-		if(sub.isPresent()) {
-			return sub.get().asReference();
-		}
-		else if(query.isCte(this)) {
-			return asReference(); 
-		}
-		return this; //no mapping
+		build(builder);
 	}
 	
 	default ViewColumn column(String name) {

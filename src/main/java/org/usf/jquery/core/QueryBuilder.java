@@ -13,6 +13,8 @@ import static org.usf.jquery.core.TypedArg.arg;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,6 +24,7 @@ import java.util.function.Consumer;
 import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -30,7 +33,7 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-@Getter(value = AccessLevel.PACKAGE)
+@Getter(AccessLevel.PACKAGE)
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class QueryBuilder {
 	
@@ -40,15 +43,20 @@ public final class QueryBuilder {
 	private final StringBuilder query;
 	private final Map<QueryView, String> ctes;
 	private final Map<DBView, String> views;
+	private final Map<Column, String> columnMap;
 	private final List<TypedArg> args;
 	private final Map<DBView, QueryView> overViews;
-
+	@Setter
+	private boolean useReference;
+	
+	private final Map<Integer, Boolean> flag = new HashMap<>();
+	
 	Optional<QueryView> subView(DBView view) {
 		return ofNullable(overViews.get(view));
 	}
 	
 	public boolean isCte(DBView view) {
-		return view instanceof QueryView q && ctes.containsKey(q);
+		return ctes.containsKey(view) || overViews.containsKey(view);
 	}
 	
 	public QueryBuilder appendViewAlias(DBView view) {
@@ -138,15 +146,32 @@ public final class QueryBuilder {
 		return runForeach(delimiter, arr, 0, o-> o.build(this));
 	}
 	
+
+	public QueryBuilder appendEach(String delimiter, Iterable<? extends DBObject> arr) {
+		return this; //TODO
+	}
+	
 	public <T> QueryBuilder appendEach(String delimiter, T[] arr, Consumer<T> cons) {
 		return runForeach(delimiter, arr, 0, cons);
 	}
+	
+
+	public <T> QueryBuilder appendEach(String delimiter, Iterable<T> arr, Consumer<T> cons) {
+		//TODO
+		return this;
+	}
+	
+	
+	public <T> QueryBuilder appendEach(String delimiter, Iterable<T> arr, Consumer<T> cons) {
+		return null;// complete this
+	}
+	
 
 	public QueryBuilder withValue() { //inherit schema, prefix, args but not views
 		return new QueryBuilder(store, prefix, query, ctes, views, null, overViews); //no args
 	}
 
-	public QueryBuilder subQuery(DBView[] views, Map<DBView, QueryView> overview) { //inherit schema, prefix, args but not views
+	public QueryBuilder subQuery(Collection<DBView> views, Map<DBView, QueryView> overview) { //inherit schema, prefix, args but not views
 		var s = prefix + "_s";
 		var vMap = viewAlias(s, views);
 		if(!isEmpty(overview)) {
@@ -191,15 +216,15 @@ public final class QueryBuilder {
 		return create(NO_STORE, null, null, null, null);
 	}
 
-	public static QueryBuilder addWithValue(Store store, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
+	public static QueryBuilder addWithValue(Store store, Collection<QueryView> ctes, Collection<DBView> views, Map<DBView, QueryView> overview) {
 		return create(store, ctes, views, null, overview);
 	}
 
-	public static QueryBuilder parameterized(Store store, QueryView[] ctes, DBView[] views, Map<DBView, QueryView> overview) {
+	public static QueryBuilder parameterized(Store store, Collection<QueryView> ctes, Collection<DBView> views, Map<DBView, QueryView> overview) {
 		return create(store, ctes, views, new ArrayList<>(), overview);
 	}
 	
-	private static QueryBuilder create(Store store, QueryView[] ctes, DBView[] views, List<TypedArg> args, Map<DBView, QueryView> overview) {
+	private static QueryBuilder create(Store store, Collection<QueryView> ctes, Collection<QueryView> views, List<TypedArg> args, Map<DBView, QueryView> overview) {
 		var cMap = viewAlias("g", ctes);
 		var vMap = viewAlias("v", views);
 		if(!isEmpty(overview)) {
@@ -218,5 +243,12 @@ public final class QueryBuilder {
 			}
 		}
 		return map;
+	}
+	
+	public String aliasFor(Column sql) {
+		return useReference && store.dialect().supportAliasReference() ? columnMap.get(sql) : null;
+	}
+	
+	public void enable(int... flags) {
 	}
 }

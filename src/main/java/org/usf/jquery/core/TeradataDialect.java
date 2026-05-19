@@ -73,17 +73,12 @@ public final class TeradataDialect extends Dialect {
 	}
 
 	@Override
-	public boolean supportGroupByIndex() {
+	public boolean supportAliasReference() {
 		return false;
 	}
 	
 	@Override
-	public boolean supportGroupByAlias() {
-		return false;
-	}
-
-	@Override
-	public boolean supportHavingByAlias() {
+	public boolean supportWilcardPrefix() {
 		return false;
 	}
 }

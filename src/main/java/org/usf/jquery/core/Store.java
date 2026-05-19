@@ -21,6 +21,10 @@ public interface Store {
 	
 	DataSource dataSource();
 	
+	default TableView table(String name) {
+		return new TableView(name, name());
+	}
+	
 	default QueryView newQuery(Consumer<QueryComposer> cons) {
 		var qc = new QueryComposer();
 		var cs = getCurrentStore();

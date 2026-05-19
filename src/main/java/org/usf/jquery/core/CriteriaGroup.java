@@ -1,9 +1,10 @@
 package org.usf.jquery.core;
 
-import static java.util.Collections.addAll;
-import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
+import static java.util.Collections.unmodifiableCollection;
+import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
+import java.util.Collection;
 
 /**
  * 
@@ -14,21 +15,24 @@ import java.util.ArrayList;
 public final class CriteriaGroup implements Criteria {
 	
 	private final LogicalOperator operator;
-	private final Criteria[] filters;
+	private final Collection<Criteria> criterias;
 	
-	CriteriaGroup(LogicalOperator operator, Criteria... filters) {
+	CriteriaGroup(LogicalOperator operator, Criteria... criterias) {
+		if(isEmpty(criterias)) {
+			throw new ComposeException("CriteriaGroup requires at least one filter");
+		}
 		this.operator = operator;
-		this.filters = chain(operator, requireAtLeastNArgs(1, filters, CriteriaGroup.class::getSimpleName));
+		this.criterias = chain(operator, criterias);
 	}
 
 	@Override
-	public int prepare(QueryManifest query) {
-		return query.prepareNested(filters);
+	public int prepare(QueryManifest manifest) {
+		return manifest.prepareNested(criterias);
 	}
 	
 	@Override
-	public void build(QueryBuilder query) {
-		query.append("(").appendEach(operator.sql(), filters).append(")");
+	public void build(QueryBuilder builder) {
+		builder.append("(").appendEach(operator.sql(), criterias).append(")");
 	}
 
 	@Override
@@ -41,16 +45,16 @@ public final class CriteriaGroup implements Criteria {
 		return DBObject.toSQL(this);
 	}
 	
-	static Criteria[] chain(LogicalOperator op, Criteria... filters) {
+	static Collection<Criteria> chain(LogicalOperator op, Criteria... filters) {
 		var res = new ArrayList<Criteria>(filters.length);
 		for(var f : filters) {
-			if(f instanceof CriteriaGroup fg && fg.operator == op) {
-				addAll(res, fg.filters);
+			if(f instanceof CriteriaGroup cg && cg.operator == op) {
+				res.addAll(cg.criterias);
 			}
 			else {
 				res.add(f);
 			}
 		}
-		return res.toArray(Criteria[]::new);
+		return unmodifiableCollection(res);
 	}
 }

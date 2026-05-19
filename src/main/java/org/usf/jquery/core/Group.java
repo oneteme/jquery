@@ -1,16 +1,25 @@
 package org.usf.jquery.core;
 
-import lombok.RequiredArgsConstructor;
+import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.Utils.isEmpty;
+
+import java.util.Collection;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor
-public class Group implements DBObject {
+public final class Group implements DBObject {
 	
-	private final Order[] orders;
+	private final Collection<Order> orders;
+
+	public Group(Collection<Order> orders) {
+		if(isEmpty(orders)) {
+			throw new ComposeException("within group requires at least one order");
+		}
+		this.orders = orders;
+	}
 
 	@Override
 	public int prepare(QueryManifest manifest) {
@@ -18,7 +27,7 @@ public class Group implements DBObject {
 	}
 
 	@Override
-	public void build(QueryBuilder query, Object... args) {
-		query.append("ORDER BY ").appendEach(" ", orders);
+	public void build(QueryBuilder builder, Object... args) {
+		builder.append("ORDER BY ").appendEach(SPACE, orders);
 	}
 }

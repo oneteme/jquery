@@ -1,36 +1,41 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.Utils.isEmpty;
 
+import java.util.Collection;
 import java.util.Objects;
-import java.util.stream.Stream;
-
-import lombok.RequiredArgsConstructor;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor
 public final class CaseColumn implements Column {
 
-	private final WhenCase[] whenCases;
+	private final Collection<WhenCase> cases;
+
+	public CaseColumn(Collection<WhenCase> cases) {
+		if(isEmpty(cases)) {			
+			throw new ComposeException("CaseColumn requires at least one when case");
+		}
+		this.cases = cases;
+	}
 	
 	@Override
-	public int prepare(QueryManifest declare) {
-		return declare.prepareNestedOrElse(this, whenCases);
+	public int prepare(QueryManifest manifest) {
+		return manifest.prepareNestedOrElse(cases, this);
 	}
 
 	@Override
-	public void build(QueryBuilder query) {
-		query.withValue() //append filters literally 
-		.append("CASE ").appendEach(SPACE, whenCases).append(" END");
+	public void build(QueryBuilder builder) {
+		builder.withValue()
+		.append("CASE ").appendEach(SPACE, cases).append(" END");
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return Stream.of(whenCases)
+		return cases.stream()
 				.map(WhenCase::getType)
 				.filter(Objects::nonNull) // should have same type
 				.findAny().orElse(null);

@@ -1,52 +1,47 @@
 package org.usf.jquery.core;
 
 import static java.lang.Math.max;
-import static java.util.Arrays.stream;
-import static java.util.stream.Stream.concat;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import lombok.RequiredArgsConstructor;
+import java.util.Collection;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor
 public final class Partition implements DBObject {
 
-	private final Column[] columns;//optional
-	private final  Order[] orders; //optional
+	private final Collection<Column> columns;//optional
+	private final Collection<Order>   orders; //optional
 	
-	@Override
-	public int prepare(QueryManifest query) {
-		return max(query.prepareNested(columns), query.prepareNested(orders));
+	public Partition(Collection<Column> columns, Collection<Order> orders) {
+		if(isEmpty(columns) && isEmpty(orders)) {
+			throw new ComposeException("Partition requires at least one column or order");
+		}
+		this.columns = columns;
+		this.orders = orders;
 	}
 	
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public int prepare(QueryManifest manifest) {
+		return max(manifest.prepareNested(columns), manifest.prepareNested(orders));
+	}
+	
+	@Override
+	public void build(QueryBuilder builder, Object... args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
 		if(!isEmpty(columns)) {
-			query.append("PARTITION BY ").appendEach(SCOMA, columns);
+			builder.append("PARTITION BY ").appendEach(SCOMA, columns);
 		}
 		if(!isEmpty(orders)) {
 			if(!isEmpty(columns)) {
-				query.appendSpace();
+				builder.appendSpace();
 			}
-			query.append("ORDER BY ").appendEach(SCOMA, orders);
+			builder.append("ORDER BY ").appendEach(SCOMA, orders);
 		}
-	}
-	
-	public Partition orders(Order... orders) {
-		if(isEmpty(orders)) {
-			return this;
-		}
-		if(isEmpty(this.orders)) {
-			return new Partition(columns, orders);
-		}
-		return new Partition(columns, concat(stream(this.orders), stream(orders)).toArray(Order[]::new));
 	}
 	
 	@Override
