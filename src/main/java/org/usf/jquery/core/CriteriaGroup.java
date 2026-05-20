@@ -26,12 +26,12 @@ public final class CriteriaGroup implements Criteria {
 	}
 
 	@Override
-	public int prepare(QueryManifest manifest) {
-		return manifest.prepareNested(criterias);
+	public int prepare(QueryAnalyzer manifest) {
+		return manifest.analyzeNested(criterias);
 	}
 	
 	@Override
-	public void build(QueryBuilder builder) {
+	public void build(SqlBuilder builder) {
 		builder.append("(").appendEach(operator.sql(), criterias).append(")");
 	}
 
@@ -42,7 +42,7 @@ public final class CriteriaGroup implements Criteria {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 	
 	static Collection<Criteria> chain(LogicalOperator op, Criteria... filters) {

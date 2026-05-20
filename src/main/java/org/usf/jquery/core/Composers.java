@@ -101,7 +101,7 @@ public interface Composers {
 	
 	private ComposerDefinition<JoinComposer> joinDefinition(JoinType type) {
 		return new ComposerDefinition<>(type.name().toLowerCase()+"Join", JOIN, 
-				args-> new JoinComposer(type, (DBView)args[0]), 
+				args-> new JoinComposer(type, (View)args[0]), 
 				required(VIEW));
 	}
 	
@@ -126,7 +126,7 @@ public interface Composers {
 	default ComposerDefinition<QueryComposer> join(QueryComposer composer){
 		return new ComposerDefinition<>("join", QUERY, 
 				args-> {
-					for(var jc : (JoinsClause[]) args) {
+					for(var jc : (JoinGroup[]) args) {
 						composer.joins(jc.getJoins());
 					}
 					return composer;
@@ -154,7 +154,7 @@ public interface Composers {
 	
 	default ComposerDefinition<QueryComposer> union(QueryComposer composer) {
 		return new ComposerDefinition<>("union", QUERY, 
-				args-> composer.unions((QueryUnion[]) args), 
+				args-> composer.unions((Union[]) args), 
 				arrayOf(UNION, 1));
 	}
 	

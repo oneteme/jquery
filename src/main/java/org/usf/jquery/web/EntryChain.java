@@ -43,7 +43,7 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.DBObject;
+import org.usf.jquery.core.QueryPart;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
@@ -51,7 +51,7 @@ import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.Signature;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.core.ViewJoin;
+import org.usf.jquery.core.Join;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -154,7 +154,7 @@ final class EntryChain {
 	}
 	
 	//[view.]join
-	public ViewJoin[] evalJoin(QueryContext ctx) {
+	public Join[] evalJoin(QueryContext ctx) {
 		try {
 			return hasNext()
 					? ctx.lookupRegisteredView(value)
@@ -166,7 +166,7 @@ final class EntryChain {
 		}
 	}
 	
-	private ViewJoin[] evalJoin(ViewDecorator vd) { 
+	private Join[] evalJoin(ViewDecorator vd) { 
 		var join = vd.joinBuilder(value);
 		if(nonNull(join)) {
 			return build(JOIN_PARAM, join, vd, requireNoNext()); //takes args but not next
@@ -392,7 +392,7 @@ final class EntryChain {
 		});
 	}
 
-	Object[] parseArgs(QueryContext ctx, DBObject col, Signature ps) {
+	Object[] parseArgs(QueryContext ctx, QueryPart col, Signature ps) {
 		int inc = isNull(col) ? 0 : 1;
 		var arr = new Object[isNull(args) ? inc : args.length + inc];
 		if(nonNull(col)) {

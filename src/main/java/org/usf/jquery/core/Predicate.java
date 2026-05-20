@@ -9,12 +9,12 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-public interface Predicate extends DBObject, Chainable<Predicate> {
+public interface Predicate extends QueryPart, Chainable<Predicate> {
 
-	void build(QueryBuilder builder, Object left); // do change method order
+	void build(SqlBuilder builder, Object left); // do change method order
 	
 	@Override
-	default void build(QueryBuilder builder, Object... args) {
+	default void build(SqlBuilder builder, Object... args) {
 		requireNArgs(1, args, Predicate.class::getSimpleName);
 		build(builder, args[0]);
 	}

@@ -31,8 +31,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.DBView;
-import org.usf.jquery.core.TableView;
+import org.usf.jquery.core.View;
+import org.usf.jquery.core.Table;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -69,7 +69,7 @@ public final class YearTableMetadata extends ViewMetadata {
 	}
 		
 	@Override
-	void fetchView(DatabaseMetaData metadata, TableView view, String schema) throws SQLException  {
+	void fetchView(DatabaseMetaData metadata, Table view, String schema) throws SQLException  {
 		tablenames.clear();
 		var dbMap = getColumns().values().stream().collect(toMap(cm-> cm.getName(), ColumnMetadata::reset)); //important! reset columns
 		Set<String> dirtyColumns = new LinkedHashSet<>();
@@ -112,7 +112,7 @@ public final class YearTableMetadata extends ViewMetadata {
 	}
 	
 	@Override
-	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
+	void fetch(DatabaseMetaData metadata, View qr, String schema) throws SQLException {
 		throw new UnsupportedOperationException("query");
 	}
 	

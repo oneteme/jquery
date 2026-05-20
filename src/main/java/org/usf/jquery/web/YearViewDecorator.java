@@ -15,7 +15,7 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.View;
 
 /**
  * 
@@ -30,7 +30,7 @@ public interface YearViewDecorator extends ViewDecorator {
 	ColumnDecorator monthRevision(); //optional
 	
 	@Override
-	default DBView view() {
+	default View view() {
 		var env = currentEnvironment();
 //		return env.cacheView(identity(), ()-> {
 //			var view = env.getDatabase().view(this);

@@ -12,13 +12,13 @@ import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.View;
 import org.usf.jquery.core.DynamicModel;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryExecutor;
 import org.usf.jquery.core.ResultSetMapper;
 import org.usf.jquery.core.RowMapper;
-import org.usf.jquery.core.TableView;
+import org.usf.jquery.core.Table;
 
 /**
  * 
@@ -31,13 +31,13 @@ public interface DatabaseDecorator {
 	
 	String viewName(ViewDecorator vd); //[schema.]table
 	
-	default DBView view(ViewDecorator vd) {
+	default View view(ViewDecorator vd) {
 		var tn = viewName(vd);
 		if(nonNull(tn)){
 		var idx = tn.indexOf('.');
 		return idx == -1
-				? new TableView(requireLegalVariable(tn), null) 
-				: new TableView(
+				? new Table(requireLegalVariable(tn), null) 
+				: new Table(
 							requireLegalVariable(tn.substring(idx+1, tn.length())), //schema
 							requireLegalVariable(tn.substring(0, idx))); //view
 		}

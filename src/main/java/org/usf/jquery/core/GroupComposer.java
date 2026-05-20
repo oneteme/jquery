@@ -2,8 +2,6 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.addAll;
 import static java.util.Collections.unmodifiableCollection;
-import static java.util.Objects.isNull;
-import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -15,9 +13,9 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-public class GroupComposer implements Composer<Group> {
+public final class GroupComposer implements Composer<Group> {
 	
-	private Collection<Order> orders;
+	private Collection<Order> orders = new ArrayList<>();
 	
 	public GroupComposer order(@NonNull Order order) {
 		getOrders().add(order);
@@ -35,17 +33,11 @@ public class GroupComposer implements Composer<Group> {
 	}
 	
 	private Collection<Order> getOrders(){
-		if(isNull(orders)) {
-			orders = new ArrayList<>();
-		}
 		return orders;
 	}
 	
 	@Override
 	public Group compose(Store store) {
-		if(!isEmpty(orders)) {
-			return new Group(unmodifiableCollection(orders));
-		}
-		throw new ComposeException("within group requires at least one order");
+		return new Group(unmodifiableCollection(orders));
 	}
 }

@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlStringBuilder.DOT;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -18,20 +17,20 @@ import lombok.RequiredArgsConstructor;
 public final class AsteriskColumn implements Column {
 	
 	private static final String SYMBOL = "*";
-	private final Collection<DBView> views;
+	private final Collection<View> views; //optional, for example: select t1.* from table1 t1
 	
 	@Override
-	public int prepare(QueryManifest manifest) {
-		if(nonNull(views)) {
+	public int prepare(QueryAnalyzer analyzer) {
+		if(!isEmpty(views)) {
 			for(var v : views) {
-				manifest.from(v); //declare views
+				analyzer.from(v); //declare views
 			}
 		}
 		return SCALAR;
 	}
 	
 	@Override
-	public void build(QueryBuilder builder) {
+	public void build(SqlBuilder builder) {
 		if(!isEmpty(views) && builder.getStore().dialect().supportWilcardPrefix()) {
 			builder.appendEach(SCOMA, views, v-> builder.appendViewAlias(v, DOT).append(SYMBOL));
 		}
@@ -57,6 +56,6 @@ public final class AsteriskColumn implements Column {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

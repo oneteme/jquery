@@ -8,11 +8,12 @@ import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 
 import java.util.Map;
 
+import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.View;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.ViewJoin;
+import org.usf.jquery.core.Join;
 
 import lombok.NonNull;
 
@@ -35,7 +36,7 @@ public interface ViewDecorator {
 		return null; //no criteria by default
 	}
 	
-	default Builder<ViewDecorator, ViewJoin[]> joinBuilder(String name) {
+	default Builder<ViewDecorator, Join[]> joinBuilder(String name) {
 		return null; //no join by default
 	}
 	
@@ -43,14 +44,14 @@ public interface ViewDecorator {
 		return null; //no partition by default
 	}
 	
-	default DBView view() { //takes no args : single instance !?
+	default View view() { //takes no args : single instance !?
 		var env = currentEnvironment();
 		return env.cacheView(identity(), ()-> env.getDatabase().view(this));
 	}
 
 //	default NamedColumn column(@NonNull String id, String... args) //final
 	
-	default NamedColumn column(@NonNull ColumnDecorator cd, String... args) {//final
+	default Column column(@NonNull ColumnDecorator cd, String... args) {//final
 		var name = columnName(cd);
 		if(nonNull(name)) {
 			return view().column(name, cd.type(this), cd.reference(this));
@@ -67,7 +68,7 @@ public interface ViewDecorator {
 				.build(this, args);
 	}
 
-	default ViewJoin[] join(String name, String...args) {
+	default Join[] join(String name, String...args) {
 		return requireNonNull(joinBuilder(name), "joinBuilder")
 				.build(this, args);
 	}

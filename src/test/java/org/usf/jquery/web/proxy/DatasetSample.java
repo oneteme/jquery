@@ -7,7 +7,7 @@ import static org.usf.jquery.web.proxy.StoreManager.getInstance;
 import java.time.LocalDate;
 
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.JoinsClause;
+import org.usf.jquery.core.JoinGroup;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
@@ -48,7 +48,7 @@ interface DatasetSample extends DatasetResource {
     }
 
     @Expose(identity="rattachement", description="")
-    default JoinsClause ratt(LocalDate o2) {
+    default JoinGroup ratt(LocalDate o2) {
     	return null;
     }
 

@@ -19,11 +19,11 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.View;
 import org.usf.jquery.core.Environment.SimpleEnvironment;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.Stores;
-import org.usf.jquery.core.TableView;
+import org.usf.jquery.core.Table;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -59,7 +59,7 @@ public class ViewMetadata {
 			try {
 				var time = currentTimeMillis();
 				log.info("scanning view '{}' metadata...", view);
-				if(view instanceof TableView tab) {
+				if(view instanceof Table tab) {
 					fetchView(metadata, tab, schema);
 				}
 				else {
@@ -78,7 +78,7 @@ public class ViewMetadata {
 		}
 	}
 	
-	void fetchView(DatabaseMetaData metadata, TableView view, String schema) throws SQLException {
+	void fetchView(DatabaseMetaData metadata, Table view, String schema) throws SQLException {
 		schema = view.getSchemaOrElse(schema);
 		try(var tm = metadata.getTables(null, schema, view.getName(), null)) {
 			if(tm.next()) {
@@ -114,7 +114,7 @@ public class ViewMetadata {
 		}
 	}
 
-	void fetch(DatabaseMetaData metadata, DBView qr, String schema) throws SQLException {
+	void fetch(DatabaseMetaData metadata, View qr, String schema) throws SQLException {
 		var query = new QueryComposer().columns(allColumns(qr)).criterias(constant(1).eq(constant(0))); //no data
 		query.compose(Stores.getCurrentStore()).buildQuery(true).execute(rs->{
 			var db = reverseMapKeys();

@@ -11,19 +11,19 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class QueryUnion implements DBObject {
+public final class Union implements QueryPart {
 	
 	private final boolean all;
-	private final QueryView view;
+	private final Query view;
 	
 	@Override
-	public int prepare(QueryManifest manifest) {
+	public int prepare(QueryAnalyzer manifest) {
 		return view.prepare(manifest);
 	}
 	
 	@Override
-	public void build(QueryBuilder builder, Object... args) {
-		requireNoArgs(args, QueryUnion.class::getSimpleName);
+	public void build(SqlBuilder builder, Object... args) {
+		requireNoArgs(args, Union.class::getSimpleName);
 		builder.append(" UNION ");
 		if(all) {
 			builder.append("ALL ");
@@ -33,14 +33,14 @@ public final class QueryUnion implements DBObject {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 	
-	public static QueryUnion union(QueryView view) {
-		return new QueryUnion(false, view);
+	public static Union union(Query view) {
+		return new Union(false, view);
 	}
 	
-	public static QueryUnion unionAll(QueryView view) {
-		return new QueryUnion(true, view);
+	public static Union unionAll(Query view) {
+		return new Union(true, view);
 	}
 }

@@ -1,25 +1,30 @@
 package org.usf.jquery.core;
 
-import lombok.RequiredArgsConstructor;
-
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
 public class ValueColumn implements Column {
 	
 	private final Object value;
 	private final JDBCType type;
+	
+	public ValueColumn(Object value, JDBCType type) {
+		if(value == null || value instanceof QueryPart) {
+			throw new IllegalArgumentException("ValueColumn only accepts non null scalar value");
+		}
+		this.value = value;
+		this.type = type;
+	}
 
 	@Override
-	public int prepare(QueryManifest manifest) {
+	public int prepare(QueryAnalyzer manifest) {
 		return SCALAR;
 	}
 	
 	@Override
-	public void build(QueryBuilder builder) {
+	public void build(SqlBuilder builder) {
 		builder.appendParameter(value);
 	}
 	
@@ -30,6 +35,6 @@ public class ValueColumn implements Column {
 
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

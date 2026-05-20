@@ -2,11 +2,14 @@ package org.usf.jquery.core;
 
 import static java.lang.System.arraycopy;
 import static java.lang.reflect.Array.newInstance;
+import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
@@ -93,4 +96,17 @@ public final class Utils {
 		}
 		throw exceptionSupplier.get();
     }
+    
+    @SafeVarargs
+    public static <T> List<T> toList(T... arr) {
+    	return isEmpty(arr) ? emptyList() : asList(arr);
+    }
+    
+	public static <T> List<T> toList(T[] arr, int from) {
+    	if(!isEmpty(arr)) {
+    		var list = asList(arr);
+    		return from == 0 ? list : list.subList(from, arr.length);
+    	}
+		return emptyList();
+	}
 }

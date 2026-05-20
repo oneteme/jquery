@@ -14,19 +14,19 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-final class WhenCase implements DBObject, Typed {
+final class WhenCase implements QueryPart, Typed {
 	
 	private final Criteria criteria; //optional
 	private final Object result; //then|else
 
 	@Override
-	public int prepare(QueryManifest manifest) {
-		var v = result instanceof DBObject c ? c.prepare(manifest) : SCALAR;
-		return nonNull(criteria) ? Math.max(v, criteria.prepare(manifest)) : v;
+	public int prepare(QueryAnalyzer analyzer) {
+		var v = analyzer.tryAnalyzeNested(result);
+		return nonNull(criteria) ? Math.max(v, criteria.prepare(analyzer)) : v;
 	}
 	
 	@Override
-	public void build(QueryBuilder builder, Object... args) {
+	public void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, WhenCase.class::getSimpleName);
 		(nonNull(criteria) 
 				? builder.append("WHEN ").append(criteria).append(" THEN ") 
@@ -41,6 +41,6 @@ final class WhenCase implements DBObject, Typed {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

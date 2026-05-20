@@ -18,7 +18,7 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.usf.jquery.core.DynamicModel;
-import org.usf.jquery.core.Query;
+import org.usf.jquery.core.SqlQuery;
 import org.usf.jquery.core.QueryExecutor;
 
 import jakarta.servlet.http.HttpServletResponse;
@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class MvcExecutors {
 	
-	private static final Map<String, Query> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
+	private static final Map<String, SqlQuery> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
 	
 	public static QueryExecutor<?> executor(HttpServletResponse res, Optional<String> view) {
 		return switch (view.filter(not(String::isEmpty)).orElse("json")) {

@@ -14,13 +14,13 @@ public final class SimpleCriteria implements Criteria {
 	private final Predicate predicate;
 
 	@Override
-	public int prepare(QueryManifest manifest) {
+	public int prepare(QueryAnalyzer manifest) {
 		var v = predicate.prepare(manifest);
-		return left instanceof DBObject c ? Math.max(v, c.prepare(manifest)) : v;
+		return left instanceof QueryPart c ? Math.max(v, c.prepare(manifest)) : v;
 	}
 	
 	@Override
-	public void build(QueryBuilder builder) {
+	public void build(SqlBuilder builder) {
 		predicate.build(builder, left);
 	}
 
@@ -31,6 +31,6 @@ public final class SimpleCriteria implements Criteria {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

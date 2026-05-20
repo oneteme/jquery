@@ -4,9 +4,9 @@ import static java.util.Objects.isNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.View;
 import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.ViewJoin;
+import org.usf.jquery.core.Join;
 
 import lombok.RequiredArgsConstructor;
 
@@ -21,7 +21,7 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	//do no use @Delegate
 	private final ViewDecorator vd;
 	private final String id;
-	private DBView viewRef;
+	private View viewRef;
 		
 	@Override
 	public String identity() {
@@ -34,7 +34,7 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	}
 	
 	@Override
-	public DBView view() {
+	public View view() {
 		if(isNull(viewRef)) { // do not use env.cache
 			viewRef = currentEnvironment().getDatabase().view(vd); 
 		}
@@ -47,7 +47,7 @@ final class ViewDecoratorWrapper implements ViewDecorator {
 	}
 	
 	@Override
-	public Builder<ViewDecorator, ViewJoin[]> joinBuilder(String name) {
+	public Builder<ViewDecorator, Join[]> joinBuilder(String name) {
 		return vd.joinBuilder(name);
 	}
 	

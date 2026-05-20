@@ -12,7 +12,7 @@ import java.util.Collection;
  * @author u$f
  *
  */
-public final class Partition implements DBObject {
+public final class Partition implements QueryPart {
 
 	private final Collection<Column> columns;//optional
 	private final Collection<Order>   orders; //optional
@@ -26,12 +26,12 @@ public final class Partition implements DBObject {
 	}
 	
 	@Override
-	public int prepare(QueryManifest manifest) {
-		return max(manifest.prepareNested(columns), manifest.prepareNested(orders));
+	public int prepare(QueryAnalyzer manifest) {
+		return max(manifest.analyzeNested(columns), manifest.analyzeNested(orders));
 	}
 	
 	@Override
-	public void build(QueryBuilder builder, Object... args) {
+	public void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
 		if(!isEmpty(columns)) {
 			builder.append("PARTITION BY ").appendEach(SCOMA, columns);
@@ -46,6 +46,6 @@ public final class Partition implements DBObject {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

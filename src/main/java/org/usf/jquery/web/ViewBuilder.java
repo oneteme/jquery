@@ -2,7 +2,7 @@ package org.usf.jquery.web;
 
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.View;
 
 /**
  * 
@@ -10,12 +10,12 @@ import org.usf.jquery.core.DBView;
  *
  */
 @FunctionalInterface
-public interface ViewBuilder extends Builder<DatabaseDecorator, DBView> {
+public interface ViewBuilder extends Builder<DatabaseDecorator, View> {
 
-	DBView build(DatabaseDecorator db);
+	View build(DatabaseDecorator db);
 	
 	@Override
-	default DBView build(DatabaseDecorator parent, String... args) {
+	default View build(DatabaseDecorator parent, String... args) {
 		requireNoArgs(args, ()-> "no args expected");
 		return this.build(parent);
 	}	

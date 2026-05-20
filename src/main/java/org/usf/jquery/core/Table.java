@@ -11,18 +11,18 @@ import lombok.Getter;
  *
  */
 @Getter
-public final class TableView implements DBView {
+public final class Table implements View {
 	
 	private final String name;
 	private final String schema; //optional
 
-	public TableView(String name, String schema) {
+	public Table(String name, String schema) {
 		this.name = requireLegalVariable(name);
 		this.schema = nonNull(schema) ? requireLegalVariable(schema) : null;
 	}
 	
 	@Override
-	public void build(QueryBuilder builder) {
+	public void build(SqlBuilder builder) {
 		var sch = getSchemaOrElse(builder.getStore().name());
 		if(nonNull(sch)) {
 			builder.append(sch + '.');
@@ -36,6 +36,6 @@ public final class TableView implements DBView {
 
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

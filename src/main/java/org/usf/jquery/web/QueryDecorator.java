@@ -7,7 +7,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.QueryView;
+import org.usf.jquery.core.Query;
 
 import lombok.Getter;
 import lombok.NonNull;
@@ -23,7 +23,7 @@ final class QueryDecorator implements ViewDecorator {
 	
 	private final String id;
 	@Getter
-	private final QueryView query; //unmodifiable
+	private final Query query; //unmodifiable
 
 	@Override
 	public String identity() {	
@@ -31,7 +31,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public QueryView view() {
+	public Query view() {
 		return query; //do not use env cache
 	}
 

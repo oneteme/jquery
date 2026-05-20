@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Arrays.asList;
 import static org.usf.jquery.core.JoinType.CROSS;
 import static org.usf.jquery.core.JoinType.FULL;
 import static org.usf.jquery.core.JoinType.INNER;
@@ -8,6 +7,7 @@ import static org.usf.jquery.core.JoinType.LEFT;
 import static org.usf.jquery.core.JoinType.RIGHT;
 import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Utils.toList;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 import java.util.Collection;
@@ -20,13 +20,13 @@ import lombok.Getter;
  *
  */
 @Getter
-public final class ViewJoin implements DBObject {
+public final class Join implements QueryPart {
 	
 	private final JoinType type;
-	private final DBView view;
+	private final View view;
 	private final Collection<Criteria> criterias;
 
-	ViewJoin(JoinType type, DBView view, Collection<Criteria> criterias) {
+	Join(JoinType type, View view, Collection<Criteria> criterias) {
 		if(type != CROSS && isEmpty(criterias)) {
 			throw new ComposeException("Join type " + type + " requires at least one criteria");
 		}
@@ -36,14 +36,14 @@ public final class ViewJoin implements DBObject {
 	}
 	
 	@Override
-	public int prepare(QueryManifest manifest) {
+	public int prepare(QueryAnalyzer manifest) {
 		view.prepare(manifest);
 		return SCALAR;
 	}
 
 	@Override
-	public void build(QueryBuilder builder, Object... args) {
-		requireNoArgs(args, ViewJoin.class::getSimpleName);
+	public void build(SqlBuilder builder, Object... args) {
+		requireNoArgs(args, Join.class::getSimpleName);
 		builder.append(type.name()).append(" JOIN ");
 		if(!builder.isCte(view)) {
 			builder.append(view).appendSpace();
@@ -56,30 +56,30 @@ public final class ViewJoin implements DBObject {
 		
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 	
-	public static ViewJoin innerJoin(DBView view, Criteria... criterias) {
-		return new ViewJoin(INNER, view, asList(criterias));
+	public static Join innerJoin(View view, Criteria... criterias) {
+		return new Join(INNER, view, toList(criterias));
 	}
 	
-	public static ViewJoin leftJoin(DBView view, Criteria... criterias) {
-		return new ViewJoin(LEFT, view, asList(criterias));
+	public static Join leftJoin(View view, Criteria... criterias) {
+		return new Join(LEFT, view, toList(criterias));
 	}
 	
-	public static ViewJoin rightJoin(DBView view, Criteria... criterias) {
-		return new ViewJoin(RIGHT, view, asList(criterias));
+	public static Join rightJoin(View view, Criteria... criterias) {
+		return new Join(RIGHT, view, toList(criterias));
 	}
 
-	public static ViewJoin fullJoin(DBView view, Criteria... criterias) {
-		return new ViewJoin(FULL, view, asList(criterias));
+	public static Join fullJoin(View view, Criteria... criterias) {
+		return new Join(FULL, view, toList(criterias));
 	}
 
-	public static ViewJoin crossJoin(DBView view, Criteria... criterias) {
-		return new ViewJoin(CROSS, view, asList(criterias));
+	public static Join crossJoin(View view, Criteria... criterias) {
+		return new Join(CROSS, view, toList(criterias));
 	}
 
-	public static ViewJoin join(JoinType joinType, DBView view, Criteria... criterias) {
-		return new ViewJoin(joinType, view, asList(criterias));
+	public static Join join(JoinType joinType, View view, Criteria... criterias) {
+		return new Join(joinType, view, toList(criterias));
 	}
 }

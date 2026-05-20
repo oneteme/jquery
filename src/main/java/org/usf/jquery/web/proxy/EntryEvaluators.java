@@ -17,18 +17,17 @@ import org.usf.jquery.core.Column;
 import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.Composer;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.DBView;
 import org.usf.jquery.core.Definition;
 import org.usf.jquery.core.Group;
-import org.usf.jquery.core.JoinsClause;
-import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.Join;
+import org.usf.jquery.core.JoinGroup;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
-import org.usf.jquery.core.QueryView;
+import org.usf.jquery.core.Query;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.core.ViewJoin;
+import org.usf.jquery.core.View;
 import org.usf.jquery.web.EntryParseException;
 import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
@@ -43,11 +42,11 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class EntryEvaluators {
 	
-	public static DBView evaluateView(Entry entry, RequestContext ctx) {
+	public static View evaluateView(Entry entry, RequestContext ctx) {
 		return evaluateView(entry, ctx, false);
 	}
 	
-	public static DBView evaluateView(Entry entry, RequestContext ctx, boolean declare) {
+	public static View evaluateView(Entry entry, RequestContext ctx, boolean declare) {
 		var itr = entry.iterator();
 		var view = evalView(itr, ctx, declare);
 		if(nonNull(view)) {
@@ -59,8 +58,8 @@ public final class EntryEvaluators {
 		}
 		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
 	}
-
-	public static NamedColumn evaluateNamedColumn(Entry entry, RequestContext ctx) {
+	
+	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
 		var col = evalColumn(itr, ctx);
 		if(nonNull(col)) {
@@ -70,19 +69,6 @@ public final class EntryEvaluators {
 				ctx.declareColumn(tag, col);
 				return col.as(tag);
 			}
-			if(col instanceof NamedColumn nc) {
-				return nc;
-			}
-			throw new EntryParseException("expected tag after : " + entry);
-		}
-		throw new NoSuchResourceException("no such named column : " + itr.peekNext().getValue());
-	}
-	
-	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
-		var itr = entry.iterator();
-		var col = evalColumn(itr, ctx);
-		if(nonNull(col)) {
-			assertLastEntry(itr, false);
 			return col;
 		}
 		throw new NoSuchResourceException("no such column : " + itr.peekNext().getValue());
@@ -111,9 +97,9 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such order : " + itr.peekNext().getValue());
 	}
 
-	public static JoinsClause evaluateJoin(Entry entry, RequestContext ctx) {
+	public static JoinGroup evaluateJoin(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var join = lookupResource(itr, JoinsClause.class, ctx, (v, e)-> evalJoin(e, v, ctx));
+		var join = lookupResource(itr, JoinGroup.class, ctx, (v, e)-> evalJoin(e, v, ctx));
 		if(nonNull(join)) {
 			assertLastEntry(itr, false);
 			return join;
@@ -157,10 +143,7 @@ public final class EntryEvaluators {
 			view = evalQuery(itr, view, ctx);
 		}
 		if(view instanceof QueryResource query) {
-			if(query.getQuery().getSelects().length == 1) {
-				return query.getQuery().asColumn();
-			}
-			throw new EntryParseException(""); //TODO
+			return query.getQuery().asColumn();
 		}
 		return null;
 	}
@@ -231,8 +214,8 @@ public final class EntryEvaluators {
 			catch (Exception e) {
 				throw new EntryParseException("cannot parse query arguments ", e);
 			}
-			if(res instanceof QueryView query) {
-				if(query.getSelects().length > 0) {
+			if(res instanceof Query query) {
+				if(isEmpty(query.getSelects())) {
 					return new QueryResource(query);
 				}
 				throw new EntryParseException("query must have at least one column");
@@ -276,7 +259,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 	
-	static JoinsClause evalJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+	static JoinGroup evalJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
 		var v = itr.hasNext() ? itr.peekNext().getValue() : null;
 		if(nonNull(v) && v.matches("(inner|left|right|full|cross)Join")) {
 			Object res = null;
@@ -286,8 +269,8 @@ public final class EntryEvaluators {
 			catch (Exception e) {
 				throw new EntryParseException("cannot parse join arguments ", e);
 			}
-			if(res instanceof ViewJoin join) {
-				return new JoinsClause(join);
+			if(res instanceof Join join) {
+				return new JoinGroup(join);
 			}
 			throw new EntryParseException("invalid join definition");
 		}

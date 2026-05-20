@@ -19,7 +19,6 @@ import java.util.Map;
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.Dialect;
-import org.usf.jquery.core.H2Dialect;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

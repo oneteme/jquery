@@ -1,11 +1,11 @@
 package org.usf.jquery.core;
 
-import static java.util.Arrays.asList;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
 import static org.usf.jquery.core.Utils.appendFirst;
+import static org.usf.jquery.core.Utils.toList;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -18,12 +18,12 @@ import org.usf.jquery.core.JavaType.Typed;
  * @author u$f
  *
  */
-public interface Column extends DBObject, Typed {
+public interface Column extends QueryPart, Typed {
 	
-	void build(QueryBuilder builder);
+	void build(SqlBuilder builder);
 	
 	@Override
-	default void build(QueryBuilder builder, Object... args) {
+	default void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, Column.class::getSimpleName);
 		var ref = builder.aliasFor(this);
 		if(nonNull(ref)) {
@@ -432,7 +432,7 @@ public interface Column extends DBObject, Typed {
 	//scope functions
 	
 	default Column over(Column[] cols, Order[] orders) {
-		return over(new Partition(asList(cols), asList(orders)));
+		return over(new Partition(toList(cols), toList(orders)));
 	}
 	
 	default Column over(Partition part) {
@@ -440,7 +440,7 @@ public interface Column extends DBObject, Typed {
 	}
 	
 	default Column within(Order... orders) {
-		return within(new Group(asList(orders)));
+		return within(new Group(toList(orders)));
 	}
 	
 	default Column within(Group group) {
@@ -491,7 +491,7 @@ public interface Column extends DBObject, Typed {
 		return getDialect().ctimestamp().invoke();
 	}
 
-	static Column countAll(DBView... view) {
+	static Column countAll(View... view) {
 		return getDialect().count().invoke(allColumns(view));
 	}
 	
@@ -513,11 +513,11 @@ public interface Column extends DBObject, Typed {
 		return new ViewColumn(value, null, null, null);
 	}
 
-	static ViewColumn column(String value, DBView view) {
+	static ViewColumn column(String value, View view) {
 		return new ViewColumn(value, view, null, null);
 	}
 
-	static ViewColumn column(String value, DBView view, JDBCType type) {
+	static ViewColumn column(String value, View view, JDBCType type) {
 		return new ViewColumn(value, view, type, null);
 	}
 
@@ -525,12 +525,12 @@ public interface Column extends DBObject, Typed {
 		return new ViewColumn(value, null, type, null);
 	}
 	
-	static ViewColumn column(String value, DBView view, JDBCType type, String tag) {
+	static ViewColumn column(String value, View view, JDBCType type, String tag) {
 		return new ViewColumn(value, view, type, tag);
 	}
 
-	static AsteriskColumn allColumns(DBView... views) {
-		return new AsteriskColumn(nonNull(views) ? asList(views) : null);
+	static AsteriskColumn allColumns(View... views) {
+		return new AsteriskColumn(nonNull(views) ? toList(views) : null);
 	}
 	
 	static ValueColumn constant(Object value) {

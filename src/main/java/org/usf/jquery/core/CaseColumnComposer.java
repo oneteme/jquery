@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.util.Collections.unmodifiableCollection;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -19,7 +18,7 @@ import lombok.RequiredArgsConstructor;
 public class CaseColumnComposer implements Composer<CaseColumn> {
 
 	private final Column column;
-	private Collection<WhenCase> cases;
+	private final Collection<WhenCase> cases = new ArrayList<>();
 	
 	public CaseColumnComposer() {
 		this(null);
@@ -48,18 +47,13 @@ public class CaseColumnComposer implements Composer<CaseColumn> {
 		return compose(null);
 	}
 	
-	private Collection<WhenCase> getCases() {
-		if(isNull(cases)) {
-			cases = new ArrayList<>();
-		}
+
+	private Collection<WhenCase> getCases(){
 		return cases;
 	}
-	
+		
 	@Override
 	public CaseColumn compose(Store store) {
-		if(!isEmpty(cases)) {			
-			return new CaseColumn(unmodifiableCollection(cases));
-		}
-		throw new ComposeException("case column requires at least one when case");
+		return new CaseColumn(unmodifiableCollection(cases));
 	}
 }

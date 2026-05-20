@@ -23,12 +23,12 @@ public final class CaseColumn implements Column {
 	}
 	
 	@Override
-	public int prepare(QueryManifest manifest) {
-		return manifest.prepareNestedOrElse(cases, this);
+	public int prepare(QueryAnalyzer analyzer) {
+		return analyzer.analyzeNested(cases, this);
 	}
 
 	@Override
-	public void build(QueryBuilder builder) {
+	public void build(SqlBuilder builder) {
 		builder.withValue()
 		.append("CASE ").appendEach(SPACE, cases).append(" END");
 	}
@@ -43,6 +43,6 @@ public final class CaseColumn implements Column {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

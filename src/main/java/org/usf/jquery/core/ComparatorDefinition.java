@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.lang.String.format;
-import static java.util.Arrays.copyOfRange;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 
 import lombok.Getter;
@@ -29,7 +28,7 @@ public final class ComparatorDefinition extends Definition<Criteria> {
 	protected Criteria internalInvoke(JavaType type, Object... args) {
 		if(type == BOOLEAN) {
 			return new SimpleCriteria(args[0], 
-					new SimplePredicate(comparator, copyOfRange(args, 1, args.length))); // no type
+					new SimplePredicate(comparator, args, 1)); // no type
 		}
 		throw new IllegalStateException(format("comparator '%s' cannot be applied to type %s", this, type));
 	}

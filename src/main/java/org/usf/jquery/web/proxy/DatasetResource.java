@@ -1,6 +1,6 @@
 package org.usf.jquery.web.proxy;
 
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.View;
 
 /**
  * 
@@ -9,5 +9,5 @@ import org.usf.jquery.core.DBView;
  */
 public interface DatasetResource extends Resource {
 	
-	DBView getView();
+	View getView();
 }

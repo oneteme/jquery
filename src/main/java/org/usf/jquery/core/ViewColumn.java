@@ -16,21 +16,21 @@ import lombok.RequiredArgsConstructor;
 public class ViewColumn implements Column {
 
 	private final String name;
-	private final DBView view; //optional
+	private final View view; //optional
 	private final JDBCType type; //optional
 	private final String tag;  //optional
 
 	@Override
-	public int prepare(QueryManifest manifest) {
+	public int prepare(QueryAnalyzer analyzer) {
 		if(nonNull(view)) {
-			manifest.from(view);
+			analyzer.from(view);
 		}
-		manifest.groupBy(this);
+		analyzer.groupBy(this);
 		return DIMENSION;
 	}
 	
 	@Override
-	public void build(QueryBuilder builder) {
+	public void build(SqlBuilder builder) {
 		if(nonNull(view)) {
 			builder.appendViewAlias(view, DOT);
 		}
@@ -39,6 +39,6 @@ public class ViewColumn implements Column {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

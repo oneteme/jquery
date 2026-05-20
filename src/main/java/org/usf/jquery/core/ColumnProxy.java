@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.Arrays.asList;
-import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Utils.toList;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -14,24 +13,23 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public final class ColumnProxy implements Column {
 
-	//do not @Delegate
 	private final Column column;
 	private final JDBCType type; //optional
 	private final String tag; //optional
 	
 	@Override
-	public int prepare(QueryManifest manifest) {
-		return manifest.prepareNestedOrElse(asList(column), this);
+	public int prepare(QueryAnalyzer manifest) {
+		return manifest.analyzeNested(toList(column), this);
 	}
 
 	@Override
-	public void build(QueryBuilder builder) {
+	public void build(SqlBuilder builder) {
 		builder.append(column);
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return nonNull(type) ? type : column.getType();
+		return type;
 	}
 
 	@Override
@@ -41,6 +39,6 @@ public final class ColumnProxy implements Column {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

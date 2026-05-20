@@ -6,10 +6,10 @@ package org.usf.jquery.core;
  *
  */
 @FunctionalInterface
-public interface Invocable extends DBObject {
+public interface Invocable extends QueryPart {
 	
 	@Override
-	default int prepare(QueryManifest composer) {
+	default int prepare(QueryAnalyzer composer) {
 		throw new UnsupportedOperationException("compose operator");
 	}
 }

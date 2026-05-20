@@ -15,13 +15,13 @@ import lombok.NonNull;
  * @author u$f
  * 
  */
-public class JoinComposer implements Composer<ViewJoin> {
+public class JoinComposer implements Composer<Join> {
 	
 	private final JoinType type;
-	private final DBView view;
+	private final View view;
 	private Collection<Criteria> criterias; //optional for cross join
 
-	public JoinComposer(JoinType type, DBView view) {
+	public JoinComposer(JoinType type, View view) {
 		this.type = type;
 		this.view = view;
 	}
@@ -42,15 +42,15 @@ public class JoinComposer implements Composer<ViewJoin> {
 	}
 	
 	private Collection<Criteria> getCriterias(){
-		if(isNull(this.criterias)) {
-			this.criterias = new ArrayList<>();
+		if(isNull(criterias)) {
+			criterias = new ArrayList<>();
 		}
 		return criterias;
 	}
 	
 	@Override
-	public ViewJoin compose(Store store) {
-		return new ViewJoin(type, view, 
+	public Join compose(Store store) {
+		return new Join(type, view, 
 				nonNull(criterias) ? unmodifiableCollection(criterias) : null);
 	}
 }

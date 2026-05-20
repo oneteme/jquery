@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.util.Collections.unmodifiableCollection;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -29,12 +28,12 @@ public final class PredicateGroup implements Predicate {
 	}
 	
 	@Override
-	public int prepare(QueryManifest manifest) {
-		return manifest.prepareNested(predicates);
+	public int prepare(QueryAnalyzer manifest) {
+		return manifest.analyzeNested(predicates);
 	}
 
 	@Override
-	public void build(QueryBuilder builder, Object operand) {
+	public void build(SqlBuilder builder, Object operand) {
 		builder.append("(").appendEach(operator.sql(), predicates, e-> e.build(builder, operand)).append(")");
 	}
 	
@@ -45,7 +44,7 @@ public final class PredicateGroup implements Predicate {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this, Column.column("$item"));
+		return QueryPart.toSQL(this, Column.column("$item"));
 	}
 
 	static Collection<Predicate> chain(LogicalOperator op, @NonNull Predicate... filters) {

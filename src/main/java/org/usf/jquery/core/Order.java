@@ -14,18 +14,18 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class Order implements DBObject {
+public final class Order implements QueryPart {
 
 	private final Column column;
 	private final OrderType type;
 	
 	@Override
-	public int prepare(QueryManifest declare) {
+	public int prepare(QueryAnalyzer declare) {
 		return column.prepare(declare);
 	}
 	
 	@Override
-	public void build(QueryBuilder builder, Object... args) {
+	public void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, Order.class::getSimpleName);
 		builder.append(column);
 		if(nonNull(type)) {
@@ -35,6 +35,6 @@ public final class Order implements DBObject {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

@@ -22,7 +22,7 @@ public interface QueryExecutor2 {
 
 	static final Logger log = getLogger(QueryExecutor.class);
 	
-	default <T> T execute(Query query, ResultSetMapper<T> mapper, DataSource ds) {
+	default <T> T execute(SqlQuery query, ResultSetMapper<T> mapper, DataSource ds) {
 		log.debug("preparing query: {}", query.sql());
 		try(var cnx = ds.getConnection(); 
 			var ps = cnx.prepareStatement(query.sql())){

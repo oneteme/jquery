@@ -34,7 +34,7 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.DBView;
+import org.usf.jquery.core.View;
 import org.usf.jquery.core.Environment;
 import org.usf.jquery.core.JQueryException;
 import org.usf.jquery.core.Provider;
@@ -68,7 +68,7 @@ public final class WebEnvironment implements Environment {
 	private final String schema; // optional
 	private DatabaseMetadata metadata = NO_META; // optional
 	//execution context
-	private final Map<String, DBView> viewRefCache = new LinkedHashMap<>();
+	private final Map<String, View> viewRefCache = new LinkedHashMap<>();
 	private final ThreadLocal<List<QueryComposer>> stack = withInitial(ArrayList::new);
 	
 //	private final Map<String, TypedOperator> operators = null
@@ -130,7 +130,7 @@ public final class WebEnvironment implements Environment {
 	}
 
 	/** assume unique instance of DBView */
-	DBView cacheView(String name, Supplier<DBView> orElse) {
+	View cacheView(String name, Supplier<View> orElse) {
 		return viewRefCache.computeIfAbsent(name, k-> orElse.get());
 	}
 

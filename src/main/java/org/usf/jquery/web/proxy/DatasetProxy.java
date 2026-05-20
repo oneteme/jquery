@@ -9,7 +9,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.Optional.ofNullable;
 import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
-import static org.usf.jquery.core.DBObject.toSQL;
+import static org.usf.jquery.core.QueryPart.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.datasetMetadata;
 import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
@@ -21,11 +21,11 @@ import javax.sql.DataSource;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.DBView;
-import org.usf.jquery.core.JoinsClause;
+import org.usf.jquery.core.JoinGroup;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.TableView;
+import org.usf.jquery.core.Table;
+import org.usf.jquery.core.View;
 import org.usf.jquery.core.ViewColumn;
 
 /**
@@ -35,10 +35,10 @@ import org.usf.jquery.core.ViewColumn;
  */
 final class DatasetProxy extends ResourceProxy {
 
-	private final DBView view;
+	private final View view;
 	private final DatasetMetadata metadata;
 	
-	DatasetProxy(DBView view, Map<String, Method> resourceMap, DatasetMetadata metadata) {
+	DatasetProxy(View view, Map<String, Method> resourceMap, DatasetMetadata metadata) {
 		super(resourceMap);
 		this.view = view;
 		this.metadata = metadata;
@@ -62,7 +62,7 @@ final class DatasetProxy extends ResourceProxy {
 	
 	@Override
 	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) {
-		if(method.getReturnType() == DBView.class && method.getParameterCount() == 0 && method.getName().equals("getView")) {
+		if(method.getReturnType() == View.class && method.getParameterCount() == 0 && method.getName().equals("getView")) {
 			return view;
 		}
 		var type = method.getReturnType();
@@ -74,7 +74,7 @@ final class DatasetProxy extends ResourceProxy {
 		if(Criteria.class.isAssignableFrom(type)) { //filter first (extends Column)
 			throw new UnsupportedOperationException("not implemented");
 		}
-		if(JoinsClause.class.isAssignableFrom(type)) {
+		if(JoinGroup.class.isAssignableFrom(type)) {
 			throw new UnsupportedOperationException("not implemented");
 		}
 		if(Partition.class.isAssignableFrom(type)) {
@@ -113,7 +113,7 @@ final class DatasetProxy extends ResourceProxy {
 	static <T extends DatasetResource> T createDataset(Class<T> type, Bind bind, String store, DataSource ds) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
-			case REF-> new TableView(bind.value(), store);
+			case REF-> new Table(bind.value(), store);
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
@@ -126,7 +126,7 @@ final class DatasetProxy extends ResourceProxy {
 							Criteria.class.isAssignableFrom(c) || 
 							c == Order.class || 
 							c == Partition.class||
-							c == JoinsClause.class;
+							c == JoinGroup.class;
 				}
 			});
 			var cols = stream(type.getDeclaredMethods())

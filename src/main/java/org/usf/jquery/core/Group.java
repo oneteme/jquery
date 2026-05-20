@@ -1,5 +1,6 @@
 package org.usf.jquery.core;
 
+import static org.usf.jquery.core.QueryAnalyzer.IGNORE_GROUPS;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -10,7 +11,7 @@ import java.util.Collection;
  * @author u$f
  *
  */
-public final class Group implements DBObject {
+public final class Group implements QueryPart {
 	
 	private final Collection<Order> orders;
 
@@ -22,12 +23,12 @@ public final class Group implements DBObject {
 	}
 
 	@Override
-	public int prepare(QueryManifest manifest) {
-		return manifest.ignoreGroups(d-> d.prepareNested(orders));
+	public int prepare(QueryAnalyzer manifest) {
+		return manifest.with(IGNORE_GROUPS).analyzeNested(orders);
 	}
 
 	@Override
-	public void build(QueryBuilder builder, Object... args) {
+	public void build(SqlBuilder builder, Object... args) {
 		builder.append("ORDER BY ").appendEach(SPACE, orders);
 	}
 }

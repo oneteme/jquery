@@ -27,8 +27,8 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.usf.jquery.core.Criteria;
+import org.usf.jquery.core.Query;
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.core.QueryView;
 import org.usf.jquery.web.ResourceAccessException;
 
 import lombok.NonNull;
@@ -78,8 +78,8 @@ public interface QueryInterpreter {
 	default void parseViews(String[] parameters, QueryComposer query, RequestContext ctx) { //ctes
 		if(!isEmpty(parameters)) {
 			parse(parameters).map(e-> evaluateView(e, ctx, true))
-				.<QueryView>mapMulti((v,cons)-> {
-					if(v instanceof QueryView q) {
+				.<Query>mapMulti((v,cons)-> {
+					if(v instanceof Query q) {
 						cons.accept(q);
 					}
 				}).forEach(query::ctes);

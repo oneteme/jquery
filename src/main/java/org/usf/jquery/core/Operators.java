@@ -26,6 +26,7 @@ import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.TypeResolver.firstArgType;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.core.Utils.toList;
 
 /**
  * 
@@ -397,7 +398,7 @@ public interface Operators {
 	
 	public static OperatorDefinition function(TypeResolver type, String name, OperatorKind kind, Parameter... parameters) {
 		return new OperatorDefinition(name, type, kind,
-				(builder,args)-> builder.append(name).append("(").appendParameters(SCOMA, args, 0).append(")"),
+				(builder,args)-> builder.append(name).append("(").appendParameters(SCOMA, toList(args)).append(")"),
 				parameters);
 	}
 	
@@ -415,12 +416,13 @@ public interface Operators {
 			throw new IllegalArgumentException(format("'cast(%s)' must have at least one required parameter", target));
 		}
 		return new OperatorDefinition(target, type, CAST,
-				(builder,args)-> builder.append("CAST").appendParenthesis(()-> {
-					builder.appendParameter(args[0]).appendAs().append(target);
+				(builder,args)-> {
+					builder.append("CAST").append("(").appendParameter(args[0]).appendAs().append(target);
 					if(args.length > 1) { //varchar | decimal
-						builder.append("(").appendParameters(SCOMA, args, 1).append(")");
+						builder.append("(").appendParameters(SCOMA, toList(args, 1)).append(")");
 					}
-				}), 
+					builder.append(")");
+				}, 
 				parameters);
 	}
 
@@ -443,7 +445,7 @@ public interface Operators {
 		}
 		return new OperatorDefinition(name, resolver, SCOPE, 
 				(builder,args)-> builder.appendParameter(args[0]).appendSpace()
-				.append(name).append("(").appendParameters(SCOMA, args, 1).append(")"), 
+				.append(name).append("(").appendParameters(SCOMA, toList(args, 1)).append(")"), 
 				parameters);
 	}
 }
