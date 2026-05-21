@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.SqlStringBuilder.DOT;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -32,7 +31,7 @@ public class ViewColumn implements Column {
 	@Override
 	public void build(SqlBuilder builder) {
 		if(nonNull(view)) {
-			builder.appendViewAlias(view, DOT);
+			builder.appendViewAlias(view, SqlBuilder.DOT);
 		}
 		builder.append(name);
 	}

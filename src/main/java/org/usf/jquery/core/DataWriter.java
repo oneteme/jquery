@@ -69,7 +69,7 @@ public interface DataWriter {
 
 		@Override
 		public void writeLine() throws IOException {
-			writeLine(EMPTY);
+			writeLine("");
 		}
 		
 		@Override

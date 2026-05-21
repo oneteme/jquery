@@ -6,7 +6,6 @@ import static org.usf.jquery.core.LogicalOperator.AND;
 import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.TypeResolver.firstArgType;
 import static org.usf.jquery.core.Utils.toList;
 
@@ -148,7 +147,7 @@ public interface Comparators {
 	static ComparatorDefinition inComparator(final String name) {
 		return new ComparatorDefinition(name, 
 				(builder,args)-> builder.appendParameter(args[0]).appendSpace().append(name)
-				.append("(").appendParameters(SCOMA, toList(args, 1), true).append(")"), 
+				.append("(").appendParameters(SqlBuilder.SCOMA, toList(args, 1), true).append(")"), 
 				required(), required(firstArgType()), varargs(firstArgType()));
 	}
 

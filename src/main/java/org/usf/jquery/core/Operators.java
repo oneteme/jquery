@@ -23,7 +23,7 @@ import static org.usf.jquery.core.OperatorKind.WINDOW;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.SqlBuilder.SCOMA;
 import static org.usf.jquery.core.TypeResolver.firstArgType;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.toList;
@@ -419,7 +419,7 @@ public interface Operators {
 				(builder,args)-> {
 					builder.append("CAST").append("(").appendParameter(args[0]).appendAs().append(target);
 					if(args.length > 1) { //varchar | decimal
-						builder.append("(").appendParameters(SCOMA, toList(args, 1)).append(")");
+						builder.append("(").appendParameters(SqlBuilder.SCOMA, toList(args, 1)).append(")");
 					}
 					builder.append(")");
 				}, 
@@ -445,7 +445,7 @@ public interface Operators {
 		}
 		return new OperatorDefinition(name, resolver, SCOPE, 
 				(builder,args)-> builder.appendParameter(args[0]).appendSpace()
-				.append(name).append("(").appendParameters(SCOMA, toList(args, 1)).append(")"), 
+				.append(name).append("(").appendParameters(SqlBuilder.SCOMA, toList(args, 1)).append(")"), 
 				parameters);
 	}
 }

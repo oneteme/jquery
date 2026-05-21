@@ -4,8 +4,6 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.TypedArg.arg;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -43,6 +41,10 @@ public final class SqlBuilder {
 	@Setter
 	private boolean useReference;
 
+	public static final String DOT = ".";
+	public static final String SPACE = " ";
+	public static final String SCOMA  = "," + SPACE;
+
 	public boolean isCte(View view) {
 		return ctes.containsKey(view) || overViews.containsKey(view);
 	}
@@ -65,7 +67,7 @@ public final class SqlBuilder {
 	}
 
 	public SqlBuilder appendSpace() {
-		return append(SPACE);
+		return append(SqlBuilder.SPACE);
 	}
 
 	public SqlBuilder appendAs() {
@@ -87,11 +89,22 @@ public final class SqlBuilder {
 		return this;
 	}
 
+	public SqlBuilder append(boolean test, char c) {
+		if(test) {
+			sql.append(c);
+		}
+		return this;
+	}
+
 	public SqlBuilder append(QueryPart o) {
 		o.build(this);
 		return this;
 	}
-
+	
+	public char lastChar() {
+		return sql.isEmpty() ? 0 : sql.charAt(sql.length() - 1);
+	}
+	
 	public SqlBuilder appendParameter(Object o) {
 		return appendParameter(o, false);
 	}
@@ -110,7 +123,7 @@ public final class SqlBuilder {
 		if(o instanceof Number || o instanceof Boolean){
 			return append(o.toString());
 		} 
-		return append(nonNull(o) ? quote(o.toString()) : "null");   //TD : format value using dialect if possible
+		return append(nonNull(o) ? '\''+o.toString()+'\'' : "null");   //TD : format value using dialect if possible
 	}
 	
 	public SqlBuilder appendParameters(String delimiter, Collection<?> arr) {

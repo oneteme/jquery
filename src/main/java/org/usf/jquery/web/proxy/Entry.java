@@ -4,7 +4,6 @@ import static java.util.Arrays.stream;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
-import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.web.proxy.EntryParser.TokenKind.TXT;
 import static org.usf.jquery.web.proxy.EntryParser.TokenKind.VAR;
 
@@ -78,7 +77,7 @@ public final class Entry {
 	public String toString() {
 		var s = ""; // null == EMPTY
 		if(nonNull(value)) {
-			s += kind == TXT ? doubleQuote(value) : value;
+			s += kind == TXT ? '"' + value + '"' : value;
 		}
 		if(nonNull(args)){
 			s += stream(args).map(Entry::toString).collect(joining(",", "(", ")"));

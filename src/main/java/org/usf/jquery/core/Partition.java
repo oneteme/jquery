@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.lang.Math.max;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
@@ -34,13 +33,13 @@ public final class Partition implements QueryPart {
 	public void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
 		if(!isEmpty(columns)) {
-			builder.append("PARTITION BY ").appendEach(SCOMA, columns);
+			builder.append("PARTITION BY ").appendEach(SqlBuilder.SCOMA, columns);
 		}
 		if(!isEmpty(orders)) {
 			if(!isEmpty(columns)) {
 				builder.appendSpace();
 			}
-			builder.append("ORDER BY ").appendEach(SCOMA, orders);
+			builder.append("ORDER BY ").appendEach(SqlBuilder.SCOMA, orders);
 		}
 	}
 	

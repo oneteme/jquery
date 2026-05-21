@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.SqlStringBuilder.DOT;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
+import static org.usf.jquery.core.SqlBuilder.DOT;
+import static org.usf.jquery.core.SqlBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Collection;

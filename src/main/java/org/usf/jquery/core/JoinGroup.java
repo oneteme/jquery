@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.toList;
 
@@ -32,7 +31,7 @@ public final class JoinGroup implements QueryPart {
 
 	@Override
 	public void build(SqlBuilder builder, Object... args) {
-		builder.appendEach(SPACE, joins);
+		builder.appendEach(SqlBuilder.SPACE, joins);
 	}
 	
 	public static JoinGroup joins(Join... joins) {

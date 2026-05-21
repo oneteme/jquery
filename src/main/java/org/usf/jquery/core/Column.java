@@ -27,7 +27,7 @@ public interface Column extends QueryPart, Typed {
 		requireNoArgs(args, Column.class::getSimpleName);
 		var ref = builder.aliasFor(this);
 		if(nonNull(ref)) {
-			builder.append(ref);
+			builder.append(builder.getStore().dialect().suroundColumnAlias(ref));
 		}
 		else {
 			build(builder);

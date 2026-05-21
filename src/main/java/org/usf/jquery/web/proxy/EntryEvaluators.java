@@ -50,9 +50,12 @@ public final class EntryEvaluators {
 		var itr = entry.iterator();
 		var view = evalView(itr, ctx, declare);
 		if(nonNull(view)) {
-			assertLastEntry(itr, declare);
+			assertLastEntry(itr, true);
 			if(declare) {
-				ctx.declareView(requireTag(itr.get()), view);
+				var tag = itr.get().getTag();
+				if(nonNull(tag)) {
+					ctx.declareView(requireTag(itr.get()), view);
+				}
 			}
 			return view.getView();
 		}
@@ -66,8 +69,10 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
-				ctx.declareColumn(tag, col);
-				return col.as(tag);
+				col = col.as(tag);
+			}
+			if(nonNull(col.getTag())) {
+				ctx.declareColumn(col.getTag(), col);
 			}
 			return col;
 		}

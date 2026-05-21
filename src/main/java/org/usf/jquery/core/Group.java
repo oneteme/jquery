@@ -1,7 +1,7 @@
 package org.usf.jquery.core;
 
 import static org.usf.jquery.core.QueryAnalyzer.IGNORE_GROUPS;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
+import static org.usf.jquery.core.SqlBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Collection;

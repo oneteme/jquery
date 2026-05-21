@@ -3,9 +3,9 @@ package org.usf.jquery.core;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.SqlBuilder.SCOMA;
+import static org.usf.jquery.core.SqlBuilder.SPACE;
 import static org.usf.jquery.core.SqlBuilder.create;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Collection;
@@ -57,7 +57,10 @@ public class Query implements View {
 
 	@Override
 	public void build(SqlBuilder builder) {
-		buildClauses(builder.subQuery(this)); //build sub query without ctes
+		var suround = '(' != builder.lastChar();
+		builder.append(suround, '(');
+		buildClauses(builder.subQuery(this));
+		builder.append(suround, ')');
 	}
 
 	public SqlQuery build() {
@@ -103,7 +106,7 @@ public class Query implements View {
     	builder.append(SPACE).appendEach(SCOMA, map.entrySet(), o-> {
     		builder.append(o.getKey());
     		if(nonNull(o.getValue())) { //e.g AsteriskColumn
-    			builder.appendAs().append(o.getValue());
+    			builder.appendAs().append(store.dialect().suroundColumnAlias(o.getValue()));
     		}
     	});
 	}

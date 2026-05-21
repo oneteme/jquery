@@ -122,6 +122,10 @@ public class Dialect implements Composers, Operators, Comparators {
 		return true;
 	}
 	
+	public String suroundColumnAlias(String alias) {
+		return '"'+alias+'"';
+	}
+	
 	public static Dialect getDialect() {		
 		var store = getCurrentStore();
 		return nonNull(store) ? store.dialect() : DEFAULT_DIALECT;
