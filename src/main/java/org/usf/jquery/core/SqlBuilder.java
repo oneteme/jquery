@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.SqlStringBuilder.SPACE;
 import static org.usf.jquery.core.SqlStringBuilder.quote;
@@ -35,11 +34,11 @@ public final class SqlBuilder {
 
 	@Getter
 	private final Store store;
-	private final StringBuilder query;
+	private final StringBuilder sql;
+	private final List<TypedArg> args;
 	private final Map<Query, String> ctes;
 	private final Map<View, String> views;
 	private final Map<Column, String> columns;
-	private final List<TypedArg> args;
 	private final Map<View, Query> overViews;
 	@Setter
 	private boolean useReference;
@@ -74,17 +73,17 @@ public final class SqlBuilder {
 	}
 
 	public SqlBuilder append(String v) {
-		query.append(v);
+		sql.append(v);
 		return this;
 	}
 
 	public SqlBuilder append(int n) {
-		query.append(n);
+		sql.append(n);
 		return this;
 	}
 
 	public SqlBuilder append(char c) {
-		query.append(c);
+		sql.append(c);
 		return this;
 	}
 
@@ -131,7 +130,7 @@ public final class SqlBuilder {
 			var it = arr.iterator();
 			cons.accept(it.next());
 			while(it.hasNext()) {
-				query.append(delimiter);
+				sql.append(delimiter);
 				cons.accept(it.next());
 			}
 		}
@@ -139,17 +138,16 @@ public final class SqlBuilder {
 	}
 
 	public SqlBuilder withValue() { //inherit schema, prefix, views but not args
-		return new SqlBuilder(store, query, ctes, views, columns, null, overViews);
+		return new SqlBuilder(store, sql, null, ctes, views, columns, overViews);
 	}
 
 	public SqlBuilder subQuery(Query query) {
-//		var s = prefix + "_s";
-//		var vMap = viewAlias(s, views);
-//		if(!isEmpty(overview)) {
-//			overview.forEach((k,v)-> vMap.put(k, ctes.get(v))); //override or add
-//		}
-//		return new SqlBuilder(store, s, query, ctes, vMap, args, overview);
-		return null;
+		var sMap = columnAlias("unnamed_", query.getSelects());
+		var cMap = isCte(query) ? cteAlias(query.getCtes()) : this.ctes; //inherit ctes if sub query is overview
+		var vMap = viewAlias(query.getFroms(), query.getJoins());
+		var ovr  = isCte(query) ? overview(cMap, vMap, query.getOverView()) : overViews; //inherit overview if sub query is overview
+		return new SqlBuilder(query.getStore(), sql, args, 
+				unmodifiableMap(cMap), unmodifiableMap(vMap), unmodifiableMap(sMap), unmodifiableMap(ovr));
 	}
 
 	private boolean isParameterized() {
@@ -161,48 +159,61 @@ public final class SqlBuilder {
 	}
 
 	public SqlQuery build() {
-		return new SqlQuery(store, query.toString(), isParameterized() ? args.toArray(TypedArg[]::new) : null);
+		return new SqlQuery(store, sql.toString(), isParameterized() ? args.toArray(TypedArg[]::new) : null);
 	}
 
 	@Override
 	public String toString() {
-		return query.toString();
+		return sql.toString();
 	}
 
 	static SqlBuilder addWithValue(Store store) {
-		return new SqlBuilder(store, new StringBuilder(), emptyMap(), emptyMap(), emptyMap(), null, emptyMap());
+		return new SqlBuilder(store, new StringBuilder(), null, emptyMap(), emptyMap(), emptyMap(), emptyMap());
 	}
 
 	static SqlBuilder create(Query query, boolean parameterized) {
-		var cMap = viewAlias("g", query.getCtes());
-		var vMap = viewAlias("v", query.getFroms());
 		var sMap = columnAlias("unnamed_", query.getSelects());
-		if(!isEmpty(query.getJoins())) {
-			for(var j : query.getJoins()) {  //add join views to alias map
-				vMap.put(j.getView(), "v"+ (1+vMap.size()));
-			}
-		}
-		Map<View, Query> ovr = emptyMap();
-		if(!isEmpty(query.getOverView())) {
-			ovr = unmodifiableMap(query.getOverView());
+		var cMap = cteAlias(query.getCtes());
+		var vMap = viewAlias(query.getFroms(), query.getJoins());
+		var ovr  = overview(cMap, vMap, query.getOverView());
+		var args = parameterized ? new ArrayList<TypedArg>() : null;
+		return new SqlBuilder(query.getStore(), new StringBuilder(), args, 
+				unmodifiableMap(cMap), unmodifiableMap(vMap), unmodifiableMap(sMap), unmodifiableMap(ovr));
+	}
+	
+	static Map<View, Query> overview(Map<Query,String> cMap, Map<View, String> vMap, Map<View, Query> ovr) {
+		if(!isEmpty(ovr)) {
 			for(var e : ovr.entrySet()) {
 				vMap.put(e.getKey(), cMap.get(e.getValue()));
 			}
 		}
-		var args = parameterized ? new ArrayList<TypedArg>() : null;
-		return new SqlBuilder(query.getStore(), new StringBuilder(), cMap, vMap, sMap, args, ovr);
+		return emptyMap();
 	}
 
-	static <T> Map<T, String> viewAlias(String prefix, Collection<T> views){
+	static  Map<Query, String> cteAlias(Collection<Query> views){
 		if(!isEmpty(views)) {
-			var map = new LinkedHashMap<T, String>(); //preserve order
-			var i = 0;
+			var map = new LinkedHashMap<Query, String>(); //preserve order
 			for(var v : views) {
-				map.put(v, prefix+ ++i);
+				map.put(v, "g"+ (1+map.size()));
 			}
 			return map;
 		}
 		return emptyMap();
+	}
+	
+	static Map<View, String> viewAlias(Collection<View> views, Collection<Join> joins){
+		var map = new LinkedHashMap<View, String>(); //preserve order
+		if(!isEmpty(views)) {
+			for(var v : views) {
+				map.put(v, "v"+ (1+map.size()));
+			}
+		}
+		if(!isEmpty(joins)) {
+			for(var j : joins) {
+				map.put(j.getView(), "v"+ (1+map.size()));
+			}			
+		}
+		return map;
 	}
 
 	static Map<Column, String> columnAlias(String prefix, Collection<Column> columns){

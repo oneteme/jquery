@@ -5,9 +5,6 @@ import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.toList;
 
-import lombok.AccessLevel;
-import lombok.RequiredArgsConstructor;
-
 /**
  * 
  * @author u$f

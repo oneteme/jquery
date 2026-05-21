@@ -12,13 +12,13 @@ import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import java.util.List;
 import java.util.function.Consumer;
 
-import org.usf.jquery.core.View;
 import org.usf.jquery.core.DynamicModel;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryExecutor;
 import org.usf.jquery.core.ResultSetMapper;
 import org.usf.jquery.core.RowMapper;
 import org.usf.jquery.core.Table;
+import org.usf.jquery.core.View;
 
 /**
  * 

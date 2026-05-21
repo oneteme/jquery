@@ -31,8 +31,8 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.View;
 import org.usf.jquery.core.Table;
+import org.usf.jquery.core.View;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;

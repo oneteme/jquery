@@ -10,10 +10,9 @@ import java.util.Map;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.View;
-import org.usf.jquery.core.NamedColumn;
-import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Join;
+import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.View;
 
 import lombok.NonNull;
 

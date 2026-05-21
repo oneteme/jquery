@@ -69,9 +69,9 @@ public class Query implements View {
 		var bg = currentTimeMillis();
 		var builder = create(this, parameterized);
 		if(!isEmpty(ctes)) {
-			builder.append("WITH ").append('(')
-			.appendEach(SCOMA, ctes, v-> builder.appendViewAlias(v).appendAs().append(v)) 
-			.append(") ");
+			builder.append("WITH ")
+			.appendEach(SCOMA, ctes, v-> builder.appendViewAlias(v).appendAs().append('(').append(v).append(')')) 
+			.appendSpace();
 		}
 		buildClauses(builder);
 		log.trace("query built in {} ms", currentTimeMillis() - bg);

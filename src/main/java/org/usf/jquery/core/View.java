@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
 /**

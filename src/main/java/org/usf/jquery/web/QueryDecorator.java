@@ -1,7 +1,6 @@
 package org.usf.jquery.web;
 
 import static java.util.Arrays.stream;
-import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 
 import java.util.Map;
 import java.util.Optional;

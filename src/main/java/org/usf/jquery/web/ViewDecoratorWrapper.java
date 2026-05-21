@@ -4,9 +4,9 @@ import static java.util.Objects.isNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.View;
-import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Join;
+import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.View;
 
 import lombok.RequiredArgsConstructor;
 

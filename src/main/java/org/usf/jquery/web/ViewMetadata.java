@@ -19,11 +19,10 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
-import org.usf.jquery.core.View;
-import org.usf.jquery.core.Environment.SimpleEnvironment;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.Stores;
 import org.usf.jquery.core.Table;
+import org.usf.jquery.core.View;
 
 import lombok.AccessLevel;
 import lombok.Getter;

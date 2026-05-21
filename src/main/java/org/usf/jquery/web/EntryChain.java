@@ -43,15 +43,16 @@ import java.util.stream.Stream;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.QueryPart;
+import org.usf.jquery.core.Join;
 import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
+import org.usf.jquery.core.QueryPart;
 import org.usf.jquery.core.Signature;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.core.Join;
+import org.usf.jquery.web.EntryChain.EntryChainCursor;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;

@@ -6,8 +6,6 @@ import static org.usf.jquery.core.OperatorKind.WINDOW;
 import static org.usf.jquery.core.QueryAnalyzer.IGNORE_GROUPS;
 import static org.usf.jquery.core.QueryAnalyzer.Stage.CRITERIA;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Utils.toList;
-import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
 
 import java.util.List;
 

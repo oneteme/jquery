@@ -18,8 +18,8 @@ import java.util.NoSuchElementException;
 import java.util.Optional;
 
 import org.usf.jquery.core.DynamicModel;
-import org.usf.jquery.core.SqlQuery;
 import org.usf.jquery.core.QueryExecutor;
+import org.usf.jquery.core.SqlQuery;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.AccessLevel;

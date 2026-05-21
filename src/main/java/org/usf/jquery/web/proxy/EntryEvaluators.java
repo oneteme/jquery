@@ -215,7 +215,7 @@ public final class EntryEvaluators {
 				throw new EntryParseException("cannot parse query arguments ", e);
 			}
 			if(res instanceof Query query) {
-				if(isEmpty(query.getSelects())) {
+				if(!isEmpty(query.getSelects())) {
 					return new QueryResource(query);
 				}
 				throw new EntryParseException("query must have at least one column");

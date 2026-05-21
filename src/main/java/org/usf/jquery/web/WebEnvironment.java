@@ -34,12 +34,12 @@ import java.util.stream.Stream;
 
 import javax.sql.DataSource;
 
-import org.usf.jquery.core.View;
 import org.usf.jquery.core.Environment;
 import org.usf.jquery.core.JQueryException;
 import org.usf.jquery.core.Provider;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.QueryExecutor;
+import org.usf.jquery.core.View;
 
 import lombok.AccessLevel;
 import lombok.Getter;
