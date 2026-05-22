@@ -107,7 +107,6 @@ public final class TypeRegistry {
 		var evl = new HashMap<Class<?>, EntryEvaluator<?>>();
 		evl.put(View.class, EntryEvaluators::evaluateView);
 		evl.put(Column.class, EntryEvaluators::evaluateColumn);
-//		evl.put(NamedColumn.class, EntryEvaluators::evaluateNamedColumn);
 		evl.put(Criteria.class, EntryEvaluators::evaluateFilter);
 		evl.put(Order.class, EntryEvaluators::evaluateOrder);
 		evl.put(JoinGroup.class, EntryEvaluators::evaluateJoin);

@@ -13,7 +13,6 @@ public enum JQueryType implements JavaType, TypeResolver {
 	VIEW(View.class),
 	QUERY(Query.class),
 	COLUMN(Column.class),
-//	NAMED_COLUMN(NamedColumn.class),
 	QUERY_COLUMN(SingleQueryColumn.class),
 	FILTER(Criteria.class),
 	ORDER(Order.class),

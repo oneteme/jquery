@@ -75,20 +75,20 @@ public interface QueryInterpreter {
 		return query;
 	}
 	
-	default void parseViews(String[] parameters, QueryComposer query, RequestContext ctx) { //ctes
+	default void parseViews(String[] parameters, QueryComposer composer, RequestContext ctx) { //ctes
 		if(!isEmpty(parameters)) {
 			parse(parameters).map(e-> evaluateView(e, ctx, true))
 				.<Query>mapMulti((v,cons)-> {
 					if(v instanceof Query q) {
 						cons.accept(q);
 					}
-				}).forEach(query::ctes);
+				}).forEach(composer::ctes);
 		}
 	}
 	
-	default void parseColumns(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseColumns(String[] parameters, QueryComposer composer, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
-			var def = ctx.getDialect().select(query);
+			var def = ctx.getDialect().select(composer);
 			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}
 		else {
@@ -103,33 +103,33 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	default void parseJoins(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseJoins(String[] parameters, QueryComposer composer, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
-			var def = ctx.getDialect().join(query);
+			var def = ctx.getDialect().join(composer);
 			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}
 	}
 	
-	default void parseGroups(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseGroups(String[] parameters, QueryComposer composer, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
-			var def = ctx.getDialect().group(query);
+			var def = ctx.getDialect().group(composer);
 			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}
 	}
 	
-	default void parseFilters(Map<String, String[]> parameterMap, QueryComposer query, RequestContext ctx) {
+	default void parseFilters(Map<String, String[]> parameterMap, QueryComposer composer, RequestContext ctx) {
 		if(!isEmpty(parameterMap)) {
 			Object[] args = parameterMap.entrySet().stream()
 					.map(e-> evaluateFilter(parseEntry(e.getKey()), ctx, parse(e.getValue()).toArray(Entry[]::new)))
 					.toArray(Criteria[]::new);
-			ctx.getDialect().criteria(query).invoke(args);
+			ctx.getDialect().criteria(composer).invoke(args);
 		}
 	}
 	
-	default void parseDistinct(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseDistinct(String[] parameters, QueryComposer composer, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			try {
-				var def = ctx.getDialect().distinct(query);
+				var def = ctx.getDialect().distinct(composer);
 				def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 			} catch (Exception e) {
 				throw new IllegalArgumentException("Invalid value for parameter: " + DISTINCT_PARAM, e);
@@ -137,10 +137,10 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	default void parseLimit(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseLimit(String[] parameters, QueryComposer composer, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			try {
-				var limit = ctx.getDialect().limit(query);
+				var limit = ctx.getDialect().limit(composer);
 				limit.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, limit));
 			}
 			catch (Exception e) {
@@ -149,10 +149,10 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	default void parseOffset(String[] parameters, QueryComposer query, RequestContext ctx) {
+	default void parseOffset(String[] parameters, QueryComposer composer, RequestContext ctx) {
 		if(!isEmpty(parameters)) {
 			try {
-				var offset = ctx.getDialect().offset(query);
+				var offset = ctx.getDialect().offset(composer);
 				offset.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, offset));
 			}
 			catch (Exception e) {

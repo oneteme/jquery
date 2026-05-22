@@ -61,6 +61,16 @@ public final class EntryEvaluators {
 		}
 		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
 	}
+
+
+	@Deprecated //use evaluateView with declare=true instead
+	public static Column evaluateAndDeclareColumn(Entry entry, RequestContext ctx) {
+		var col = evaluateColumn(entry, ctx);
+		if(nonNull(col.getTag())) {
+			ctx.declareColumn(col.getTag(), col);
+		}
+		return col;
+	}
 	
 	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
@@ -70,9 +80,6 @@ public final class EntryEvaluators {
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
 				col = col.as(tag);
-			}
-			if(nonNull(col.getTag())) {
-				ctx.declareColumn(col.getTag(), col);
 			}
 			return col;
 		}
