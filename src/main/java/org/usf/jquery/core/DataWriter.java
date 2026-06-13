@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.lang.System.lineSeparator;
 import static org.slf4j.LoggerFactory.getLogger;
-import static org.usf.jquery.core.SqlStringBuilder.EMPTY;
 
 import java.io.IOException;
 import java.io.OutputStream;

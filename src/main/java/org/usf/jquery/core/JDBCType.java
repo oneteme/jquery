@@ -17,8 +17,6 @@ import lombok.RequiredArgsConstructor;
 
 /**
  * 
- * <a href="https://docs.oracle.com/cd/E19830-01/819-4721/beajw/index.html">Supported Data Types</a>
- * 
  * @author u$f
  * 
  */

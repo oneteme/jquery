@@ -11,7 +11,6 @@ import static org.usf.jquery.web.Parameters.SELECT_OPR;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.ComparatorDefinition;
@@ -43,45 +42,43 @@ import lombok.NoArgsConstructor;
 public final class EntryEvaluators {
 	
 	public static View evaluateView(Entry entry, RequestContext ctx) {
-		return evaluateView(entry, ctx, false);
-	}
-	
-	public static View evaluateView(Entry entry, RequestContext ctx, boolean declare) {
 		var itr = entry.iterator();
-		var view = evalView(itr, ctx, declare);
+		var view = evalView(itr, ctx, true);
 		if(nonNull(view)) {
 			assertLastEntry(itr, true);
-			if(declare) {
-				var tag = itr.get().getTag();
-				if(nonNull(tag)) {
-					ctx.declareView(requireTag(itr.get()), view);
-				}
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareView(tag, view);
 			}
 			return view.getView();
 		}
 		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
 	}
-
-
-	@Deprecated //use evaluateView with declare=true instead
-	public static Column evaluateAndDeclareColumn(Entry entry, RequestContext ctx) {
-		var col = evaluateColumn(entry, ctx);
-		if(nonNull(col.getTag())) {
-			ctx.declareColumn(col.getTag(), col);
-		}
-		return col;
-	}
 	
+	public static View evaluateQuery(Entry entry, RequestContext ctx) {
+		var itr = entry.iterator();
+		var view = evalView(itr, ctx, true);
+		if(view instanceof QueryResource) {
+			assertLastEntry(itr, true);
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareView(tag, view);
+			} 
+			return view.getView();
+		}
+		if(nonNull(view)) {
+			throw new EntryParseException(itr.get().getValue() + " cannot be used as query resource");
+		}
+		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
+	}
+
 	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
 		var col = evalColumn(itr, ctx);
 		if(nonNull(col)) {
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
-			if(nonNull(tag)) {
-				col = col.as(tag);
-			}
-			return col;
+			return nonNull(tag) ? col.as(tag) : col;
 		}
 		throw new NoSuchResourceException("no such column : " + itr.peekNext().getValue());
 	}
@@ -149,27 +146,29 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such query column : " + itr.peekNext().getValue());
 	}
 	
-	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetResource view, RequestContext ctx) {
+	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetResource rsc, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
+		var view = rsc.getView(); 
 		if(SELECT_OPR.equals(entry.getValue()) || FIELD_PARAM.equals(entry.getValue())) {
-			view = evalQuery(itr, view, ctx);
+			view = evalQuery(itr, rsc, ctx);
 		}
-		if(view instanceof QueryResource query) {
-			return query.getQuery().asColumn();
+		if(view instanceof Query query) {
+			return query.asColumn();
 		}
 		return null;
 	}
 
 	static DatasetResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
-		if(allowAnonymous && (SELECT_OPR.equals(entry.getValue()) || FIELD_PARAM.equals(entry.getValue()))) {
-			return evalQuery(itr, ctx.getDefaultDataset(), ctx);
+		if(allowAnonymous && (SELECT_OPR.equals(entry.getValue()))) {
+			return new QueryResource(evalQuery(itr, ctx.getDefaultDataset(), ctx));
 		} //parameterized view considered as anonymous view resource, not supported for direct lookup
 		var view = ctx.lookupView(allowAnonymous, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
 			itr.advance();
-			return allowAnonymous && itr.hasNext() && (SELECT_OPR.equals(itr.peekNext().getValue()) || FIELD_PARAM.equals(itr.peekNext().getValue())) //view.column().filter()..
-					? evalQuery(itr, view.get(), ctx) : view.get();
+			return allowAnonymous && itr.hasNext() && (SELECT_OPR.equals(itr.peekNext().getValue())) //view.column().filter()..
+					? new QueryResource(evalQuery(itr, view.get(), ctx))
+							: view.get();
 		}
 		return null;
 	}
@@ -217,7 +216,7 @@ public final class EntryEvaluators {
 		return chainResource(itr, col, ctx, outArgs);
 	}
 
-	static QueryResource evalQuery(EntryIterator itr, DatasetResource dr, RequestContext ctx) { 
+	static Query evalQuery(EntryIterator itr, DatasetResource dr, RequestContext ctx) { 
 		if(itr.hasNext() && SELECT_OPR.equals(itr.peekNext().getValue())) {
 			Object res = null;
 			try {
@@ -228,7 +227,7 @@ public final class EntryEvaluators {
 			}
 			if(res instanceof Query query) {
 				if(!isEmpty(query.getSelects())) {
-					return new QueryResource(query);
+					return query;
 				}
 				throw new EntryParseException("query must have at least one column");
 			}
@@ -382,21 +381,6 @@ public final class EntryEvaluators {
 		}
 		return null;
 	}
-	
-	
-	static <T> T resolveSingleArgValue(Entry entry, Class<T> type, RequestContext ctx) {
-		return resolveSingleArg(entry, e-> ctx.parseValue(e.next().getValue(), type));
-	}
-	
-	static <T> T resolveSingleArg(Entry entry, Function<EntryIterator, T> resovler) {
-		if(entry.hasArgs() && entry.getArgs().length == 1) {
-			var itr = entry.getArgs()[0].iterator();
-			var obj = resovler.apply(itr);
-			assertLastEntry(itr, false);
-			return obj;
-		}
-		throw new EntryParseException("entry " + entry.getValue() + " must have exactly 1 argument");
-	}
 
 	static void assertLastEntry(EntryIterator entry, boolean tagAllowed) {
 		assertLastEntry(entry.get(), tagAllowed);
@@ -410,11 +394,4 @@ public final class EntryEvaluators {
 			throw new EntrySyntaxException("unexpected tag : " + entry.getTag());
 		}
 	}
-	
-	static String requireTag(Entry entry) {
-		if(entry.hasTag()) {
-			return entry.getTag();
-		}
-		throw new EntrySyntaxException("expected tag after : " + entry.getValue());
-	}	
 }

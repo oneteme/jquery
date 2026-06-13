@@ -16,7 +16,7 @@ import lombok.extern.slf4j.Slf4j;
 public final class Parameters {
 
 	//parameters
-	public static final String VIEW_PARAM = "view";
+	public static final String VIEW_PARAM = "cte";
 	@Deprecated(since = "5.0.0", forRemoval = true)
 	public static final String COLUMN_PARAM = "column";
 	public static final String FIELD_PARAM = "field";

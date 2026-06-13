@@ -1,6 +1,5 @@
 package org.usf.jquery.web.proxy;
 
-import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Collections.emptySet;
@@ -16,13 +15,13 @@ import static org.usf.jquery.core.JDBCType.TIME;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
+import static org.usf.jquery.core.JQueryType.DECLARE_COLUMN;
 import static org.usf.jquery.core.Parameter.match;
 import static org.usf.jquery.core.Signature.badArgumentTypeException;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.proxy.Resource.Match.HIDDEN;
 import static org.usf.jquery.web.proxy.Resource.Match.VALID;
 
-import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -36,11 +35,11 @@ import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Definition;
 import org.usf.jquery.core.Dialect;
 import org.usf.jquery.core.JDBCType;
+import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.SignatureMismatchException;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.web.EntryParseException;
-import org.usf.jquery.web.EntrySyntaxException;
 import org.usf.jquery.web.NoSuchResourceException;
 
 import lombok.Getter;
@@ -209,67 +208,60 @@ public final class RequestContext {
 		}
 		for(var t : types) {
 			try {
-				return resolve(entry, t.getCorrespondingClass());
+				return resolve(entry, t);
 			}
 			catch (Exception e) {
 				if(types.length == 1) {
 					throw e;
 				}
-				log.trace("failed to resolve entry {} to type {}, reason: {}", entry, t.getCorrespondingClass(), e.getMessage());
+				log.trace("failed to resolve entry {} to type {}, reason: {}", entry, t, e.getMessage());
 			}
 		}
 		throw new NoSuchElementException("no parser for type " + Arrays.toString(types));
 	}
-
-	@SuppressWarnings("unchecked")
-	public <T> T resolveArray(Entry[] args, Class<T> type) {
-		if(nonNull(args)) {
-			if(type.isArray()) {
-				var arr = newInstance(type.componentType(), args.length);
-				for(int i=0; i<args.length; i++) {
-					Array.set(arr, i, resolve(args[i], type.componentType()));
-				}
-				return (T)arr;
+	
+	public Object resolve(Entry entry, JavaType type) {
+		if(type == DECLARE_COLUMN) {
+			var col = registry.getEvaluator(Column.class).evaluate(entry, this);
+			if(nonNull(col.getTag())){
+				declareColumn(col.getTag(), col);
 			}
-			if(args.length == 1) {
-				return resolve(args[0], type);
-			}
-			if(args.length > 1) {
-				throw new EntrySyntaxException("multiple entries cannot be resolved to single value of type " + type.getSimpleName());
-			}
+			return col;
 		}
-		return null;
+		return resolve(entry, type.getCorrespondingClass());
 	}
+	
 	public <T> T resolve(Entry entry, Class<T> type) {
-
 		if(entry.isVariable()) {
 			var prs = registry.getEvaluator(type);
 			if(nonNull(prs)) {
-//				try {
-					return prs.evaluate(entry, this);
-//				}
-//				catch (Exception e) { this hide original exception
-//					throw new EntryParseException("cannot evaluate '" + type.getSimpleName() + "' expression " + entry, e);
-//				}²
+				return prs.evaluate(entry, this);
 			}
-		}// consider variable with no args, next or tag as value entry
-		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) { 
-			return parseValue(entry.getValue(), type);
+			else if(type == JQueryType.class) {
+				throw new UnsupportedOperationException("");
+			}
 		}
-		throw new EntryParseException("cannot resolve entry " + entry + " to type " + type.getSimpleName());
+		return parseValue(entry, type); //string value can be considered as variable
 	}
 	
-	public <T> T parseValue(String value, Class<T> type) {
-		var prs = registry.getParser(type);
-		if(nonNull(prs)) {
-			try {
-				return nonNull(value) ? prs.parse(value) : null;
+	public <T> T parseValue(Entry entry, Class<T> type) {
+		if(!entry.hasArgs() && !entry.hasNext() && !entry.hasTag()) {
+			var v = entry.getValue();
+			if(nonNull(v)) {
+				var prs = registry.getParser(type);
+				if(nonNull(prs)) {
+					try {
+						return prs.parse(v);
+					}
+					catch (Exception e) {
+						throw new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + v, e);
+					}
+				}
+				throw new EntryParseException("no parser for type " + type.getSimpleName());
 			}
-			catch (Exception e) {
-				throw new EntryParseException("cannot parse '" + type.getSimpleName() + "' value " + value, e);
-			}
+			return null;
 		}
-		throw new EntryParseException("no parser for type " + type.getSimpleName());
+		throw new EntryParseException("cannot resolve entry " + entry + " to type " + type.getSimpleName());
 	}
 
 	//inherit common properties, but not declared views and columns

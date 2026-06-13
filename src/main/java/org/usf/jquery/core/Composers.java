@@ -4,6 +4,7 @@ import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JQueryType.CASE;
 import static org.usf.jquery.core.JQueryType.COLUMN;
+import static org.usf.jquery.core.JQueryType.DECLARE_COLUMN;
 import static org.usf.jquery.core.JQueryType.FILTER;
 import static org.usf.jquery.core.JQueryType.GROUP;
 import static org.usf.jquery.core.JQueryType.JOIN;
@@ -22,8 +23,6 @@ import static org.usf.jquery.core.Signature.arrayOf;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.function.IntFunction;
-
-import org.usf.jquery.web.proxy.PartitionComposer;
 
 /**
  * 
@@ -120,7 +119,13 @@ public interface Composers {
 	default ComposerDefinition<QueryComposer> select(QueryComposer composer) {
 		return new ComposerDefinition<>("select", QUERY, 
 				args-> composer.columns((Column[]) args),
-				arrayOf(COLUMN, 1));
+				arrayOf(DECLARE_COLUMN, 1));
+	}
+	
+	default ComposerDefinition<QueryComposer> cte(QueryComposer composer) {
+		return new ComposerDefinition<>("cte", QUERY, 
+				args-> composer.ctes((Query[]) args),
+				arrayOf(QUERY, 1));
 	}
 	
 	default ComposerDefinition<QueryComposer> join(QueryComposer composer){

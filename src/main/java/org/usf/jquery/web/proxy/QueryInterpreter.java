@@ -15,7 +15,6 @@ import static org.usf.jquery.web.Parameters.ORDER_PARAM;
 import static org.usf.jquery.web.Parameters.SELECT_OPR;
 import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import static org.usf.jquery.web.proxy.EntryEvaluators.evaluateFilter;
-import static org.usf.jquery.web.proxy.EntryEvaluators.evaluateView;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntries;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntry;
 import static org.usf.jquery.web.proxy.StoreManager.getInstance;
@@ -27,7 +26,6 @@ import java.util.stream.Stream;
 
 import org.slf4j.Logger;
 import org.usf.jquery.core.Criteria;
-import org.usf.jquery.core.Query;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.web.ResourceAccessException;
 
@@ -62,7 +60,7 @@ public interface QueryInterpreter {
 	
 	default QueryComposer parseQuery(Map<String, String[]> parameterMap, RequestContext ctx) {
 		var query = new QueryComposer();
-		parseViews(parameterMap.remove(VIEW_PARAM), query, ctx);
+		parseCtes(parameterMap.remove(VIEW_PARAM), query, ctx);
 		parseColumns(parameterMap.remove(SELECT_OPR), query, ctx);
 		parseJoins(parameterMap.remove(JOIN_PARAM), query, ctx);
 		parseGroups(parameterMap.remove(GROUP_PARAM), query, ctx);
@@ -75,14 +73,10 @@ public interface QueryInterpreter {
 		return query;
 	}
 	
-	default void parseViews(String[] parameters, QueryComposer composer, RequestContext ctx) { //ctes
+	default void parseCtes(String[] parameters, QueryComposer composer, RequestContext ctx) { //ctes
 		if(!isEmpty(parameters)) {
-			parse(parameters).map(e-> evaluateView(e, ctx, true))
-				.<Query>mapMulti((v,cons)-> {
-					if(v instanceof Query q) {
-						cons.accept(q);
-					}
-				}).forEach(composer::ctes);
+			var def = ctx.getDialect().cte(composer);
+			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
 		}
 	}
 	

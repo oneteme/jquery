@@ -12,6 +12,7 @@ public enum JQueryType implements JavaType, TypeResolver {
 
 	VIEW(View.class),
 	QUERY(Query.class),
+	DECLARE_COLUMN(Column.class),
 	COLUMN(Column.class),
 	QUERY_COLUMN(SingleQueryColumn.class),
 	FILTER(Criteria.class),
@@ -33,4 +34,5 @@ public enum JQueryType implements JavaType, TypeResolver {
 	public JavaType apply(Object[] t) {
 		return this;
 	}
+	
 }

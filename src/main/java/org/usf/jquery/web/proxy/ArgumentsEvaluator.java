@@ -25,13 +25,12 @@ public interface ArgumentsEvaluator {
 			return new Object[] {arr}; //allow empty array ?
 		}
 		if(params.length == nArgs) {
-			var arr = new Object[params.length];
-			for(int i=0; i<params.length; i++) {
+			var arr = new Object[nArgs];
+			for(int i=0; i<nArgs; i++) {
 				arr[i] = ctx.resolve(args[i], params[i].getType());
 			}
 			return arr;
 		}
-		//returning TypedOperator or TypedComparator !
 		throw new IllegalArgumentException("expected " + params.length + " arguments but got " + nArgs);
 	}
 }

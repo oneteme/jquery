@@ -29,6 +29,7 @@ import org.usf.jquery.core.Group;
 import org.usf.jquery.core.JoinGroup;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
+import org.usf.jquery.core.Query;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.View;
 
@@ -63,17 +64,16 @@ public final class TypeRegistry {
 	
 	@SuppressWarnings("unchecked")
 	public <T> ValueParser<T> getParser(Class<T> clazz){
-		var p = nonNull(parsers) ? parsers.get(clazz) : null;
-		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) { //strict | toUPPER
+		var p = (nonNull(parsers) ? parsers : DEF_PARSERS).get(clazz);
+		if(isNull(p)  && Enum.class.isAssignableFrom(clazz)) {
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
-		return (ValueParser<T>) (nonNull(p) ? p : DEF_PARSERS.get(clazz));
+		return (ValueParser<T>) p;
 	}
 	
 	@SuppressWarnings("unchecked")
 	public <T> EntryEvaluator<T> getEvaluator(Class<T> clazz){
-		var p = nonNull(evaluators) ? evaluators.get(clazz) : null;
-		return (EntryEvaluator<T>) (nonNull(p) ? p : DEF_EVALUATORS.get(clazz));
+		return (EntryEvaluator<T>) (nonNull(parsers) ? parsers : DEF_EVALUATORS).get(clazz);
 	}
 	
 	static {
@@ -106,12 +106,13 @@ public final class TypeRegistry {
 		DEF_PARSERS = unmodifiableMap(prs);
 		var evl = new HashMap<Class<?>, EntryEvaluator<?>>();
 		evl.put(View.class, EntryEvaluators::evaluateView);
+		evl.put(Query.class, EntryEvaluators::evaluateQuery);
 		evl.put(Column.class, EntryEvaluators::evaluateColumn);
 		evl.put(Criteria.class, EntryEvaluators::evaluateFilter);
 		evl.put(Order.class, EntryEvaluators::evaluateOrder);
+		evl.put(Group.class, EntryEvaluators::evaluateGroup);
 		evl.put(JoinGroup.class, EntryEvaluators::evaluateJoin);
 		evl.put(Partition.class, EntryEvaluators::evaluatePartition);
-		evl.put(Group.class, EntryEvaluators::evaluateGroup);
 		evl.put(SingleQueryColumn.class, EntryEvaluators::evaluateQueryColumn);
 		DEF_EVALUATORS = unmodifiableMap(evl);
 	}

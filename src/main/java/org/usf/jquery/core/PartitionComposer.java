@@ -1,4 +1,4 @@
-package org.usf.jquery.web.proxy;
+package org.usf.jquery.core;
 
 import static java.util.Collections.addAll;
 import static java.util.Collections.unmodifiableCollection;
@@ -7,12 +7,6 @@ import static java.util.Objects.nonNull;
 
 import java.util.ArrayList;
 import java.util.Collection;
-
-import org.usf.jquery.core.Column;
-import org.usf.jquery.core.Composer;
-import org.usf.jquery.core.Order;
-import org.usf.jquery.core.Partition;
-import org.usf.jquery.core.Store;
 
 import lombok.NonNull;
 

@@ -6,9 +6,9 @@ import static org.usf.jquery.web.proxy.StoreManager.getInstance;
 
 import java.time.LocalDate;
 
+import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.JoinGroup;
-import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
 import org.usf.jquery.web.proxy.Bind.BindType;
@@ -34,12 +34,12 @@ interface DatasetSample extends DatasetResource {
     ViewColumn size();
     
     @Expose(identity="toto", description="")
-    default NamedColumn elapsedtime(){
+    default Column elapsedtime(){
     	return start().epoch().minus(end().epoch()).as("elps");
     }
     
     @Bind(value="start.epoch.minus(end.epoch)", type = BindType.REQ)
-    NamedColumn elapsedtime2();
+    Column elapsedtime2();
     
     @Expose(description="")
     default Criteria active(LocalDate date, int x) {
