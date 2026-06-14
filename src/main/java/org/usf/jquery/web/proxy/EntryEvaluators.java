@@ -15,6 +15,7 @@ import java.util.function.BiFunction;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.Composer;
+import org.usf.jquery.core.ComposerDefinition;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.Definition;
 import org.usf.jquery.core.Group;
@@ -333,19 +334,14 @@ public final class EntryEvaluators {
 			}
 			else {
 				var opt = ctx.lookupDialectResource(entry.getValue(), Definition.class);
-				if(opt.isEmpty()) {
+				if(opt.isEmpty() || opt.get() instanceof ComposerDefinition<?>) {
 					break;
 				}
 				itr.advance(); 
 				var def = opt.get();
-				if(def instanceof ComparatorDefinition) {
-					col = (Column) def.invoke(ctx.resolveArgs(args, col, def));
-					if(args == outArgs) {
-						outArgs = null;
-					}
-				}
-				else {
-					col = (Column) def.invoke(ctx.resolveArgs(entry.getArgs(), col, def));
+				col = (Column) def.invoke(ctx.resolveArgs(args, col, def));
+				if(args == outArgs && def instanceof ComparatorDefinition) {
+					outArgs = null;
 				}
 			}
 		}
@@ -383,15 +379,12 @@ public final class EntryEvaluators {
 	}
 
 	static void assertLastEntry(EntryIterator entry, boolean tagAllowed) {
-		assertLastEntry(entry.get(), tagAllowed);
-	}
-
-	static void assertLastEntry(Entry entry, boolean tagAllowed) {
-		if(entry.hasNext()) {
-			throw new EntrySyntaxException("unexpected entry : " + entry.getNext().getValue());
+		var e =entry.get();
+		if(e.hasNext()) {
+			throw new EntrySyntaxException("unexpected entry : " + e.getNext().getValue());
 		}
-		if(!tagAllowed && entry.hasTag()) {
-			throw new EntrySyntaxException("unexpected tag : " + entry.getTag());
+		if(!tagAllowed && e.hasTag()) {
+			throw new EntrySyntaxException("unexpected tag : " + e.getTag());
 		}
 	}
 }

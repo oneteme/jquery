@@ -30,6 +30,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SqlBuilder {
 
+	private final String prefix;
 	@Getter
 	private final Store store;
 	private final StringBuilder sql;
@@ -151,15 +152,15 @@ public final class SqlBuilder {
 	}
 
 	public SqlBuilder withValue() { //inherit schema, prefix, views but not args
-		return new SqlBuilder(store, sql, null, ctes, views, columns, overViews);
+		return new SqlBuilder(prefix, store, sql, null, ctes, views, columns, overViews);
 	}
 
 	public SqlBuilder subQuery(Query query) {
 		var sMap = columnAlias("unnamed_", query.getSelects());
 		var cMap = isCte(query) ? cteAlias(query.getCtes()) : this.ctes; //inherit ctes if sub query is overview
-		var vMap = viewAlias(query.getFroms(), query.getJoins());
+		var vMap = viewAlias("s_"+prefix, query.getFroms(), query.getJoins());
 		var ovr  = isCte(query) ? overview(cMap, vMap, query.getOverView()) : overViews; //inherit overview if sub query is overview
-		return new SqlBuilder(query.getStore(), sql, args, 
+		return new SqlBuilder("s_"+prefix, query.getStore(), sql, args, 
 				unmodifiableMap(cMap), unmodifiableMap(vMap), unmodifiableMap(sMap), unmodifiableMap(ovr));
 	}
 
@@ -181,16 +182,16 @@ public final class SqlBuilder {
 	}
 
 	static SqlBuilder addWithValue(Store store) {
-		return new SqlBuilder(store, new StringBuilder(), null, emptyMap(), emptyMap(), emptyMap(), emptyMap());
+		return new SqlBuilder("", store, new StringBuilder(), null, emptyMap(), emptyMap(), emptyMap(), emptyMap());
 	}
 
 	static SqlBuilder create(Query query, boolean parameterized) {
 		var sMap = columnAlias("unnamed_", query.getSelects());
 		var cMap = cteAlias(query.getCtes());
-		var vMap = viewAlias(query.getFroms(), query.getJoins());
+		var vMap = viewAlias("", query.getFroms(), query.getJoins());
 		var ovr  = overview(cMap, vMap, query.getOverView());
 		var args = parameterized ? new ArrayList<TypedArg>() : null;
-		return new SqlBuilder(query.getStore(), new StringBuilder(), args, 
+		return new SqlBuilder("", query.getStore(), new StringBuilder(), args, 
 				unmodifiableMap(cMap), unmodifiableMap(vMap), unmodifiableMap(sMap), unmodifiableMap(ovr));
 	}
 	
@@ -214,11 +215,11 @@ public final class SqlBuilder {
 		return emptyMap();
 	}
 	
-	static Map<View, String> viewAlias(Collection<View> views, Collection<Join> joins){
+	static Map<View, String> viewAlias(String prefix, Collection<View> views, Collection<Join> joins){
 		var map = new LinkedHashMap<View, String>(); //preserve order
 		if(!isEmpty(views)) {
 			for(var v : views) {
-				map.put(v, "v"+ (1+map.size()));
+				map.put(v, prefix+"v"+ (1+map.size()));
 			}
 		}
 		if(!isEmpty(joins)) {

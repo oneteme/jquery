@@ -1,8 +1,8 @@
 package org.usf.jquery.web.proxy;
 
+import static org.usf.jquery.core.Column.cdate;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JDBCType.TIMESTAMP;
-import static org.usf.jquery.web.proxy.StoreManager.getInstance;
 
 import java.time.LocalDate;
 
@@ -43,8 +43,7 @@ interface DatasetSample extends DatasetResource {
     
     @Expose(description="")
     default Criteria active(LocalDate date, int x) {
-    	var dialect = getInstance().getDefaultStore().dialect();
-    	return size().lt(x).and(dialect.cdate().invoke().eq(date));
+    	return size().lt(x).and(cdate().eq(date));
     }
 
     @Expose(identity="rattachement", description="")
@@ -55,8 +54,5 @@ interface DatasetSample extends DatasetResource {
     //@Resource(value="", description="")
     default Partition latestEdit(){
     	return null;
-    }    
-   
-    
-    
+    }     
 }

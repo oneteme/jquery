@@ -51,8 +51,8 @@ import lombok.extern.slf4j.Slf4j;
 public final class RequestContext {
 
 	private static final JDBCType[] STD_TYPES = { 
-			BIGINT, DOUBLE, DATE, TIMESTAMP, BOOLEAN, 
-			TIME, TIMESTAMP_WITH_TIMEZONE, VARCHAR };
+			BIGINT, DOUBLE, DATE, TIMESTAMP, TIME, 
+			TIMESTAMP_WITH_TIMEZONE, BOOLEAN, VARCHAR };
 
 	@Getter
 	private final DatasetResource defaultDataset;

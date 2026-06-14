@@ -34,5 +34,4 @@ public class DatasetMetadata {
 		log.warn("column {} not found in view {}", name, this.name);
 		return null;
 	}
-	
 }

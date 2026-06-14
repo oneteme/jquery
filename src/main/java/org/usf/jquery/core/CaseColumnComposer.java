@@ -47,7 +47,6 @@ public class CaseColumnComposer implements Composer<CaseColumn> {
 		return compose(null);
 	}
 	
-
 	private Collection<WhenCase> getCases(){
 		return cases;
 	}
