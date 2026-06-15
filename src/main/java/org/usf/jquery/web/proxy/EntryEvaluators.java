@@ -5,9 +5,8 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.Parameters.FIELD_PARAM;
 import static org.usf.jquery.web.Parameters.PARTITION_OPR;
-import static org.usf.jquery.web.Parameters.SELECT_OPR;
+import static org.usf.jquery.web.Parameters.SELECT_PARAM;
 
 import java.util.Optional;
 import java.util.function.BiFunction;
@@ -150,7 +149,7 @@ public final class EntryEvaluators {
 	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetResource rsc, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		var view = rsc.getView(); 
-		if(SELECT_OPR.equals(entry.getValue()) || FIELD_PARAM.equals(entry.getValue())) {
+		if(SELECT_PARAM.equals(entry.getValue())) {
 			view = evalQuery(itr, rsc, ctx);
 		}
 		if(view instanceof Query query) {
@@ -161,13 +160,13 @@ public final class EntryEvaluators {
 
 	static DatasetResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
-		if(allowAnonymous && (SELECT_OPR.equals(entry.getValue()))) {
+		if(allowAnonymous && (SELECT_PARAM.equals(entry.getValue()))) {
 			return new QueryResource(evalQuery(itr, ctx.getDefaultDataset(), ctx));
 		} //parameterized view considered as anonymous view resource, not supported for direct lookup
 		var view = ctx.lookupView(allowAnonymous, entry.getValue(), entry.getArgs());
 		if(view.isPresent()) {
 			itr.advance();
-			return allowAnonymous && itr.hasNext() && (SELECT_OPR.equals(itr.peekNext().getValue())) //view.column().filter()..
+			return allowAnonymous && itr.hasNext() && (SELECT_PARAM.equals(itr.peekNext().getValue())) //view.column().filter()..
 					? new QueryResource(evalQuery(itr, view.get(), ctx))
 							: view.get();
 		}
@@ -218,7 +217,7 @@ public final class EntryEvaluators {
 	}
 
 	static Query evalQuery(EntryIterator itr, DatasetResource dr, RequestContext ctx) { 
-		if(itr.hasNext() && SELECT_OPR.equals(itr.peekNext().getValue())) {
+		if(itr.hasNext() && SELECT_PARAM.equals(itr.peekNext().getValue())) {
 			Object res = null;
 			try {
 				res = invokeDialectComposer(itr, ctx.subContext(dr));

@@ -16,10 +16,10 @@ import lombok.extern.slf4j.Slf4j;
 public final class Parameters {
 
 	//parameters
-	public static final String VIEW_PARAM = "cte";
+	public static final String VIEW_PARAM = "view";
+	public static final String CTE_PARAM = "cte";
 	@Deprecated(since = "5.0.0", forRemoval = true)
 	public static final String COLUMN_PARAM = "column";
-	public static final String FIELD_PARAM = "field";
 	public static final String GROUP_PARAM = "group";
 	public static final String DISTINCT_PARAM = "distinct";
 	public static final String JOIN_PARAM = "join";
@@ -27,7 +27,7 @@ public final class Parameters {
 	public static final String LIMIT_PARAM = "limit";
 	public static final String OFFSET_PARAM = "offset";
 	//query parameter
-	public static final String SELECT_OPR = "select";
+	public static final String SELECT_PARAM = "select";
 	@Deprecated(since = "5.0.0", forRemoval = true)
 	public static final String FILTER_OPR = "filter";
 	public static final String CRITERIA_OPR = "criteria";
@@ -36,8 +36,8 @@ public final class Parameters {
 	//useful for resource validation and to prevent reserved word usage in query parameters
 	public static Set<String> reservedWords() {
 		return Set.of(
-				VIEW_PARAM, FIELD_PARAM, DISTINCT_PARAM, JOIN_PARAM, ORDER_PARAM, LIMIT_PARAM, OFFSET_PARAM,
-				SELECT_OPR, FILTER_OPR, CRITERIA_OPR, PARTITION_OPR);
+				VIEW_PARAM, DISTINCT_PARAM, JOIN_PARAM, ORDER_PARAM, LIMIT_PARAM, OFFSET_PARAM,
+				SELECT_PARAM, CRITERIA_OPR, PARTITION_OPR);
 	}
 	
 }

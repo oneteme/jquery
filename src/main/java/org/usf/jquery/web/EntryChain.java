@@ -35,7 +35,7 @@ import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
 import static org.usf.jquery.web.Parameters.PARTITION_OPR;
-import static org.usf.jquery.web.Parameters.SELECT_OPR;
+import static org.usf.jquery.web.Parameters.SELECT_PARAM;
 
 import java.util.ArrayList;
 import java.util.Optional;
@@ -222,7 +222,7 @@ final class EntryChain {
 	//select[.filter|order|offset|fetch]*
 	QueryDecorator parseQuery(QueryContext ctx, boolean requireTag) {
 		Exception cause = null;
-		if(SELECT_OPR.equals(value)) {
+		if(SELECT_PARAM.equals(value)) {
 			try {
 				var e = new EntryChain[] {this}; //mutable reference
 				var qry = currentEnvironment().query(q->{

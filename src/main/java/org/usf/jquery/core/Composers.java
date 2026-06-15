@@ -165,7 +165,7 @@ public interface Composers {
 	
 	default ComposerDefinition<QueryComposer> distinct(QueryComposer composer) {
 		return new ComposerDefinition<>("distinct", QUERY, 
-				args-> composer.distinct(!isEmpty(args) && (Boolean) args[0]),
+				args-> composer.distinct(isEmpty(args) || (Boolean) args[0]),
 				optional(BOOLEAN));
 	}
 	

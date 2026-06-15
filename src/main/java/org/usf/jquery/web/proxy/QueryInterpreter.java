@@ -1,18 +1,21 @@
 package org.usf.jquery.web.proxy;
 
 import static java.util.Arrays.stream;
+import static java.util.Objects.nonNull;
 import static java.util.stream.Stream.concat;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
+import static org.usf.jquery.web.Parameters.CRITERIA_OPR;
+import static org.usf.jquery.web.Parameters.CTE_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
-import static org.usf.jquery.web.Parameters.FIELD_PARAM;
+import static org.usf.jquery.web.Parameters.FILTER_OPR;
 import static org.usf.jquery.web.Parameters.GROUP_PARAM;
 import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
-import static org.usf.jquery.web.Parameters.SELECT_OPR;
+import static org.usf.jquery.web.Parameters.SELECT_PARAM;
 import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import static org.usf.jquery.web.proxy.EntryEvaluators.evaluateFilter;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntries;
@@ -25,6 +28,7 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import org.slf4j.Logger;
+import org.usf.jquery.core.ComposerDefinition;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.web.ResourceAccessException;
@@ -46,7 +50,7 @@ public interface QueryInterpreter {
 			}
 		}
 		resolveParameterCompatibility(modifiableMap);
-		modifiableMap.computeIfAbsent(SELECT_OPR, k-> qr.fields());		
+		modifiableMap.computeIfAbsent(SELECT_PARAM, k-> qr.fields());		
 		var store = qr.store() == StoreResource.class 
 				? getInstance().getDefaultStore() //default schema if not specified
 				: getInstance().getStore(qr.store());
@@ -60,54 +64,28 @@ public interface QueryInterpreter {
 	
 	default QueryComposer parseQuery(Map<String, String[]> parameterMap, RequestContext ctx) {
 		var query = new QueryComposer();
-		parseCtes(parameterMap.remove(VIEW_PARAM), query, ctx);
-		parseColumns(parameterMap.remove(SELECT_OPR), query, ctx);
-		parseJoins(parameterMap.remove(JOIN_PARAM), query, ctx);
-		parseGroups(parameterMap.remove(GROUP_PARAM), query, ctx);
-		parseOrders(parameterMap.remove(ORDER_PARAM), query, ctx);
-		parseDistinct(parameterMap.remove(DISTINCT_PARAM), query, ctx);
-		parseLimit(parameterMap.remove(LIMIT_PARAM), query, ctx);
-		parseOffset(parameterMap.remove(OFFSET_PARAM), query, ctx);
-		parseFilters(parameterMap, query, ctx);
+		parseParam(parameterMap, CTE_PARAM, ctx.getDialect().cte(query), ctx);
+		parseParam(parameterMap, SELECT_PARAM, ctx.getDialect().select(query), ctx);
+		parseParam(parameterMap, JOIN_PARAM, ctx.getDialect().join(query), ctx);
+		parseParam(parameterMap, GROUP_PARAM, ctx.getDialect().group(query), ctx);
+		parseParam(parameterMap, ORDER_PARAM, ctx.getDialect().order(query), ctx);
+		parseParam(parameterMap, DISTINCT_PARAM, ctx.getDialect().distinct(query), ctx);
+		parseParam(parameterMap, LIMIT_PARAM, ctx.getDialect().limit(query), ctx);
+		parseParam(parameterMap, OFFSET_PARAM, ctx.getDialect().offset(query), ctx);
 		//TODO parse group, from, union
+		parseFilters(parameterMap, query, ctx);
 		return query;
 	}
 	
-	default void parseCtes(String[] parameters, QueryComposer composer, RequestContext ctx) { //ctes
-		if(!isEmpty(parameters)) {
-			var def = ctx.getDialect().cte(composer);
-			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
-		}
-	}
-	
-	default void parseColumns(String[] parameters, QueryComposer composer, RequestContext ctx) {
-		if(!isEmpty(parameters)) {
-			var def = ctx.getDialect().select(composer);
-			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
-		}
-		else {
-			throw new IllegalArgumentException("missing required parameter: " + SELECT_OPR);
-		}
-	}
-	
-	default void parseOrders(String[] parameters, QueryComposer query, RequestContext ctx) {
-		if(!isEmpty(parameters)) {
-			var def = ctx.getDialect().order(query);
-			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
-		}
-	}
-	
-	default void parseJoins(String[] parameters, QueryComposer composer, RequestContext ctx) {
-		if(!isEmpty(parameters)) {
-			var def = ctx.getDialect().join(composer);
-			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
-		}
-	}
-	
-	default void parseGroups(String[] parameters, QueryComposer composer, RequestContext ctx) {
-		if(!isEmpty(parameters)) {
-			var def = ctx.getDialect().group(composer);
-			def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
+	default void parseParam(Map<String, String[]> parameterMap, String param, ComposerDefinition<QueryComposer> def, RequestContext ctx) { //ctes
+		var params = parameterMap.remove(param);
+		if(nonNull(params)) {
+			try {
+				def.invoke(ctx.resolveArgs(parse(params).toArray(Entry[]::new), null, def));
+			}
+			catch (Exception e) {
+				throw new IllegalArgumentException("Invalid value for parameter: " + param, e);
+			}
 		}
 	}
 	
@@ -120,47 +98,12 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	default void parseDistinct(String[] parameters, QueryComposer composer, RequestContext ctx) {
-		if(!isEmpty(parameters)) {
-			try {
-				var def = ctx.getDialect().distinct(composer);
-				def.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, def));
-			} catch (Exception e) {
-				throw new IllegalArgumentException("Invalid value for parameter: " + DISTINCT_PARAM, e);
-			}
-		}
-	}
-	
-	default void parseLimit(String[] parameters, QueryComposer composer, RequestContext ctx) {
-		if(!isEmpty(parameters)) {
-			try {
-				var limit = ctx.getDialect().limit(composer);
-				limit.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, limit));
-			}
-			catch (Exception e) {
-				throw new IllegalArgumentException("Invalid value for parameter: " + LIMIT_PARAM, e);
-			}
-		}
-	}
-	
-	default void parseOffset(String[] parameters, QueryComposer composer, RequestContext ctx) {
-		if(!isEmpty(parameters)) {
-			try {
-				var offset = ctx.getDialect().offset(composer);
-				offset.invoke(ctx.resolveArgs(parse(parameters).toArray(Entry[]::new), null, offset));
-			}
-			catch (Exception e) {
-				throw new IllegalArgumentException("Invalid value for parameter: " + OFFSET_PARAM, e);
-			}
-		}
-	}
-	
 	private static Stream<Entry> parse(String[] values) {
 		return stream(values).flatMap(c-> stream(parseEntries(c)));
 	}
 	
 	private static void resolveParameterCompatibility(Map<String, String[]> modifiableMap) {
-		Map.of(COLUMN_PARAM, SELECT_OPR, FIELD_PARAM, SELECT_OPR).entrySet().forEach(e-> {
+		Map.of(COLUMN_PARAM, SELECT_PARAM, FILTER_OPR, CRITERIA_OPR, VIEW_PARAM, CTE_PARAM).entrySet().forEach(e-> {
 			var args = modifiableMap.remove(e.getKey());
 			if(!isEmpty(args)) {
 				log.warn("'{}' parameter is deprecated, use {} instead", e.getKey(), e.getValue());
