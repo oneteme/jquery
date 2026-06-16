@@ -17,6 +17,8 @@ import static org.usf.jquery.core.JoinType.FULL;
 import static org.usf.jquery.core.JoinType.INNER;
 import static org.usf.jquery.core.JoinType.LEFT;
 import static org.usf.jquery.core.JoinType.RIGHT;
+import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Parameter.optional;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Signature.arrayOf;
@@ -31,6 +33,22 @@ import java.util.function.IntFunction;
  */
 public interface Composers {
 
+	//logical operators
+	
+	default Definition<Criteria> and() {
+		return logicalOprDefinition(AND);
+	}
+
+	default Definition<Criteria> or() {
+		return logicalOprDefinition(OR);
+	}
+	
+	private Definition<Criteria> logicalOprDefinition(LogicalOperator opr) {
+		return new ComposerDefinition<>(opr.name().toLowerCase(), BOOLEAN, 
+				args-> ((Criteria)args[0]).append(opr, (Criteria)args[1]), 
+				required(BOOLEAN), required(BOOLEAN));
+	}
+	
 	//case operators
 	
 	default ComposerDefinition<CaseColumnComposer> when() { 

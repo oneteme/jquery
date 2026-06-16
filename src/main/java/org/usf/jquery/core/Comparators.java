@@ -1,9 +1,7 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.LogicalOperator.AND;
-import static org.usf.jquery.core.LogicalOperator.OR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Parameter.varargs;
 import static org.usf.jquery.core.TypeResolver.firstArgType;
@@ -106,22 +104,6 @@ public interface Comparators {
 	
 	default ComparatorDefinition notIn() {
 		return inComparator("NOT IN");
-	}
-
-	//logical operators
-	
-	default Definition<Criteria> and() {
-		return logicalOprDefinition(AND);
-	}
-
-	default Definition<Criteria> or() {
-		return logicalOprDefinition(OR);
-	}
-	
-	private Definition<Criteria> logicalOprDefinition(LogicalOperator opr) {
-		return new ComposerDefinition<>(opr.name().toLowerCase(), BOOLEAN, 
-				args-> ((Criteria)args[0]).append(opr, (Criteria)args[1]), 
-				required(BOOLEAN), required(BOOLEAN));
 	}
 	
 	static ComparatorDefinition basicComparator(final String symbol, final String name) {

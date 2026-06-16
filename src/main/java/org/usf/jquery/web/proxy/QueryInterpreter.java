@@ -16,6 +16,7 @@ import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
 import static org.usf.jquery.web.Parameters.SELECT_PARAM;
+import static org.usf.jquery.web.Parameters.UNION_PARAM;
 import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import static org.usf.jquery.web.proxy.EntryEvaluators.evaluateFilter;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntries;
@@ -72,6 +73,7 @@ public interface QueryInterpreter {
 		parseParam(parameterMap, DISTINCT_PARAM, ctx.getDialect().distinct(query), ctx);
 		parseParam(parameterMap, LIMIT_PARAM, ctx.getDialect().limit(query), ctx);
 		parseParam(parameterMap, OFFSET_PARAM, ctx.getDialect().offset(query), ctx);
+//		parseParam(parameterMap, UNION_PARAM, ctx.getDialect().union(query), ctx);
 		//TODO parse group, from, union
 		parseFilters(parameterMap, query, ctx);
 		return query;

@@ -26,6 +26,7 @@ public final class Parameters {
 	public static final String ORDER_PARAM = "order";
 	public static final String LIMIT_PARAM = "limit";
 	public static final String OFFSET_PARAM = "offset";
+	public static final String UNION_PARAM = "union";
 	//query parameter
 	public static final String SELECT_PARAM = "select";
 	@Deprecated(since = "5.0.0", forRemoval = true)

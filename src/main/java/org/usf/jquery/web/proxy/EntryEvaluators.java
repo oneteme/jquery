@@ -14,7 +14,6 @@ import java.util.function.BiFunction;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.Composer;
-import org.usf.jquery.core.ComposerDefinition;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.Definition;
 import org.usf.jquery.core.Group;
@@ -321,7 +320,7 @@ public final class EntryEvaluators {
 			Entry entry = itr.peekNext();
 			var args = entry.getArgs();
 			if(isNull(args) && !entry.hasNext()) {
-				args = outArgs;
+				args = outArgs; //TODO name.left=1
 			}
 			var r = ctx.lookupSchemaResource(entry.getValue(), Predicate.class, args);
 			if(r.isPresent()) {
@@ -333,14 +332,19 @@ public final class EntryEvaluators {
 			}
 			else {
 				var opt = ctx.lookupDialectResource(entry.getValue(), Definition.class);
-				if(opt.isEmpty() || opt.get() instanceof ComposerDefinition<?>) {
+				if(opt.isEmpty()) {
 					break;
 				}
-				itr.advance(); 
 				var def = opt.get();
-				col = (Column) def.invoke(ctx.resolveArgs(args, col, def));
-				if(args == outArgs && def instanceof ComparatorDefinition) {
-					outArgs = null;
+				if(def.invoke(ctx.resolveArgs(args, col, def)) instanceof Column cc) {
+					col = cc;
+					if(args == outArgs && def instanceof ComparatorDefinition) {
+						outArgs = null;
+					}
+					itr.advance(); 
+				}
+				else {
+					throw new EntryParseException("");
 				}
 			}
 		}
