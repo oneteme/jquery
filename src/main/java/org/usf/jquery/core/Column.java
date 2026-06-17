@@ -231,8 +231,8 @@ public interface Column extends QueryPart, Typed {
 		return getDialect().bitXor().invoke(this, value);
 	}
 	
-	default Column bitNot(int value) {
-		return getDialect().bitNot().invoke(this, value);
+	default Column bitNot() {
+		return getDialect().bitNot().invoke(this);
 	}
 	
 	default Column bitShiftLeft(int value) {
