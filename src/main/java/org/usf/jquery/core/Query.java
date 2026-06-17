@@ -57,7 +57,8 @@ public class Query implements View {
 
 	@Override
 	public void build(SqlBuilder builder) {
-		var suround = '(' != builder.lastChar();
+		var c = builder.lastChar();
+		var suround = c != 0 && c != '(' ;
 		builder.append(suround, '(');
 		buildClauses(builder.subQuery(this));
 		builder.append(suround, ')');

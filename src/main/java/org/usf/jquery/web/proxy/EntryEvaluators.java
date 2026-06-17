@@ -156,7 +156,7 @@ public final class EntryEvaluators {
 		}
 		return null;
 	}
-
+	
 	static DatasetResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		if(allowAnonymous && (SELECT_PARAM.equals(entry.getValue()))) {

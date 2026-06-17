@@ -16,7 +16,6 @@ import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.web.Parameters.ORDER_PARAM;
 import static org.usf.jquery.web.Parameters.SELECT_PARAM;
-import static org.usf.jquery.web.Parameters.UNION_PARAM;
 import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import static org.usf.jquery.web.proxy.EntryEvaluators.evaluateFilter;
 import static org.usf.jquery.web.proxy.EntryParser.parseEntries;
