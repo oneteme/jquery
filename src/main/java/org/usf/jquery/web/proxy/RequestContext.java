@@ -84,7 +84,7 @@ public final class RequestContext {
 		var view = declaredViews.get(name);
 		if(isNull(view) && !excludeViews.contains(name)) {
 			try {
-				return lookupSchemaResource(name, DatasetResource.class, args);
+				return lookupResource(name, DatasetResource.class, args);
 			}
 			catch (EntryParseException e) {
 				if(!allowParameterize && nonNull(args)) {
@@ -136,11 +136,11 @@ public final class RequestContext {
 		return empty();
 	}
 
-	public <T> Optional<T> lookupSchemaResource(String name, Class<T> type, Entry... args) { 
+	public <T> Optional<T> lookupResource(String name, Class<T> type, Entry... args) { 
 		return lookupResource(store, name, type, args);
 	}
 	
-	public <T> Optional<T> lookupViewResource(Resource view, String name, Class<T> type, Entry... args) { 
+	public <T> Optional<T> lookupSubResource(Resource view, String name, Class<T> type, Entry... args) { 
 		return lookupResource(view, name, type, args);
 	}
 	

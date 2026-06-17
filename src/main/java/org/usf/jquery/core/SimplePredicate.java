@@ -32,7 +32,7 @@ public final class SimplePredicate implements Predicate {
 
 	@Override
 	public int prepare(QueryAnalyzer declare) {
-		return nonNull(right) ? declare.tryAnalyzeNested(toList(right)) : SCALAR;
+		return nonNull(right) ? declare.tryAnalyzeNested(toList(right), from) : SCALAR;
 	}
 	
 	@Override

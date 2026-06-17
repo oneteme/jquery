@@ -156,7 +156,7 @@ public final class SqlBuilder {
 	}
 
 	public SqlBuilder subQuery(Query query) {
-		var sMap = columnAlias("unnamed_", query.getSelects());
+		var sMap = columnAlias(query.getSelects());
 		var cMap = isCte(query) ? cteAlias(query.getCtes()) : this.ctes; //inherit ctes if sub query is overview
 		var vMap = viewAlias("s_"+prefix, query.getFroms(), query.getJoins());
 		var ovr  = isCte(query) ? overview(cMap, vMap, query.getOverView()) : overViews; //inherit overview if sub query is overview
@@ -186,7 +186,7 @@ public final class SqlBuilder {
 	}
 
 	static SqlBuilder create(Query query, boolean parameterized) {
-		var sMap = columnAlias("unnamed_", query.getSelects());
+		var sMap = columnAlias(query.getSelects());
 		var cMap = cteAlias(query.getCtes());
 		var vMap = viewAlias("", query.getFroms(), query.getJoins());
 		var ovr  = overview(cMap, vMap, query.getOverView());
@@ -230,12 +230,11 @@ public final class SqlBuilder {
 		return map;
 	}
 
-	static Map<Column, String> columnAlias(String prefix, Collection<Column> columns){
+	static Map<Column, String> columnAlias(Collection<Column> columns){
 		if(!isEmpty(columns)) {
 			var map = new LinkedHashMap<Column, String>(); //preserve order
-			var i = 0;
 			for(var c : columns) {
-				map.put(c, nonNull(c.getTag()) ? c.getTag() : prefix + ++i);
+				map.put(c, c.getTag()); //tag can be null
 			}
 			return map;
 		}

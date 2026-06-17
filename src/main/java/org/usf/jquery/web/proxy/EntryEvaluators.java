@@ -306,7 +306,7 @@ public final class EntryEvaluators {
 
 	static <T> Optional<T> lookupViewResource(DatasetResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
-		var res = ctx.lookupViewResource(view, entry.getValue(), type, entry.getArgs());
+		var res = ctx.lookupSubResource(view, entry.getValue(), type, entry.getArgs());
 		if(res.isPresent()) {
 			itr.advance();
 		}
@@ -322,7 +322,7 @@ public final class EntryEvaluators {
 			if(isNull(args) && !entry.hasNext()) {
 				args = outArgs; //TODO name.left=1
 			}
-			var r = ctx.lookupSchemaResource(entry.getValue(), Predicate.class, args);
+			var r = ctx.lookupResource(entry.getValue(), Predicate.class, args);
 			if(r.isPresent()) {
 				itr.advance();
 				col = col.filter(r.get());

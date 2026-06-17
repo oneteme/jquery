@@ -12,6 +12,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -79,6 +80,13 @@ public final class QueryAnalyzer {
 		return this;
 	}
 	
+	public Set<View> getFroms() {
+		if(Utils.isEmpty(overViews)) {
+			return froms;
+		}
+		return froms.stream().map(v-> overViews.containsKey(v) ? overViews.get(v) : v).collect(Collectors.toSet());
+	}
+	
 	public int analyzeNested(Collection<? extends QueryPart> arr){
 		return analyzeNested(streamOrEmpty(arr), null);
 	}
@@ -93,6 +101,10 @@ public final class QueryAnalyzer {
 		
 	public int tryAnalyzeNested(Collection<?> arr){
 		return analyzeNested(filterStream(arr), null);
+	}
+	
+	public int tryAnalyzeNested(Collection<?> arr, int from){
+		return analyzeNested(filterStream(arr).skip(from), null);
 	}
 
 	public int tryAnalyzeNested(Collection<?> arr, Column defaultDimension){
