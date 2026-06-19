@@ -3,11 +3,13 @@ package org.usf.jquery.core;
 import static java.lang.System.arraycopy;
 import static java.lang.reflect.Array.newInstance;
 import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
@@ -108,5 +110,14 @@ public final class Utils {
     		return from == 0 ? list : list.subList(from, arr.length);
     	}
 		return emptyList();
+	}
+
+	public static Method getMethod(Class<?> clazz, String name, Class<?>... argsClazz)  {
+		try {
+			return clazz.getMethod(name, argsClazz);
+		} catch (Exception e) {
+			throw new NoSuchMethodError("no such method: " + clazz.getName() + "." + name + "("+
+					stream(argsClazz).map(Class::getSimpleName).collect(joining(",")) + ")");
+		}
 	}
 }

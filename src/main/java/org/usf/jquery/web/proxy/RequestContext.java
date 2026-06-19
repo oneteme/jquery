@@ -1,5 +1,6 @@
 package org.usf.jquery.web.proxy;
 
+import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Collections.emptySet;
@@ -19,10 +20,10 @@ import static org.usf.jquery.core.JQueryType.DECLARE_COLUMN;
 import static org.usf.jquery.core.Parameter.match;
 import static org.usf.jquery.core.Signature.badArgumentTypeException;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.proxy.Resource.Match.HIDDEN;
-import static org.usf.jquery.web.proxy.Resource.Match.VALID;
 
+import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -105,13 +106,14 @@ public final class RequestContext {
 	}
 	
 	public <T> Optional<T> lookupDialectResource(String name, Class<T> type, Object composer) {
-		var match = store.exposes(name, type); //cannot override composer method
-		if(match == VALID) {
-			return lookupResource(store, name, type);
-		}
-		if(match == HIDDEN) {
-			log.warn("resource '{}' of type {} is hidden by store, cannot be used", name, type.getSimpleName());
-			return empty();
+		if(isNull(composer)) { //cannot override composers in stores
+			var match = store.lookup(name, type);
+			if(nonNull(match)) {
+				if(match.isAccessible()) {
+					return Optional.of(match.invoke());
+				}
+				log.warn("resource '{}' of type {} is hidden by store, cannot be used", name, type.getSimpleName());
+			}
 		}
 		try {
 			var mth = nonNull(composer) 
@@ -145,9 +147,11 @@ public final class RequestContext {
 	}
 	
 	<T> Optional<T> lookupResource(Resource resource, String name, Class<T> type, Entry... args) { 
-		return resource.exposes(name, type) == VALID
-				? Optional.of(resource.invokeResource(name, type, args, this))
-				: Optional.empty();
+		var res = resource.lookup(name, type);
+		if(nonNull(res) && res.isAccessible()) {
+			return Optional.of(res.invoke(evaluate(args, res.getParameters())));
+		}
+		return Optional.empty();
 	}
 	
 	void declareView(String name, DatasetResource view) {
@@ -166,6 +170,26 @@ public final class RequestContext {
 			}
 			throw new IllegalArgumentException("a column with name '" + name + "' already exists in context");
 		});
+	}
+	
+	public Object[] evaluate(Entry[] args, Parameter[] params) {
+		var nArgs = nonNull(args) ? args.length : 0;
+		if(params.length == 1 && params[0].getType().isArray()) {
+			var type = params[0].getType().getComponentType();
+			var arr = newInstance(type, nArgs);
+			for(int i=0; i<nArgs; i++) {
+				Array.set(arr, i, resolve(args[i], type));
+			}
+			return new Object[] {arr}; //allow empty array ?
+		}
+		if(params.length == nArgs) {
+			var arr = new Object[nArgs];
+			for(int i=0; i<nArgs; i++) {
+				arr[i] = resolve(args[i], params[i].getType());
+			}
+			return arr;
+		}
+		throw new IllegalArgumentException("expected " + params.length + " arguments but got " + nArgs);
 	}
 	
 	public Object[] resolveArgs(Entry[] args, Object operand, Definition<?> def){ //TODO parse on demand

@@ -2,7 +2,6 @@ package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.newProxyInstance;
-import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -12,7 +11,6 @@ import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.QueryPart.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.datasetMetadata;
-import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -25,6 +23,7 @@ import org.usf.jquery.core.JoinGroup;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Table;
+import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.View;
 import org.usf.jquery.core.ViewColumn;
 
@@ -38,8 +37,8 @@ final class DatasetProxy extends ResourceProxy {
 	private final View view;
 	private final DatasetMetadata metadata;
 	
-	DatasetProxy(View view, Map<String, Method> resourceMap, DatasetMetadata metadata) {
-		super(resourceMap);
+	DatasetProxy(View view, Map<String, Method> exposedMethods, Map<Method, Object> resourcesCache, DatasetMetadata metadata) {
+		super(exposedMethods, resourcesCache);
 		this.view = view;
 		this.metadata = metadata;
 	}
@@ -62,9 +61,6 @@ final class DatasetProxy extends ResourceProxy {
 	
 	@Override
 	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) {
-		if(method.getReturnType() == View.class && method.getParameterCount() == 0 && method.getName().equals("getView")) {
-			return view;
-		}
 		var type = method.getReturnType();
 		if(Column.class.isAssignableFrom(type)) {
 			var bind = requireNonNull(method.getAnnotation(Bind.class), 
@@ -117,27 +113,27 @@ final class DatasetProxy extends ResourceProxy {
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
-			var map = discoverExposedMethods(type, (t,c)-> {
-				if(t == REF) {
-					return c == ViewColumn.class;
-				}
-				else {
-					return Column.class.isAssignableFrom(c) || 
-							Criteria.class.isAssignableFrom(c) || 
-							c == Order.class || 
-							c == Partition.class||
-							c == JoinGroup.class;
-				}
-			});
-			var cols = stream(type.getDeclaredMethods())
-			.filter(m-> isAbstract(m.getModifiers()) && m.getAnnotation(Bind.class).type() == REF) //must have bind annotation
-			.map(m-> m.getAnnotation(Bind.class).value())
-			.collect(toSet());
-			
+			var map = discoverExposedMethods(type, DatasetProxy::acceptBind);
+			var cols = map.values().stream()
+			.filter(m-> isAbstract(m.getModifiers()) && m.getAnnotation(Bind.class).type() == REF) //only binded object
+			.map(m-> m.getAnnotation(Bind.class).value()).collect(toSet());
 			var meta = datasetMetadata(store, view.getName(), cols, ds);
 			return type.cast(newProxyInstance(DatasetProxy.class.getClassLoader(), new Class<?>[]{type}, 
-					new DatasetProxy(view, map, meta)));
+					new DatasetProxy(view, map, Map.of(Utils.getMethod(type, "getView"), view), meta)));
 		}
 		throw new ResourceMappingException("view must be an interface : " + type);
+	}
+	
+	static boolean acceptBind(Method method, Bind bind) {
+		var t = bind.type();
+		var c = method.getReturnType();
+		if(t == REF) {
+			return c == ViewColumn.class;
+		}
+		return Column.class.isAssignableFrom(c) || 
+				Criteria.class.isAssignableFrom(c) || 
+				c == Order.class || 
+				c == Partition.class||
+				c == JoinGroup.class;
 	}
 }

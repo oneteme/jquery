@@ -36,6 +36,8 @@ public @interface QueryRequest {
 	
 	int maxColumns() default 0;
 	
+	//TODO security annotation to restrict access to certain datasets or stores
+	
 	/** Views to exclude from the query. */
 	String[] excludeViews() default {};
 

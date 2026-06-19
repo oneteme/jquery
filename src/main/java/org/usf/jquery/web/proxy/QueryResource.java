@@ -1,8 +1,6 @@
 package org.usf.jquery.web.proxy;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.proxy.Resource.Match.NONE;
-import static org.usf.jquery.web.proxy.Resource.Match.VALID;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Query;
@@ -26,25 +24,19 @@ public final class QueryResource implements DatasetResource {
 	@Override
 	public View getView() {
 		return query;
-	}
-
+	}	
+	
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T> T invokeResource(String id, Class<T> type, Entry[] args, RequestContext ctx) {
+	public <T> MethodInvoker<T> lookup(String id, Class<T> type) {
 		if(type.isAssignableFrom(Column.class) && nonNull(query.getSelects())) {
 			return query.getSelects().stream()
 					.filter(c-> id.equals(c.getTag()))
 					.findFirst().map(Column.class::cast)
-					.map(c-> (T)query.column(ctx.getStore().dialect().suroundColumnAlias(id), c.getType(), id))
+					.map(c-> query.column(query.getStore().dialect().suroundColumnAlias(id), c.getType(), id)) //proxy ?
+					.map(v-> new MethodInvoker<T>(true, args-> (T)v)) //no arguments
 					.orElse(null);
 		}
 		throw new NoSuchResourceException("no exposed method with id '" + id + "' found in query resource");
-	}
-	
-	@Override
-	public Match exposes(String id, Class<?> type) {
-		return type.isAssignableFrom(Column.class) 
-				&& nonNull(query.getSelects())
-				&& query.getSelects().stream().anyMatch(c-> id.equals(c.getTag())) ? VALID : NONE;
 	}
 }

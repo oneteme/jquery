@@ -1,22 +1,30 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Modifier.isAbstract;
+import static java.lang.reflect.Modifier.isPublic;
+import static java.lang.reflect.Modifier.isStatic;
+import static java.util.Arrays.stream;
+import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Utils.isEmpty;
+import static java.util.function.Function.identity;
+import static java.util.stream.Collectors.toMap;
+import static java.util.stream.Collectors.toUnmodifiableSet;
+import static org.usf.jquery.web.proxy.Bind.BindType.REF;
 
+import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.Set;
+import java.util.function.BiPredicate;
+import java.util.function.Supplier;
 
 import org.usf.jquery.core.InvocationException;
-import org.usf.jquery.web.EntryParseException;
-import org.usf.jquery.web.NoSuchResourceException;
-import org.usf.jquery.web.proxy.Resource.Match;
+import org.usf.jquery.core.Utils;
 
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -26,38 +34,36 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-@RequiredArgsConstructor(access = AccessLevel.PROTECTED)
-public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvaluator {
+public abstract class ResourceProxy implements InvocationHandler {
 
-	private static final Method INVOKE_METHOD;
-	private static final Method EXPOSES_METHOD;
+	private static final Method LOOKUP_METHOD = Utils.getMethod(Resource.class, "lookup", String.class, Class.class);
 
-	private final Map<String, Method> exposedMethods;
+	final Map<String, Method> exposedMethods;
+	final Map<Method, Object> resourcesCache;
+	final Set<Method> excludes;
 	
-	static {
-		try {
-			INVOKE_METHOD  = Resource.class.getMethod("invokeResource", String.class, Class.class, Entry[].class, RequestContext.class);
-			EXPOSES_METHOD = Resource.class.getMethod("exposes", String.class, Class.class);
-		} catch (Exception e) {
-			throw new NoSuchMethodError("failed to initialize ResourceProxy: " + e.getMessage());
-		}
+	ResourceProxy(Map<String, Method> exposedMethods, Map<Method, Object> resourcesCache) {
+		this.exposedMethods = nonNull(exposedMethods) ? unmodifiableMap(exposedMethods) : emptyMap();
+		this.resourcesCache = nonNull(resourcesCache) ? unmodifiableMap(resourcesCache) : emptyMap();
+		this.excludes = this.exposedMethods.values().stream().filter(m->{
+			var exp = m.getAnnotation(Expose.class);
+			return nonNull(exp) && !exp.value();
+		}).collect(toUnmodifiableSet());
 	}
 	
 	@Override
 	public final Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+		if(resourcesCache.containsKey(method)) { //contains key but value can be null
+			return resourcesCache.get(method);
+		}
 		if(method.isDefault()) {
 			return invokeDefaultMethod(proxy, method, args);
 		}
 		if(isAbstract(method.getModifiers())) {
-			if(EXPOSES_METHOD.equals(method)) {
-				return invokeExposesMethod(assertArguments(method, args));
+			if(LOOKUP_METHOD.equals(method)) {
+				return invokeLookupMethod(proxy, (String)args[0], (Class<?>)args[1]);
 			}
-			if(INVOKE_METHOD.equals(method)) {
-				return invokeResourceMethod(proxy, assertArguments(method, args));
-			}
-			else {
-				return invokeAbstractMethod(proxy, method, args);
-			}
+			return invokeAbstractMethod(proxy, method, args);
 		}
 		return switch (method.getName()) {
 		case "equals"-> invokeEquals(proxy, args);
@@ -71,71 +77,92 @@ public abstract class ResourceProxy implements InvocationHandler, ArgumentsEvalu
 		return InvocationHandler.invokeDefault(proxy, method, args);
 	}
 	
-	Match invokeExposesMethod(Object[] args) {
-		var m = exposedMethods.get(args[0]);
-		if(nonNull(m)) {
-			if(((Class<?>)args[1]).isAssignableFrom(m.getReturnType())) {
-				return Match.VALID;
-			}
-			else {
-				return Match.TYPE;
-			}
-		}
-		return exposedMethods.containsKey(args[0]) ? Match.HIDDEN : Match.NONE;
-	}
-	
-	Object invokeResourceMethod(Object proxy, Object[] args) {
-		var m = exposedMethods.get(args[0]);
-		if(nonNull(m) && ((Class<?>)args[1]).isAssignableFrom(m.getReturnType())) {
-			Object[] arr = null;
-			var entries = (Entry[]) args[2];
-			if(m.getParameterCount() > 0) {
+	@SuppressWarnings("unchecked")
+	<T> MethodInvoker<T> invokeLookupMethod(Object proxy, String name, Class<T> type) {
+		var mth = exposedMethods.get(name);
+		if(nonNull(mth) && type.isAssignableFrom(mth.getReturnType())) {
+			return new MethodInvoker<>(!excludes.contains(mth), mth.getParameters(), arr->{
 				try {
-					 arr = (proxy instanceof ArgumentsEvaluator eval ? eval : this).evaluate(m, entries, (RequestContext) args[3]);
-				}
-				catch (EntryParseException e) {
-					throw e;
+					return (T) mth.invoke(proxy, arr);
 				}
 				catch (Exception e) {
-					throw new EntryParseException("failed to parse arguments for method " + m.getName(), e);
+					throw new InvocationException(e);
 				}
-			}
-			else if(!isEmpty(entries)){
-				throw new InvocationException("method " + m.getName() + " does not expect arguments");
-			}
-			try {
-				return invoke(proxy, m, arr);
-			}
-			catch (Throwable e) {
-				throw new InvocationException(e);
-			}
+			});
 		}
-		throw new NoSuchResourceException("Resource '" + args[0] + "' not found or incompatible with type " + ((Class<?>)args[1]).getSimpleName());	
+		return null;
+	}
+	
+	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) {
+		throw new IllegalStateException("unexpected method invocation : " + method);
 	}
 	
 	boolean invokeEquals(Object proxy, Object[] args) {
 		return proxy == args[0];
 	}
 	
-	abstract Object invokeAbstractMethod(Object proxy, Method method, Object[] args);
-	
 	abstract int invokeHashCode(Object proxy, Object[] args);
 	
 	abstract String invokeToString(Object proxy, Object[] args);
 	
-	static Object[] assertArguments(Method m, Object... args) {
-		var nArgs = isNull(args) ? 0 : args.length;
-		if(m.getParameterCount() == nArgs) {
-			if(nArgs > 0) {
-				var params = m.getParameters();
-				for(int i=0; i<nArgs; i++) {
-					if(nonNull(args[i]) && !params[i].getType().isInstance(args[i])) {
-						throw new IllegalArgumentException("expected argument " + i + " to be of type " + m.getParameters()[i].getType() + " but got " + args[i].getClass());
-					}
+	static Map<String, Method> discoverExposedMethods(Class<?> type, BiPredicate<Method, Bind> pre) {
+		return stream(type.getDeclaredMethods()).filter(m-> {
+			var mod = m.getModifiers();
+			if(!isStatic(mod) && isPublic(mod)) {
+				var bnd = validateBind(m); //no arguments
+				if(nonNull(bnd) && !pre.test(m, bnd)) {
+					throw new ResourceMappingException("invalid @Bind.type=["+bnd+"] for return type " + m + " on " + m);
 				}
+				return true;
 			}
-			return args;
+			return false;
+		}).collect(toMap(ResourceProxy::validateExpose, identity(), (m1, m2) -> {
+			throw new ResourceMappingException("duplicate resource identifier: " + m1.getName() + " vs " + m2.getName());
+		}));
+	}
+	
+	static Bind validateBind(Method m){
+		Bind bnd = null;
+		if(isAbstract(m.getModifiers())) {
+			bnd = scanBind(m);
+			if(m.getParameterCount() > 0) { 
+				throw new ResourceMappingException("binded method cannot have parameters : " + m);
+			}
 		}
-		throw new IllegalArgumentException("expected " + m.getParameterCount() + " arguments but got " + nArgs);
+		else if(nonNull(m.getAnnotation(Bind.class))) { //bind default method 
+			throw new ResourceMappingException("default method cannot be binded : " + m);
+		}
+		return bnd;
+	}
+	
+	static String validateExpose(Method m){
+		var exp = m.getAnnotation(Expose.class); //optional annotation for exposed method
+		if(nonNull(exp)) {
+			if(!exp.alias().isEmpty()) {
+				verifyIdentifier(exp.alias(), () -> "invalid @Expose.alias=["+exp.alias()+"] on " + m);
+			}
+			if(!exp.identity().isEmpty()) {
+				verifyIdentifier(exp.identity(), () -> "invalid @Expose.id=["+exp.identity()+"] on " + m);
+				return exp.identity();
+			}
+		} //TD check reserved words
+		return m.getName();
+	}
+	
+	static Bind scanBind(AnnotatedElement elem){
+		var bnd = elem.getAnnotation(Bind.class);
+		if(nonNull(bnd)) {
+			if(bnd.type() == REF) {
+				verifyIdentifier(bnd.value(), () -> "invalid @Bind.value=["+bnd.value()+"] on " + elem);
+			}	
+			return bnd;
+		}
+		throw new ResourceMappingException("missing decorator @Bind on " + elem);
+	}
+		
+	static void verifyIdentifier(String id, Supplier<String> message) {
+		if(isNull(id) || !id.matches("[a-zA-Z_]\\w*")) {
+			throw new ResourceMappingException(message.get());
+		}
 	}
 }

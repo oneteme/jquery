@@ -2,16 +2,12 @@ package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.newProxyInstance;
-import static java.util.Arrays.stream;
 import static java.util.Objects.hash;
-import static java.util.Objects.isNull;
-import static java.util.Objects.nonNull;
+import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
+import static org.usf.jquery.core.Utils.getMethod;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.storeDialect;
 import static org.usf.jquery.web.proxy.DatasetProxy.createDataset;
-import static org.usf.jquery.web.proxy.ResourceIntrospector.discoverExposedMethods;
-import static org.usf.jquery.web.proxy.ResourceIntrospector.resolveIdentifier;
-import static org.usf.jquery.web.proxy.ResourceIntrospector.scanBind;
 
 import java.lang.reflect.Method;
 import java.util.Map;
@@ -33,36 +29,12 @@ import lombok.extern.slf4j.Slf4j;
 public final class StoreProxy extends ResourceProxy {
 	
 	private final String name;
-	private final Map<String, ? extends DatasetResource> views;
-	private final Dialect dialect;
-	private final DataSource dataSource;
 	
-	StoreProxy(String name, Map<String, Method> exposedMethods, Map<String, ? extends DatasetResource> views, Dialect dialect, DataSource dataSource) {
-		super(exposedMethods);
-		this.views = views;
+	StoreProxy(String name, Map<String, Method> exposedMethods, Map<Method, Object> resourcesCache) {
+		super(exposedMethods, resourcesCache);
 		this.name = name;
-		this.dialect = dialect;
-		this.dataSource = dataSource;
 	}
 	
-	@Override
-	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) { //bind method must return a resource handler
-		if(Dialect.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "dialect".equals(method.getName())) {
-			return dialect;
-		}
-		if(DataSource.class.isAssignableFrom(method.getReturnType()) && method.getParameterCount() == 0 && "dataSource".equals(method.getName())) {
-			return dataSource;
-		}
-		if(method.getReturnType() == String.class && method.getParameterCount() == 0 && "name".equals(method.getName())) {
-			return name;
-		}
-		var handler = views.get(resolveIdentifier(method));
-		if(nonNull(handler)) {
-			return handler;	
-		}
-		throw new IllegalStateException("unexpected method invocation : " + method);
-	}
-
 	@Override
 	int invokeHashCode(Object proxy, Object[] args) {
 		return hash(name);
@@ -74,23 +46,22 @@ public final class StoreProxy extends ResourceProxy {
 	}
 
 	static <T extends StoreResource> T createStore(Class<T> clazz, DataSource ds) {
-		return createStore(clazz, ds, null);
+		return createStore(clazz, ds, storeDialect(ds));
 	}
 	
 	@SuppressWarnings("unchecked")
 	static <T extends StoreResource> T createStore(Class<T> clazz, DataSource ds, Dialect dialect) {
 		if(clazz.isInterface()) {
-			var bnd = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
-			var map = discoverExposedMethods(clazz, (t,c)-> DatasetResource.class.isAssignableFrom(c));
-			var sub = stream(clazz.getDeclaredMethods())
+			var name = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
+			var map = discoverExposedMethods(clazz, (m,b)-> DatasetResource.class.isAssignableFrom(m.getReturnType()));
+			Map<Method, Object> sub = map.values().stream()
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
-					.parallel().collect(toMap(ResourceIntrospector::resolveIdentifier, 
-							m-> createDataset((Class<? extends DatasetResource>) m.getReturnType(), m.getAnnotation(Bind.class), bnd, ds)));
-			if(isNull(dialect)) {
-				dialect = storeDialect(ds);
-			}
-			return clazz.cast(newProxyInstance(StoreProxy.class.getClassLoader(), new Class<?>[]{clazz}, 
-					new StoreProxy(bnd, map, sub, dialect, ds)));
+					.parallel().collect(toMap(identity(), m-> createDataset((Class<? extends DatasetResource>) m.getReturnType(), m.getAnnotation(Bind.class), name, ds)));
+			sub.put(getMethod(clazz, "name"), name);
+			sub.put(getMethod(clazz, "dataSource"), ds);
+			sub.put(getMethod(clazz, "dialect"), dialect);
+			var store = new StoreProxy(name, map, sub);
+			return clazz.cast(newProxyInstance(StoreProxy.class.getClassLoader(), new Class<?>[]{clazz}, store));
 		}
 		throw new ResourceMappingException("schema must be an interface : " + clazz);
 	}

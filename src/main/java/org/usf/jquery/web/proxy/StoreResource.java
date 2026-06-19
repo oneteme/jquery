@@ -1,7 +1,7 @@
 package org.usf.jquery.web.proxy;
 
 import static java.util.Collections.emptySet;
-import static org.usf.jquery.web.proxy.Resource.Match.VALID;
+import static java.util.Objects.nonNull;
 
 import java.util.Set;
 
@@ -22,9 +22,9 @@ public interface StoreResource extends Store, Resource {
 	}
 	
 	default RequestContext createContext(String defaultDataset, Set<String> excludeViews, Set<String> excludeResources, Set<String> excludeDialects) {
-		if(exposes(defaultDataset, DatasetResource.class) == VALID) {
-			var dataset = invokeResource(defaultDataset, DatasetResource.class, null, null);
-			return new RequestContext(this, dataset, new TypeRegistry(), excludeViews, excludeResources, excludeDialects);
+		var v = lookup(defaultDataset, DatasetResource.class);
+		if(nonNull(v) && v.isAccessible()) {
+			return new RequestContext(this, v.invoke(), new TypeRegistry(), excludeViews, excludeResources, excludeDialects);
 		}
 		throw new NoSuchResourceException("no dataset resource found for " + defaultDataset);
 	}
