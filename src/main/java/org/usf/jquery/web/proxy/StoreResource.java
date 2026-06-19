@@ -1,11 +1,9 @@
 package org.usf.jquery.web.proxy;
 
-import static java.lang.reflect.Modifier.isPublic;
-import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.proxy.ClassUtils.lookupMethod;
+import static org.usf.jquery.web.proxy.ClassUtils.lookupAccessibleMethod;
 import static org.usf.jquery.web.proxy.ResourceInvoker.ofMethod;
 import static org.usf.jquery.web.proxy.RestrictedStore.restrict;
 
@@ -47,17 +45,16 @@ public interface StoreResource extends Store, Resource {
 					return res;
 				}
 				throw new ResourceAccessException(resource + " of type " + type.getSimpleName() + " is not accessible in store " + this);
-				//log.warn("resource '{}' of type {} is hidden by store, cannot be used", name, type.getSimpleName());
 			}
 		}
+		var dialect = dialect();
 		var mth = nonNull(composer) 
-				? lookupMethod(resource, dialect().getClass(), composer.getClass())
-				: lookupMethod(resource, dialect().getClass()); //no parameter
+				? lookupAccessibleMethod(resource, dialect.getClass(), composer.getClass())
+				: lookupAccessibleMethod(resource, dialect.getClass()); //no parameter
 		if(nonNull(mth)) {
-			var mod = mth.getModifiers();
 			var npr = nonNull(composer) ? 1 : 0;
-			if(type.isAssignableFrom(mth.getReturnType()) && mth.getParameterCount() == npr && isPublic(mod) && !isStatic(mod)) {
-				return ofMethod(true, mth, dialect());
+			if(type.isAssignableFrom(mth.getReturnType()) && mth.getParameterCount() == npr) {
+				return ofMethod(true, mth, dialect);
 			}
 		}
 		return null;
