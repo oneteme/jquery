@@ -10,6 +10,7 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.QueryPart.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
+import static org.usf.jquery.web.proxy.ClassUtils.getMethod;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.datasetMetadata;
 
 import java.lang.reflect.Method;
@@ -23,7 +24,6 @@ import org.usf.jquery.core.JoinGroup;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Table;
-import org.usf.jquery.core.Utils;
 import org.usf.jquery.core.View;
 import org.usf.jquery.core.ViewColumn;
 
@@ -119,7 +119,7 @@ final class DatasetProxy extends ResourceProxy {
 			.map(m-> m.getAnnotation(Bind.class).value()).collect(toSet());
 			var meta = datasetMetadata(store, view.getName(), cols, ds);
 			return type.cast(newProxyInstance(DatasetProxy.class.getClassLoader(), new Class<?>[]{type}, 
-					new DatasetProxy(view, map, Map.of(Utils.getMethod(type, "getView"), view), meta)));
+					new DatasetProxy(view, map, Map.of(getMethod("getView", type), view), meta)));
 		}
 		throw new ResourceMappingException("view must be an interface : " + type);
 	}

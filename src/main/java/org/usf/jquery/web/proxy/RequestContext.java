@@ -3,10 +3,8 @@ package org.usf.jquery.web.proxy;
 import static java.lang.reflect.Array.newInstance;
 import static java.lang.reflect.Modifier.isPublic;
 import static java.lang.reflect.Modifier.isStatic;
-import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
@@ -20,16 +18,15 @@ import static org.usf.jquery.core.JQueryType.DECLARE_COLUMN;
 import static org.usf.jquery.core.Parameter.match;
 import static org.usf.jquery.core.Signature.badArgumentTypeException;
 import static org.usf.jquery.core.Utils.isEmpty;
+import static org.usf.jquery.web.proxy.ResourceInvoker.ofMethod;
+import static org.usf.jquery.web.proxy.ResourceInvoker.ofObject;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Parameter;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.Column;
@@ -47,8 +44,13 @@ import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
+/**
+ * 
+ * @author u$f
+ *
+ */
 @Slf4j
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public final class RequestContext {
 
 	private static final JDBCType[] STD_TYPES = { 
@@ -58,59 +60,42 @@ public final class RequestContext {
 	@Getter
 	private final DatasetResource defaultDataset;
 	@Getter
-	private final StoreResource store;
+	private final StoreResource store; 
 	private final TypeRegistry registry;
-	private final Set<String> excludeViews;
-	private final Set<String> excludeResources;
-	private final Set<String> excludeDialects;
 
 	private final Map<String, DatasetResource> declaredViews;
 	private final Map<String, Column> declaredColumns;
 	//strict mode !? resolve order, groupBy, ..
 	
 	public RequestContext(StoreResource store, DatasetResource defaultDataset, TypeRegistry registry) {
-		this(store, defaultDataset, registry, emptySet(), emptySet(), emptySet());
-	}
-	
-	public RequestContext(StoreResource store, DatasetResource defaultDataset, TypeRegistry registry, 
-			Set<String> excludeViews, Set<String> excludeResources, Set<String> excludeDialects) {
-		this(defaultDataset, store, registry, excludeViews, excludeResources, excludeDialects, new HashMap<>(), new HashMap<>());
+		this(defaultDataset, store, registry, new HashMap<>(), new HashMap<>());
 	}
 	
 	public Dialect getDialect(){
 		return store.dialect();
 	}
 	
-	public Optional<DatasetResource> lookupView(boolean allowParameterize, String name, Entry... args) { 
+	public ResourceInvoker<DatasetResource> lookupView(String name) { 
 		var view = declaredViews.get(name);
-		if(isNull(view) && !excludeViews.contains(name)) {
-			try {
-				return lookupResource(name, DatasetResource.class, args);
-			}
-			catch (EntryParseException e) {
-				if(!allowParameterize && nonNull(args)) {
-					throw new IllegalArgumentException("view resource '" + name + "' expects parameters, but parameterization is not allowed in this context");
-				}
-			}
-			return Optional.empty();
-		}
-		return Optional.of(view);
+		return nonNull(view)
+				? ofObject(true, view, DatasetResource.class)
+				: lookupResource(name, DatasetResource.class);
 	}
 	
 	public Optional<Column> lookupDeclaredColumn(String name) {
 		return ofNullable(declaredColumns.get(name));
 	}
 	
-	public <T> Optional<T> lookupDialectResource(String name, Class<T> type) {
+	public <T> ResourceInvoker<T> lookupDialectResource(String name, Class<T> type) {
 		return lookupDialectResource(name, type, null);
 	}
 	
-	public <T> Optional<T> lookupDialectResource(String name, Class<T> type, Object composer) {
+	public <T> ResourceInvoker<T> lookupDialectResource(String name, Class<T> type, Object composer) {
 		if(isNull(composer)) { //cannot override composers in stores
-			var match = store.lookup(name, type);
-			if(nonNull(match)) {
-				if(match.isAccessible()) {
-					return Optional.of(match.invoke());
+			var res = store.lookup(name, type);
+			if(nonNull(res)) {
+				if(res.isAccessible()) {
+					return res;
 				}
 				log.warn("resource '{}' of type {} is hidden by store, cannot be used", name, type.getSimpleName());
 			}
@@ -123,35 +108,33 @@ public final class RequestContext {
 				var mod = mth.getModifiers();
 				var npr = nonNull(composer) ? 1 : 0;
 				if(type.isAssignableFrom(mth.getReturnType()) && mth.getParameterCount() == npr && isPublic(mod) && !isStatic(mod)) {
-					var res = nonNull(composer) 
-							? mth.invoke(store.dialect(), composer)
-							: mth.invoke(store.dialect());
-					return Optional.of(type.cast(res));
+					return ofMethod(true, mth, store.dialect());
 				}
 			}
-		} catch (IllegalAccessException | InvocationTargetException e) {
-			log.warn("failed to invoke method '{}' of type {} for lookup, reason: {}", name, type.getSimpleName(), e.getMessage());
 		}
 		catch (Exception e) { //NoSuchMethodException, SecurityException
-			//do nothing, return empty
+			log.debug("resource '{}' of type {} is not found in dialect", name, type.getSimpleName());
 		}
-		return empty();
+		return null;
 	}
 
-	public <T> Optional<T> lookupResource(String name, Class<T> type, Entry... args) { 
-		return lookupResource(store, name, type, args);
+	public <T> ResourceInvoker<T> lookupResource(String name, Class<T> type) { 
+		return lookupResource(store, name, type);
 	}
 	
-	public <T> Optional<T> lookupSubResource(Resource view, String name, Class<T> type, Entry... args) { 
-		return lookupResource(view, name, type, args);
+	public <T> ResourceInvoker<T> lookupSubResource(Resource view, String name, Class<T> type) { 
+		return lookupResource(view, name, type);
 	}
 	
-	<T> Optional<T> lookupResource(Resource resource, String name, Class<T> type, Entry... args) { 
+	<T> ResourceInvoker<T> lookupResource(Resource resource, String name, Class<T> type) { 
 		var res = resource.lookup(name, type);
-		if(nonNull(res) && res.isAccessible()) {
-			return Optional.of(res.invoke(evaluate(args, res.getParameters())));
+		if(nonNull(res)) {
+			if(res.isAccessible()) {
+				return res;
+			}
+			log.warn("resource '{}' of type {} is hidden, cannot be used", name, type.getSimpleName());
 		}
-		return Optional.empty();
+		return null;
 	}
 	
 	void declareView(String name, DatasetResource view) {
@@ -172,10 +155,10 @@ public final class RequestContext {
 		});
 	}
 	
-	public Object[] evaluate(Entry[] args, Parameter[] params) {
+	public Object[] evaluate(Entry[] args, Class<?>[] params) {
 		var nArgs = nonNull(args) ? args.length : 0;
-		if(params.length == 1 && params[0].getType().isArray()) {
-			var type = params[0].getType().getComponentType();
+		if(params.length == 1 && params[0].isArray()) {
+			var type = params[0].getComponentType();
 			var arr = newInstance(type, nArgs);
 			for(int i=0; i<nArgs; i++) {
 				Array.set(arr, i, resolve(args[i], type));
@@ -185,7 +168,7 @@ public final class RequestContext {
 		if(params.length == nArgs) {
 			var arr = new Object[nArgs];
 			for(int i=0; i<nArgs; i++) {
-				arr[i] = resolve(args[i], params[i].getType());
+				arr[i] = resolve(args[i], params[i]);
 			}
 			return arr;
 		}
@@ -290,7 +273,7 @@ public final class RequestContext {
 
 	//inherit common properties, but not declared views and columns
 	public RequestContext subContext(DatasetResource dataset) {
-		return new RequestContext(dataset, store, registry, excludeViews, excludeResources, excludeDialects, new HashMap<>(), new HashMap<>());
+		return new RequestContext(dataset, store, registry, new HashMap<>(), new HashMap<>());
 	}
 	
 	//inherit declared views and columns, but with different default view
@@ -298,6 +281,6 @@ public final class RequestContext {
 		if(dataset == defaultDataset) {
 			return this;
 		}
-		return new RequestContext(dataset, store, registry, excludeViews, excludeResources, excludeDialects, declaredViews, declaredColumns);
+		return new RequestContext(dataset, store, registry, declaredViews, declaredColumns);
 	}
 }

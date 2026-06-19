@@ -54,7 +54,7 @@ public final class SqlBuilder {
 		return appendViewAlias(view, "");
 	}
 
-	public SqlBuilder appendViewAlias(View view, String after) {
+	public SqlBuilder appendViewAlias(View view, String after) { //TODO before/after
 		if(!ctes.isEmpty() || !views.isEmpty()) {
 			var v = ctes.containsKey(view) ? ctes.get(view) : views.get(view);
 			if(nonNull(v)) {

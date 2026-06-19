@@ -31,7 +31,6 @@ import org.slf4j.Logger;
 import org.usf.jquery.core.ComposerDefinition;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.web.ResourceAccessException;
 
 import lombok.NonNull;
 
@@ -54,7 +53,7 @@ public interface QueryInterpreter {
 		var store = qr.store() == StoreResource.class 
 				? getInstance().getDefaultStore() //default schema if not specified
 				: getInstance().getStore(qr.store());
-		var query = parseQuery(modifiableMap, store.createContext(qr.dataset(), Set.of(qr.excludeViews()), Set.of(qr.excludeResources()), Set.of(qr.excludeDialects())));
+		var query = parseQuery(modifiableMap, store.createContext(qr.dataset(), Set.of(qr.excludeResources()), Set.of(qr.excludeDialects())));
 		query.maxRows(qr.maxSize());
 		if(!qr.aggregate() || query.isAggregation()) {
 			return query; 

@@ -3,6 +3,7 @@ package org.usf.jquery.web.proxy;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
+import static java.util.Optional.empty;
 import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.Parameters.PARTITION_OPR;
@@ -162,12 +163,12 @@ public final class EntryEvaluators {
 		if(allowAnonymous && (SELECT_PARAM.equals(entry.getValue()))) {
 			return new QueryResource(evalQuery(itr, ctx.getDefaultDataset(), ctx));
 		} //parameterized view considered as anonymous view resource, not supported for direct lookup
-		var view = ctx.lookupView(allowAnonymous, entry.getValue(), entry.getArgs());
-		if(view.isPresent()) {
+		var view = ctx.lookupView(entry.getValue());
+		if(nonNull(view)) {
 			itr.advance();
 			return allowAnonymous && itr.hasNext() && (SELECT_PARAM.equals(itr.peekNext().getValue())) //view.column().filter()..
-					? new QueryResource(evalQuery(itr, view.get(), ctx))
-							: view.get();
+					? new QueryResource(evalQuery(itr, view.invoke(), ctx))
+					: view.invoke();
 		}
 		return null;
 	}
@@ -290,10 +291,10 @@ public final class EntryEvaluators {
 	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> anonymousResolver) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
 		if(entry.hasNext()) {
-			var view = ctx.lookupView(false, entry.getValue()); //parameterized view resource is not supported, must be declared as view resource in context
-			if(view.isPresent()) {
-				var res = lookupViewResource(view.get(), type, itr.mark().advance(), ctx) //consume view entry
-						.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(view.get(), itr) : null);
+			var view = ctx.lookupView(entry.getValue()); //parameterized view resource is not supported, must be declared as view resource in context
+			if(nonNull(view)) {
+				var res = lookupViewResource(view.invoke(), type, itr.mark().advance(), ctx) //consume view entry
+						.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(view.invoke(), itr) : null);
 				if(nonNull(res)) {
 					return res;
 				}
@@ -306,45 +307,45 @@ public final class EntryEvaluators {
 
 	static <T> Optional<T> lookupViewResource(DatasetResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
-		var res = ctx.lookupSubResource(view, entry.getValue(), type, entry.getArgs());
-		if(res.isPresent()) {
+		var res = ctx.lookupSubResource(view, entry.getValue(), type);
+		if(nonNull(res)) {
 			itr.advance();
+			return Optional.of(res.invoke(ctx.evaluate(entry.getArgs(), res.getParameters())));
 		}
-		return res;
+		return empty();
 	}
 	
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
-	static Column chainResource(EntryIterator itr, Column res, RequestContext ctx, Entry... outArgs) {
-		var col = res;
+	static Column chainResource(EntryIterator itr, Column prev, RequestContext ctx, Entry... outArgs) {
+		var col = prev;
 		while(itr.hasNext()) {
 			Entry entry = itr.peekNext();
 			var args = entry.getArgs();
-			if(isNull(args) && !entry.hasNext()) {
-				args = outArgs; //TODO name.left=1
-			}
-			var r = ctx.lookupResource(entry.getValue(), Predicate.class, args);
-			if(r.isPresent()) {
+			var r = ctx.lookupResource(entry.getValue(), Predicate.class);
+			if(nonNull(r)) {
 				itr.advance();
-				col = col.filter(r.get());
-				if(args == outArgs) {
+				if(isNull(args) && !entry.hasNext()) {
+					args = outArgs;
 					outArgs = null;
 				}
+				col = col.filter(r.invoke(ctx.evaluate(args, r.getParameters())));
 			}
 			else {
-				var opt = ctx.lookupDialectResource(entry.getValue(), Definition.class);
-				if(opt.isEmpty()) {
+				var res = ctx.lookupDialectResource(entry.getValue(), Definition.class);
+				if(isNull(res)) {
 					break;
 				}
-				var def = opt.get();
+				itr.advance(); 
+				if(isNull(args) && !entry.hasNext() && res.getType() == ComparatorDefinition.class) {
+					args = outArgs;
+					outArgs = null;
+				}
+				var def = res.invoke(); //takes no args, args are passed to the definition instance
 				if(def.invoke(ctx.resolveArgs(args, col, def)) instanceof Column cc) {
 					col = cc;
-					if(args == outArgs && def instanceof ComparatorDefinition) {
-						outArgs = null;
-					}
-					itr.advance(); 
 				}
 				else {
-					throw new EntryParseException("");
+					throw new EntryParseException("invalid column chain definition");	
 				}
 			}
 		}
@@ -359,16 +360,16 @@ public final class EntryEvaluators {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
 			var res = ctx.lookupDialectResource(entry.getValue(), Definition.class);
-			if(res.isPresent()) {
+			if(nonNull(res)) {
 				itr.advance();
-				var def = res.get(); 
+				var def = res.invoke(); 
 				var obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
 				while(itr.hasNext() && obj instanceof Composer<?>) {
 					entry = itr.peekNext();
 					res = ctx.lookupDialectResource(entry.getValue(), Definition.class, obj);
-					if(res.isPresent()) {
+					if(nonNull(res)) {
 						itr.advance();
-						def = res.get(); 
+						def = res.invoke(obj); 
 						obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
 					}
 					else {

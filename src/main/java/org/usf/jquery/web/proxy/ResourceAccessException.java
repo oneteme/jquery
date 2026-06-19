@@ -1,4 +1,4 @@
-package org.usf.jquery.web;
+package org.usf.jquery.web.proxy;
 
 /**
  * 

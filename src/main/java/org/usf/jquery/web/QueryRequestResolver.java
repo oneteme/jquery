@@ -13,6 +13,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.usf.jquery.core.QueryComposer;
+import org.usf.jquery.web.proxy.ResourceAccessException;
 
 import lombok.NonNull;
 import lombok.extern.slf4j.Slf4j;

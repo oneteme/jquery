@@ -7,6 +7,6 @@ package org.usf.jquery.web.proxy;
  */
 public interface Resource {
 	
-	<T> MethodInvoker<T> lookup(String id, Class<T> type);
+	<T> ResourceInvoker<T> lookup(String resource, Class<T> type);
 
 }

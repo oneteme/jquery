@@ -35,15 +35,15 @@ public interface Composers {
 
 	//logical operators
 	
-	default Definition<Criteria> and() {
+	default ComposerDefinition<Criteria> and() {
 		return logicalOprDefinition(AND);
 	}
 
-	default Definition<Criteria> or() {
+	default ComposerDefinition<Criteria> or() {
 		return logicalOprDefinition(OR);
 	}
 	
-	private Definition<Criteria> logicalOprDefinition(LogicalOperator opr) {
+	private ComposerDefinition<Criteria> logicalOprDefinition(LogicalOperator opr) {
 		return new ComposerDefinition<>(opr.name().toLowerCase(), BOOLEAN, 
 				args-> ((Criteria)args[0]).append(opr, (Criteria)args[1]), 
 				required(BOOLEAN), required(BOOLEAN));
@@ -51,7 +51,7 @@ public interface Composers {
 	
 	//case operators
 	
-	default ComposerDefinition<CaseColumnComposer> when() { 
+	default ComposerDefinition<CaseColumnComposer> when() { //case
 		return when(new CaseColumnComposer());
 	}
 	
@@ -69,7 +69,7 @@ public interface Composers {
 
 	//partition operators
 	
-	default ComposerDefinition<PartitionComposer> partition() { 
+	default ComposerDefinition<PartitionComposer> partition() { //over
 		return partition(new PartitionComposer());
 	}
 	
@@ -87,7 +87,7 @@ public interface Composers {
 	
 	//within operators
 	
-	default ComposerDefinition<GroupComposer> group() {  
+	default ComposerDefinition<GroupComposer> group() {  //within
 		return new ComposerDefinition<>("group", GROUP, 
 				args-> new GroupComposer());
 	}

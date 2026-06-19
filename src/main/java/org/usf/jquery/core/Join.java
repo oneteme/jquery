@@ -44,11 +44,11 @@ public final class Join implements QueryPart {
 	@Override
 	public void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, Join.class::getSimpleName);
-		builder.append(type.name()).append(" JOIN ");
+		builder.append(type.name()).append(" JOIN");
 		if(!builder.isCte(view)) {
-			builder.append(view).appendSpace();
+			builder.appendSpace().append(view);
 		}
-		builder.appendViewAlias(view);
+		builder.appendSpace().appendViewAlias(view);
 		if(!isEmpty(criterias)) {
 			builder.append(" ON ").appendEach(AND.sql(), criterias);
 		}

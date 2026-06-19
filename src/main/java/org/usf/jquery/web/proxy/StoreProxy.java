@@ -5,7 +5,7 @@ import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Objects.hash;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.core.Utils.getMethod;
+import static org.usf.jquery.web.proxy.ClassUtils.getMethod;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.storeDialect;
 import static org.usf.jquery.web.proxy.DatasetProxy.createDataset;
 
@@ -57,9 +57,9 @@ public final class StoreProxy extends ResourceProxy {
 			Map<Method, Object> sub = map.values().stream()
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
 					.parallel().collect(toMap(identity(), m-> createDataset((Class<? extends DatasetResource>) m.getReturnType(), m.getAnnotation(Bind.class), name, ds)));
-			sub.put(getMethod(clazz, "name"), name);
-			sub.put(getMethod(clazz, "dataSource"), ds);
-			sub.put(getMethod(clazz, "dialect"), dialect);
+			sub.put(getMethod("name", clazz), name);
+			sub.put(getMethod("dataSource", clazz), ds);
+			sub.put(getMethod("dialect", clazz), dialect);
 			var store = new StoreProxy(name, map, sub);
 			return clazz.cast(newProxyInstance(StoreProxy.class.getClassLoader(), new Class<?>[]{clazz}, store));
 		}

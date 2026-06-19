@@ -12,6 +12,8 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
+import static org.usf.jquery.web.proxy.ClassUtils.getMethod;
+import static org.usf.jquery.web.proxy.ResourceInvoker.ofMethod;
 
 import java.lang.reflect.AnnotatedElement;
 import java.lang.reflect.InvocationHandler;
@@ -20,9 +22,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.BiPredicate;
 import java.util.function.Supplier;
-
-import org.usf.jquery.core.InvocationException;
-import org.usf.jquery.core.Utils;
 
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -36,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public abstract class ResourceProxy implements InvocationHandler {
 
-	private static final Method LOOKUP_METHOD = Utils.getMethod(Resource.class, "lookup", String.class, Class.class);
+	private static final Method LOOKUP_METHOD = getMethod("lookup", Resource.class, String.class, Class.class);
 
 	final Map<String, Method> exposedMethods;
 	final Map<Method, Object> resourcesCache;
@@ -77,18 +76,10 @@ public abstract class ResourceProxy implements InvocationHandler {
 		return InvocationHandler.invokeDefault(proxy, method, args);
 	}
 	
-	@SuppressWarnings("unchecked")
-	<T> MethodInvoker<T> invokeLookupMethod(Object proxy, String name, Class<T> type) {
+	<T> ResourceInvoker<T> invokeLookupMethod(Object proxy, String name, Class<T> type) {
 		var mth = exposedMethods.get(name);
 		if(nonNull(mth) && type.isAssignableFrom(mth.getReturnType())) {
-			return new MethodInvoker<>(!excludes.contains(mth), mth.getParameters(), arr->{
-				try {
-					return (T) mth.invoke(proxy, arr);
-				}
-				catch (Exception e) {
-					throw new InvocationException(e);
-				}
-			});
+			return ofMethod(!excludes.contains(mth), mth, proxy);
 		}
 		return null;
 	}

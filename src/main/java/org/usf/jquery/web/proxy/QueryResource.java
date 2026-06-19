@@ -1,6 +1,7 @@
 package org.usf.jquery.web.proxy;
 
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.web.proxy.ResourceInvoker.ofObject;
 
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Query;
@@ -28,13 +29,13 @@ public final class QueryResource implements DatasetResource {
 	
 	@Override
 	@SuppressWarnings("unchecked")
-	public <T> MethodInvoker<T> lookup(String id, Class<T> type) {
-		if(type.isAssignableFrom(Column.class) && nonNull(query.getSelects())) {
+	public <T> ResourceInvoker<T> lookup(String id, Class<T> type) {
+		if(Column.class.isAssignableFrom(type) && nonNull(query.getSelects())) {
 			return query.getSelects().stream()
 					.filter(c-> id.equals(c.getTag()))
 					.findFirst().map(Column.class::cast)
 					.map(c-> query.column(query.getStore().dialect().suroundColumnAlias(id), c.getType(), id)) //proxy ?
-					.map(v-> new MethodInvoker<T>(true, args-> (T)v)) //no arguments
+					.map(v-> ofObject(true, (T)v, type)) //no arguments
 					.orElse(null);
 		}
 		throw new NoSuchResourceException("no exposed method with id '" + id + "' found in query resource");
