@@ -1,10 +1,14 @@
 package org.usf.jquery.web.proxy;
 
 import static java.util.Objects.requireNonNullElseGet;
+import static org.usf.jquery.core.Mappers.rowLimitMapper;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Collections;
 import java.util.Set;
+
+import org.usf.jquery.core.Query;
+import org.usf.jquery.core.ResultSetMapper;
 
 import lombok.RequiredArgsConstructor;
 import lombok.experimental.Delegate;
@@ -19,15 +23,18 @@ public class RestrictedStore implements StoreResource {
 
 	@Delegate
 	private final StoreResource store;
+	private final int maxCols;
+	private final int maxRows;
+	private final boolean aggregate;
 	private final Set<String> excludeResources;
 	private final Set<String> excludeDialects;
 	
 	@Override
 	public <T> ResourceInvoker<T> lookup(String resource, Class<T> type) {
-		if(!excludeResources.contains(resource)) {
-			return store.lookup(resource, type);
+		if(excludeResources.contains(resource)) {
+			throw new ResourceAccessException("Resource " + resource + " is not allowed");
 		}
-		throw new ResourceAccessException("Resource " + resource + " is not allowed");
+		return store.lookup(resource, type);
 	}
 	
 	@Override
@@ -37,19 +44,29 @@ public class RestrictedStore implements StoreResource {
 	
 	@Override
 	public <T> ResourceInvoker<T> lookupDialect(String resource, Class<T> type, Object composer) {
-		if(!excludeDialects.contains(resource)) {
-			return store.lookupDialect(resource, type, composer);
+		if(excludeDialects.contains(resource)) {
+			throw new ResourceAccessException("Resource " + resource + " is not allowed");
 		}
-		throw new ResourceAccessException("Resource " + resource + " is not allowed");
+		return store.lookupDialect(resource, type, composer);
 	}
 	
-	public static StoreResource restrict(StoreResource store, Set<String> excludeResources, Set<String> excludeDialects) {
-		if(isEmpty(excludeResources) && isEmpty(excludeDialects)) {
+	@Override
+	public <T> T execute(Query query, ResultSetMapper<T> mapper) {
+		if(maxCols > 0 && query.getSelects().size() > maxCols) {
+			throw new ResourceAccessException("Query has too many columns: " + query.getSelects().size() + " > " + maxCols);
+		}
+		if(aggregate && !query.isAggregation()) {
+			throw new ResourceAccessException("Query is not an aggregation query");
+		}
+		return store.execute(query, maxRows > 0 ? rowLimitMapper(maxRows, mapper) : mapper);
+	}
+	
+	public static StoreResource restrict(StoreResource store, int maxCols, int maxRows, boolean aggregation, Set<String> excludeResources, Set<String> excludeDialects) {
+		if(isEmpty(excludeResources) && isEmpty(excludeDialects) && maxCols <= 0 && maxRows <= 0) {
 			return store;
 		}
-		return new RestrictedStore(store, 
+		return new RestrictedStore(store, maxRows, maxCols, aggregation,
 				requireNonNullElseGet(excludeResources, Collections::emptySet), 
 				requireNonNullElseGet(excludeDialects, Collections::emptySet));
 	}
-
 }

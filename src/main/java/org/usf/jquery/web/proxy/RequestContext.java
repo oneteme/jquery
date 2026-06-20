@@ -1,8 +1,6 @@
 package org.usf.jquery.web.proxy;
 
 import static java.lang.reflect.Array.newInstance;
-import static java.lang.reflect.Modifier.isPublic;
-import static java.lang.reflect.Modifier.isStatic;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Optional.ofNullable;
@@ -18,7 +16,6 @@ import static org.usf.jquery.core.JQueryType.DECLARE_COLUMN;
 import static org.usf.jquery.core.Parameter.match;
 import static org.usf.jquery.core.Signature.badArgumentTypeException;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.web.proxy.ResourceInvoker.ofMethod;
 import static org.usf.jquery.web.proxy.ResourceInvoker.ofObject;
 
 import java.lang.reflect.Array;
@@ -57,10 +54,8 @@ public final class RequestContext {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, TIME, 
 			TIMESTAMP_WITH_TIMEZONE, BOOLEAN, VARCHAR };
 
-	@Getter
-	private final DatasetResource defaultDataset;
-	@Getter
-	private final StoreResource store; 
+	@Getter private final DatasetResource defaultDataset;
+	@Getter private final StoreResource store; 
 	private final TypeRegistry registry;
 
 	private final Map<String, DatasetResource> declaredViews;
@@ -87,54 +82,19 @@ public final class RequestContext {
 	}
 	
 	public <T> ResourceInvoker<T> lookupDialectResource(String name, Class<T> type) {
-		return lookupDialectResource(name, type, null);
+		return store.lookupDialect(name, type, null);
 	}
 	
 	public <T> ResourceInvoker<T> lookupDialectResource(String name, Class<T> type, Object composer) {
-		if(isNull(composer)) { //cannot override composers in stores
-			var res = store.lookup(name, type);
-			if(nonNull(res)) {
-				if(res.isAccessible()) {
-					return res;
-				}
-				log.warn("resource '{}' of type {} is hidden by store, cannot be used", name, type.getSimpleName());
-			}
-		}
-		try {
-			var mth = nonNull(composer) 
-					? store.dialect().getClass().getMethod(name, composer.getClass())
-					: store.dialect().getClass().getMethod(name); //no parameter
-			if(nonNull(mth)) {
-				var mod = mth.getModifiers();
-				var npr = nonNull(composer) ? 1 : 0;
-				if(type.isAssignableFrom(mth.getReturnType()) && mth.getParameterCount() == npr && isPublic(mod) && !isStatic(mod)) {
-					return ofMethod(true, mth, store.dialect());
-				}
-			}
-		}
-		catch (Exception e) { //NoSuchMethodException, SecurityException
-			log.debug("resource '{}' of type {} is not found in dialect", name, type.getSimpleName());
-		}
-		return null;
+		return store.lookupDialect(name, type, composer);
 	}
 
 	public <T> ResourceInvoker<T> lookupResource(String name, Class<T> type) { 
-		return lookupResource(store, name, type);
+		return store.lookup(name, type);
 	}
 	
 	public <T> ResourceInvoker<T> lookupSubResource(Resource view, String name, Class<T> type) { 
-		return lookupResource(view, name, type);
-	}
-	
-	<T> ResourceInvoker<T> lookupResource(Resource resource, String name, Class<T> type) { 
-		var res = resource.lookup(name, type);
-		if(nonNull(res)) {
-			if(res.isAccessible()) {
-				return res;
-			}
-			log.warn("resource '{}' of type {} is hidden, cannot be used", name, type.getSimpleName());
-		}
-		return null;
+		return store.lookup(view, name, type);
 	}
 	
 	void declareView(String name, DatasetResource view) {

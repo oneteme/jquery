@@ -50,7 +50,6 @@ public final class QueryComposer implements Composer<Query> {
 	private boolean distinct;
 	private int limit  = -1;
 	private int offset = -1;
-	private int maxRows = -1; //security
 	
 	private final Map<View, Query> overView = new HashMap<>();
 
@@ -241,12 +240,7 @@ public final class QueryComposer implements Composer<Query> {
 		this.distinct = distinct;
 		return this;
 	}
-	
-	public QueryComposer maxRows(int maxRows) {
-		this.maxRows = maxRows;
-		return this;
-	}
-	
+
 	@Override
 	public Query compose(Store store) {
 		if(!isEmpty(columns)) {

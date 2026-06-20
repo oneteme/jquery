@@ -50,6 +50,9 @@ public final class Mappers {
 	}
 	
 	public static <T> ResultSetMapper<T> rowLimitMapper(int limit, ResultSetMapper<T> rm){
+		if(limit < 0) {
+			throw new IllegalArgumentException("limit must be >= 0");
+		}
 		return rs-> rm.map(new ResultSetLimiter(rs, limit));
 	}
 	

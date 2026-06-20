@@ -36,7 +36,7 @@ public final class ClassUtils {
 				return m;
 			}
 		} catch (Exception e) {
-			log.debug("no such method: " + clazz.getName() + "." + name + "()");
+			log.trace("no such method: {}.{}()", clazz.getName(), name);
 		}
 		return null;
 	}

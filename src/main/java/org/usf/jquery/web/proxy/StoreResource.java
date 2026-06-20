@@ -1,13 +1,9 @@
 package org.usf.jquery.web.proxy;
 
-import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.web.proxy.ClassUtils.lookupAccessibleMethod;
 import static org.usf.jquery.web.proxy.ResourceInvoker.ofMethod;
-import static org.usf.jquery.web.proxy.RestrictedStore.restrict;
-
-import java.util.Set;
 
 import org.usf.jquery.core.Store;
 
@@ -21,18 +17,17 @@ public interface StoreResource extends Store, Resource {
 	//can override createContext to provide a custom TypeRegistry 
 	
 	default RequestContext createContext(String defaultDataset) {
-		return createContext(defaultDataset, emptySet(), emptySet());
-	}
-	
-	default RequestContext createContext(String defaultDataset, Set<String> excludeResources, Set<String> excludeDialects) {
 		var v = lookup(defaultDataset, DatasetResource.class);
 		if(nonNull(v) && v.isAccessible()) {
-			var store = restrict(this, excludeResources, excludeDialects);
-			return new RequestContext(store, v.invoke(), new TypeRegistry());
+			return new RequestContext(this, v.invoke(), new TypeRegistry());
 		}
 		throw new IllegalAccessError("Dataset " + defaultDataset + " is not accessible or does not exist");
 	}
 
+	default <T> ResourceInvoker<T> lookup(Resource sub, String resource, Class<T> type) {
+		return nonNull(sub) ? sub.lookup(resource, type) : null;
+	}
+	
 	default <T> ResourceInvoker<T> lookupDialect(String resource, Class<T> type) {
 		return lookupDialect(resource, type, null);
 	}
@@ -41,10 +36,7 @@ public interface StoreResource extends Store, Resource {
 		if(isNull(composer)) { //cannot override composers in stores
 			var res = lookup(resource, type);
 			if(nonNull(res)) {
-				if(res.isAccessible()) {
-					return res;
-				}
-				throw new ResourceAccessException(resource + " of type " + type.getSimpleName() + " is not accessible in store " + this);
+				return res;
 			}
 		}
 		var dialect = dialect();
