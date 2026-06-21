@@ -28,6 +28,7 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
 public class Query implements View {
 
+	@Getter
 	private final Store store;
 	
 	private Collection<Query> ctes;

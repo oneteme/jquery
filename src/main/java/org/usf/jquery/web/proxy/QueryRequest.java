@@ -12,9 +12,9 @@ import java.lang.annotation.Target;
  *
  */
 @Documented
-@Target(ElementType.PARAMETER)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface QueryRequest {
+public @interface QueryRequest { //RequestQuery
 
 	/** The target table or view name. */
 	String dataset();
@@ -27,4 +27,6 @@ public @interface QueryRequest {
 
 	/** Parameters to be ignored by the interpreter. */
 	String[] ignore() default {};
+	
+	String view() default "json";
 }

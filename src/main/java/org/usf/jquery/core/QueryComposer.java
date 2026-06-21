@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -36,7 +35,6 @@ import lombok.extern.slf4j.Slf4j;
  *
  */
 @Slf4j
-@RequiredArgsConstructor
 public final class QueryComposer implements Composer<Query> {
 	
 	private final List<Column> columns = new ArrayList<>();

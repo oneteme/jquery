@@ -55,7 +55,7 @@ public interface Store {
 		}
 		return qc.compose(this);
 	}
-	
+
 	default <T> T execute(Query query, ResultSetMapper<T> mapper) {
 		log.debug("building query");
 		var sqlQuery = query.build();

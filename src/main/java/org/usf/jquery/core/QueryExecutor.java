@@ -8,9 +8,9 @@ package org.usf.jquery.core;
 @FunctionalInterface
 public interface QueryExecutor<T> {
 
-	T execute(SqlQuery query);
+	T execute(Query query, Store ds);
 	
 	static <T> QueryExecutor<T> defaultExecutor(ResultSetMapper<T> mapper){
-		return q-> q.execute(mapper);
+		return (q,s)-> s.execute(q, mapper);
 	}
 }

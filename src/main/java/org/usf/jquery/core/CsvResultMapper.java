@@ -48,5 +48,4 @@ public final class CsvResultMapper implements ResultSetMapper<Void> {
 		log.info("{} rows written in {} ms", rw, currentTimeMillis() - bg);
         return null;
     }
-    
 }
