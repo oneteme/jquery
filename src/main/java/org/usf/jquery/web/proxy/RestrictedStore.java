@@ -1,5 +1,6 @@
 package org.usf.jquery.web.proxy;
 
+import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNullElseGet;
 import static org.usf.jquery.core.Mappers.rowLimitMapper;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -28,6 +29,13 @@ public class RestrictedStore implements StoreResource {
 	private final boolean aggregate;
 	private final Set<String> excludeResources;
 	private final Set<String> excludeDialects;
+	
+	public RequestContext createContext(String defaultDataset) {
+		if(!excludeResources.contains(defaultDataset)) {
+			return StoreResource.super.createContext(defaultDataset);
+		}
+		throw new IllegalAccessError("Dataset " + defaultDataset + " is not accessible or does not exist");
+	}
 	
 	@Override
 	public <T> ResourceInvoker<T> lookup(String resource, Class<T> type) {

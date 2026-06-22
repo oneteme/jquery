@@ -2,7 +2,7 @@ package org.usf.jquery.web.proxy;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.web.proxy.ClassUtils.lookupAccessibleMethod;
+import static org.usf.jquery.web.proxy.MethodUtils.lookupAccessibleMethod;
 import static org.usf.jquery.web.proxy.ResourceInvoker.ofMethod;
 
 import org.usf.jquery.core.Store;
@@ -47,14 +47,8 @@ public interface StoreResource extends Store, Resource {
 		}
 		var dialect = dialect();
 		var mth = nonNull(composer) 
-				? lookupAccessibleMethod(resource, dialect.getClass(), composer.getClass())
-				: lookupAccessibleMethod(resource, dialect.getClass()); //no parameter
-		if(nonNull(mth)) {
-			var npr = nonNull(composer) ? 1 : 0;
-			if(type.isAssignableFrom(mth.getReturnType()) && mth.getParameterCount() == npr) {
-				return ofMethod(true, mth, dialect);
-			}
-		}
-		return null;
+				? lookupAccessibleMethod(resource, dialect.getClass(), type, composer.getClass())
+				: lookupAccessibleMethod(resource, dialect.getClass(), type); //no parameter
+		return nonNull(mth) ? ofMethod(true, mth, dialect) : null;
 	}
 }

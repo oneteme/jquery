@@ -5,7 +5,7 @@ import static java.lang.reflect.Proxy.newProxyInstance;
 import static java.util.Objects.hash;
 import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
-import static org.usf.jquery.web.proxy.ClassUtils.getMethod;
+import static org.usf.jquery.web.proxy.MethodUtils.getMethod;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.storeDialect;
 import static org.usf.jquery.web.proxy.DatasetProxy.createDataset;
 

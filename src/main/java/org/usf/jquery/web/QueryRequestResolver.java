@@ -5,7 +5,6 @@ import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.web.JQuery.defaultEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.JQuery.getRequestParser;
-import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 
 import java.util.Arrays;
@@ -37,14 +36,14 @@ public final class QueryRequestResolver {//spring connection bridge
 			}
 		}
 		if(modifiableMap.containsKey(COLUMN_DISTINCT)) { //deprecated
-			if(modifiableMap.containsKey(COLUMN_PARAM)) {
+			if(modifiableMap.containsKey("column")) {
 				throw new IllegalArgumentException(format("%s and %s are both set", COLUMN_DISTINCT, DISTINCT_PARAM));
 			}
 			modifiableMap.put(DISTINCT_PARAM, new String[] { "true" });
-			modifiableMap.put(COLUMN_PARAM, modifiableMap.remove(COLUMN_DISTINCT));
+			modifiableMap.put("column", modifiableMap.remove(COLUMN_DISTINCT));
 			log.warn("column.distinct is deprecated, use distinct=true instead");
 		}
-		modifiableMap.computeIfAbsent(COLUMN_PARAM, k-> ant.defaultColumns());
+		modifiableMap.computeIfAbsent("column", k-> ant.defaultColumns());
 		var env = ant.database().isEmpty() ? defaultEnvironment() : getEnvironment(ant.database());
 		var qry = getRequestParser().parse(env, ant.view(), ant.variables(), modifiableMap);
 		if(!ant.aggregationOnly() || qry.isAggregation()) {

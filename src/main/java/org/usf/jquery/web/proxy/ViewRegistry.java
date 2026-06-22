@@ -57,10 +57,7 @@ public class ViewRegistry {
 	
 	public DataViewer viewer(String id) {
 		var v = nonNull(viewers) ? viewers.get(id) : null;
-		if(isNull(v)) {
-			v = DEF_VIEWERS.get(id);
-		}
-		return v;
+		return isNull(v) ? DEF_VIEWERS.get(id) : v;
 	}
 	
 	public static MvcRequest callback(String id){

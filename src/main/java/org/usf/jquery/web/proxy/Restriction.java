@@ -12,7 +12,7 @@ import java.lang.annotation.Target;
  *
  */
 @Documented
-@Target(ElementType.PARAMETER)
+@Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
 public @interface Restriction {
 

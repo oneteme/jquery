@@ -10,7 +10,7 @@ import static java.util.function.Predicate.not;
 import static java.util.stream.Collectors.toSet;
 import static org.usf.jquery.core.QueryPart.toSQL;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
-import static org.usf.jquery.web.proxy.ClassUtils.getMethod;
+import static org.usf.jquery.web.proxy.MethodUtils.getMethod;
 import static org.usf.jquery.web.proxy.DatabaseIntrospector.datasetMetadata;
 
 import java.lang.reflect.Method;

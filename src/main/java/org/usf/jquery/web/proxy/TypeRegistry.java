@@ -64,7 +64,10 @@ public final class TypeRegistry {
 	
 	@SuppressWarnings("unchecked")
 	public <T> ValueParser<T> getParser(Class<T> clazz){
-		var p = (nonNull(parsers) ? parsers : DEF_PARSERS).get(clazz);
+		var p = nonNull(parsers) ? parsers.get(clazz) : null;
+		if(isNull(p)) {
+			p = DEF_PARSERS.get(clazz);
+		}
 		if(isNull(p)  && Enum.class.isAssignableFrom(clazz)) {
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
@@ -73,7 +76,11 @@ public final class TypeRegistry {
 	
 	@SuppressWarnings("unchecked")
 	public <T> EntryEvaluator<T> getEvaluator(Class<T> clazz){
-		return (EntryEvaluator<T>) (nonNull(parsers) ? parsers : DEF_EVALUATORS).get(clazz);
+		var p = nonNull(evaluators) ? evaluators.get(clazz) : null;
+		if(isNull(p)) {
+			p = DEF_EVALUATORS.get(clazz);
+		}
+		return (EntryEvaluator<T>) p;
 	}
 	
 	static {

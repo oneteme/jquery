@@ -25,9 +25,7 @@ import static org.usf.jquery.web.ArgumentParsers.parse;
 import static org.usf.jquery.web.ArgumentParsers.parseAll;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
-import static org.usf.jquery.web.Parameters.FILTER_OPR;
 import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.web.Parameters.OFFSET_PARAM;
@@ -69,6 +67,8 @@ final class EntryChain {
 
 	private static final String ORDER_PATTERN = enumPattern(OrderType.class); 
 	private static final String PARTITION_PATTERN = join("|", PARTITION_OPR, ORDER_PARAM);
+	private static final String COLUMN_PARAM = "column";
+	private static final String FILTER_OPR = "filter";
 	
 	private final String value;
 	private final boolean text; //"string"

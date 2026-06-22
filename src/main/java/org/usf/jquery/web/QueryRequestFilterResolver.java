@@ -9,7 +9,6 @@ import static org.usf.jquery.core.Validation.illegalArgumentIf;
 import static org.usf.jquery.web.JQuery.defaultEnvironment;
 import static org.usf.jquery.web.JQuery.getEnvironment;
 import static org.usf.jquery.web.JQuery.getRequestParser;
-import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
@@ -46,7 +45,7 @@ public final class QueryRequestFilterResolver {// spring connection bridge
 			illegalArgumentIf(illegalKeys.contains(k), ()-> k + " argument not allowed"));
 		
 		var modifiableMap = new LinkedHashMap<>(parameterMap);
-		appendParam(modifiableMap, COLUMN_PARAM, ant.column());
+		appendParam(modifiableMap, "column", ant.column());
 		appendParam(modifiableMap, DISTINCT_PARAM, ant.distinct());
 		appendParam(modifiableMap, JOIN_PARAM, ant.join());
 		appendParam(modifiableMap, ORDER_PARAM, ant.order());

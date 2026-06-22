@@ -18,8 +18,6 @@ public final class Parameters {
 	//parameters
 	public static final String VIEW_PARAM = "view";
 	public static final String CTE_PARAM = "cte";
-	@Deprecated(since = "5.0.0", forRemoval = true)
-	public static final String COLUMN_PARAM = "column";
 	public static final String GROUP_PARAM = "group";
 	public static final String DISTINCT_PARAM = "distinct";
 	public static final String JOIN_PARAM = "join";
@@ -29,8 +27,6 @@ public final class Parameters {
 	public static final String UNION_PARAM = "union";
 	//query parameter
 	public static final String SELECT_PARAM = "select";
-	@Deprecated(since = "5.0.0", forRemoval = true)
-	public static final String FILTER_OPR = "filter";
 	public static final String CRITERIA_OPR = "criteria";
 	public static final String PARTITION_OPR = "partition";
 

@@ -4,7 +4,6 @@ import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 
 import java.util.Map;
 
@@ -59,7 +58,7 @@ public interface ViewDecorator {
 		if(nonNull(b)) {
 			return b.build(this, args).as(cd.reference(this), cd.type(this));
 		}
-		throw noSuchResourceException(COLUMN_PARAM, cd.identity(), identity());
+		throw noSuchResourceException("column", cd.identity(), identity());
 	}
 	
 	default Criteria criteria(String name, String...args) {

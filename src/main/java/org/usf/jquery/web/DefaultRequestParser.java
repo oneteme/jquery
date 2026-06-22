@@ -12,7 +12,6 @@ import static org.usf.jquery.web.EntryChainParser.parseEntries;
 import static org.usf.jquery.web.EntryChainParser.parseEntry;
 import static org.usf.jquery.web.JQuery.currentEnvironment;
 import static org.usf.jquery.web.NoSuchResourceException.noSuchResourceException;
-import static org.usf.jquery.web.Parameters.COLUMN_PARAM;
 import static org.usf.jquery.web.Parameters.DISTINCT_PARAM;
 import static org.usf.jquery.web.Parameters.JOIN_PARAM;
 import static org.usf.jquery.web.Parameters.LIMIT_PARAM;
@@ -50,7 +49,7 @@ public class DefaultRequestParser implements RequestParser {
 					}
 				}
 				parseViews(ctx, parameterMap.remove(VIEW_PARAM));
-				parseColumns(ctx, parameterMap.remove(COLUMN_PARAM));
+				parseColumns(ctx, parameterMap.remove("column"));
 				parseDistinct(ctx, parameterMap.remove(DISTINCT_PARAM));
 				parseOrders(ctx, parameterMap.remove(ORDER_PARAM));
 				parseJoins(ctx, parameterMap.remove(JOIN_PARAM));

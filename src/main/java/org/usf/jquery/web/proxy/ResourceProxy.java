@@ -12,7 +12,7 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableSet;
 import static org.usf.jquery.web.proxy.Bind.BindType.REF;
-import static org.usf.jquery.web.proxy.ClassUtils.getMethod;
+import static org.usf.jquery.web.proxy.MethodUtils.getMethod;
 import static org.usf.jquery.web.proxy.ResourceInvoker.ofMethod;
 
 import java.lang.reflect.AnnotatedElement;

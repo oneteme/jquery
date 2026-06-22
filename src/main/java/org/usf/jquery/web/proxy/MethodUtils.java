@@ -17,7 +17,7 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-public final class ClassUtils {
+public final class MethodUtils {
 
 	public static Method getMethod(String name, Class<?> clazz, Class<?>... argsClazz)  {
 		try {
@@ -28,12 +28,12 @@ public final class ClassUtils {
 		}
 	}
 
-	public static Method lookupAccessibleMethod(String name, Class<?> clazz, Class<?>... argsClazz) {
+	public static Method lookupAccessibleMethod(String name, Class<?> clazz, Class<?> type, Class<?>... argsClazz) {
 		try {
-			var m = clazz.getMethod(name, argsClazz);
-			var mod = m.getModifiers();
-			if(isPublic(mod) && !isStatic(mod)) {
-				return m;
+			var mth = clazz.getMethod(name, argsClazz);
+			var mod = mth.getModifiers();
+			if(isPublic(mod) && !isStatic(mod) && type.isAssignableFrom(mth.getReturnType())) {
+				return mth;
 			}
 		} catch (Exception e) {
 			log.trace("no such method: {}.{}()", clazz.getName(), name);

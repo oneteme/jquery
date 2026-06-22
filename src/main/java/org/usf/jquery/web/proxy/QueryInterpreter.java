@@ -36,7 +36,7 @@ public interface QueryInterpreter {
 	default MvcRequest parseQuery(StoreResource store, String dataset, @NonNull Map<String, String[]> parameterMap) {
 		var ctx = store.createContext(dataset);
 		var query = new QueryComposer();
-		var view = parseViewer(parameterMap, VIEW_PARAM, ctx);
+		var view = parseViewer(parameterMap, VIEW_PARAM, ctx); //TD accept alias for download
 		parseParam(parameterMap, CTE_PARAM, ctx.getDialect().cte(query), ctx);
 		parseParam(parameterMap, SELECT_PARAM, ctx.getDialect().select(query), ctx);
 		parseParam(parameterMap, JOIN_PARAM, ctx.getDialect().join(query), ctx);
@@ -51,17 +51,15 @@ public interface QueryInterpreter {
 		return new MvcRequest(store, query, view);
 	}
 	
-	
 	default DataViewer parseViewer(@NonNull Map<String, String[]> parameterMap, String param, RequestContext ctx){
 		var params = parameterMap.remove(param);
-		String v = null;
 		if(!isEmpty(params)) {
-			if(params.length > 1) {
-				throw new IllegalArgumentException("");
+			if(params.length == 1) {
+				return ctx.getStore().viewRegistry().viewer(params[0]);
 			}
-			v = params[0];
+			throw new IllegalArgumentException("Parameter " + param + " can only have one value");
 		}
-		return ctx.getStore().viewRegistry().viewer(v);
+		throw new IllegalArgumentException("require " + param + " parameter");
 	}
 	
 	default void parseParam(Map<String, String[]> parameterMap, String param, ComposerDefinition<QueryComposer> def, RequestContext ctx) { //ctes
