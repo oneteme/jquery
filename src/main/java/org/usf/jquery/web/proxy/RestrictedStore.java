@@ -1,6 +1,5 @@
 package org.usf.jquery.web.proxy;
 
-import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNullElseGet;
 import static org.usf.jquery.core.Mappers.rowLimitMapper;
 import static org.usf.jquery.core.Utils.isEmpty;
@@ -73,7 +72,7 @@ public class RestrictedStore implements StoreResource {
 		if(isEmpty(excludeResources) && isEmpty(excludeDialects) && maxCols <= 0 && maxRows <= 0) {
 			return store;
 		}
-		return new RestrictedStore(store, maxRows, maxCols, aggregation,
+		return new RestrictedStore(store, maxCols, maxRows, aggregation,
 				requireNonNullElseGet(excludeResources, Collections::emptySet), 
 				requireNonNullElseGet(excludeDialects, Collections::emptySet));
 	}
