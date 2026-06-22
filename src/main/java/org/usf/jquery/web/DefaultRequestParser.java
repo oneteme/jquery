@@ -23,7 +23,6 @@ import static org.usf.jquery.web.Parameters.VIEW_PARAM;
 import java.util.Map;
 import java.util.stream.Stream;
 
-import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.QueryComposer;
 
 import lombok.RequiredArgsConstructor;
@@ -89,10 +88,10 @@ public class DefaultRequestParser implements RequestParser {
 	
 	protected void parseColumns(QueryContext context, String[] values) {
 		if(!isEmpty(values)) {
-			Stream.of(values)
-			.flatMap(v-> stream(parseEntries(v)))
-			.map(e-> (NamedColumn)e.evalColumn(context, true))
-			.forEach(currentEnvironment().currentQuery()::columns);
+//			Stream.of(values)
+//			.flatMap(v-> stream(parseEntries(v)))
+//			.map(e-> (NamedColumn)e.evalColumn(context, true))
+//			.forEach(currentEnvironment().currentQuery()::columns);
 		}
 		else {
 			throw new IllegalArgumentException("no columns specified");

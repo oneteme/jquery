@@ -12,10 +12,9 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Optional;
 
-import org.usf.jquery.core.ColumnProxy;
+import org.usf.jquery.core.Column;
 import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.Comparators;
-import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.OperatorDefinition;
 import org.usf.jquery.core.Operators;
 
@@ -39,12 +38,9 @@ public final class QueryContext {
 				computeIfAbsentElseThrow(view, ()-> resourceAlreadyExistsMessage("view", view.identity())));
 	}
 	
-	public Optional<NamedColumn> lookupDeclaredColumn(String name) {
+	public Optional<Column> lookupDeclaredColumn(String name) {
 		var query = currentEnvironment().currentQuery();
-		return query.getColumns().stream()
-				.filter(ColumnProxy.class::isInstance) //tagged column only
-				.filter(c-> name.equals(c.getTag()))
-				.findAny();
+		return null;
 	}
 	
 	public Optional<ViewDecorator> lookupRegisteredView(String name) { //+ declared

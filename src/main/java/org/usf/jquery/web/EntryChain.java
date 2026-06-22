@@ -17,9 +17,7 @@ import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JQueryType.COLUMN;
 import static org.usf.jquery.core.JQueryType.FILTER;
 import static org.usf.jquery.core.JQueryType.JOIN;
-import static org.usf.jquery.core.JQueryType.NAMED_COLUMN;
 import static org.usf.jquery.core.JQueryType.ORDER;
-import static org.usf.jquery.core.SqlStringBuilder.doubleQuote;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNArgs;
 import static org.usf.jquery.web.ArgumentParsers.jdbcArgParser;
@@ -44,7 +42,6 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.Join;
-import org.usf.jquery.core.NamedColumn;
 import org.usf.jquery.core.Order;
 import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.Partition;
@@ -52,7 +49,6 @@ import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.QueryPart;
 import org.usf.jquery.core.Signature;
 import org.usf.jquery.core.SingleQueryColumn;
-import org.usf.jquery.web.EntryChain.EntryChainCursor;
 
 import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
@@ -105,7 +101,7 @@ final class EntryChain {
 				if(nonNull(cur.entry.tag)) {
 					return cur.col.as(cur.entry.tag);
 				}
-				if(!requireTag || cur.col instanceof NamedColumn) {
+				if(!requireTag || cur.col instanceof Column) {
 					return cur.col;
 				}
 				throw badEntryTagException(cur.entry);
@@ -227,7 +223,7 @@ final class EntryChain {
 				var e = new EntryChain[] {this}; //mutable reference
 				var qry = currentEnvironment().query(q->{
 					var subCtx = new QueryContext(ctx.getDefaultView());
-					q.columns(parseAll(args, subCtx, NAMED_COLUMN)); //context isolation
+					q.columns(parseAll(args, subCtx, null)); //context isolation
 					while(e[0].hasNext()) {
 						e[0] = e[0].next;
 						switch(e[0].value) {//column not allowed 
@@ -241,7 +237,7 @@ final class EntryChain {
 						}
 					}
 				});
-				return new QueryDecorator(requireTag ? e[0].requireTag() : e[0].tag, qry.compose());
+				return new QueryDecorator(requireTag ? e[0].requireTag() : e[0].tag, qry.compose(null));
 			}
 			catch (Exception ex) {
 				cause = ex;
@@ -265,9 +261,7 @@ final class EntryChain {
 					}
 					e = e.next;
 				} while(nonNull(e));
-				return Optional.of(new Partition(
-						cols.toArray(Column[]::new), 
-						ords.toArray(Order[]::new)));
+				return null;
 			}
 			catch (Exception ex) {
 				throw cannotParseEntryException(this, PARTITION_OPR, ex);
@@ -448,7 +442,7 @@ final class EntryChain {
 	public String toString() {
 		var s = ""; // null == EMPTY
 		if(nonNull(value)) {
-			s += text ? doubleQuote(value) : value;
+			s += text ? value : value;
 		}
 		if(nonNull(args)){
 			s += stream(args).map(EntryChain::toString).collect(joining(",", "(", ")"));

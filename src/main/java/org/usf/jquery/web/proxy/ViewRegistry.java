@@ -44,9 +44,16 @@ import lombok.extern.slf4j.Slf4j;
 public class ViewRegistry {
 	
 	private static final Map<String, DataViewer> DEF_VIEWERS; 
-	private static final Map<String, DataViewer> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
+	private static final Map<String, MvcRequest> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
 	
 	private Map<String, DataViewer> viewers;
+	
+	public void register(String id, DataViewer viewer) {
+		if(isNull(this.viewers)) {
+			this.viewers = new HashMap<>();
+		}
+		viewers.put(id, viewer);
+	}
 	
 	public DataViewer viewer(String id) {
 		var v = nonNull(viewers) ? viewers.get(id) : null;
@@ -56,7 +63,7 @@ public class ViewRegistry {
 		return v;
 	}
 	
-	public static DataViewer callback(String id){
+	public static MvcRequest callback(String id){
 		var exc = queryQueue.remove(id);
 		if(nonNull(exc)) {
 			return  exc;
@@ -67,9 +74,9 @@ public class ViewRegistry {
 	static {
 		var map = new HashMap<String, DataViewer>();
 		map.put("json", ViewRegistry::keyValueViewer);
-		map.put("csv", ViewRegistry::csvResponseWriter);
-		map.put("ascii", ViewRegistry::asciiResponseWriter);
-		map.put("google.v1", rsp-> lasyHtmlWriter(rsp, "static/google.v1.html"));
+		map.put("csv", ViewRegistry::csvViewer);
+		map.put("ascii", ViewRegistry::asciiViewer);
+		map.put("google.v1", rsp-> lasyHtmlViewer(rsp, "static/google.v1.html"));
 		DEF_VIEWERS = unmodifiableMap(map);
 	}
 	
@@ -83,25 +90,25 @@ public class ViewRegistry {
 		return defaultExecutor(keyValueMapper());
 	}
 	
-	public static QueryExecutor<Void> asciiResponseWriter(HttpServletResponse res) {
-		return asciiResponseWriter(res, empty());
+	public static QueryExecutor<Void> asciiViewer(HttpServletResponse res) {
+		return asciiViewer(res, empty());
 	}
 
-	public static QueryExecutor<Void> asciiResponseWriter(@NonNull HttpServletResponse res, Optional<String> filename) {
+	public static QueryExecutor<Void> asciiViewer(@NonNull HttpServletResponse res, Optional<String> filename) {
 		headers(res, "text/plain; charset=utf-8", filename.map(withExtention("txt")));
 		return defaultExecutor(asciiWriter(responseWriter(res)));
 	}
 	
-	public static QueryExecutor<Void> csvResponseWriter(HttpServletResponse res) {
-		return csvResponseWriter(res, empty());
+	public static QueryExecutor<Void> csvViewer(HttpServletResponse res) {
+		return csvViewer(res, empty());
 	}
 	
-	public static QueryExecutor<Void> csvResponseWriter(@NonNull HttpServletResponse res, Optional<String> filename) {
+	public static QueryExecutor<Void> csvViewer(@NonNull HttpServletResponse res, Optional<String> filename) {
 		headers(res, "text/plain; charset=utf-8", filename.map(withExtention("csv")));
 		return defaultExecutor(csvWriter(responseWriter(res)));  //text/csv => force download
 	}
 	
-	public static QueryExecutor<Void> lasyHtmlWriter(@NonNull HttpServletResponse res, String template) {
+	public static QueryExecutor<Void> lasyHtmlViewer(@NonNull HttpServletResponse res, String template) {
 		headers(res, "text/html; charset=utf-8", empty());
 		return (qry, str)->{
 			try {
@@ -109,7 +116,7 @@ public class ViewRegistry {
 				var writer = res.getWriter();
 				var path = Paths.get(ViewRegistry.class.getClassLoader().getResource(template).toURI());
 				writer.write(readString(path).replace("[[${callback}]]", "/callback/"+id));
-				queryQueue.put(id, rsp-> mvcModelMapper(rsp));
+				queryQueue.put(id, new MvcRequest((StoreResource) str, qry, rsp-> mvcModelMapper(rsp)));
 				return null;
 			} catch (IOException | URISyntaxException e) {
 				throw new RuntimeException(e); //TODO change this

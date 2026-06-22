@@ -13,6 +13,14 @@ import org.usf.jquery.core.Store;
  *
  */
 public interface StoreResource extends Store, Resource {
+
+	default RequestContext createContext(String defaultDataset) {
+		var v = lookup(defaultDataset, DatasetResource.class);
+		if(nonNull(v) && v.isAccessible()) {
+			return new RequestContext(this, v.invoke(), typeRegistry());
+		}
+		throw new IllegalAccessError("Dataset " + defaultDataset + " is not accessible or does not exist");
+	}
 	
 	default TypeRegistry typeRegistry() {
 		return new TypeRegistry();
@@ -21,15 +29,7 @@ public interface StoreResource extends Store, Resource {
 	default ViewRegistry viewRegistry() {
 		return new ViewRegistry();
 	}
-
 	
-	default RequestContext createContext(String defaultDataset) {
-		var v = lookup(defaultDataset, DatasetResource.class);
-		if(nonNull(v) && v.isAccessible()) {
-			return new RequestContext(this, v.invoke(), typeRegistry());
-		}
-		throw new IllegalAccessError("Dataset " + defaultDataset + " is not accessible or does not exist");
-	}
 	default <T> ResourceInvoker<T> lookup(Resource sub, String resource, Class<T> type) {
 		return nonNull(sub) ? sub.lookup(resource, type) : null;
 	}

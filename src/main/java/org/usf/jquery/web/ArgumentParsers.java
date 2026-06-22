@@ -114,7 +114,7 @@ public class ArgumentParsers {
 	public static JavaArgumentParser jqueryArgParser(JQueryType type) {
 		switch (type) {
 		case QUERY_COLUMN:	return EntryChain::evalQueryColumn;
-		case NAMED_COLUMN:	return (e,c)-> e.evalColumn(c, true); //separate query context 
+//		case NAMED_COLUMN:	return (e,c)-> e.evalColumn(c, true); //separate query context 
 		case COLUMN:		return (e,c)-> e.evalColumn(c, false);
 		case FILTER: 		return EntryChain::evalFilter;
 		case ORDER: 		return EntryChain::evalOrder;

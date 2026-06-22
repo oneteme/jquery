@@ -1,11 +1,9 @@
 package org.usf.jquery.web;
 
-import static java.util.Arrays.stream;
-
 import java.util.Map;
 import java.util.Optional;
 
-import org.usf.jquery.core.NamedColumn;
+import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Query;
 
 import lombok.Getter;
@@ -34,11 +32,8 @@ final class QueryDecorator implements ViewDecorator {
 		return query; //do not use env cache
 	}
 
-	public Optional<NamedColumn> column(String id) {
-		return stream(query.getSelects()) //do not use declaredColumn
-		.filter(c-> id.equals(c.getTag()))
-		.findAny()
-		.map(c-> view().column(doubleQuote(c.getTag()), c.getType(), null));
+	public Optional<Column> column(String id) {
+		return null;
 	}
 	
 	@Override
@@ -47,7 +42,7 @@ final class QueryDecorator implements ViewDecorator {
 	}
 	
 	@Override
-	public NamedColumn column(@NonNull ColumnDecorator cd, String... args) {
+	public Column column(@NonNull ColumnDecorator cd, String... args) {
 		throw unsupportedOperationException("column");
 	}
 	

@@ -1,20 +1,14 @@
 package org.usf.jquery.web.proxy;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Stores.getCurrentStore;
-import static org.usf.jquery.core.Stores.setCurrentStore;
 import static org.usf.jquery.web.proxy.StoreProxy.createStore;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 
 import javax.sql.DataSource;
 
 import org.usf.jquery.core.Dialect;
-import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.core.QueryExecutor2;
-import org.usf.jquery.core.ResultSetMapper;
 import org.usf.jquery.web.NoSuchResourceException;
 
 import lombok.NoArgsConstructor;
@@ -25,7 +19,7 @@ import lombok.NoArgsConstructor;
  *
  */
 @NoArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-public final class StoreManager implements QueryExecutor2 {
+public final class StoreManager {
 	
 	private static final StoreManager instance = new StoreManager();
 	
@@ -57,27 +51,5 @@ public final class StoreManager implements QueryExecutor2 {
 			return (T) stores.values().iterator().next();
 		}
 		throw new NoSuchResourceException("unable to determine default store");
-	}
-	
-	public <S extends StoreResource, T> T execute(Class<S> clazz, Function<S, QueryComposer> fn, ResultSetMapper<T> mapper) {
-		return withStore(clazz, s-> execute(clazz, fn.apply(s), mapper));
-	}
-	
-	public <S extends StoreResource, T> T execute(Class<S> clazz, QueryComposer query, ResultSetMapper<T> mapper) {
-		var store = getStore(clazz);
-		var exec = store instanceof QueryExecutor2 qe ? qe : this; //allow stores to override default execution strategy
-		return exec.execute(query.compose(store).build(), mapper, store.dataSource());
-	}
-	
-	public <S extends StoreResource, T> T withStore(Class<S> clazz, Function<S,T> fn) {
-		var prv = getCurrentStore();
-		var str = getStore(clazz);
-		setCurrentStore(str);
-		try {
-			return fn.apply(str);
-		}
-		finally {
-			setCurrentStore(prv);
-		}
 	}
 }

@@ -93,7 +93,7 @@ public final class WebEnvironment implements Environment {
 
 	public <T> T exec(QueryComposer query, QueryExecutor<T> executor) {
 		var qry = apply(this, env-> query.compose(null).buildQuery(true));
-		return executor.execute(qry); //outside context
+		return executor.execute(null, null); //outside context
 	}
 	
 	public QueryComposer query(Consumer<QueryComposer> fn) {

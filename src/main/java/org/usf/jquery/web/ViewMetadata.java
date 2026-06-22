@@ -9,7 +9,6 @@ import static java.util.function.Function.identity;
 import static java.util.stream.Collectors.toMap;
 import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.Column.constant;
-import static org.usf.jquery.core.SqlStringBuilder.quote;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.DatabaseMetaData;
@@ -108,7 +107,7 @@ public class ViewMetadata {
 				}
 			}
 			else {
-				throw new NoSuchElementException(quote(view.toString()) + " table or view not found");
+				throw new NoSuchElementException(view.toString() + " table or view not found");
 			}
 		}
 	}

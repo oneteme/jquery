@@ -25,6 +25,6 @@ public final class MvcRequest {
 	}
 	
 	public Object execute(HttpServletResponse res) {
-		return viewer.view(res).execute(composer.compose(store), store);
+		return viewer.view(res).execute(composer, store);
 	}
 }
