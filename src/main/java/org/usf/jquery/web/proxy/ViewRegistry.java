@@ -6,7 +6,6 @@ import static java.util.Collections.synchronizedMap;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.empty;
 import static java.util.UUID.randomUUID;
 import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.DataWriter.toDataWriter;
@@ -24,8 +23,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
-import java.util.function.UnaryOperator;
 
 import org.usf.jquery.core.DataWriter;
 import org.usf.jquery.core.DynamicModel;
@@ -48,6 +45,7 @@ public class ViewRegistry {
 	private static final Map<String, MvcRequest> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
 	
 	private Map<String, ResultSetViewer> viewers;
+	
 	
 	public ViewRegistry register(String id, ResultSetViewer viewer) {
 		if(isNull(this.viewers)) {
@@ -89,31 +87,31 @@ public class ViewRegistry {
 	}
 	
 	public static QueryExecutor<Void> asciiViewer(HttpServletResponse res) {
-		return asciiViewer(res, empty());
+		return asciiViewer(res, null);
 	}
 
-	public static QueryExecutor<Void> asciiViewer(@NonNull HttpServletResponse res, Optional<String> filename) {
-		headers(res, "text/plain; charset=utf-8", filename.map(withExtention("txt")));
+	public static QueryExecutor<Void> asciiViewer(@NonNull HttpServletResponse res, String filename) {
+		headers(res, "text/plain; charset=utf-8", filename, "txt");
 		return defaultExecutor(asciiWriter(responseWriter(res)));  //filename => force download
 	}
 	
 	public static QueryExecutor<Void> csvViewer(HttpServletResponse res) {
-		return csvViewer(res, empty());
+		return csvViewer(res, null);
 	}
 	
-	public static QueryExecutor<Void> csvViewer(@NonNull HttpServletResponse res, Optional<String> filename) {
-		headers(res, "text/plain; charset=utf-8", filename.map(withExtention("csv")));
+	public static QueryExecutor<Void> csvViewer(@NonNull HttpServletResponse res, String filename) {
+		headers(res, "text/plain; charset=utf-8", filename, "csv");
 		return defaultExecutor(csvWriter(responseWriter(res)));  //filename => force download
 	}
 	
 	public static QueryExecutor<Void> lasyHtmlViewer(@NonNull HttpServletResponse res, String template, ResultSetMapper<?> mapper) {
-		headers(res, "text/html; charset=utf-8", empty());
+		headers(res, "text/html; charset=utf-8", null, null);
 		return (qry, str)->{
 			try {
 				var id = randomUUID().toString();
 				var writer = res.getWriter();
 				var path = Paths.get(ViewRegistry.class.getClassLoader().getResource(template).toURI());
-				writer.write(readString(path).replace("[[${callback}]]", "/callback/"+id));
+				writer.write(readString(path).replace("[[${callback}]]", "/callback/"+id)); //TD optim
 				queryQueue.put(id, new MvcRequest((StoreResource) str, qry, rsp-> mvcModelMapper(rsp, mapper)));
 				return null;
 			} catch (IOException | URISyntaxException e) {
@@ -139,10 +137,10 @@ public class ViewRegistry {
 		});
 	}
 	
-	static void headers(HttpServletResponse res, String type, Optional<String> filename) {
+	static void headers(HttpServletResponse res, String type, String filename, String ext) {
 		res.setHeader("Content-Type", type);
-		if(filename.isPresent()) {
-			res.setHeader("Content-Disposition", "attachement; filename=\""+filename.get()+"\"");
+		if(nonNull(filename) && !filename.isEmpty()) {
+			res.setHeader("Content-Disposition", "attachement; filename=\""+filename+'.'+ext+"\"");
 		}
 	}
 	
@@ -153,9 +151,5 @@ public class ViewRegistry {
 		catch (IOException e) {
 			throw new RuntimeException(e);
 		}
-	}
-	
-	static UnaryOperator<String> withExtention(String ext){
-		return v-> join(".", v, ext);
 	}
 }
