@@ -21,7 +21,7 @@ public class MacroDefinition extends Definition<Column> {
 	@Override
 	protected Column internalInvoke(JavaType type, Object... args) {
 		var col = macro.apply(args);
-		if(type == col.getType()) {
+		if(type.accept(col)) {
 			return col;
 		}
 		throw new IllegalStateException(format("macro '%s' cannot be applied to type %s", getName(), type));

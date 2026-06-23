@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.DATE;
 import static org.usf.jquery.core.JDBCType.INTEGER;
 import static org.usf.jquery.core.JDBCType.TIME;
@@ -9,7 +8,6 @@ import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
 import static org.usf.jquery.core.JDBCType.VARCHAR;
 import static org.usf.jquery.core.Parameter.required;
 import static org.usf.jquery.core.Provider.DEFAULT;
-import static org.usf.jquery.core.Stores.getCurrentStore;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -29,19 +27,13 @@ public class Dialect implements Composers, Operators, Comparators {
 
 	public MacroDefinition semester() {//[1-2]
 		return new MacroDefinition("semester", INTEGER, 
-				args-> month().invoke(args).toCase()
-				.when(Predicate.lt(7), 1)
-				.orElse(2), 
+				args-> ceil().invoke(divide().invoke(month().invoke(args), 6.)),  
 				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
 	public MacroDefinition quarter() {//[1-4]
 		return new MacroDefinition("quarter", INTEGER, 
-				args-> month().invoke(args).toCase()
-				.when(Predicate.lt(4), 1)
-				.when(Predicate.lt(7), 2)
-				.when(Predicate.lt(10), 3)
-				.orElse(4), 
+				args-> ceil().invoke(divide().invoke(month().invoke(args), 3.)), 
 				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
 	}
 	
@@ -124,10 +116,5 @@ public class Dialect implements Composers, Operators, Comparators {
 	
 	public String suroundColumnAlias(String alias) {
 		return '"'+alias+'"';
-	}
-	
-	public static Dialect getDialect() {		
-		var store = getCurrentStore();
-		return nonNull(store) ? store.dialect() : DEFAULT_DIALECT;
 	}
 }

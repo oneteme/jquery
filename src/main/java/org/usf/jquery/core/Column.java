@@ -1,9 +1,9 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Dialect.getDialect;
 import static org.usf.jquery.core.OrderType.ASC;
 import static org.usf.jquery.core.OrderType.DESC;
+import static org.usf.jquery.core.Stores.getCurrentDialect;
 import static org.usf.jquery.core.Utils.appendFirst;
 import static org.usf.jquery.core.Utils.toList;
 import static org.usf.jquery.core.Validation.requireLegalVariable;
@@ -56,89 +56,89 @@ public interface Column extends QueryPart, Typed {
 	//criteria
 	
 	default Criteria eq(Object value) {
-		return getDialect().eq().invoke(this, value);
+		return getCurrentDialect().eq().invoke(this, value);
 	}
 
 	default Criteria ne(Object value) {
-		return getDialect().ne().invoke(this, value);
+		return getCurrentDialect().ne().invoke(this, value);
 	}
 
 	default Criteria lt(Object value) {
-		return getDialect().lt().invoke(this, value);
+		return getCurrentDialect().lt().invoke(this, value);
 	}
 
 	default Criteria le(Object value) {
-		return getDialect().le().invoke(this, value);
+		return getCurrentDialect().le().invoke(this, value);
 	}
 
 	default Criteria gt(Object value) {
-		return getDialect().gt().invoke(this, value);
+		return getCurrentDialect().gt().invoke(this, value);
 	}
 
 	default Criteria ge(Object value) {
-		return getDialect().ge().invoke(this, value);
+		return getCurrentDialect().ge().invoke(this, value);
 	}
 
 	default Criteria between(Object min, Object max) { //included
-		return getDialect().between().invoke(this, min, max);
+		return getCurrentDialect().between().invoke(this, min, max);
 	}
 	
 	default Criteria like(Object value) {
-		return getDialect().like().invoke(this, value);
+		return getCurrentDialect().like().invoke(this, value);
 	}
 	
 	default Criteria startsLike(Object value) {
-		return getDialect().startsLike().invoke(this, value);
+		return getCurrentDialect().startsLike().invoke(this, value);
 	}
 
 	default Criteria endsLike(Object value) {
-		return getDialect().endsLike().invoke(this, value);
+		return getCurrentDialect().endsLike().invoke(this, value);
 	}
 
 	default Criteria contentLike(Object value) {
-		return getDialect().contentLike().invoke(this, value);
+		return getCurrentDialect().contentLike().invoke(this, value);
 	}
 	
 	default Criteria startsNotLike(Object value) {
-		return getDialect().startsNotLike().invoke(this, value);
+		return getCurrentDialect().startsNotLike().invoke(this, value);
 	}
 
 	default Criteria endsNotLike(Object value) {
-		return getDialect().endsNotLike().invoke(this, value);
+		return getCurrentDialect().endsNotLike().invoke(this, value);
 	}
 
 	default Criteria contentNotLike(Object value) {
-		return getDialect().contentNotLike().invoke(this, value);
+		return getCurrentDialect().contentNotLike().invoke(this, value);
 	}
 
 	default Criteria notLike(Object value) {
-		return getDialect().notLike().invoke(this, value);
+		return getCurrentDialect().notLike().invoke(this, value);
 	}
 
 	default Criteria ilike(Object value) {
-		return getDialect().iLike().invoke(this, value);
+		return getCurrentDialect().iLike().invoke(this, value);
 	}
 
 	default Criteria notILike(Object value) {
-		return getDialect().notILike().invoke(this, value);
+		return getCurrentDialect().notILike().invoke(this, value);
 	}
 
 	default Criteria isNull() {
-		return getDialect().isNull().invoke(this);
+		return getCurrentDialect().isNull().invoke(this);
 	}
 
 	default Criteria notNull() {
-		return getDialect().notNull().invoke(this);
+		return getCurrentDialect().notNull().invoke(this);
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> Criteria in(T... arr) {
-		return getDialect().in().invoke(appendFirst(arr, this)); 
+		return getCurrentDialect().in().invoke(appendFirst(arr, this)); 
 	}
 
 	@SuppressWarnings("unchecked")
 	default <T> Criteria notIn(T... arr) {
-		return getDialect().notIn().invoke(appendFirst(arr, this));
+		return getCurrentDialect().notIn().invoke(appendFirst(arr, this));
 	}
 	
 	default Criteria filter(Predicate exp) {
@@ -148,285 +148,285 @@ public interface Column extends QueryPart, Typed {
 	// arithmetic operations
 	
 	default Column plus(Object o) {
-		return getDialect().plus().invoke(this, o);
+		return getCurrentDialect().plus().invoke(this, o);
 	}
 
 	default Column minus(Object o) {
-		return getDialect().minus().invoke(this, o);
+		return getCurrentDialect().minus().invoke(this, o);
 	}
 
 	default Column multiply(Object o) {
-		return getDialect().multiply().invoke(this, o);
+		return getCurrentDialect().multiply().invoke(this, o);
 	}
 
 	default Column divide(Object o) {
-		return getDialect().divide().invoke(this, o);
+		return getCurrentDialect().divide().invoke(this, o);
 	}
 	
 	//numeric functions
 	
 	default Column sqrt() {
-		return getDialect().sqrt().invoke(this);
+		return getCurrentDialect().sqrt().invoke(this);
 	}
 	
 	default Column exp() {
-		return getDialect().exp().invoke(this);
+		return getCurrentDialect().exp().invoke(this);
 	}
 	
 	default Column log() {
-		return getDialect().log().invoke(this);
+		return getCurrentDialect().log().invoke(this);
 	}
 
 	default Column log(int base) {
-		return getDialect().log().invoke(this, base);
+		return getCurrentDialect().log().invoke(this, base);
 	}
 	
 	default Column abs() {
-		return getDialect().abs().invoke(this);
+		return getCurrentDialect().abs().invoke(this);
 	}
 
 	default Column ceil() {
-		return getDialect().ceil().invoke(this);
+		return getCurrentDialect().ceil().invoke(this);
 	}
 
 	default Column floor() {
-		return getDialect().floor().invoke(this);
+		return getCurrentDialect().floor().invoke(this);
 	}
 
 	default Column trunc() {
-		return getDialect().trunc().invoke(this);
+		return getCurrentDialect().trunc().invoke(this);
 	}
 
 	default Column trunc(int digit) {
-		return getDialect().trunc().invoke(this, digit);
+		return getCurrentDialect().trunc().invoke(this, digit);
 	}
 	
 	default Column round() {
-		return getDialect().round().invoke(this);
+		return getCurrentDialect().round().invoke(this);
 	}
 	
 	default Column round(int digit) {
-		return getDialect().round().invoke(this, digit);
+		return getCurrentDialect().round().invoke(this, digit);
 	}
 	
 	default Column mod(int value) {
-		return getDialect().mod().invoke(this, value);
+		return getCurrentDialect().mod().invoke(this, value);
 	}
 	
 	default Column pow(int value) {
-		return getDialect().pow().invoke(this, value);
+		return getCurrentDialect().pow().invoke(this, value);
 	}
 
 	//bitwise functions
 	
 	default Column bitAnd(int value) {
-		return getDialect().bitAnd().invoke(this, value);
+		return getCurrentDialect().bitAnd().invoke(this, value);
 	}
 	
 	default Column bitOr(int value) {
-		return getDialect().bitOr().invoke(this, value);
+		return getCurrentDialect().bitOr().invoke(this, value);
 	}
 	
 	default Column bitXor(int value) {
-		return getDialect().bitXor().invoke(this, value);
+		return getCurrentDialect().bitXor().invoke(this, value);
 	}
 	
 	default Column bitNot() {
-		return getDialect().bitNot().invoke(this);
+		return getCurrentDialect().bitNot().invoke(this);
 	}
 	
 	default Column bitShiftLeft(int value) {
-		return getDialect().bitShiftLeft().invoke(this, value);
+		return getCurrentDialect().bitShiftLeft().invoke(this, value);
 	}
 	
 	default Column bitShiftRight(int value) {
-		return getDialect().bitShiftRight().invoke(this, value);
+		return getCurrentDialect().bitShiftRight().invoke(this, value);
 	}
 	
 	//string functions
 
 	default Column length() {
-		return getDialect().length().invoke(this);
+		return getCurrentDialect().length().invoke(this);
 	}
 	
 	default Column trim() {
-		return getDialect().trim().invoke(this);
+		return getCurrentDialect().trim().invoke(this);
 	}
 
 	default Column ltrim() {
-		return getDialect().ltrim().invoke(this);
+		return getCurrentDialect().ltrim().invoke(this);
 	}
 
 	default Column rtrim() {
-		return getDialect().rtrim().invoke(this);
+		return getCurrentDialect().rtrim().invoke(this);
 	}
 	
 	default Column upper() {
-		return getDialect().upper().invoke(this);
+		return getCurrentDialect().upper().invoke(this);
 	}
 
 	default Column lower() {
-		return getDialect().lower().invoke(this);
+		return getCurrentDialect().lower().invoke(this);
 	}
 	
 	default Column initcap() {
-		return getDialect().initcap().invoke(this);
+		return getCurrentDialect().initcap().invoke(this);
 	}
 	
 	default Column reverse() {
-		return getDialect().reverse().invoke(this);
+		return getCurrentDialect().reverse().invoke(this);
 	}
 	
 	default Column left(int n) {
-		return getDialect().left().invoke(this, n);
+		return getCurrentDialect().left().invoke(this, n);
 	}
 	
 	default Column right(int n) {
-		return getDialect().pow().invoke(this, n);
+		return getCurrentDialect().pow().invoke(this, n);
 	}
 	
 	default Column replace(String oldValue, String newValue) {
-		return getDialect().replace().invoke(this, oldValue, newValue);
+		return getCurrentDialect().replace().invoke(this, oldValue, newValue);
 	}
 	
 	default Column substring(int start, int end) {
-		return getDialect().substring().invoke(this, start, end);
+		return getCurrentDialect().substring().invoke(this, start, end);
 	}
 	
 	default Column concat(Object... str) {
-		return getDialect().concat().invoke(appendFirst(str, this));
+		return getCurrentDialect().concat().invoke(appendFirst(str, this));
 	}
 	
 	default Column lpad(int n, String value) {
-		return getDialect().lpad().invoke(this, n, value);
+		return getCurrentDialect().lpad().invoke(this, n, value);
 	}
 	
 	default Column rpad(int n, String value) {
-		return getDialect().rpad().invoke(this, n, value);
+		return getCurrentDialect().rpad().invoke(this, n, value);
 	}
 
 	//temporal functions
 	
 	default Column year() {
-		return getDialect().year().invoke(this);
+		return getCurrentDialect().year().invoke(this);
 	}
 	
 	default Column month() {
-		return getDialect().month().invoke(this);
+		return getCurrentDialect().month().invoke(this);
 	}
 
 	default Column week() {
-		return getDialect().week().invoke(this);
+		return getCurrentDialect().week().invoke(this);
 	}
 	
 	default Column day() {
-		return getDialect().day().invoke(this);
+		return getCurrentDialect().day().invoke(this);
 	}
 	
 	default Column dow() {
-		return getDialect().dow().invoke(this);
+		return getCurrentDialect().dow().invoke(this);
 	}
 	
 	default Column doy() {
-		return getDialect().doy().invoke(this);
+		return getCurrentDialect().doy().invoke(this);
 	}
 
 	default Column hour() {
-		return getDialect().hour().invoke(this);
+		return getCurrentDialect().hour().invoke(this);
 	}
 
 	default Column minute() {
-		return getDialect().minute().invoke(this);
+		return getCurrentDialect().minute().invoke(this);
 	}
 	
 	default Column second() {
-		return getDialect().second().invoke(this);
+		return getCurrentDialect().second().invoke(this);
 	}
 	
 	default Column epoch() {
-		return getDialect().epoch().invoke(this);
+		return getCurrentDialect().epoch().invoke(this);
 	}
 	
 	default Column yearMonth() {
-		return getDialect().yearMonth().invoke(this);
+		return getCurrentDialect().yearMonth().invoke(this);
 	}
 	
 	default Column yearWeek() {
-		return getDialect().yearWeek().invoke(this);
+		return getCurrentDialect().yearWeek().invoke(this);
 	}
 	
 	default Column monthDay() {
-		return getDialect().monthDay().invoke(this);
+		return getCurrentDialect().monthDay().invoke(this);
 	}
 	
 	default Column hourMinute() {
-		return getDialect().hourMinute().invoke(this);
+		return getCurrentDialect().hourMinute().invoke(this);
 	}
 	
 	//cast functions
 
 	default Column varchar() {
-		return getDialect().varchar().invoke(this);
+		return getCurrentDialect().varchar().invoke(this);
 	}
 	
 	default Column varchar(int size) {
-		return getDialect().varchar().invoke(this, size);
+		return getCurrentDialect().varchar().invoke(this, size);
 	}
 	
 	default Column date() {
-		return getDialect().date().invoke(this);
+		return getCurrentDialect().date().invoke(this);
 	}
 	
 	default Column timestamp() {
-		return getDialect().timestamp().invoke(this);
+		return getCurrentDialect().timestamp().invoke(this);
 	}
 	
 	default Column integer() {
-		return getDialect().integer().invoke(this);
+		return getCurrentDialect().integer().invoke(this);
 	}
 	
 	default Column bigint() {
-		return getDialect().bigint().invoke(this);
+		return getCurrentDialect().bigint().invoke(this);
 	}
 	
 	default Column decimal() {
-		return getDialect().decimal().invoke(this);
+		return getCurrentDialect().decimal().invoke(this);
 	}
 	
 	default Column decimal(int digit, int precision) {
-		return getDialect().decimal().invoke(this, digit, precision);
+		return getCurrentDialect().decimal().invoke(this, digit, precision);
 	}
 
 	//other functions
 	
 	default Column distinct() {
-		return getDialect().distinct().invoke(this);
+		return getCurrentDialect().distinct().invoke(this);
 	}
 	
 	default Column coalesce(Object o) {
-		return getDialect().coalesce().invoke(this, o);
+		return getCurrentDialect().coalesce().invoke(this, o);
 	}
 	
 	//aggregate functions
 
 	default Column count() {
-		return getDialect().count().invoke(this);
+		return getCurrentDialect().count().invoke(this);
 	}
 
 	default Column min() {
-		return getDialect().min().invoke(this);
+		return getCurrentDialect().min().invoke(this);
 	}
 
 	default Column max() {
-		return getDialect().max().invoke(this);
+		return getCurrentDialect().max().invoke(this);
 	}
 
 	default Column sum() {
-		return getDialect().sum().invoke(this);
+		return getCurrentDialect().sum().invoke(this);
 	}
 	
 	default Column avg() {
-		return getDialect().avg().invoke(this);
+		return getCurrentDialect().avg().invoke(this);
 	}
 
 	//scope functions
@@ -436,7 +436,7 @@ public interface Column extends QueryPart, Typed {
 	}
 	
 	default Column over(Partition part) {
-		return getDialect().over().invoke(this, part);
+		return getCurrentDialect().over().invoke(this, part);
 	}
 	
 	default Column within(Order... orders) {
@@ -444,7 +444,7 @@ public interface Column extends QueryPart, Typed {
 	}
 	
 	default Column within(Group group) {
-		return getDialect().within().invoke(this, group);
+		return getCurrentDialect().within().invoke(this, group);
 	}
 
 	//orders
@@ -476,37 +476,37 @@ public interface Column extends QueryPart, Typed {
 	// constants
 	
 	static Column pi() {
-		return getDialect().pi().invoke();
+		return getCurrentDialect().pi().invoke();
 	}
 	
 	static Column cdate() {
-		return getDialect().cdate().invoke();
+		return getCurrentDialect().cdate().invoke();
 	}
 	
 	static Column ctime() {
-		return getDialect().ctime().invoke();
+		return getCurrentDialect().ctime().invoke();
 	}
 	
 	static Column ctimestamp() {
-		return getDialect().ctimestamp().invoke();
+		return getCurrentDialect().ctimestamp().invoke();
 	}
 
 	static Column countAll(View... view) {
-		return getDialect().count().invoke(allColumns(view));
+		return getCurrentDialect().count().invoke(allColumns(view));
 	}
 	
 	//window functions
 	
 	static Column rank() {
-		return getDialect().rank().invoke();
+		return getCurrentDialect().rank().invoke();
 	}
 	
 	static Column rowNumber() {
-		return getDialect().rowNumber().invoke();
+		return getCurrentDialect().rowNumber().invoke();
 	}
 	
 	static Column denseRank() {
-		return getDialect().denseRank().invoke();
+		return getCurrentDialect().denseRank().invoke();
 	}
 	
 	static ViewColumn column(String value) {

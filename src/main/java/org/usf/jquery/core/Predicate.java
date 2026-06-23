@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Dialect.getDialect;
+import static org.usf.jquery.core.Stores.getCurrentDialect;
 import static org.usf.jquery.core.Validation.requireNArgs;
 
 import lombok.NonNull;
@@ -20,61 +20,61 @@ public interface Predicate extends QueryPart, Chainable<Predicate> {
 	}
 	
 	static Predicate eq(Object right) {
-		return getDialect().eq().invokeAsExpression(right);
+		return getCurrentDialect().eq().invokeAsExpression(right);
 	}
 
 	static Predicate ne(Object right) {
-		return getDialect().ne().invokeAsExpression(right);
+		return getCurrentDialect().ne().invokeAsExpression(right);
 	}
 	
 	static Predicate lt(Object right) {
-		return getDialect().lt().invokeAsExpression(right);
+		return getCurrentDialect().lt().invokeAsExpression(right);
 	}
 
 	static Predicate le(Object right) {
-		return getDialect().le().invokeAsExpression(right);
+		return getCurrentDialect().le().invokeAsExpression(right);
 	}
 
 	static Predicate gt(Object right) {
-		return getDialect().gt().invokeAsExpression(right);
+		return getCurrentDialect().gt().invokeAsExpression(right);
 	}
 
 	static Predicate ge(Object right) {
-		return getDialect().ge().invokeAsExpression(right);
+		return getCurrentDialect().ge().invokeAsExpression(right);
 	}
 	
 	static Predicate like(Object right) {
-		return getDialect().like().invokeAsExpression(right);
+		return getCurrentDialect().like().invokeAsExpression(right);
 	}
 	
 	static Predicate iLike(Object right) {
-		return getDialect().iLike().invokeAsExpression(right);
+		return getCurrentDialect().iLike().invokeAsExpression(right);
 	}
 
 	static Predicate notLike(Object right) {
-		return getDialect().notLike().invokeAsExpression(right);
+		return getCurrentDialect().notLike().invokeAsExpression(right);
 	}
 
 	static Predicate notILike(Object right) {
-		return getDialect().notILike().invokeAsExpression(right);
+		return getCurrentDialect().notILike().invokeAsExpression(right);
 	}
 
 	static Predicate isNull() {
-		return getDialect().isNull().invokeAsExpression();
+		return getCurrentDialect().isNull().invokeAsExpression();
 	}
 
 	static Predicate isNotNull() {
-		return getDialect().notNull().invokeAsExpression();
+		return getCurrentDialect().notNull().invokeAsExpression();
 	}
 
 	@SuppressWarnings("unchecked")
 	static <T> Predicate in(@NonNull T... right) {
-		return getDialect().in().invokeAsExpression((Object[])right);
+		return getCurrentDialect().in().invokeAsExpression((Object[])right);
 	}
 	
 	@SuppressWarnings("unchecked")
 	static <T> Predicate notIn(@NonNull T... right) {
-		return getDialect().notIn().invokeAsExpression((Object[])right);
+		return getCurrentDialect().notIn().invokeAsExpression((Object[])right);
 	}
 	
 }

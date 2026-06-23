@@ -16,13 +16,14 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public final class Stores {
 
-	private static final ThreadLocal<Store> currentStore = new ThreadLocal<>();
+	private static final ThreadLocal<Dialect> currentStore = new ThreadLocal<>();
 	
-	public static Store getCurrentStore() {
-		return currentStore.get();
+	public static Dialect getCurrentDialect() {
+		var dial = currentStore.get();
+		return nonNull(dial) ? dial : DEFAULT_DIALECT;
 	}
 	
-	public static void setCurrentStore(Store store) {
+	public static void setCurrentDialect(Dialect store) {
 		if(nonNull(store)) {
 			currentStore.set(store);
 		}

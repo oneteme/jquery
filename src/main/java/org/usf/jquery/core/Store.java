@@ -3,8 +3,8 @@ package org.usf.jquery.core;
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.isNull;
 import static org.slf4j.LoggerFactory.getLogger;
-import static org.usf.jquery.core.Stores.getCurrentStore;
-import static org.usf.jquery.core.Stores.setCurrentStore;
+import static org.usf.jquery.core.Stores.getCurrentDialect;
+import static org.usf.jquery.core.Stores.setCurrentDialect;
 import static org.usf.jquery.core.TypedArg.values;
 import static org.usf.jquery.core.Utils.isEmpty;
 
@@ -37,14 +37,14 @@ public interface Store {
 	
 	default Query newQuery(Consumer<QueryComposer> cons) {
 		var qc = new QueryComposer();
-		var cs = getCurrentStore();
+		var cs = getCurrentDialect();
 		if(isNull(cs)) {
-			setCurrentStore(this);
+			setCurrentDialect(dialect());
 			try {
 				cons.accept(qc);
 			}
 			finally {
-				setCurrentStore(null);
+				setCurrentDialect(null);
 			}
 		}
 		else if(cs == this) {
