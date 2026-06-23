@@ -1,7 +1,6 @@
 package org.usf.jquery.web.proxy;
 
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.web.proxy.ViewRegistry.DataViewer;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.Getter;
@@ -18,7 +17,7 @@ public final class MvcRequest {
 	
 	private final StoreResource store;
 	private final QueryComposer composer;
-	private final DataViewer viewer;
+	private final ResultSetViewer viewer;
 
 	public Object execute() {
 		return execute(null);

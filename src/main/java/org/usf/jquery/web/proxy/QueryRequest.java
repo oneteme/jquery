@@ -28,5 +28,5 @@ public @interface QueryRequest { //RequestQuery
 	/** Parameters to be ignored by the interpreter. */
 	String[] ignore() default {};
 	
-	String view() default "json";
+	String view() default "map";
 }

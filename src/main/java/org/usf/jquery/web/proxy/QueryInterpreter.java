@@ -22,7 +22,6 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.ComposerDefinition;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.QueryComposer;
-import org.usf.jquery.web.proxy.ViewRegistry.DataViewer;
 
 import lombok.NonNull;
 
@@ -51,11 +50,11 @@ public interface QueryInterpreter {
 		return new MvcRequest(store, query, view);
 	}
 	
-	default DataViewer parseViewer(@NonNull Map<String, String[]> parameterMap, String param, RequestContext ctx){
+	default ResultSetViewer parseViewer(@NonNull Map<String, String[]> parameterMap, String param, RequestContext ctx){
 		var params = parameterMap.remove(param);
 		if(!isEmpty(params)) {
 			if(params.length == 1) {
-				return ctx.getStore().viewRegistry().viewer(params[0]);
+				return ctx.getStore().viewRegistry().geViewer(params[0]);
 			}
 			throw new IllegalArgumentException("Parameter " + param + " can only have one value");
 		}

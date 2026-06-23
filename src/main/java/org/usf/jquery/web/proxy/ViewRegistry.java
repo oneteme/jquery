@@ -30,6 +30,7 @@ import java.util.function.UnaryOperator;
 import org.usf.jquery.core.DataWriter;
 import org.usf.jquery.core.DynamicModel;
 import org.usf.jquery.core.QueryExecutor;
+import org.usf.jquery.core.ResultSetMapper;
 
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.NonNull;
@@ -43,19 +44,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ViewRegistry {
 	
-	private static final Map<String, DataViewer> DEF_VIEWERS; 
+	private static final Map<String, ResultSetViewer> DEF_VIEWERS; 
 	private static final Map<String, MvcRequest> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
 	
-	private Map<String, DataViewer> viewers;
+	private Map<String, ResultSetViewer> viewers;
 	
-	public void register(String id, DataViewer viewer) {
+	public ViewRegistry register(String id, ResultSetViewer viewer) {
 		if(isNull(this.viewers)) {
 			this.viewers = new HashMap<>();
 		}
 		viewers.put(id, viewer);
+		return this;
 	}
 	
-	public DataViewer viewer(String id) {
+	public ResultSetViewer geViewer(String id) {
 		var v = nonNull(viewers) ? viewers.get(id) : null;
 		return isNull(v) ? DEF_VIEWERS.get(id) : v;
 	}
@@ -69,22 +71,21 @@ public class ViewRegistry {
 	}
 	
 	static {
-		var map = new HashMap<String, DataViewer>();
-		map.put("json", ViewRegistry::keyValueViewer);
+		var map = new HashMap<String, ResultSetViewer>();
+		map.put("map", rsp-> keyValueViewer());
+		//json writer for better performance
 		map.put("csv", ViewRegistry::csvViewer);
 		map.put("ascii", ViewRegistry::asciiViewer);
-		map.put("google.v1", rsp-> lasyHtmlViewer(rsp, "static/google.v1.html"));
+		map.put("google.v1", rsp-> lasyHtmlViewer(rsp, "static/google.v1.html", keyValueMapper()));
 		DEF_VIEWERS = unmodifiableMap(map);
 	}
 	
-	@FunctionalInterface
-	public interface DataViewer {
-		
-		QueryExecutor<?> view(HttpServletResponse res);
+	public static QueryExecutor<List<DynamicModel>> keyValueViewer() {
+		return modelViewer(keyValueMapper());
 	}
 	
-	public static QueryExecutor<List<DynamicModel>> keyValueViewer(HttpServletResponse res) {
-		return defaultExecutor(keyValueMapper());
+	public static <T> QueryExecutor<T> modelViewer(ResultSetMapper<T> mapper) {
+		return defaultExecutor(mapper);
 	}
 	
 	public static QueryExecutor<Void> asciiViewer(HttpServletResponse res) {
@@ -93,7 +94,7 @@ public class ViewRegistry {
 
 	public static QueryExecutor<Void> asciiViewer(@NonNull HttpServletResponse res, Optional<String> filename) {
 		headers(res, "text/plain; charset=utf-8", filename.map(withExtention("txt")));
-		return defaultExecutor(asciiWriter(responseWriter(res)));
+		return defaultExecutor(asciiWriter(responseWriter(res)));  //filename => force download
 	}
 	
 	public static QueryExecutor<Void> csvViewer(HttpServletResponse res) {
@@ -102,10 +103,10 @@ public class ViewRegistry {
 	
 	public static QueryExecutor<Void> csvViewer(@NonNull HttpServletResponse res, Optional<String> filename) {
 		headers(res, "text/plain; charset=utf-8", filename.map(withExtention("csv")));
-		return defaultExecutor(csvWriter(responseWriter(res)));  //text/csv => force download
+		return defaultExecutor(csvWriter(responseWriter(res)));  //filename => force download
 	}
 	
-	public static QueryExecutor<Void> lasyHtmlViewer(@NonNull HttpServletResponse res, String template) {
+	public static QueryExecutor<Void> lasyHtmlViewer(@NonNull HttpServletResponse res, String template, ResultSetMapper<?> mapper) {
 		headers(res, "text/html; charset=utf-8", empty());
 		return (qry, str)->{
 			try {
@@ -113,7 +114,7 @@ public class ViewRegistry {
 				var writer = res.getWriter();
 				var path = Paths.get(ViewRegistry.class.getClassLoader().getResource(template).toURI());
 				writer.write(readString(path).replace("[[${callback}]]", "/callback/"+id));
-				queryQueue.put(id, new MvcRequest((StoreResource) str, qry, rsp-> mvcModelMapper(rsp)));
+				queryQueue.put(id, new MvcRequest((StoreResource) str, qry, rsp-> mvcModelMapper(rsp, mapper)));
 				return null;
 			} catch (IOException | URISyntaxException e) {
 				throw new RuntimeException(e); //TODO change this
@@ -121,7 +122,7 @@ public class ViewRegistry {
 		};
 	}
 
-	public static QueryExecutor<List<DynamicModel>> mvcModelMapper(@NonNull HttpServletResponse res) {
+	public static <T> QueryExecutor<T> mvcModelMapper(@NonNull HttpServletResponse res, ResultSetMapper<T> mapper) {
 		return defaultExecutor(rs->{
 			var md = rs.getMetaData();
 			var map = new LinkedHashMap<String, String>(); 
@@ -134,7 +135,7 @@ public class ViewRegistry {
 			res.setHeader("X-JQuery-Metadata", map.entrySet().stream()
 					.map(e-> join(":", e.getKey(), e.getValue()))
 					.collect(joining(",")));
-			return keyValueMapper().map(rs);
+			return mapper.map(rs);
 		});
 	}
 	
