@@ -1,7 +1,7 @@
 package org.usf.jquery.web.proxy;
 
 import static java.util.Objects.requireNonNullElseGet;
-import static org.usf.jquery.core.Mappers.rowLimitMapper;
+import static org.usf.jquery.core.Mappers.resultSetLimiter;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.util.Collections;
@@ -29,6 +29,7 @@ public class RestrictedStore implements StoreResource {
 	private final Set<String> excludeResources;
 	private final Set<String> excludeDialects;
 	
+	@Override
 	public RequestContext createContext(String defaultDataset) {
 		if(!excludeResources.contains(defaultDataset)) {
 			return StoreResource.super.createContext(defaultDataset);
@@ -65,7 +66,7 @@ public class RestrictedStore implements StoreResource {
 		if(aggregate && !query.isAggregation()) {
 			throw new ResourceAccessException("Query is not an aggregation query");
 		}
-		return store.execute(query, maxRows > 0 ? rowLimitMapper(maxRows, mapper) : mapper);
+		return store.execute(query, maxRows > 0 ? resultSetLimiter(mapper, maxRows) : mapper);
 	}
 	
 	public static StoreResource restrict(StoreResource store, int maxCols, int maxRows, boolean aggregation, Set<String> excludeResources, Set<String> excludeDialects) {

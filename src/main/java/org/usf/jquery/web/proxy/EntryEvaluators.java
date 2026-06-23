@@ -307,7 +307,7 @@ public final class EntryEvaluators {
 
 	static <T> Optional<T> lookupViewResource(DatasetResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
-		var res = ctx.lookupSubResource(view, entry.getValue(), type);
+		var res = ctx.getStore().lookup(view, entry.getValue(), type);
 		if(nonNull(res)) {
 			itr.advance();
 			return Optional.of(res.invoke(ctx.evaluate(entry.getArgs(), res.getParameters())));
@@ -321,7 +321,7 @@ public final class EntryEvaluators {
 		while(itr.hasNext()) {
 			Entry entry = itr.peekNext();
 			var args = entry.getArgs();
-			var r = ctx.lookupResource(entry.getValue(), Predicate.class);
+			var r = ctx.getStore().lookup(entry.getValue(), Predicate.class);
 			if(nonNull(r)) {
 				itr.advance();
 				if(isNull(args) && !entry.hasNext()) {
@@ -331,7 +331,7 @@ public final class EntryEvaluators {
 				col = col.filter(r.invoke(ctx.evaluate(args, r.getParameters())));
 			}
 			else {
-				var res = ctx.lookupDialectResource(entry.getValue(), Definition.class);
+				var res = ctx.getStore().lookupDialect(entry.getValue(), Definition.class);
 				if(isNull(res)) {
 					break;
 				}
@@ -359,14 +359,14 @@ public final class EntryEvaluators {
 	static Object invokeDialectComposer(EntryIterator itr, RequestContext ctx) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
-			var res = ctx.lookupDialectResource(entry.getValue(), Definition.class);
+			var res = ctx.getStore().lookupDialect(entry.getValue(), Definition.class);
 			if(nonNull(res)) {
 				itr.advance();
 				var def = res.invoke(); 
 				var obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
 				while(itr.hasNext() && obj instanceof Composer<?>) {
 					entry = itr.peekNext();
-					res = ctx.lookupDialectResource(entry.getValue(), Definition.class, obj);
+					res = ctx.getStore().lookupDialect(entry.getValue(), Definition.class, obj);
 					if(nonNull(res)) {
 						itr.advance();
 						def = res.invoke(obj); 

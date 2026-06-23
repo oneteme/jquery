@@ -74,27 +74,11 @@ public final class RequestContext {
 		var view = declaredViews.get(name);
 		return nonNull(view)
 				? ofObject(true, view, DatasetResource.class)
-				: lookupResource(name, DatasetResource.class);
+				: store.lookup(name, DatasetResource.class);
 	}
 	
 	public Optional<Column> lookupDeclaredColumn(String name) {
 		return ofNullable(declaredColumns.get(name));
-	}
-	
-	public <T> ResourceInvoker<T> lookupDialectResource(String name, Class<T> type) {
-		return store.lookupDialect(name, type, null);
-	}
-	
-	public <T> ResourceInvoker<T> lookupDialectResource(String name, Class<T> type, Object composer) {
-		return store.lookupDialect(name, type, composer);
-	}
-
-	public <T> ResourceInvoker<T> lookupResource(String name, Class<T> type) { 
-		return store.lookup(name, type);
-	}
-	
-	public <T> ResourceInvoker<T> lookupSubResource(Resource view, String name, Class<T> type) { 
-		return store.lookup(view, name, type);
 	}
 	
 	void declareView(String name, DatasetResource view) {

@@ -54,7 +54,11 @@ public interface QueryInterpreter {
 		var params = parameterMap.remove(param);
 		if(!isEmpty(params)) {
 			if(params.length == 1) {
-				return ctx.getStore().viewRegistry().geViewer(params[0]);
+				var view = ctx.getStore().viewRegistry().geViewer(params[0]);
+				if(nonNull(view)) {
+					return view;
+				}
+				throw new IllegalArgumentException("unknown view: " + params[0]);
 			}
 			throw new IllegalArgumentException("Parameter " + param + " can only have one value");
 		}

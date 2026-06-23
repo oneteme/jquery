@@ -49,7 +49,7 @@ public final class Mappers {
 		};
 	}
 	
-	public static <T> ResultSetMapper<T> rowLimitMapper(int limit, ResultSetMapper<T> rm){
+	public static <T> ResultSetMapper<T> resultSetLimiter(ResultSetMapper<T> rm, int limit){
 		if(limit < 0) {
 			throw new IllegalArgumentException("limit must be >= 0");
 		}
@@ -71,6 +71,7 @@ public final class Mappers {
 			}
 			return nxt;
 		}
-		//last ??
+		
+		//last, prev ??
 	}
 }
