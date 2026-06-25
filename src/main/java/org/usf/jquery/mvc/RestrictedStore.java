@@ -18,35 +18,46 @@ import lombok.experimental.Delegate;
  * @author u$f
  *
  */
-@RequiredArgsConstructor
+@RequiredArgsConstructor(access = lombok.AccessLevel.PRIVATE)
 public class RestrictedStore implements StoreResource {
 
-	@Delegate
+	@Delegate(types = StoreResource.class)
 	private final StoreResource store;
 	private final int maxCols;
 	private final int maxRows;
-	private final boolean aggregate;
+	private final boolean aggregateOnly;
 	private final Set<String> excludeResources;
 	private final Set<String> excludeDialects;
 	
 	@Override
 	public RequestContext createContext(String defaultDataset) {
 		if(!excludeResources.contains(defaultDataset)) {
-			return StoreResource.super.createContext(defaultDataset);
+			return StoreResource.super.createContext(defaultDataset); //because of @Delegate, this will call the store.createContext(defaultDataset)
 		}
 		throw new IllegalAccessError("Dataset " + defaultDataset + " is not accessible or does not exist");
 	}
 	
 	@Override
 	public <T> ResourceInvoker<T> lookup(String resource, Class<T> type) {
-		if(excludeResources.contains(resource)) {
-			throw new ResourceAccessException("Resource " + resource + " is not allowed");
+		if(!excludeResources.contains(resource)) {
+			return store.lookup(resource, type);
 		}
-		return store.lookup(resource, type);
+		throw new ResourceAccessException("Resource " + resource + " is not allowed");
+	}
+	
+	@Override
+	public <T> ResourceInvoker<T> lookup(Resource sub, String resource, Class<T> type) {
+		if(!excludeResources.contains(resource)) {
+			return store.lookup(sub, resource, type);
+		}
+		throw new ResourceAccessException("Sub-resource " + resource + " is not allowed");
 	}
 	
 	@Override
 	public <T> ResourceInvoker<T> lookupDialect(String resource, Class<T> type) {
+		if(excludeDialects.contains(resource)) {
+			throw new ResourceAccessException("Dialect " + resource + " is not allowed");
+		}
 		return store.lookupDialect(resource, type);
 	}
 	
@@ -63,17 +74,17 @@ public class RestrictedStore implements StoreResource {
 		if(maxCols > 0 && query.getSelects().size() > maxCols) {
 			throw new ResourceAccessException("Query has too many columns: " + query.getSelects().size() + " > " + maxCols);
 		}
-		if(aggregate && !query.isAggregation()) {
+		if(aggregateOnly && !query.isAggregation()) {
 			throw new ResourceAccessException("Query is not an aggregation query");
 		}
 		return store.execute(query, maxRows > 0 ? resultSetLimiter(mapper, maxRows) : mapper);
 	}
 	
-	public static StoreResource restrict(StoreResource store, int maxCols, int maxRows, boolean aggregation, Set<String> excludeResources, Set<String> excludeDialects) {
+	public static StoreResource restrict(StoreResource store, int maxCols, int maxRows, boolean aggregationOnly, Set<String> excludeResources, Set<String> excludeDialects) {
 		if(isEmpty(excludeResources) && isEmpty(excludeDialects) && maxCols <= 0 && maxRows <= 0) {
 			return store;
 		}
-		return new RestrictedStore(store, maxCols, maxRows, aggregation,
+		return new RestrictedStore(store, maxCols, maxRows, aggregationOnly,
 				requireNonNullElseGet(excludeResources, Collections::emptySet), 
 				requireNonNullElseGet(excludeDialects, Collections::emptySet));
 	}

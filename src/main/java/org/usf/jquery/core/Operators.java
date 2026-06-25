@@ -17,7 +17,7 @@ import static org.usf.jquery.core.OperatorKind.AGGREGATE;
 import static org.usf.jquery.core.OperatorKind.CAST;
 import static org.usf.jquery.core.OperatorKind.DEFAUTL;
 import static org.usf.jquery.core.OperatorKind.EXTRACT;
-import static org.usf.jquery.core.OperatorKind.OPR;
+import static org.usf.jquery.core.OperatorKind.OPERATOR;
 import static org.usf.jquery.core.OperatorKind.SCOPE;
 import static org.usf.jquery.core.OperatorKind.WINDOW;
 import static org.usf.jquery.core.Parameter.optional;
@@ -369,7 +369,7 @@ public interface Operators {
 		if(isNull(parameters) || parameters.length != 2 || !parameters[0].isRequired() || !parameters[1].isRequired()) {
 			throw new IllegalArgumentException(format("'%s(%s)' must have exactly two required parameters", name, symbol));
 		}
-		return new OperatorDefinition(name, type, OPR,
+		return new OperatorDefinition(name, type, OPERATOR,
 				(builder,args)-> builder.append("(").appendParameter(args[0]).append(symbol).appendParameter(args[1]).append(")"),
 				parameters);
 	}
@@ -378,7 +378,7 @@ public interface Operators {
 		if(isEmpty(parameters) || !parameters[0].isRequired()) {
 			throw new IllegalArgumentException(format("'%s(%s)' must have at least one required parameter", name, symbol));
 		}
-		return new OperatorDefinition(name, type, OPR, prefix
+		return new OperatorDefinition(name, type, OPERATOR, prefix
 				? (builder,args)-> builder.append(symbol).appendParameter(args[0])
 				: (builder,args)-> builder.appendParameter(args[0]).append(symbol),
 				parameters);

@@ -95,8 +95,8 @@ public final class AsciiResultMapper implements ResultSetMapper<Void> {
 	
 	private static boolean isNumer(int type) {
 		return switch (type) {
-		case BOOLEAN, BIT, TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL: yield true;
-		default: yield false;
+		case BOOLEAN, BIT, TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL-> true;
+		default-> false;
 		};
 	}
 	
