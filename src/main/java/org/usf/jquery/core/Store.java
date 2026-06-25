@@ -6,12 +6,10 @@ import static java.util.Objects.nonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.usf.jquery.core.Stores.getCurrentDialect;
 import static org.usf.jquery.core.Stores.setCurrentDialect;
-import static org.usf.jquery.core.TypedArg.values;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Objects;
+import java.util.List;
 import java.util.function.Consumer;
 
 import javax.sql.DataSource;
@@ -72,17 +70,18 @@ public interface Store {
 			var args = sqlQuery.args();
 			if(!isEmpty(args)) {
 				if(log.isDebugEnabled()) {
-					log.debug("binding query parameters: {}", Arrays.toString(values(args)));
+					log.debug("binding query parameters: {}", values(args));
 				}
 				var registry = typeConverters();
-				for(var i=0; i<args.length; i++) {
-					if(isNull(args[i].value())) {
-						ps.setNull(i+1, args[i].type().getValue());
+				for(var i=0; i<args.size(); i++) {
+					var arg = args.get(i);
+					if(isNull(arg.value())) {
+						ps.setNull(i+1, arg.type().getValue());
 					}
 					else {
-						var cnv = (TypeConverter<Object>)registry.getConverter(args[i].value().getClass());
-						var val = nonNull(cnv) ? cnv.convert(args[i].value(), args[i].type()) : args[i].value();
-						ps.setObject(i+1, val, args[i].type().getValue());
+						var cnv = (TypeConverter<Object>)registry.getConverter(arg.value().getClass());
+						var val = nonNull(cnv) ? cnv.convert(arg.value(), arg.type()) : arg.value();
+						ps.setObject(i+1, val, arg.type().getValue());
 					}
 				}						
 			}
@@ -95,8 +94,11 @@ public interface Store {
 			}
 		}
 		catch (SQLException e) {
-			var args = values(sqlQuery.args());
-			throw new QueryExecutionException("error executing query: " + sqlQuery.sql() + " with args: " + Arrays.toString(args), e);
+			throw new QueryExecutionException("error executing query: " + sqlQuery.sql() + " with args: " + values(sqlQuery.args()), e);
 		}
 	}
+	
+	public static List<Object> values(List<TypedArg> arr) {
+		return nonNull(arr) ? arr.stream().map(TypedArg::value).toList() : null;
+	} 
 }

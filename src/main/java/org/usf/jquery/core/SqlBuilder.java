@@ -1,6 +1,7 @@
 package org.usf.jquery.core;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.unmodifiableList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
@@ -173,7 +174,7 @@ public final class SqlBuilder {
 	}
 
 	public SqlQuery build() {
-		return new SqlQuery(store, sql.toString(), isParameterized() ? args.toArray(TypedArg[]::new) : null);
+		return new SqlQuery(store, sql.toString(), isParameterized() ? unmodifiableList(args) : null);
 	}
 
 	@Override
