@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static org.slf4j.LoggerFactory.getLogger;
 import static org.usf.jquery.core.Stores.getCurrentDialect;
 import static org.usf.jquery.core.Stores.setCurrentDialect;
@@ -10,6 +11,7 @@ import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.function.Consumer;
 
 import javax.sql.DataSource;
@@ -30,6 +32,10 @@ public interface Store {
 	Dialect dialect();
 	
 	DataSource dataSource();
+	
+	default ConverterRegistry typeConverters(){
+		return new ConverterRegistry();
+	}
 	
 	default Table table(String name) {
 		return new Table(name, name());
@@ -56,6 +62,7 @@ public interface Store {
 		return qc.compose(this);
 	}
 
+	@SuppressWarnings("unchecked")
 	default <T> T execute(Query query, ResultSetMapper<T> mapper) {
 		log.debug("building query");
 		var sqlQuery = query.build();
@@ -67,12 +74,15 @@ public interface Store {
 				if(log.isDebugEnabled()) {
 					log.debug("binding query parameters: {}", Arrays.toString(values(args)));
 				}
+				var registry = typeConverters();
 				for(var i=0; i<args.length; i++) {
 					if(isNull(args[i].value())) {
-						ps.setNull(i+1, args[i].type());
+						ps.setNull(i+1, args[i].type().getValue());
 					}
 					else {
-						ps.setObject(i+1, args[i].value(), args[i].type());
+						var cnv = (TypeConverter<Object>)registry.getConverter(args[i].value().getClass());
+						var val = nonNull(cnv) ? cnv.convert(args[i].value(), args[i].type()) : args[i].value();
+						ps.setObject(i+1, val, args[i].type().getValue());
 					}
 				}						
 			}

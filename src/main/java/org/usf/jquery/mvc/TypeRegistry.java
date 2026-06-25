@@ -128,10 +128,10 @@ public final class TypeRegistry {
 		if(nonNull(v)) {
 			if(v.length() == 1) {
 				var c = v.charAt(0);
-				if(c=='1' || c=='t') {
+				if(c=='1' || c=='t' || c=='y') {
 					return true;
 				}
-				if(c=='0' || c=='f') {
+				if(c=='0' || c=='f' || c=='n') {
 					return false;
 				}
 			}

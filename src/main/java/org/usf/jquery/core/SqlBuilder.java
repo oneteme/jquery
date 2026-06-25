@@ -117,7 +117,7 @@ public final class SqlBuilder {
 		if(parameterized && isParameterized()) {
 			var t = typeOf(o);
 			if(t.isPresent()) {
-				args.add(arg(o, t.get().getValue()));
+				args.add(arg(o, t.get()));
 				return append("?");
 			}
 		}

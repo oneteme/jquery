@@ -108,7 +108,7 @@ public enum JDBCType implements JavaType, TypeResolver {
 		if(o instanceof Typed t) {
 			return ofNullable(t.getType());
 		}
-		if(o instanceof String || o instanceof Character) {
+		if(o instanceof String) {
 			return Optional.of(VARCHAR);
 		}
 		if(o instanceof Number) {

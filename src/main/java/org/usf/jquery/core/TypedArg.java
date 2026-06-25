@@ -8,9 +8,9 @@ import static java.util.Objects.nonNull;
  * @author u$f
  *
  */
-public record TypedArg(Object value, int type) {
+public record TypedArg(Object value, JDBCType type) {
 	
-	public static TypedArg arg(Object value, int type) {
+	public static TypedArg arg(Object value, JDBCType type) {
 		return new TypedArg(value, type);
 	}
 	
