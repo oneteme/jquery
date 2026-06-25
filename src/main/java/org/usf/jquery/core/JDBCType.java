@@ -1,10 +1,11 @@
 package org.usf.jquery.core;
 
 import static java.util.Arrays.stream;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
-import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.math.BigDecimal;
 import java.sql.Date;
@@ -19,30 +20,27 @@ import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
 import java.util.Optional;
-import java.util.function.Predicate;
-
-import lombok.RequiredArgsConstructor;
+import java.util.Set;
 
 /**
  * 
  * @author u$f
  * 
  */
-@RequiredArgsConstructor
 public enum JDBCType implements JavaType, TypeResolver {
 
 	BOOLEAN(Types.BOOLEAN, Boolean.class),
 	BIT(Types.BIT, Boolean.class),
 	
-	TINYINT(Types.TINYINT, Byte.class, Number.class::isAssignableFrom),
-	SMALLINT(Types.SMALLINT, Short.class, Number.class::isAssignableFrom),
-	INTEGER(Types.INTEGER, Integer.class, Number.class::isAssignableFrom),
-	BIGINT(Types.BIGINT, Long.class, Number.class::isAssignableFrom),
-	REAL(Types.REAL, Float.class, Number.class::isAssignableFrom),
-	FLOAT(Types.FLOAT, Double.class, Number.class::isAssignableFrom),
-	DOUBLE(Types.DOUBLE, Double.class, Number.class::isAssignableFrom),
-	NUMERIC(Types.NUMERIC, BigDecimal.class, Number.class::isAssignableFrom),
-	DECIMAL(Types.DECIMAL, BigDecimal.class, Number.class::isAssignableFrom),
+	TINYINT(Types.TINYINT, Byte.class, true),
+	SMALLINT(Types.SMALLINT, Short.class, true),
+	INTEGER(Types.INTEGER, Integer.class, true),
+	BIGINT(Types.BIGINT, Long.class, true),
+	REAL(Types.REAL, Float.class, true),
+	FLOAT(Types.FLOAT, Double.class, true),
+	DOUBLE(Types.DOUBLE, Double.class, true),
+	NUMERIC(Types.NUMERIC, BigDecimal.class, true),
+	DECIMAL(Types.DECIMAL, BigDecimal.class, true),
 	
 	CHAR(Types.CHAR, String.class),
 	VARCHAR(Types.VARCHAR, String.class),
@@ -71,22 +69,27 @@ public enum JDBCType implements JavaType, TypeResolver {
 
 	private final int value;
 	private final Class<?> type;
-	private final Predicate<Class<?>> typeMatcher;
+	private final boolean isNumber;
+	private final Set<Class<?>> accepts;
 	
-	private <T> JDBCType(int value, Class<T> type, Class<?>... others) {
-		this(value, type, isEmpty(others) ? c-> c == type : c-> {
-			if(c == type) {
-				return true;
-			}
-			for(var o : others) {
-				if(c == o) {
-					return true;
-				}
-			}
-			return false;
-		});
+	private <T> JDBCType(int value, Class<T> type) {
+		this(value, type, false);
 	}
 	
+	private <T> JDBCType(int value, Class<T> type, boolean isNumber) {
+		this.value = value;
+		this.type = type;
+		this.isNumber = isNumber;
+		this.accepts = emptySet();
+	}
+
+	private <T> JDBCType(int value, Class<T> type, Class<?>... accepts) {
+		this.value = value;
+		this.type = type;
+		this.isNumber = false;
+		this.accepts = nonNull(accepts) ? Set.of(accepts) : emptySet();
+	}
+
 	public Class<?> getCorrespondingClass() {
 		return type;
 	}
@@ -99,62 +102,27 @@ public enum JDBCType implements JavaType, TypeResolver {
 	public boolean accept(Object o) {
 		if(o instanceof Typed v) {
 			var t = v.getType();
-			return t == this || isNull(t) || typeMatcher.test(t.type);
+			return t == this || isNull(t) || accept(t.type);
 		}
-		return isNull(o) || typeMatcher.test(o.getClass());
+		return isNull(o) || accept(o.getClass());
+	}
+
+	public boolean accept(Class<?> c) {
+		return type == c || (isNumber ? Number.class.isAssignableFrom(c) : accepts.contains(c));
 	}
 	
 	public static Optional<JDBCType> typeOf(Object o) {
-		if(o instanceof Typed t) {
-			return ofNullable(t.getType());
-		}
-		if(o instanceof String) {
-			return Optional.of(VARCHAR);
-		}
-		if(o instanceof Number) {
-			return typeOfNumber(o);
-		}
-		if(o instanceof Timestamp) {
-			return Optional.of(TIMESTAMP);
-		}
-		if(o instanceof Time) {
-			return Optional.of(TIME);
-		}
-		if(o instanceof Date) {
-			return Optional.of(DATE);
-		}
-		if(o instanceof Boolean) {
-			return Optional.of(BOOLEAN);
+		if(nonNull(o)) {
+			var c = o.getClass();
+			for(var t : values()) {
+				if(c == t.type || (!t.isNumber && t.accepts.contains(c))) {
+					return ofNullable(t);
+				}
+			}
 		}
 		return empty();
 	}
-	
-	public static Optional<JDBCType> typeOfNumber(Object o) {
-		var c = o.getClass();
-		if(c == Integer.class) {
-			return Optional.of(INTEGER);
-		}
-		if(c == Long.class) {
-			return Optional.of(BIGINT);
-		}
-		if(c == Double.class) {
-			return Optional.of(DOUBLE);
-		}
-		if(c == BigDecimal.class) {
-			return Optional.of(DECIMAL);
-		}
-		if(c == Float.class) {
-			return Optional.of(REAL);
-		}
-		if(c == Short.class) {
-			return Optional.of(SMALLINT);
-		}
-		if(c == Byte.class) {
-			return Optional.of(TINYINT);
-		}
-		return empty();
-	}
-	
+		
 	public static Optional<JDBCType> fromDataType(int value) {
 		return stream(values()).filter(t-> t.value == value).findAny();
 	}

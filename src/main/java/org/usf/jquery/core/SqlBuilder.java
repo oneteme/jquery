@@ -116,7 +116,7 @@ public final class SqlBuilder {
 			return append(jo);
 		}
 		if(parameterized && isParameterized()) {
-			var t = typeOf(o);
+			var t = typeOf(o); //TODO 
 			if(t.isPresent()) {
 				args.add(arg(o, t.get()));
 				return append("?");

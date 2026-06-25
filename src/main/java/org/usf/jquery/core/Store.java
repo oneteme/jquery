@@ -31,8 +31,8 @@ public interface Store {
 	
 	DataSource dataSource();
 	
-	default ConverterRegistry typeConverters(){
-		return new ConverterRegistry();
+	default TypeConverterRegistry typeConverters(){
+		return new TypeConverterRegistry();
 	}
 	
 	default Table table(String name) {
@@ -80,7 +80,7 @@ public interface Store {
 					}
 					else {
 						var cnv = (TypeConverter<Object>)registry.getConverter(arg.value().getClass());
-						var val = nonNull(cnv) ? cnv.convert(arg.value(), arg.type()) : arg.value();
+						var val = nonNull(cnv) ? cnv.convert(arg.value(), arg.type()) : arg.value(); //TODO trace
 						ps.setObject(i+1, val, arg.type().getValue());
 					}
 				}						
