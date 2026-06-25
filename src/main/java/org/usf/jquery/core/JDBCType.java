@@ -31,7 +31,7 @@ public enum JDBCType implements JavaType, TypeResolver {
 
 	BOOLEAN(Types.BOOLEAN, Boolean.class),
 	BIT(Types.BIT, Boolean.class),
-	
+
 	TINYINT(Types.TINYINT, Byte.class, true),
 	SMALLINT(Types.SMALLINT, Short.class, true),
 	INTEGER(Types.INTEGER, Integer.class, true),
@@ -41,12 +41,12 @@ public enum JDBCType implements JavaType, TypeResolver {
 	DOUBLE(Types.DOUBLE, Double.class, true),
 	NUMERIC(Types.NUMERIC, BigDecimal.class, true),
 	DECIMAL(Types.DECIMAL, BigDecimal.class, true),
-	
+
 	CHAR(Types.CHAR, String.class),
 	VARCHAR(Types.VARCHAR, String.class),
 	NVARCHAR(Types.NVARCHAR, String.class),
 	LONGNVARCHAR(Types.LONGNVARCHAR, String.class),
-	
+
 	DATE(Types.DATE, Date.class, java.util.Date.class, LocalDate.class),
 	TIME(Types.TIME, Time.class, LocalTime.class, OffsetTime.class),
 	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, 
@@ -71,11 +71,11 @@ public enum JDBCType implements JavaType, TypeResolver {
 	private final Class<?> type;
 	private final boolean isNumber;
 	private final Set<Class<?>> accepts;
-	
+
 	private <T> JDBCType(int value, Class<T> type) {
 		this(value, type, false);
 	}
-	
+
 	private <T> JDBCType(int value, Class<T> type, boolean isNumber) {
 		this.value = value;
 		this.type = type;
@@ -93,11 +93,11 @@ public enum JDBCType implements JavaType, TypeResolver {
 	public Class<?> getCorrespondingClass() {
 		return type;
 	}
-	
+
 	public int getValue() {
 		return value;
 	}
-	
+
 	@Override
 	public boolean accept(Object o) {
 		if(o instanceof Typed v) {
@@ -110,19 +110,22 @@ public enum JDBCType implements JavaType, TypeResolver {
 	public boolean accept(Class<?> c) {
 		return type == c || (isNumber ? Number.class.isAssignableFrom(c) : accepts.contains(c));
 	}
-	
+
 	public static Optional<JDBCType> typeOf(Object o) {
+		if(o instanceof Typed t) {
+			return ofNullable(t.getType());
+		}
 		if(nonNull(o)) {
 			var c = o.getClass();
 			for(var t : values()) {
 				if(c == t.type || (!t.isNumber && t.accepts.contains(c))) {
-					return ofNullable(t);
+					return Optional.of(t);
 				}
 			}
 		}
 		return empty();
 	}
-		
+
 	public static Optional<JDBCType> fromDataType(int value) {
 		return stream(values()).filter(t-> t.value == value).findAny();
 	}
