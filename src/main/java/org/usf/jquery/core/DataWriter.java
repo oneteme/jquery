@@ -42,13 +42,11 @@ public interface DataWriter {
 	}
 	
 	static RowWriter debugLogger() {
-		var log = getLogger(DataWriter.class);
-		return rowWriter(log::debug);
+		return rowWriter(getLogger(DataWriter.class)::debug);
 	}
 
 	static RowWriter infoLogger() {
-		var log = getLogger(DataWriter.class);
-		return rowWriter(log::info);
+		return rowWriter(getLogger(DataWriter.class)::info);
 	}
 	
 	static RowWriter rowWriter(Consumer<String> writer) {

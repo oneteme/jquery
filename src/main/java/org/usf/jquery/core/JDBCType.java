@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.util.Arrays.stream;
 import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -28,7 +27,7 @@ import java.util.Set;
  * 
  */
 public enum JDBCType implements JavaType, TypeResolver {
-
+	
 	BOOLEAN(Types.BOOLEAN, Boolean.class),
 	BIT(Types.BIT, Boolean.class),
 
@@ -116,8 +115,9 @@ public enum JDBCType implements JavaType, TypeResolver {
 			return ofNullable(t.getType());
 		}
 		if(nonNull(o)) {
+			var arr = values();
 			var c = o.getClass();
-			for(var t : values()) {
+			for(var t : arr) {
 				if(c == t.type || (!t.isNumber && t.accepts.contains(c))) {
 					return Optional.of(t);
 				}
@@ -127,7 +127,13 @@ public enum JDBCType implements JavaType, TypeResolver {
 	}
 
 	public static Optional<JDBCType> fromDataType(int value) {
-		return stream(values()).filter(t-> t.value == value).findAny();
+		var arr = values();
+		for(var v : arr) {
+			if(v.value == value) {
+				return Optional.of(v);
+			}
+		}
+		return empty();
 	}
 
 	@Override

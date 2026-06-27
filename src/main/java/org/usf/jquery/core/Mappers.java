@@ -1,10 +1,13 @@
 package org.usf.jquery.core;
 
+import static java.util.Collections.emptyList;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.IntFunction;
+import java.util.function.Supplier;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -40,20 +43,25 @@ public final class Mappers {
 	}
 
 	public static <T> ResultSetMapper<List<T>> toListMapper(RowMapper<T> rm) {
+		return toListMapper(rm, ArrayList::new);
+	}
+
+	public static <T> ResultSetMapper<List<T>> toListMapper(RowMapper<T> rm, Supplier<List<T>> supplier) {
 		return rs->{
-			var arr = new ArrayList<T>();
-			while(rs.next()) {
-				arr.add(rm.mapRow(rs, rs.getRow()));
+			if(rs.next()) {
+				var arr = supplier.get();
+				while(arr.add(rm.mapRow(rs, rs.getRow())) && rs.next());
+				return arr;
 			}
-			return arr;
+			return emptyList(); //avoids creating an List if the ResultSet is empty
 		};
 	}
 	
 	public static <T> ResultSetMapper<T> resultSetLimiter(ResultSetMapper<T> rm, int limit){
-		if(limit < 0) {
-			throw new IllegalArgumentException("limit must be >= 0");
+		if(limit > 0) {
+			return rs-> rm.map(new ResultSetLimiter(rs, limit));
 		}
-		return rs-> rm.map(new ResultSetLimiter(rs, limit));
+		throw new IllegalArgumentException("limit must be >= 0");
 	}
 	
 	@RequiredArgsConstructor
@@ -67,11 +75,9 @@ public final class Mappers {
 		public boolean next() throws SQLException {
 			var nxt = rs.next();
 			if(nxt && rs.getRow() > limit) {
-				throw new LimitExceededException("overflow");
+				throw new LimitExceededException("ResultSet limit exceeded: " + limit);
 			}
 			return nxt;
 		}
-		
-		//last, prev ??
 	}
 }

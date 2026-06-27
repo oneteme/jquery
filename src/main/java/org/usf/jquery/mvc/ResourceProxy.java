@@ -96,10 +96,10 @@ public abstract class ResourceProxy implements InvocationHandler {
 	
 	abstract String invokeToString(Object proxy, Object[] args);
 	
-	static Map<String, Method> discoverExposedMethods(Class<?> type, BiPredicate<Method, Bind> pre) {
-		return stream(type.getDeclaredMethods()).filter(m-> {
+	static Map<String, Method> discoverExposedMethods(Class<?> type, Class<?> downType, BiPredicate<Method, Bind> pre) {
+		return stream(type.getMethods()).filter(m-> {
 			var mod = m.getModifiers();
-			if(!isStatic(mod) && isPublic(mod)) {
+			if(!isStatic(mod) && isPublic(mod) && !m.getDeclaringClass().isAssignableFrom(downType)) {
 				var bnd = validateBind(m); //no arguments
 				if(nonNull(bnd) && !pre.test(m, bnd)) {
 					throw new ResourceMappingException("invalid @Bind.type=["+bnd+"] for return type " + m + " on " + m);

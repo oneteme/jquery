@@ -113,7 +113,7 @@ final class DatasetProxy extends ResourceProxy {
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
-			var map = discoverExposedMethods(type, DatasetProxy::acceptBind);
+			var map = discoverExposedMethods(type, DatasetResource.class, DatasetProxy::acceptBind);
 			var cols = map.values().stream()
 			.filter(m-> isAbstract(m.getModifiers()) && m.getAnnotation(Bind.class).type() == REF) //only binded object
 			.map(m-> m.getAnnotation(Bind.class).value()).collect(toSet());

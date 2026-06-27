@@ -10,4 +10,5 @@ import org.usf.jquery.core.View;
 public interface DatasetResource extends Resource {
 	
 	View getView();
+	
 }

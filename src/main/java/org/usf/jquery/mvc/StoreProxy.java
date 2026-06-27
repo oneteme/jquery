@@ -53,7 +53,7 @@ public final class StoreProxy extends ResourceProxy {
 	static <T extends StoreResource> T createStore(Class<T> clazz, DataSource ds, Dialect dialect) {
 		if(clazz.isInterface()) {
 			var name = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
-			var map = discoverExposedMethods(clazz, (m,b)-> DatasetResource.class.isAssignableFrom(m.getReturnType()));
+			var map = discoverExposedMethods(clazz, StoreResource.class, (m,b)-> DatasetResource.class.isAssignableFrom(m.getReturnType()));
 			Map<Method, Object> sub = map.values().stream()
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
 					.parallel().collect(toMap(identity(), m-> createDataset((Class<? extends DatasetResource>) m.getReturnType(), m.getAnnotation(Bind.class), name, ds)));

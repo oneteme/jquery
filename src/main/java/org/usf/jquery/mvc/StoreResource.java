@@ -47,7 +47,7 @@ public interface StoreResource extends Store, Resource {
 		}
 		var dialect = dialect();
 		var mth = nonNull(composer) 
-				? lookupAccessibleMethod(resource, dialect.getClass(), type, composer.getClass())
+				? lookupAccessibleMethod(resource, dialect.getClass(), type, composer.getClass()) //require Composer instance
 				: lookupAccessibleMethod(resource, dialect.getClass(), type); //no parameter
 		return nonNull(mth) ? ofMethod(true, mth, dialect) : null;
 	}

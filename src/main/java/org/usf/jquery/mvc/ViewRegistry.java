@@ -3,7 +3,6 @@ package org.usf.jquery.mvc;
 import static java.lang.String.join;
 import static java.nio.file.Files.readString;
 import static java.util.Collections.synchronizedMap;
-import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.UUID.randomUUID;
@@ -41,7 +40,12 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class ViewRegistry {
 	
-	private static final Map<String, ResultSetViewer> DEF_VIEWERS; 
+	private static final Map<String, ResultSetViewer> DEF_VIEWERS = Map.of(
+			"map", rsp-> keyValueViewer(),
+			"csv", ViewRegistry::csvViewer,
+			"ascii", ViewRegistry::asciiViewer,
+			"google.v1", rsp-> lasyHtmlViewer(rsp, "static/google.v1.html", keyValueMapper()));
+	
 	private static final Map<String, MvcRequest> queryQueue = synchronizedMap(new LinkedHashMap<>()); //timeout !?
 	
 	private Map<String, ResultSetViewer> viewers;
@@ -65,16 +69,6 @@ public class ViewRegistry {
 			return  exc;
 		}
 		throw new NoSuchElementException(id + " not found");
-	}
-	
-	static {
-		var map = new HashMap<String, ResultSetViewer>();
-		map.put("map", rsp-> keyValueViewer());
-		//json writer for better performance
-		map.put("csv", ViewRegistry::csvViewer);
-		map.put("ascii", ViewRegistry::asciiViewer);
-		map.put("google.v1", rsp-> lasyHtmlViewer(rsp, "static/google.v1.html", keyValueMapper()));
-		DEF_VIEWERS = unmodifiableMap(map);
 	}
 	
 	public static QueryExecutor<List<DynamicModel>> keyValueViewer() {

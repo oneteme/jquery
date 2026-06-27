@@ -13,7 +13,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -24,7 +23,13 @@ import java.util.Map;
  */
 public final class TypeConverterRegistry {
 
-	private static final Map<Class<?>, TypeConverter<?>> DEF_CONVERTERS;
+	private static final Map<Class<?>, TypeConverter<?>> DEF_CONVERTERS = Map.of(
+			LocalDate.class, (TypeConverter<LocalDate>) TypeConverterRegistry::localDateConverter,
+			LocalTime.class, (TypeConverter<LocalTime>) TypeConverterRegistry::localTimeConverter,
+			OffsetTime.class, (TypeConverter<OffsetTime>) TypeConverterRegistry::offsetTimeConverter,
+			OffsetDateTime.class, (TypeConverter<OffsetDateTime>) TypeConverterRegistry::offsetDateTimeConverter,
+			ZonedDateTime.class, (TypeConverter<ZonedDateTime>) TypeConverterRegistry::zonedDateTimeConverter,
+			Instant.class, (TypeConverter<Instant>) TypeConverterRegistry::instantConverter);
 
 	private Map<Class<?>, TypeConverter<?>> converters;
 	
@@ -42,17 +47,6 @@ public final class TypeConverterRegistry {
 		return (TypeConverter<T>) (isNull(v) ? DEF_CONVERTERS.get(object) : v);
 	}
 	
-	static {
-		var map = new HashMap<Class<?>, TypeConverter<?>>();
-		map.put(LocalDate.class, (TypeConverter<LocalDate>) TypeConverterRegistry::localDateConverter);
-		map.put(LocalTime.class, (TypeConverter<LocalTime>) TypeConverterRegistry::localTimeConverter);
-		map.put(LocalTime.class, (TypeConverter<OffsetTime>) TypeConverterRegistry::offsetTimeConverter);
-		map.put(LocalTime.class, (TypeConverter<OffsetDateTime>) TypeConverterRegistry::offsetDateTimeConverter);
-		map.put(Instant.class, (TypeConverter<ZonedDateTime>) TypeConverterRegistry::zonedDateTimeConverter);
-		map.put(Instant.class, (TypeConverter<Instant>) TypeConverterRegistry::instantConverter);
-		DEF_CONVERTERS = Collections.unmodifiableMap(map);
-	}
-	
 	public static Object localDateConverter(LocalDate date, JDBCType type) {
 		return switch (type) {
 		case DATE-> Date.valueOf(date);
@@ -64,14 +58,14 @@ public final class TypeConverterRegistry {
 	public static Object localTimeConverter(LocalTime time, JDBCType type) {
 		return switch (type) {
 		case TIME-> Time.valueOf(time);
-		default -> throw new IllegalArgumentException("unsupported conversion");
+		default -> throw unsupportedConversionException(type);
 		};
 	}
 	
-	public static Object offsetTimeConverter(OffsetTime time, JDBCType type) {
+	public static Object offsetTimeConverter(OffsetTime offTime, JDBCType type) {
 		return switch (type) {
-		case TIME-> Time.valueOf(time.toLocalTime());
-		default -> throw new IllegalArgumentException("unsupported conversion");
+		case TIME-> Time.valueOf(offTime.toLocalTime());
+		default -> throw unsupportedConversionException(type);
 		};
 	}
 	
@@ -80,7 +74,7 @@ public final class TypeConverterRegistry {
 		case DATE-> Date.valueOf(odt.toLocalDate());
 		case TIME-> Time.valueOf(odt.toLocalTime());
 		case TIMESTAMP, TIMESTAMP_WITH_TIMEZONE-> Timestamp.from(odt.toInstant());
-		default -> throw new IllegalArgumentException("unsupported conversion");
+		default -> throw unsupportedConversionException(type);
 		};
 	}
 	
@@ -89,7 +83,7 @@ public final class TypeConverterRegistry {
 		case DATE-> Date.valueOf(zdt.toLocalDate());
 		case TIME-> Time.valueOf(zdt.toLocalTime());
 		case TIMESTAMP, TIMESTAMP_WITH_TIMEZONE-> Timestamp.from(zdt.toInstant());
-		default -> throw new IllegalArgumentException("unsupported conversion");
+		default -> throw unsupportedConversionException(type);
 		};
 	}
 	
@@ -98,8 +92,11 @@ public final class TypeConverterRegistry {
 		case DATE-> Date.valueOf(intant.atZone(systemDefault()).toLocalDate());
 		case TIME-> Time.valueOf(intant.atZone(systemDefault()).toLocalTime());
 		case TIMESTAMP, TIMESTAMP_WITH_TIMEZONE-> Timestamp.from(intant);
-		default -> throw new IllegalArgumentException("unsupported conversion");
+		default -> throw unsupportedConversionException(type);
 		};
 	}
 	
+	private static UnsupportedOperationException unsupportedConversionException(JDBCType type) {
+		return new UnsupportedOperationException("Unsupported conversion for Instant to " + type);
+	}
 }
