@@ -46,7 +46,7 @@ public interface QueryInterpreter {
 		parseParam(parameterMap, OFFSET_PARAM, ctx.getDialect().offset(query), ctx);
 //		parseParam(parameterMap, UNION_PARAM, ctx.getDialect().union(query), ctx);
 		//TD parse group, from, union
-		parseFilters(parameterMap, query, ctx);
+		parseFilters(parameterMap, ctx.getDialect().criteria(query), ctx);
 		return new MvcRequest(store, query, view);
 	}
 	
@@ -77,12 +77,12 @@ public interface QueryInterpreter {
 		}
 	}
 	
-	default void parseFilters(Map<String, String[]> parameterMap, QueryComposer composer, RequestContext ctx) {
+	default void parseFilters(Map<String, String[]> parameterMap, ComposerDefinition<QueryComposer> def, RequestContext ctx) {
 		if(!isEmpty(parameterMap)) {
 			Object[] args = parameterMap.entrySet().stream()
 					.map(e-> evaluateFilter(parseEntry(e.getKey()), ctx, parse(e.getValue()).toArray(Entry[]::new)))
 					.toArray(Criteria[]::new);
-			ctx.getDialect().criteria(composer).invoke(args);
+			def.invoke(args);
 		}
 	}
 	

@@ -12,5 +12,5 @@ import jakarta.servlet.http.HttpServletResponse;
 @FunctionalInterface
 public interface ResultSetViewer {
 	
-	QueryExecutor<?> whith(HttpServletResponse res);
+	QueryExecutor<?> with(HttpServletResponse res);
 }

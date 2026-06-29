@@ -55,18 +55,18 @@ public class RestrictedStore implements StoreResource {
 	
 	@Override
 	public <T> ResourceInvoker<T> lookupDialect(String resource, Class<T> type) {
-		if(excludeDialects.contains(resource)) {
-			throw new ResourceAccessException("Dialect " + resource + " is not allowed");
+		if(!excludeDialects.contains(resource)) {
+			return store.lookupDialect(resource, type);
 		}
-		return store.lookupDialect(resource, type);
+		throw new ResourceAccessException("Dialect " + resource + " is not allowed");
 	}
 	
 	@Override
 	public <T> ResourceInvoker<T> lookupDialect(String resource, Class<T> type, Object composer) {
-		if(excludeDialects.contains(resource)) {
-			throw new ResourceAccessException("Resource " + resource + " is not allowed");
+		if(!excludeDialects.contains(resource)) {
+			return store.lookupDialect(resource, type, composer);
 		}
-		return store.lookupDialect(resource, type, composer);
+		throw new ResourceAccessException("Resource " + resource + " is not allowed");
 	}
 	
 	@Override

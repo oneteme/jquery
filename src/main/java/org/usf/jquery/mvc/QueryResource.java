@@ -8,6 +8,7 @@ import org.usf.jquery.core.Query;
 import org.usf.jquery.core.View;
 
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -19,7 +20,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class QueryResource implements DatasetResource {
 
-	private final Query query;
+	@NonNull private final Query query;
 
 	@Override
 	public View getView() {

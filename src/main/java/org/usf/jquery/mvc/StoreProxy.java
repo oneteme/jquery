@@ -54,13 +54,13 @@ public final class StoreProxy extends ResourceProxy {
 		if(clazz.isInterface()) {
 			var name = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
 			var map = discoverExposedMethods(clazz, StoreResource.class, (m,b)-> DatasetResource.class.isAssignableFrom(m.getReturnType()));
-			Map<Method, Object> sub = map.values().stream()
+			Map<Method, Object> cache = map.values().stream()
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
 					.parallel().collect(toMap(identity(), m-> createDataset((Class<? extends DatasetResource>) m.getReturnType(), m.getAnnotation(Bind.class), name, ds)));
-			sub.put(getMethod("name", clazz), name);
-			sub.put(getMethod("dataSource", clazz), ds);
-			sub.put(getMethod("dialect", clazz), dialect);
-			var store = new StoreProxy(name, map, sub);
+			cache.put(getMethod("name", clazz), name);
+			cache.put(getMethod("dataSource", clazz), ds);
+			cache.put(getMethod("dialect", clazz), dialect);
+			var store = new StoreProxy(name, map, cache);
 			return clazz.cast(newProxyInstance(StoreProxy.class.getClassLoader(), new Class<?>[]{clazz}, store));
 		}
 		throw new ResourceMappingException("schema must be an interface : " + clazz);
