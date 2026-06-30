@@ -30,24 +30,25 @@ public final class OperationColumn implements Column {
 	private ViewColumn overColumn;
 
 	@Override
-	public int prepare(QueryAnalyzer manifest) {
+	public int prepare(QueryAnalyzer analyzer) {
 		if(kind == AGGREGATE || kind == WINDOW) {
-			if(!isEmpty(args)) {  //declare views only
-				manifest.with(IGNORE_GROUPS).tryAnalyzeNested(args);
+			var res = MEASURE;
+			if(!isEmpty(args) && analyzer.with(IGNORE_GROUPS).tryAnalyzeNested(args) == MEASURE) { //nested measure
+				res++;
 			}
-			return MEASURE;
+			return res;
 		}
 		if("OVER".equals(name)) {
-			if(manifest.getStage() == CRITERIA) { //dialect.support window filter !?
+			if(analyzer.getStage() == CRITERIA) { //dialect.support window filter !?
 				var col = new OperationColumn(name, kind, operator, args, type).as(name + '_' + hashCode());
-				var sub = new QueryComposer().columns(Column.allColumns(), col).compose(manifest.getStore());
+				var sub = new QueryComposer().columns(Column.allColumns(), col).compose(analyzer.getStore());
 				this.overColumn = sub.column(col.getTag(), col.getType());
-				manifest.cte(sub, true);
-				return overColumn.prepare(manifest);
+				analyzer.cte(sub, true);
+				return overColumn.prepare(analyzer);
 			}
-			return resolveOverColumns(manifest);
+			return resolveOverColumns(analyzer);
 		}
-		return manifest.tryAnalyzeNested(args, this);
+		return analyzer.tryAnalyzeNested(args, this);
 	}
 
 	@Override

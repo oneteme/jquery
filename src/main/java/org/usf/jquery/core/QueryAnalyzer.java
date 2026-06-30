@@ -112,11 +112,7 @@ public final class QueryAnalyzer {
 	}
 
 	int analyzeNested(Stream<? extends QueryPart> stream, Column defaultDimension){
-		if(isNull(groups)) {
-			stream.forEach(o-> o.prepare(this)); //declare views only, no group keys
-			return SCALAR;
-		}
-		if(isNull(defaultDimension)) {
+		if(isNull(groups) || isNull(defaultDimension)) {
 			return stream.mapToInt(o-> o.prepare(this)).max().orElse(SCALAR);
 		}
 		var sub = with(ISOLATE_GROUPS);

@@ -349,6 +349,7 @@ public final class QueryComposer implements Composer<Query> {
 		else if(aggr == MEASURE && !isEmpty(analyzer.getGroups())) {
 			view.setGroups(unmodifiableCollection(analyzer.getGroups()));
 		}
+		//else agg > MEASURE => illegal agg usage
 	}
 
 	void composeFrom(Query view, QueryAnalyzer analyzer) {
