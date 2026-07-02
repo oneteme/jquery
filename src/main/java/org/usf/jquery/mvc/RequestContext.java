@@ -34,6 +34,7 @@ import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
 import org.usf.jquery.core.SignatureMismatchException;
 import org.usf.jquery.core.SingleQueryColumn;
+import org.usf.jquery.core.ViewColumn;
 
 import lombok.Getter;
 import lombok.RequiredArgsConstructor;
@@ -170,9 +171,9 @@ public final class RequestContext {
 	}
 	
 	public Object resolve(Entry entry, JavaType type) {
-		if(type == DECLARE_COLUMN) {
+		if(type == DECLARE_COLUMN && entry.isVariable()) {
 			var col = registry.getEvaluator(Column.class).evaluate(entry, this);
-			if(nonNull(col.getTag())){
+			if(nonNull(col.getTag()) && !(col instanceof ViewColumn)) { //no need to declare view column, it is already declared in view
 				declareColumn(col.getTag(), col);
 			}
 			return col;

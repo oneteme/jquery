@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface RequestQuery {
+public @interface QueryTemplate {
 
 	/** The target table or view name. */
 	String dataset();

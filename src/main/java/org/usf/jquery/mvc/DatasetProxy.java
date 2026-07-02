@@ -136,4 +136,9 @@ final class DatasetProxy extends ResourceProxy {
 				c == Partition.class||
 				c == JoinGroup.class;
 	}
+	
+	@Override
+	public String toString() {
+		return "DatasetProxy {" + view + "}";
+	}
 }
