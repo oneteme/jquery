@@ -70,7 +70,7 @@ public interface Store {
 			var args = sqlQuery.args();
 			if(!isEmpty(args)) {
 				if(log.isDebugEnabled()) {
-					log.debug("binding query parameters: {}", values(args));
+					log.debug("binding query parameters: {}", nonNull(args) ? args.toString() : "[]");
 				}
 				var registry = typeConverters();
 				for(var i=0; i<args.size(); i++) {
@@ -94,7 +94,8 @@ public interface Store {
 			}
 		}
 		catch (SQLException e) {
-			throw new QueryExecutionException("error executing query: " + sqlQuery.sql() + " with args: " + values(sqlQuery.args()), e);
+			var args = sqlQuery.args();
+			throw new QueryExecutionException("error executing query: " + sqlQuery.sql() + " with args: " + (nonNull(args) ? args.toString() : "[]"), e);
 		}
 	}
 	

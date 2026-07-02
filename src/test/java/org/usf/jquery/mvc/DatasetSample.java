@@ -11,10 +11,6 @@ import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.JoinGroup;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.ViewColumn;
-import org.usf.jquery.mvc.Bind;
-import org.usf.jquery.mvc.DatasetResource;
-import org.usf.jquery.mvc.Expose;
-import org.usf.jquery.mvc.Typed;
 import org.usf.jquery.mvc.Bind.BindType;
 
 interface DatasetSample extends DatasetResource {

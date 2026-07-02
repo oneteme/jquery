@@ -2,6 +2,7 @@ package org.usf.jquery.core;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.empty;
 import static org.usf.jquery.core.QueryPart.DIMENSION;
 import static org.usf.jquery.core.QueryPart.MEASURE;
@@ -12,7 +13,6 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import lombok.AccessLevel;
@@ -58,7 +58,7 @@ public final class QueryAnalyzer {
 					if(isNull(v) || v == cte) {
 						return cte;
 					}
-					throw new IllegalStateException("conflict");
+					throw new IllegalStateException("view=" + k + " already mapped to " + v + " cannot be mapped to " + cte);
 				});
 			}
 		}
@@ -81,10 +81,10 @@ public final class QueryAnalyzer {
 	}
 	
 	public Set<View> getFroms() {
-		if(Utils.isEmpty(overViews)) {
+		if(isEmpty(overViews)) {
 			return froms;
 		}
-		return froms.stream().map(v-> overViews.containsKey(v) ? overViews.get(v) : v).collect(Collectors.toSet());
+		return froms.stream().map(v-> overViews.containsKey(v) ? overViews.get(v) : v).collect(toSet());
 	}
 	
 	public int analyzeNested(Collection<? extends QueryPart> arr){

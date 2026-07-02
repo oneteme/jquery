@@ -80,7 +80,7 @@ public interface Operators {
 	}
 
 	default OperatorDefinition trunc() {
-		return function(BIGINT, "TRUNC", required(DOUBLE), optional(INTEGER)); 
+		return function(DOUBLE, "TRUNC", required(DOUBLE), optional(INTEGER)); 
 	}
 	
 	default OperatorDefinition round() {

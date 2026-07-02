@@ -14,7 +14,7 @@ import java.lang.annotation.Target;
 @Documented
 @Target(ElementType.METHOD)
 @Retention(RetentionPolicy.RUNTIME)
-public @interface Restriction {
+public @interface QueryPolicy {
 
 	/** Resources to exclude from the query. */
 	String[] excludeResources() default {}; //support syntax: resource.*field, resource.* or resource.field

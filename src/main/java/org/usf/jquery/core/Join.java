@@ -6,6 +6,7 @@ import static org.usf.jquery.core.JoinType.INNER;
 import static org.usf.jquery.core.JoinType.LEFT;
 import static org.usf.jquery.core.JoinType.RIGHT;
 import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.QueryAnalyzer.IGNORE_GROUPS;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Utils.toList;
 import static org.usf.jquery.core.Validation.requireNoArgs;
@@ -36,9 +37,12 @@ public final class Join implements QueryPart {
 	}
 	
 	@Override
-	public int prepare(QueryAnalyzer manifest) {
-		view.prepare(manifest);
-		return SCALAR;
+	public int prepare(QueryAnalyzer analyzer) {
+		view.prepare(analyzer);
+		if(isEmpty(criterias) || analyzer.with(IGNORE_GROUPS).analyzeNested(criterias) == DIMENSION) {
+			return SCALAR;
+		}
+		throw new IllegalStateException("Join criteria must be a scalar expression");
 	}
 
 	@Override

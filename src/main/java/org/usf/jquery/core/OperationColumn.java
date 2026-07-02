@@ -33,8 +33,8 @@ public final class OperationColumn implements Column {
 	public int prepare(QueryAnalyzer analyzer) {
 		if(kind == AGGREGATE || kind == WINDOW) {
 			var res = MEASURE;
-			if(!isEmpty(args) && analyzer.with(IGNORE_GROUPS).tryAnalyzeNested(args) == MEASURE) { //nested measure
-				res++;
+			if(!isEmpty(args) && analyzer.with(IGNORE_GROUPS).tryAnalyzeNested(args) == MEASURE) {
+				res++; //nested measure
 			}
 			return res;
 		}

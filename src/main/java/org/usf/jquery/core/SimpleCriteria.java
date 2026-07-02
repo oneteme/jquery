@@ -16,7 +16,7 @@ public final class SimpleCriteria implements Criteria {
 	@Override
 	public int prepare(QueryAnalyzer manifest) {
 		var v = predicate.prepare(manifest);
-		return left instanceof QueryPart c ? Math.max(v, c.prepare(manifest)) : v;
+		return left instanceof QueryPart p ? Math.max(v, p.prepare(manifest)) : v;
 	}
 	
 	@Override

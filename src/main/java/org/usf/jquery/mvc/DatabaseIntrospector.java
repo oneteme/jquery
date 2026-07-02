@@ -5,10 +5,10 @@ import static java.time.Instant.now;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Stores.getCurrentDialect;
 import static org.usf.jquery.core.JDBCType.fromDataType;
 import static org.usf.jquery.core.Provider.DEFAULT;
 import static org.usf.jquery.core.Provider.parseName;
+import static org.usf.jquery.core.Stores.getCurrentDialect;
 import static org.usf.jquery.mvc.DatasetType.TABLE;
 import static org.usf.jquery.mvc.DatasetType.VIEW;
 

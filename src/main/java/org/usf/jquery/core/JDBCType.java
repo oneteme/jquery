@@ -18,6 +18,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.OffsetTime;
 import java.time.ZonedDateTime;
+import java.time.temporal.Temporal;
 import java.util.Optional;
 import java.util.Set;
 
@@ -31,15 +32,15 @@ public enum JDBCType implements JavaType, TypeResolver {
 	BOOLEAN(Types.BOOLEAN, Boolean.class),
 	BIT(Types.BIT, Boolean.class),
 
-	TINYINT(Types.TINYINT, Byte.class, true),
-	SMALLINT(Types.SMALLINT, Short.class, true),
-	INTEGER(Types.INTEGER, Integer.class, true),
-	BIGINT(Types.BIGINT, Long.class, true),
-	REAL(Types.REAL, Float.class, true),
-	FLOAT(Types.FLOAT, Double.class, true),
-	DOUBLE(Types.DOUBLE, Double.class, true),
-	NUMERIC(Types.NUMERIC, BigDecimal.class, true),
-	DECIMAL(Types.DECIMAL, BigDecimal.class, true),
+	TINYINT(Types.TINYINT, Byte.class),
+	SMALLINT(Types.SMALLINT, Short.class),
+	INTEGER(Types.INTEGER, Integer.class),
+	BIGINT(Types.BIGINT, Long.class),
+	REAL(Types.REAL, Float.class),
+	FLOAT(Types.FLOAT, Double.class),
+	DOUBLE(Types.DOUBLE, Double.class),
+	NUMERIC(Types.NUMERIC, BigDecimal.class),
+	DECIMAL(Types.DECIMAL, BigDecimal.class),
 
 	CHAR(Types.CHAR, String.class),
 	VARCHAR(Types.VARCHAR, String.class),
@@ -65,36 +66,29 @@ public enum JDBCType implements JavaType, TypeResolver {
 			return false;
 		}
 	};
+	
+	private static final JDBCType[] NUMBERS = {TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL};
+	private static final JDBCType[] TEMPORALS = {DATE, TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE};
 
 	private final int value;
 	private final Class<?> type;
 	private final boolean isNumber;
 	private final Set<Class<?>> accepts;
 
-	private <T> JDBCType(int value, Class<T> type) {
-		this(value, type, false);
-	}
-
-	private <T> JDBCType(int value, Class<T> type, boolean isNumber) {
+	private JDBCType(int value, Class<?> type, Class<?>... accepts) {
 		this.value = value;
 		this.type = type;
-		this.isNumber = isNumber;
-		this.accepts = emptySet();
-	}
-
-	private <T> JDBCType(int value, Class<T> type, Class<?>... accepts) {
-		this.value = value;
-		this.type = type;
-		this.isNumber = false;
+		this.isNumber = Number.class.isAssignableFrom(type);
 		this.accepts = nonNull(accepts) ? Set.of(accepts) : emptySet();
-	}
-
-	public Class<?> getCorrespondingClass() {
-		return type;
 	}
 
 	public int getValue() {
 		return value;
+	}
+
+	@Override
+	public Class<?> getCorrespondingClass() {
+		return type;
 	}
 
 	@Override
@@ -111,16 +105,35 @@ public enum JDBCType implements JavaType, TypeResolver {
 	}
 
 	public static Optional<JDBCType> typeOf(Object o) {
-		if(o instanceof Typed t) {
-			return ofNullable(t.getType());
-		}
 		if(nonNull(o)) {
-			var arr = values();
-			var c = o.getClass();
-			for(var t : arr) {
-				if(c == t.type || (!t.isNumber && t.accepts.contains(c))) {
-					return Optional.of(t);
-				}
+			if(o instanceof Typed t) {
+				return ofNullable(t.getType());
+			}
+			if(o instanceof Number) {
+				return typeOf(o, NUMBERS);
+			}
+			if(o.getClass() == String.class) {
+				return Optional.of(VARCHAR); //JSON, CLOB, .. ?
+			}
+			if(o instanceof java.util.Date || o instanceof Temporal) {
+				return typeOf(o, TEMPORALS);
+			}
+			if(o.getClass() == Boolean.class) {
+				return Optional.of(BIT);
+			}
+			if(o.getClass() == java.util.UUID.class) {
+				return Optional.of(UUID);
+			}
+		}
+		return empty();
+	}
+	
+	
+	static Optional<JDBCType> typeOf(Object o, JDBCType... types) {
+		var c = o.getClass();
+		for(var t : types) {
+			if(c == t.type || t.accepts.contains(c)) {
+				return Optional.of(t);
 			}
 		}
 		return empty();
