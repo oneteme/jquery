@@ -7,6 +7,7 @@ import static java.util.Collections.unmodifiableCollection;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.QueryAnalyzer.IGNORE_GROUPS;
 import static org.usf.jquery.core.QueryAnalyzer.Stage.COLUMN;
 import static org.usf.jquery.core.QueryAnalyzer.Stage.CRITERIA;
 import static org.usf.jquery.core.QueryAnalyzer.Stage.CTE;
@@ -288,6 +289,7 @@ public final class QueryComposer implements Composer<Query> {
 	int composeCriteria(Query view, QueryAnalyzer analyzer) {
 		var isAgg = SCALAR;
 		if(!isEmpty(criterias)) {
+			analyzer = analyzer.with(IGNORE_GROUPS);
 			analyzer.setStage(CRITERIA);
 			List<Criteria> whr = null;
 			List<Criteria> hvn = null;

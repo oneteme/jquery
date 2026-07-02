@@ -24,7 +24,6 @@ public @interface QueryTemplate {
 
 	String[] cte() default {}; // selected columns
 	
-	/** Default columns to select if none are provided in the request. */
 	String[] select(); // selected columns
 	
 	String[] join() default {}; 
