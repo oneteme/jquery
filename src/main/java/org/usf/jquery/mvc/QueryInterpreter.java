@@ -3,7 +3,7 @@ package org.usf.jquery.mvc;
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.mvc.EntryEvaluators.evaluateFilter;
+import static org.usf.jquery.mvc.EntryEvaluators.evaluateCriteria;
 import static org.usf.jquery.mvc.EntryParser.parseEntries;
 import static org.usf.jquery.mvc.EntryParser.parseEntry;
 import static org.usf.jquery.mvc.Parameters.CTE_PARAM;
@@ -80,7 +80,7 @@ public interface QueryInterpreter {
 	default void parseFilters(Map<String, String[]> parameterMap, ComposerDefinition<QueryComposer> def, RequestContext ctx) {
 		if(!isEmpty(parameterMap)) {
 			Object[] args = parameterMap.entrySet().stream()
-					.map(e-> evaluateFilter(parseEntry(e.getKey()), ctx, parse(e.getValue()).toArray(Entry[]::new)))
+					.map(e-> evaluateCriteria(parseEntry(e.getKey()), ctx, parse(e.getValue()).toArray(Entry[]::new)))
 					.toArray(Criteria[]::new);
 			def.invoke(args);
 		}

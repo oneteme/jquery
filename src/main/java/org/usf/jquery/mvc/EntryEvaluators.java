@@ -10,9 +10,11 @@ import static org.usf.jquery.mvc.Parameters.SELECT_PARAM;
 
 import java.util.function.BiFunction;
 
+import org.usf.jquery.core.CaseColumn;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.ComparatorDefinition;
 import org.usf.jquery.core.Composer;
+import org.usf.jquery.core.ComposerDefinition;
 import org.usf.jquery.core.Criteria;
 import org.usf.jquery.core.Definition;
 import org.usf.jquery.core.Group;
@@ -91,22 +93,21 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such column : " + itr.peekNext().getValue());
 	}
 	
-	public static Criteria evaluateFilter(Entry entry, RequestContext ctx, Entry... outerArgs) {
+	public static Criteria evaluateCriteria(Entry entry, RequestContext ctx, Entry... outerArgs) {
 		var itr = entry.iterator();
 		var col = evalColumn(itr, ctx, outerArgs);
 		if(col instanceof Criteria crt) { 
 			assertLastEntry(itr, false);
 			return crt; 
 		}
-		if(nonNull(col)) {
-			throw new EntryParseException(itr.get().getValue() + " cannot be used as filter resource");
-		}
-		throw new NoSuchResourceException("no such column or filter : " + itr.next().getValue());
+		throw nonNull(col) 
+			? new EntryParseException(col + " cannot be used as filter resource")
+			: new NoSuchResourceException("no such criteria : " + itr.peekNext().getValue());
 	}
 	
 	public static Order evaluateOrder(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var ord = lookupResource(itr, Order.class, ctx, (v, e)-> evalOrder(e, ctx));
+		var ord = lookupResource(itr, Order.class, ctx, (v,e)-> evalOrder(e, ctx));
 		if(nonNull(ord)) {
 			assertLastEntry(itr, false);
 			return ord;
@@ -116,7 +117,7 @@ public final class EntryEvaluators {
 
 	public static JoinGroup evaluateJoin(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var join = lookupResource(itr, JoinGroup.class, ctx, (v, e)-> evalJoin(e, v, ctx));
+		var join = lookupResource(itr, JoinGroup.class, ctx, (v,e)-> composeJoin(e, v, ctx));
 		if(nonNull(join)) {
 			assertLastEntry(itr, false);
 			return join;
@@ -146,7 +147,7 @@ public final class EntryEvaluators {
 
 	public static SingleQueryColumn evaluateQueryColumn(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var col = lookupResource(itr, SingleQueryColumn.class, ctx, (v, e)-> evalColumnQuery(itr, v, ctx));
+		var col = lookupResource(itr, SingleQueryColumn.class, ctx, (v,e)-> evalColumnQuery(itr, v, ctx));
 		if(nonNull(col)) {
 			assertLastEntry(itr, false);
 			return col;
@@ -201,84 +202,29 @@ public final class EntryEvaluators {
 					return def.invoke(entry.hasArgs() ? ctx.resolveArgs(entry.getArgs(), null, def) : allColumns(v.getView()));
 				}
 				if("when".equals(entry.getValue())) { //view.when
-					return (Column) invokeDialectComposer(itr, ctx.withView(v)); 
+					return chainComposerExpression(itr, ctx.withView(v), CaseColumn.class); 
 				}
 				return null;
 			}); //column or criteria resource
 		}
-		return chainResource(itr, col, ctx, outArgs);
+		return chainExpression(itr, col, ctx, outArgs);
 	}
 
 	static Query evalQuery(EntryIterator itr, DatasetResource dr, RequestContext ctx) { 
-		if(itr.hasNext() && SELECT_PARAM.equals(itr.peekNext().getValue())) {
-			Object res = null;
-			try {
-				res = invokeDialectComposer(itr, ctx.subContext(dr));
-			}
-			catch (Exception e) {
-				throw new EntryParseException("cannot parse query arguments ", e);
-			}
-			if(res instanceof Query query) {
-				if(!isEmpty(query.getSelects())) {
-					return query;
-				}
-				throw new EntryParseException("query must have at least one column");
-			}
-			throw new EntryParseException("invalid query definition");
-		}
-		return null;	
+		return composeExpression(itr, ctx, Query.class, dr, SELECT_PARAM::equals);	
 	}
 	
 	static Partition evalPartition(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
-		if(itr.hasNext() && PARTITION_OPR.equals(itr.peekNext().getValue())) {
-			Object res = null;
-			try {
-				res = invokeDialectComposer(itr, ctx.withView(dr));
-			}
-			catch (Exception e) {
-				throw new EntryParseException("cannot parse partition arguments", e);
-			}
-			if(res instanceof Partition part) {
-				return part;
-			}
-			throw new EntryParseException("invalid partition definition");
-		}
-		return null;
+		return composeExpression(itr, ctx, Partition.class, dr, PARTITION_OPR::equals);
 	}
 	
 	static Group evalGroup(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
-		if(itr.hasNext() && "group".equals(itr.peekNext().getValue())) {
-			Object res = null;
-			try {
-				res = invokeDialectComposer(itr, ctx.withView(dr));
-			}
-			catch (Exception e) {
-				throw new EntryParseException("cannot parse withing arguments ", e);
-			}
-			if(res instanceof Group wth) {
-				return wth;
-			}
-			throw new EntryParseException("invalid withing definition");
-		}
-		return null;
+		return composeExpression(itr, ctx, Group.class, dr, "group"::equals);
 	}
 	
-	static JoinGroup evalJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
-		var v = itr.hasNext() ? itr.peekNext().getValue() : null;
-		if(nonNull(v) && v.matches("(inner|left|right|full|cross)Join")) {
-			Object res = null;
-			try {
-				res = invokeDialectComposer(itr, ctx.withView(dr));
-			}
-			catch (Exception e) {
-				throw new EntryParseException("cannot parse join arguments ", e);
-			}
-			if(res instanceof Join join) {
-				return new JoinGroup(join);
-			}
-			throw new EntryParseException("invalid join definition");
-		}
-		return null;
+	static JoinGroup composeJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+		var v = composeExpression(itr, ctx, Join.class, dr, s-> s.matches("(inner|left|right|full|cross)Join"));
+		return nonNull(v) ? new JoinGroup(v) : null;
 	}	
 	
 	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> composer) {
@@ -324,7 +270,7 @@ public final class EntryEvaluators {
 	}
 	
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
-	static Column chainResource(EntryIterator itr, Column prev, RequestContext ctx, Entry... outArgs) {
+	static Column chainExpression(EntryIterator itr, Column prev, RequestContext ctx, Entry... outArgs) {
 		var col = prev;
 		while(itr.hasNext()) {
 			Entry entry = itr.peekNext();
@@ -364,27 +310,43 @@ public final class EntryEvaluators {
 		return col;
 	}
 	
-	static Object invokeDialectComposer(EntryIterator itr, RequestContext ctx) {
+	static <T> T composeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetResource dr, java.util.function.Predicate<String> filter) {
+		if(itr.hasNext() && filter.test(itr.peekNext().getValue())) {
+			try {
+				return chainComposerExpression(itr, ctx.withView(dr), type);
+			}
+			catch (Exception e) {
+				throw new EntryParseException("cannot parse '%s' arguments ".formatted(type.getSimpleName()), e);
+			}
+		}
+		return null;
+	}
+	
+	static <T> T chainComposerExpression(EntryIterator itr, RequestContext ctx, Class<T> type) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
-			var res = ctx.getStore().lookupDialect(entry.getValue(), Definition.class);
+			var res = ctx.getStore().lookupDialect(entry.getValue(), ComposerDefinition.class);
 			if(nonNull(res)) {
 				itr.advance();
 				var def = res.invoke(); 
 				var obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
 				while(itr.hasNext() && obj instanceof Composer<?>) {
 					entry = itr.peekNext();
-					res = ctx.getStore().lookupDialect(entry.getValue(), Definition.class, obj);
-					if(nonNull(res)) {
-						itr.advance();
-						def = res.invoke(obj); 
-						obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
-					}
-					else {
+					res = ctx.getStore().lookupDialect(entry.getValue(), ComposerDefinition.class, obj);
+					if(isNull(res)) {
 						break; //stop at first non applicable operator
 					}
+					itr.advance();
+					def = res.invoke(obj); 
+					obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
 				}
-				return obj instanceof Composer<?> cmp ? cmp.compose(ctx.getStore()) : obj; //compose if last operator is composer, otherwise return result as is
+				if(obj instanceof Composer<?> cmp) {
+					obj = cmp.compose(ctx.getStore());
+				}
+				if(type.isInstance(obj)) {
+					return type.cast(obj);
+				}
+				throw new EntryParseException("invalid '%s' chain expression : %s".formatted(type.getSimpleName(), obj));
 			}
 		}
 		return null;

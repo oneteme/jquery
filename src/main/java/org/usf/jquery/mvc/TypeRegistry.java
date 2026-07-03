@@ -115,7 +115,7 @@ public final class TypeRegistry {
 		evl.put(View.class, EntryEvaluators::evaluateView);
 		evl.put(Query.class, EntryEvaluators::evaluateQuery);
 		evl.put(Column.class, EntryEvaluators::evaluateColumn);
-		evl.put(Criteria.class, EntryEvaluators::evaluateFilter);
+		evl.put(Criteria.class, EntryEvaluators::evaluateCriteria);
 		evl.put(Order.class, EntryEvaluators::evaluateOrder);
 		evl.put(Group.class, EntryEvaluators::evaluateGroup);
 		evl.put(JoinGroup.class, EntryEvaluators::evaluateJoin);
