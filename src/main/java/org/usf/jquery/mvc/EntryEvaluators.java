@@ -49,9 +49,9 @@ public final class EntryEvaluators {
 				}
 				return qry;
 			}
-			throw new EntrySyntaxException("unexpected entry : " + itr.next().getValue());
+			throw new EntrySyntaxException("unexpected entry : " + itr.peekNext().getValue());
 		}
-		if(nonNull(view)) {
+		if(nonNull(view)) { //view only
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
@@ -59,7 +59,7 @@ public final class EntryEvaluators {
 			}
 			return view.getView();
 		}
-		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such view : " + entry);
 	}
 	
 	public static View evaluateQuery(Entry entry, RequestContext ctx) {
@@ -75,9 +75,9 @@ public final class EntryEvaluators {
 				}
 				return qry;
 			}
-			throw new EntrySyntaxException("unexpected entry : " + itr.next().getValue());
+			throw new EntrySyntaxException("unexpected entry : " + itr.peekNext().getValue());
 		}
-		throw new NoSuchResourceException("no such query : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such query : " + entry);
 	}
 
 	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
@@ -263,6 +263,24 @@ public final class EntryEvaluators {
 		return null;
 	}
 	
+
+	static <T> T evalComposer(EntryIterator itr, DatasetResource dr, RequestContext ctx, java.util.function.Predicate<String> pre, Class<T> type) {
+		if(itr.hasNext() && pre.test(itr.peekNext().getValue())) {
+			Object res = null;
+			try {
+				res = invokeDialectComposer(itr, ctx.withView(dr));
+			}
+			catch (Exception e) {
+				throw new EntryParseException("cannot parse arguments for " + itr.peekNext().getValue(), e);
+			}
+			if(type.isInstance(res)) {
+				return type.cast(res);
+			}
+			throw new EntryParseException("invalid definition for " + itr.peekNext().getValue());
+		}
+		return null;
+	}
+	
 	static JoinGroup evalJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
 		var v = itr.hasNext() ? itr.peekNext().getValue() : null;
 		if(nonNull(v) && v.matches("(inner|left|right|full|cross)Join")) {
@@ -281,13 +299,13 @@ public final class EntryEvaluators {
 		return null;
 	}	
 	
-	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> evaluator) {
-		if(itr.hasNext()) {
-			var view = lookupView(itr.mark(), ctx, false); //avoid parameterized view 
+	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> composer) {
+		if(itr.hasNext()) { //view name == resource name
+			var view = lookupView(itr.mark(), ctx, false); //parameterized views are not allowed in resource lookup
 			if(nonNull(view)) {
 				var res = lookupViewResource(view, type, itr, ctx);
-				if(isNull(res) && nonNull(evaluator)){
-					res = evaluator.apply(view, itr);
+				if(isNull(res) && nonNull(composer)){
+					res = composer.apply(view, itr);
 				}
 				if(nonNull(res)) {
 					return res;
@@ -296,7 +314,7 @@ public final class EntryEvaluators {
 			}
 		}
 		var res = lookupViewResource(ctx.getDefaultDataset(), type, itr, ctx);
-		return isNull(res) && nonNull(evaluator) ? evaluator.apply(ctx.getDefaultDataset(), itr) : res;
+		return isNull(res) && nonNull(composer) ? composer.apply(ctx.getDefaultDataset(), itr) : res;
 	}
 	
 	static DatasetResource lookupView(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
