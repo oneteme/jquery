@@ -3,13 +3,11 @@ package org.usf.jquery.mvc;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
-import static java.util.Optional.empty;
 import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.mvc.Parameters.PARTITION_OPR;
 import static org.usf.jquery.mvc.Parameters.SELECT_PARAM;
 
-import java.util.Optional;
 import java.util.function.BiFunction;
 
 import org.usf.jquery.core.Column;
@@ -40,7 +38,19 @@ public final class EntryEvaluators {
 	
 	public static View evaluateView(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var view = evalView(itr, ctx, true);
+		var view = lookupView(itr, ctx, true);
+		if(itr.hasNext()) {
+			var qry = evalQuery(itr, nonNull(view) ? view : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+			if(nonNull(qry)) {
+				assertLastEntry(itr, true);
+				var tag = itr.get().getTag();
+				if(nonNull(tag)) {
+					ctx.declareView(tag, new QueryResource(qry));
+				}
+				return qry;
+			}
+			throw new EntrySyntaxException("unexpected entry : " + itr.next().getValue());
+		}
 		if(nonNull(view)) {
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
@@ -54,19 +64,20 @@ public final class EntryEvaluators {
 	
 	public static View evaluateQuery(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var view = evalView(itr, ctx, true);
-		if(view instanceof QueryResource) {
-			assertLastEntry(itr, true);
-			var tag = itr.get().getTag();
-			if(nonNull(tag)) {
-				ctx.declareView(tag, view);
-			} 
-			return view.getView();
+		var view = lookupView(itr, ctx, true);
+		if(itr.hasNext()) {
+			var qry = evalQuery(itr, nonNull(view) ? view : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+			if(nonNull(qry)) {
+				assertLastEntry(itr, true);
+				var tag = itr.get().getTag();
+				if(nonNull(tag)) {
+					ctx.declareView(tag, new QueryResource(qry));
+				}
+				return qry;
+			}
+			throw new EntrySyntaxException("unexpected entry : " + itr.next().getValue());
 		}
-		if(nonNull(view)) {
-			throw new EntryParseException(itr.get().getValue() + " cannot be used as query resource");
-		}
-		throw new NoSuchResourceException("no such view : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such query : " + itr.peekNext().getValue());
 	}
 
 	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
@@ -151,21 +162,6 @@ public final class EntryEvaluators {
 		}
 		if(view instanceof Query query) {
 			return query.asColumn();
-		}
-		return null;
-	}
-	
-	static DatasetResource evalView(EntryIterator itr, RequestContext ctx, boolean allowAnonymous) {
-		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
-		if(allowAnonymous && (SELECT_PARAM.equals(entry.getValue()))) {
-			return new QueryResource(evalQuery(itr, ctx.getDefaultDataset(), ctx));
-		} //parameterized view considered as anonymous view resource, not supported for direct lookup
-		var view = ctx.lookupView(entry.getValue());
-		if(nonNull(view)) {
-			itr.advance();
-			return allowAnonymous && itr.hasNext() && (SELECT_PARAM.equals(itr.peekNext().getValue())) //view.column().filter()..
-					? new QueryResource(evalQuery(itr, view.invoke(), ctx))
-					: view.invoke();
 		}
 		return null;
 	}
@@ -285,31 +281,46 @@ public final class EntryEvaluators {
 		return null;
 	}	
 	
-	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> anonymousResolver) {
-		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
-		if(entry.hasNext()) {
-			var view = ctx.lookupView(entry.getValue()); //parameterized view resource is not supported, must be declared as view resource in context
+	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> evaluator) {
+		if(itr.hasNext()) {
+			var view = lookupView(itr.mark(), ctx, false); //avoid parameterized view 
 			if(nonNull(view)) {
-				var res = lookupViewResource(view.invoke(), type, itr.mark().advance(), ctx) //consume view entry
-						.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(view.invoke(), itr) : null);
+				var res = lookupViewResource(view, type, itr, ctx);
+				if(isNull(res) && nonNull(evaluator)){
+					res = evaluator.apply(view, itr);
+				}
 				if(nonNull(res)) {
 					return res;
 				}
 				itr.resetToMark();
 			}
 		}
-		return lookupViewResource(ctx.getDefaultDataset(), type, itr, ctx)
-				.orElseGet(()-> nonNull(anonymousResolver) ? anonymousResolver.apply(ctx.getDefaultDataset(), itr) : null);
+		var res = lookupViewResource(ctx.getDefaultDataset(), type, itr, ctx);
+		return isNull(res) && nonNull(evaluator) ? evaluator.apply(ctx.getDefaultDataset(), itr) : res;
+	}
+	
+	static DatasetResource lookupView(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
+		if(itr.hasNext()) {
+			var entry = itr.peekNext();
+			var view  = ctx.lookupView(entry.getValue(), allowParameterized, entry.getArgs());
+			if(nonNull(view)) {
+				itr.advance();
+				return view;
+			}
+		}
+		return null;
 	}
 
-	static <T> Optional<T> lookupViewResource(DatasetResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
-		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as resource");
-		var res = ctx.getStore().lookup(view, entry.getValue(), type);
-		if(nonNull(res)) {
-			itr.advance();
-			return Optional.of(res.invoke(ctx.evaluate(entry.getArgs(), res.getParameters())));
+	static <T> T lookupViewResource(DatasetResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
+		if(itr.hasNext()) {
+			var entry = itr.peekNext();
+			var res = ctx.lookupResource(entry.getValue(), view, type, entry.getArgs());
+			if(nonNull(res)) {
+				itr.advance();
+				return res;
+			}
 		}
-		return empty();
+		return null;
 	}
 	
 	//res=3 or res.fun1.eq=3 or res.in=1,2,3 or res.express=33 or res.express(33).and(..)
@@ -380,7 +391,7 @@ public final class EntryEvaluators {
 	}
 
 	static void assertLastEntry(EntryIterator entry, boolean tagAllowed) {
-		var e =entry.get();
+		var e = entry.get();
 		if(e.hasNext()) {
 			throw new EntrySyntaxException("unexpected entry : " + e.getNext().getValue());
 		}

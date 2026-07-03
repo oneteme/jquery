@@ -16,7 +16,6 @@ import static org.usf.jquery.core.JQueryType.DECLARE_COLUMN;
 import static org.usf.jquery.core.Parameter.match;
 import static org.usf.jquery.core.Signature.badArgumentTypeException;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.mvc.ResourceInvoker.ofObject;
 
 import java.lang.reflect.Array;
 import java.util.Arrays;
@@ -29,6 +28,7 @@ import java.util.stream.Stream;
 import org.usf.jquery.core.Column;
 import org.usf.jquery.core.Definition;
 import org.usf.jquery.core.Dialect;
+import org.usf.jquery.core.InvocationException;
 import org.usf.jquery.core.JDBCType;
 import org.usf.jquery.core.JQueryType;
 import org.usf.jquery.core.JavaType;
@@ -69,12 +69,28 @@ public final class RequestContext {
 		return store.dialect();
 	}
 	
-	public ResourceInvoker<DatasetResource> lookupView(String name) { 
-		var view = declaredViews.get(name);
-		return nonNull(view)
-				? ofObject(true, view, DatasetResource.class)
-				: store.lookup(name, DatasetResource.class);
+	public DatasetResource lookupView(String name, boolean allowParametred, Entry... args) { 
+		return declaredViews.compute(name, (k,v)->{
+			if(isNull(v)) {
+				var inv = store.lookup(name, DatasetResource.class);
+				if(nonNull(inv)) {
+					if(allowParametred || isEmpty(inv.getParameters())) {
+						v = inv.invoke(evaluate(args, inv.getParameters()));
+					}
+					else {
+						throw new InvocationException("parameterized view '%s' not allowed in this context".formatted(name));
+					}
+				}
+			}
+			return v;
+		});
 	}
+	
+	public <T> T lookupResource(String name, DatasetResource view, Class<T> type, Entry... args) {
+		var res = store.lookup(view, name, type);
+		return nonNull(res) ? res.invoke(evaluate(args, res.getParameters())) : null;
+	}
+		
 	
 	public Optional<Column> lookupDeclaredColumn(String name) {
 		return ofNullable(declaredColumns.get(name));
