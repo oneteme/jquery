@@ -332,7 +332,7 @@ public final class QueryComposer implements Composer<Query> {
 		if(!isEmpty(joins)) {
 			view.setJoins(unmodifiableCollection(joins));
 			analyzer.setStage(JOIN);
-			analyzer.analyzeNested(view.getJoins());
+			analyzer.with(IGNORE_GROUPS).analyzeNested(view.getJoins());
 		}
 	}
 	

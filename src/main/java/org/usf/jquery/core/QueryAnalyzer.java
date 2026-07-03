@@ -100,15 +100,15 @@ public final class QueryAnalyzer {
 	}
 		
 	public int tryAnalyzeNested(Collection<?> arr){
-		return analyzeNested(filterStream(arr), null);
+		return analyzeNested(filterQueryParts(arr), null);
 	}
 	
 	public int tryAnalyzeNested(Collection<?> arr, int from){
-		return analyzeNested(filterStream(arr).skip(from), null);
+		return analyzeNested(filterQueryParts(arr).skip(from), null);
 	}
 
 	public int tryAnalyzeNested(Collection<?> arr, Column defaultDimension){
-		return analyzeNested(filterStream(arr), defaultDimension);
+		return analyzeNested(filterQueryParts(arr), defaultDimension);
 	}
 
 	int analyzeNested(Stream<? extends QueryPart> stream, Column defaultDimension){
@@ -131,12 +131,12 @@ public final class QueryAnalyzer {
 		case 0-> groups; //no changes
 		case IGNORE_GROUPS-> null;
 		case ISOLATE_GROUPS-> new LinkedHashSet<Column>();
-		default-> throw new UnsupportedOperationException("flag="+groupFlag);
+		default-> throw new UnsupportedOperationException("Unsupported group flag: " + groupFlag);
 		};
 		return new QueryAnalyzer(store, ctes, froms, grp, joins, overViews, stage);
 	}
 		
-	private static <T> Stream<QueryPart> filterStream(Collection<T> arr) {
+	private static <T> Stream<QueryPart> filterQueryParts(Collection<T> arr) {
 		return streamOrEmpty(arr).mapMulti((o, acc)->{
 			if(o instanceof QueryPart n) {
 				acc.accept(n);

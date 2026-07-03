@@ -25,8 +25,8 @@ public final class JoinGroup implements QueryPart {
 	}
 
 	@Override
-	public int prepare(QueryAnalyzer declare) {
-		return declare.analyzeNested(joins);
+	public int prepare(QueryAnalyzer analyzer) {
+		return analyzer.analyzeNested(joins);
 	}
 
 	@Override

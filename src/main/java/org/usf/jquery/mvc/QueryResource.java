@@ -38,6 +38,6 @@ public final class QueryResource implements DatasetResource {
 					.map(v-> ofObject(true, (T)v, type)) //no arguments
 					.orElse(null);
 		}
-		throw new NoSuchResourceException("no exposed method with id '" + id + "' found in query resource");
+		return null;
 	}
 }

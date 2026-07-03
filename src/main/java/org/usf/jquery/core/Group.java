@@ -31,4 +31,9 @@ public final class Group implements QueryPart {
 	public void build(SqlBuilder builder, Object... args) {
 		builder.append("ORDER BY ").appendEach(SPACE, orders);
 	}
+	
+	@Override
+	public String toString() {
+		return QueryPart.toSQL(this);
+	}
 }

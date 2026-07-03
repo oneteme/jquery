@@ -12,27 +12,27 @@ import static org.usf.jquery.core.Utils.toList;
  */
 public final class SimplePredicate implements Predicate {
 
-	private final Invocable invokable;
+	private final Invocable invocable;
 	private final Object[] right; //optional
 	private final int from;
 	
-	public SimplePredicate(Invocable invokable, Object[] right) {
-		this(invokable, right, 0);
+	public SimplePredicate(Invocable invocable, Object[] right) {
+		this(invocable, right, 0);
 	}
 	
-	public SimplePredicate(Invocable invokable, Object[] right, int from) {
+	public SimplePredicate(Invocable invocable, Object[] right, int from) {
 		var size = nonNull(right) ? right.length : 0;
 		if(from < 0 || from > size) {
 			throw new IllegalArgumentException("from index must be between 0 and " + size);
 		}
-		this.invokable = invokable;
+		this.invocable = invocable;
 		this.right = right;
 		this.from = from;
 	}
 
 	@Override
-	public int prepare(QueryAnalyzer declare) {
-		return nonNull(right) ? declare.tryAnalyzeNested(toList(right), from) : SCALAR;
+	public int prepare(QueryAnalyzer analyzer) {
+		return nonNull(right) ? analyzer.tryAnalyzeNested(toList(right), from) : SCALAR;
 	}
 	
 	@Override
@@ -50,7 +50,7 @@ public final class SimplePredicate implements Predicate {
 		else {
 			throw new IllegalStateException("invalid arguments configuration for " + this);
 		}
-		invokable.build(builder, args);
+		invocable.build(builder, args);
 	}
 	
 	@Override

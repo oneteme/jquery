@@ -20,8 +20,8 @@ public final class Order implements QueryPart {
 	private final OrderType type;
 	
 	@Override
-	public int prepare(QueryAnalyzer declare) {
-		return column.prepare(declare);
+	public int prepare(QueryAnalyzer analyzer) {
+		return column.prepare(analyzer);
 	}
 	
 	@Override

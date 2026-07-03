@@ -66,12 +66,11 @@ public final class OperationColumn implements Column {
 		return nonNull(overColumn) ? overColumn.getType() : type;
 	}
 	
-	private int resolveOverColumns(QueryAnalyzer declare) {
-//		requireAtLeastNArgs(1, args, ()-> "over"); //partition
-		var lvl = declare.tryAnalyzeNested(args.get(0))-1; //nested aggregate function
+	private int resolveOverColumns(QueryAnalyzer analyzer) {
+		var lvl = analyzer.tryAnalyzeNested(args.get(0))-1; //nested aggregate function
 		return args.size() == 1
 				? lvl
-				: Math.max(lvl, declare.tryAnalyzeNested(args.get(1))); //partition
+				: Math.max(lvl, analyzer.tryAnalyzeNested(args.get(1))); //partition
 	}
 		
 	@Override

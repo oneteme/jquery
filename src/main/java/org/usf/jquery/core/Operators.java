@@ -312,7 +312,7 @@ public interface Operators {
 	}
 	
 	default OperatorDefinition mode() {
-		return aggregate(firstArgType(), "MODE", required());
+		return aggregate(args-> null, "MODE");
 	}
 		
 	//window functions
