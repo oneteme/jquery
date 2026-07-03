@@ -60,9 +60,9 @@ public interface QueryInterpreter {
 				}
 				throw new IllegalArgumentException("unknown view: " + params[0]);
 			}
-			throw new IllegalArgumentException("Parameter " + param + " can only have one value");
+			throw new IllegalArgumentException("Parameter '%s' can only have one value".formatted(param));
 		}
-		throw new IllegalArgumentException("require " + param + " parameter");
+		throw new IllegalArgumentException("require '%s' parameter".formatted(param));
 	}
 	
 	default void parseParam(Map<String, String[]> parameterMap, String param, ComposerDefinition<QueryComposer> def, RequestContext ctx) { //ctes
@@ -84,16 +84,6 @@ public interface QueryInterpreter {
 					.toArray(Criteria[]::new);
 			def.invoke(args);
 		}
-	}
-	
-	static String requireOneArg(String[] arr, String name) {
-		if(isEmpty(arr)) {
-			throw new IllegalArgumentException("require " + name + " parameter");
-		}
-		if(arr.length > 1) {
-			throw new IllegalArgumentException("Parameter " + name + " can only have one value");
-		}
-		return arr[0];
 	}
 	
 	private static Stream<Entry> parse(String[] values) {
