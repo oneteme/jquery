@@ -263,24 +263,6 @@ public final class EntryEvaluators {
 		return null;
 	}
 	
-
-	static <T> T evalComposer(EntryIterator itr, DatasetResource dr, RequestContext ctx, java.util.function.Predicate<String> pre, Class<T> type) {
-		if(itr.hasNext() && pre.test(itr.peekNext().getValue())) {
-			Object res = null;
-			try {
-				res = invokeDialectComposer(itr, ctx.withView(dr));
-			}
-			catch (Exception e) {
-				throw new EntryParseException("cannot parse arguments for " + itr.peekNext().getValue(), e);
-			}
-			if(type.isInstance(res)) {
-				return type.cast(res);
-			}
-			throw new EntryParseException("invalid definition for " + itr.peekNext().getValue());
-		}
-		return null;
-	}
-	
 	static JoinGroup evalJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
 		var v = itr.hasNext() ? itr.peekNext().getValue() : null;
 		if(nonNull(v) && v.matches("(inner|left|right|full|cross)Join")) {
