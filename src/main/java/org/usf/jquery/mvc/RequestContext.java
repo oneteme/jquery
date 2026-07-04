@@ -90,7 +90,6 @@ public final class RequestContext {
 		var res = store.lookup(view, name, type);
 		return nonNull(res) ? res.invoke(evaluate(args, res.getParameters())) : null;
 	}
-		
 	
 	public Optional<Column> lookupDeclaredColumn(String name) {
 		return ofNullable(declaredColumns.get(name));

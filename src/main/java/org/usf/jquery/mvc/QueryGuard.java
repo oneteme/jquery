@@ -17,7 +17,7 @@ import java.lang.annotation.Target;
 public @interface QueryGuard {
 
 	/** Resources to exclude from the query. */
-	String[] excludeResources() default {}; //support syntax: resource.*field, resource.* or resource.field
+	String[] excludeResources() default {}; //TD support syntax: resource.*field, resource.* or resource.field
 	
 	/** Dialects to exclude from the query. */
 	String[] excludeDialects() default {};
@@ -25,7 +25,9 @@ public @interface QueryGuard {
 	/** If true, ensures the query is an aggregation. */
 	boolean aggregate() default false; //??
 	
+	/** If true, ensures that returned result is lower than the specified limit. */
 	int maxRows() default 0;
 		
+	/** If true, ensures that returned result has lower than the specified number of columns. */
 	int maxCols() default 0;
 }

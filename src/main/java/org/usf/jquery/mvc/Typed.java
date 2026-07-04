@@ -21,5 +21,4 @@ import org.usf.jquery.core.JDBCType;
 public @interface Typed {
 	
 	JDBCType value();
-	
 }

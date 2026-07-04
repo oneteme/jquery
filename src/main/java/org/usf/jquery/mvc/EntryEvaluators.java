@@ -42,7 +42,7 @@ public final class EntryEvaluators {
 		var itr = entry.iterator();
 		var view = lookupView(itr, ctx, true);
 		if(itr.hasNext()) {
-			var qry = evalQuery(itr, nonNull(view) ? view : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+			var qry = composeQuery(itr, nonNull(view) ? view : ctx.getDefaultDataset(), ctx); //fast check if query matches 
 			if(nonNull(qry)) {
 				assertLastEntry(itr, true);
 				var tag = itr.get().getTag();
@@ -68,7 +68,7 @@ public final class EntryEvaluators {
 		var itr = entry.iterator();
 		var view = lookupView(itr, ctx, true);
 		if(itr.hasNext()) {
-			var qry = evalQuery(itr, nonNull(view) ? view : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+			var qry = composeQuery(itr, nonNull(view) ? view : ctx.getDefaultDataset(), ctx); //fast check if query matches 
 			if(nonNull(qry)) {
 				assertLastEntry(itr, true);
 				var tag = itr.get().getTag();
@@ -127,7 +127,7 @@ public final class EntryEvaluators {
 	
 	public static Partition evaluatePartition(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var prt = lookupResource(itr, Partition.class, ctx, (v,e)-> evalPartition(e, v, ctx));
+		var prt = lookupResource(itr, Partition.class, ctx, (v,e)-> composePartition(e, v, ctx));
 		if(nonNull(prt)) {
 			assertLastEntry(itr, false);
 			return prt;
@@ -137,7 +137,7 @@ public final class EntryEvaluators {
 	
 	public static Group evaluateGroup(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var prt = lookupResource(itr, Group.class, ctx, (v,e)-> evalGroup(e, v, ctx));
+		var prt = lookupResource(itr, Group.class, ctx, (v,e)-> composeGroup(e, v, ctx));
 		if(nonNull(prt)) {
 			assertLastEntry(itr, false);
 			return prt;
@@ -159,7 +159,7 @@ public final class EntryEvaluators {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		var view = rsc.getView(); 
 		if(SELECT_PARAM.equals(entry.getValue())) {
-			view = evalQuery(itr, rsc, ctx);
+			view = composeQuery(itr, rsc, ctx);
 		}
 		if(view instanceof Query query) {
 			return query.asColumn();
@@ -202,7 +202,7 @@ public final class EntryEvaluators {
 					return def.invoke(entry.hasArgs() ? ctx.resolveArgs(entry.getArgs(), null, def) : allColumns(v.getView()));
 				}
 				if("when".equals(entry.getValue())) { //view.when
-					return chainComposerExpression(itr, ctx.withView(v), CaseColumn.class); 
+					return composeExpression(itr, ctx, CaseColumn.class, v, "when"::equals); 
 				}
 				return null;
 			}); //column or criteria resource
@@ -210,22 +210,34 @@ public final class EntryEvaluators {
 		return chainExpression(itr, col, ctx, outArgs);
 	}
 
-	static Query evalQuery(EntryIterator itr, DatasetResource dr, RequestContext ctx) { 
+	static Query composeQuery(EntryIterator itr, DatasetResource dr, RequestContext ctx) { 
 		return composeExpression(itr, ctx, Query.class, dr, SELECT_PARAM::equals);	
 	}
 	
-	static Partition evalPartition(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+	static Partition composePartition(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
 		return composeExpression(itr, ctx, Partition.class, dr, PARTITION_OPR::equals);
 	}
 	
-	static Group evalGroup(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+	static Group composeGroup(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
 		return composeExpression(itr, ctx, Group.class, dr, "group"::equals);
 	}
 	
 	static JoinGroup composeJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
 		var v = composeExpression(itr, ctx, Join.class, dr, s-> s.matches("(inner|left|right|full|cross)Join"));
 		return nonNull(v) ? new JoinGroup(v) : null;
-	}	
+	}
+
+	static <T> T composeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetResource dr, java.util.function.Predicate<String> filter) {
+		if(itr.hasNext() && filter.test(itr.peekNext().getValue())) {
+			try {
+				return chainComposerExpression(itr, ctx.withView(dr), type);
+			}
+			catch (Exception e) {
+				throw new EntryParseException("cannot parse '%s' arguments ".formatted(type.getSimpleName()), e);
+			}
+		}
+		return null;
+	}
 	
 	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> composer) {
 		if(itr.hasNext()) { //view name == resource name
@@ -308,18 +320,6 @@ public final class EntryEvaluators {
 			col = cmp.invoke(ctx.resolveArgs(outArgs, col, cmp));
 		}
 		return col;
-	}
-	
-	static <T> T composeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetResource dr, java.util.function.Predicate<String> filter) {
-		if(itr.hasNext() && filter.test(itr.peekNext().getValue())) {
-			try {
-				return chainComposerExpression(itr, ctx.withView(dr), type);
-			}
-			catch (Exception e) {
-				throw new EntryParseException("cannot parse '%s' arguments ".formatted(type.getSimpleName()), e);
-			}
-		}
-		return null;
 	}
 	
 	static <T> T chainComposerExpression(EntryIterator itr, RequestContext ctx, Class<T> type) {
