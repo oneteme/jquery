@@ -75,7 +75,7 @@ public final class RequestContext {
 				var inv = store.lookup(name, DatasetCatalogue.class);
 				if(nonNull(inv)) {
 					if(allowParametred || isEmpty(inv.getParameters())) {
-						v = inv.invoke(evaluate(args, inv.getParameters()));
+						v = invokeResource(inv, args);
 					}
 					else {
 						throw new InvocationException("parameterized view '%s' not allowed in this context".formatted(name));
@@ -88,7 +88,7 @@ public final class RequestContext {
 	
 	public <T> T lookupResource(String name, DatasetCatalogue view, Class<T> type, Entry... args) {
 		var res = store.lookup(view, name, type);
-		return nonNull(res) ? res.invoke(evaluate(args, res.getParameters())) : null;
+		return nonNull(res) ? invokeResource(res, args) : null;
 	}
 	
 	public Optional<Column> lookupDeclaredColumn(String name) {
@@ -98,8 +98,8 @@ public final class RequestContext {
 	public Object lookupDialect(String name, Class<? extends Definition> type, Object composer, Entry... args) {
 		var inv = store.lookupDialect(name, type, composer);
 		if(nonNull(inv)) {
-			var res = nonNull(composer) ? inv.invoke(composer) : inv.invoke();
-			return res.invoke(resolveArgs(args, null, res));
+			var def = nonNull(composer) ? inv.invoke(composer) : inv.invoke();
+			return def.invoke(resolveArgs(args, null, def));
 		}
 		return null;
 	}
@@ -120,6 +120,11 @@ public final class RequestContext {
 			}
 			throw new IllegalArgumentException("a column with name '" + name + "' already exists in context");
 		});
+	}
+	
+	
+	public <T> T invokeResource(ResourceInvoker<T> invok, Entry... args) {
+		return invok.invoke(evaluate(args, invok.getParameters()));
 	}
 	
 	public Object[] evaluate(Entry[] args, Class<?>[] params) {

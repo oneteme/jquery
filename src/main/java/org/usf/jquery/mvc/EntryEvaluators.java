@@ -296,7 +296,7 @@ public final class EntryEvaluators {
 					args = outArgs;
 					outArgs = null;
 				}
-				col = col.filter(r.invoke(ctx.evaluate(args, r.getParameters())));
+				col = col.filter(ctx.invokeResource(r, args));
 			}
 			else {
 				var res = ctx.getStore().lookupDialect(entry.getValue(), Definition.class);
