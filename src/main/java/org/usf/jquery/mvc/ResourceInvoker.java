@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-public class ResourceInvoker<T> {
+public final class ResourceInvoker<T> {
 	
 	private static final Class<?>[] NO_PARAM = new Class<?>[0];
 	

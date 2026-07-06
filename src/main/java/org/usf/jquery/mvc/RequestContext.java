@@ -53,15 +53,15 @@ public final class RequestContext {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, TIME, 
 			TIMESTAMP_WITH_TIMEZONE, BOOLEAN, VARCHAR };
 
-	@Getter private final DatasetResource defaultDataset;
-	@Getter private final StoreResource store; 
+	@Getter private final DatasetCatalogue defaultDataset;
+	@Getter private final StoreCatalogue store; 
 	private final TypeRegistry registry;
 
-	private final Map<String, DatasetResource> declaredViews;
+	private final Map<String, DatasetCatalogue> declaredViews;
 	private final Map<String, Column> declaredColumns;
 	//strict mode !? resolve order, groupBy, ..
 	
-	public RequestContext(StoreResource store, DatasetResource defaultDataset, TypeRegistry registry) {
+	public RequestContext(StoreCatalogue store, DatasetCatalogue defaultDataset, TypeRegistry registry) {
 		this(defaultDataset, store, registry, new HashMap<>(), new HashMap<>());
 	}
 	
@@ -69,10 +69,10 @@ public final class RequestContext {
 		return store.dialect();
 	}
 	
-	public DatasetResource lookupView(String name, boolean allowParametred, Entry... args) { 
+	public DatasetCatalogue lookupView(String name, boolean allowParametred, Entry... args) { 
 		return declaredViews.compute(name, (k,v)->{
 			if(isNull(v)) {
-				var inv = store.lookup(name, DatasetResource.class);
+				var inv = store.lookup(name, DatasetCatalogue.class);
 				if(nonNull(inv)) {
 					if(allowParametred || isEmpty(inv.getParameters())) {
 						v = inv.invoke(evaluate(args, inv.getParameters()));
@@ -86,7 +86,7 @@ public final class RequestContext {
 		});
 	}
 	
-	public <T> T lookupResource(String name, DatasetResource view, Class<T> type, Entry... args) {
+	public <T> T lookupResource(String name, DatasetCatalogue view, Class<T> type, Entry... args) {
 		var res = store.lookup(view, name, type);
 		return nonNull(res) ? res.invoke(evaluate(args, res.getParameters())) : null;
 	}
@@ -95,7 +95,16 @@ public final class RequestContext {
 		return ofNullable(declaredColumns.get(name));
 	}
 	
-	void declareView(String name, DatasetResource view) {
+	public Object lookupDialect(String name, Class<? extends Definition> type, Object composer, Entry... args) {
+		var inv = store.lookupDialect(name, type, composer);
+		if(nonNull(inv)) {
+			var res = nonNull(composer) ? inv.invoke(composer) : inv.invoke();
+			return res.invoke(resolveArgs(args, null, res));
+		}
+		return null;
+	}
+	
+	void declareView(String name, DatasetCatalogue view) {
 		declaredViews.compute(name, (k,v)->{
 			if(isNull(v)) {
 				return view;
@@ -143,9 +152,7 @@ public final class RequestContext {
 					}
 					throw badArgumentTypeException(operand, types);
 				}
-				else {
-					return resolveEntry(args[idx-shift], types);
-				}
+				return resolveEntry(args[idx-shift], types);
 			});
 		}
 		catch (SignatureMismatchException e) {
@@ -230,12 +237,12 @@ public final class RequestContext {
 	}
 
 	//inherit common properties, but not declared views and columns
-	public RequestContext subContext(DatasetResource dataset) {
+	public RequestContext subContext(DatasetCatalogue dataset) {
 		return new RequestContext(dataset, store, registry, new HashMap<>(), new HashMap<>());
 	}
 	
 	//inherit declared views and columns, but with different default view
-	public RequestContext withView(DatasetResource dataset) { 
+	public RequestContext withView(DatasetCatalogue dataset) { 
 		if(dataset == defaultDataset) {
 			return this;
 		}

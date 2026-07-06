@@ -19,10 +19,10 @@ import lombok.experimental.Delegate;
  *
  */
 @RequiredArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-public class RestrictedStore implements StoreResource {
+public final class RestrictedStore implements StoreCatalogue {
 
-	@Delegate(types = StoreResource.class)
-	private final StoreResource store;
+	@Delegate(types = StoreCatalogue.class)
+	private final StoreCatalogue store;
 	private final int maxCols;
 	private final int maxRows;
 	private final boolean aggregateOnly;
@@ -32,7 +32,7 @@ public class RestrictedStore implements StoreResource {
 	@Override
 	public RequestContext createContext(String defaultDataset) {
 		if(!excludeResources.contains(defaultDataset)) {
-			return StoreResource.super.createContext(defaultDataset); //because of @Delegate, this will call the store.createContext(defaultDataset)
+			return StoreCatalogue.super.createContext(defaultDataset); //because of @Delegate, this will call the store.createContext(defaultDataset)
 		}
 		throw new IllegalAccessError("Dataset " + defaultDataset + " is not accessible or does not exist");
 	}
@@ -46,9 +46,9 @@ public class RestrictedStore implements StoreResource {
 	}
 	
 	@Override
-	public <T> ResourceInvoker<T> lookup(Resource sub, String resource, Class<T> type) {
+	public <T> ResourceInvoker<T> lookup(Catalogue sub, String resource, Class<T> type) {
 		if(!excludeResources.contains(resource)) {
-			return store.lookup(sub, resource, type);
+			return store.lookup(sub, resource, type); //not sure !
 		}
 		throw new ResourceAccessException("Sub-resource " + resource + " is not allowed");
 	}
@@ -80,7 +80,7 @@ public class RestrictedStore implements StoreResource {
 		return store.execute(query, maxRows > 0 ? resultSetLimiter(mapper, maxRows) : mapper);
 	}
 	
-	public static StoreResource restrict(StoreResource store, int maxCols, int maxRows, boolean aggregationOnly, Set<String> excludeResources, Set<String> excludeDialects) {
+	public static StoreCatalogue restrict(StoreCatalogue store, int maxCols, int maxRows, boolean aggregationOnly, Set<String> excludeResources, Set<String> excludeDialects) {
 		if(isEmpty(excludeResources) && isEmpty(excludeDialects) && maxCols <= 0 && maxRows <= 0) {
 			return store;
 		}

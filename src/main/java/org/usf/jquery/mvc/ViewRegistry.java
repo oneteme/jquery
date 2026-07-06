@@ -105,7 +105,7 @@ public class ViewRegistry {
 				var writer = res.getWriter();
 				var path = Paths.get(ViewRegistry.class.getClassLoader().getResource(template).toURI());
 				writer.write(readString(path).replace("[[${callback}]]", "/callback/"+id)); //TD optim
-				queryQueue.put(id, new MvcRequest((StoreResource) str, qry, rsp-> mvcModelMapper(rsp, mapper)));
+				queryQueue.put(id, new MvcRequest((StoreCatalogue) str, qry, rsp-> mvcModelMapper(rsp, mapper)));
 				return null;
 			} catch (IOException | URISyntaxException e) {
 				throw new RuntimeException(e); //TODO change this

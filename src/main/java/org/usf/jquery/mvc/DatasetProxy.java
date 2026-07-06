@@ -105,15 +105,20 @@ final class DatasetProxy extends ResourceProxy {
 	String invokeToString(Object proxy, Object[] args) {
 		return toSQL(view);
 	}
+	
+	@Override
+	public String toString() {
+		return "DatasetProxy {"+view+"}";
+	}
 
-	static <T extends DatasetResource> T createDataset(Class<T> type, Bind bind, String store, DataSource ds) {
+	static <T extends DatasetCatalogue> T createDataset(Class<T> type, Bind bind, String store, DataSource ds) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
 			case REF-> new Table(bind.value(), store);
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
-			var map = discoverExposedMethods(type, DatasetResource.class, DatasetProxy::acceptBind);
+			var map = discoverExposedMethods(type, DatasetCatalogue.class, DatasetProxy::acceptBind);
 			var cols = map.values().stream()
 			.filter(m-> isAbstract(m.getModifiers()) && m.getAnnotation(Bind.class).type() == REF) //only binded object
 			.map(m-> m.getAnnotation(Bind.class).value()).collect(toSet());
@@ -135,10 +140,5 @@ final class DatasetProxy extends ResourceProxy {
 				c == Order.class || 
 				c == Partition.class||
 				c == JoinGroup.class;
-	}
-	
-	@Override
-	public String toString() {
-		return "DatasetProxy {" + view + "}";
 	}
 }

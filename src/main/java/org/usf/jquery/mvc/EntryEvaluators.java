@@ -155,7 +155,7 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such query column : " + itr.peekNext().getValue());
 	}
 	
-	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetResource rsc, RequestContext ctx) {
+	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetCatalogue rsc, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		var view = rsc.getView(); 
 		if(SELECT_PARAM.equals(entry.getValue())) {
@@ -186,48 +186,50 @@ public final class EntryEvaluators {
 	}
 
 	static Column evalColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
-		var next = itr.peekNext();
-		var res = ctx.lookupDeclaredColumn(next.getValue());
-		Column col = null;
-		if(res.isPresent()) {
-			itr.advance();
-			col = res.get();
+		if(itr.hasNext()) {
+			var res = ctx.lookupDeclaredColumn(itr.peekNext().getValue());
+			Column col = null;
+			if(res.isPresent()) {
+				itr.advance();
+				col = res.get();
+			}
+			else {
+				col = lookupResource(itr, Column.class, ctx, (v, e)-> { //column | criteria
+					var entry = e.peekNext();
+					if("count".equals(entry.getValue())) {
+						itr.advance();
+						var def = ctx.getDialect().count();
+						return def.invoke(entry.hasArgs() ? ctx.resolveArgs(entry.getArgs(), null, def) : allColumns(v.getView()));
+					}
+					if("when".equals(entry.getValue())) { //view.when
+						return composeExpression(itr, ctx, CaseColumn.class, v, "when"::equals); 
+					}
+					return null;
+				}); //column or criteria resource
+			}
+			return chainExpression(itr, col, ctx, outArgs);
 		}
-		else {
-			col = lookupResource(itr, Column.class, ctx, (v, e)-> { //column | criteria
-				var entry = e.peekNext();
-				if("count".equals(entry.getValue())) {
-					itr.advance();
-					var def = ctx.getDialect().count();
-					return def.invoke(entry.hasArgs() ? ctx.resolveArgs(entry.getArgs(), null, def) : allColumns(v.getView()));
-				}
-				if("when".equals(entry.getValue())) { //view.when
-					return composeExpression(itr, ctx, CaseColumn.class, v, "when"::equals); 
-				}
-				return null;
-			}); //column or criteria resource
-		}
-		return chainExpression(itr, col, ctx, outArgs);
+		return null;
 	}
 
-	static Query composeQuery(EntryIterator itr, DatasetResource dr, RequestContext ctx) { 
+	static Query composeQuery(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) { 
 		return composeExpression(itr, ctx, Query.class, dr, SELECT_PARAM::equals);	
 	}
 	
-	static Partition composePartition(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+	static Partition composePartition(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
 		return composeExpression(itr, ctx, Partition.class, dr, PARTITION_OPR::equals);
 	}
 	
-	static Group composeGroup(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+	static Group composeGroup(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
 		return composeExpression(itr, ctx, Group.class, dr, "group"::equals);
 	}
 	
-	static JoinGroup composeJoin(EntryIterator itr, DatasetResource dr, RequestContext ctx) {
+	static JoinGroup composeJoin(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
 		var v = composeExpression(itr, ctx, Join.class, dr, s-> s.matches("(inner|left|right|full|cross)Join"));
 		return nonNull(v) ? new JoinGroup(v) : null;
 	}
 
-	static <T> T composeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetResource dr, java.util.function.Predicate<String> filter) {
+	static <T> T composeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetCatalogue dr, java.util.function.Predicate<String> filter) {
 		if(itr.hasNext() && filter.test(itr.peekNext().getValue())) {
 			try {
 				return chainComposerExpression(itr, ctx.withView(dr), type);
@@ -239,7 +241,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 	
-	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetResource, EntryIterator, T> composer) {
+	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetCatalogue, EntryIterator, T> composer) {
 		if(itr.hasNext()) { //view name == resource name
 			var view = lookupView(itr.mark(), ctx, false); //parameterized views are not allowed in resource lookup
 			if(nonNull(view)) {
@@ -257,7 +259,7 @@ public final class EntryEvaluators {
 		return isNull(res) && nonNull(composer) ? composer.apply(ctx.getDefaultDataset(), itr) : res;
 	}
 	
-	static DatasetResource lookupView(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
+	static DatasetCatalogue lookupView(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
 			var view  = ctx.lookupView(entry.getValue(), allowParameterized, entry.getArgs());
@@ -269,7 +271,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 
-	static <T> T lookupViewResource(DatasetResource view, Class<T> type, EntryIterator itr, RequestContext ctx) {
+	static <T> T lookupViewResource(DatasetCatalogue view, Class<T> type, EntryIterator itr, RequestContext ctx) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
 			var res = ctx.lookupResource(entry.getValue(), view, type, entry.getArgs());
@@ -325,20 +327,17 @@ public final class EntryEvaluators {
 	static <T> T chainComposerExpression(EntryIterator itr, RequestContext ctx, Class<T> type) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
-			var res = ctx.getStore().lookupDialect(entry.getValue(), ComposerDefinition.class);
-			if(nonNull(res)) {
+			var obj = ctx.lookupDialect(entry.getValue(), ComposerDefinition.class, null, entry.getArgs());
+			if(nonNull(obj)) {
 				itr.advance();
-				var def = res.invoke(); 
-				var obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
 				while(itr.hasNext() && obj instanceof Composer<?>) {
 					entry = itr.peekNext();
-					res = ctx.getStore().lookupDialect(entry.getValue(), ComposerDefinition.class, obj);
+					var res = ctx.lookupDialect(entry.getValue(), ComposerDefinition.class, obj, entry.getArgs());
 					if(isNull(res)) {
 						break; //stop at first non applicable operator
 					}
 					itr.advance();
-					def = res.invoke(obj); 
-					obj = def.invoke(ctx.resolveArgs(entry.getArgs(), null, def));
+					obj = res;
 				}
 				if(obj instanceof Composer<?> cmp) {
 					obj = cmp.compose(ctx.getStore());
