@@ -107,7 +107,7 @@ public final class EntryEvaluators {
 	
 	public static Order evaluateOrder(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var ord = lookupResource(itr, Order.class, ctx, (v,e)-> evalOrder(e, ctx));
+		var ord = lookupResource(itr, Order.class, ctx, (v,e)-> evalOrder(e.reset(), ctx));
 		if(nonNull(ord)) {
 			assertLastEntry(itr, false);
 			return ord;
@@ -202,7 +202,7 @@ public final class EntryEvaluators {
 						return def.invoke(entry.hasArgs() ? ctx.resolveArgs(entry.getArgs(), null, def) : allColumns(v.getView()));
 					}
 					if("when".equals(entry.getValue())) { //view.when
-						return composeExpression(itr, ctx, CaseColumn.class, v, "when"::equals); 
+						return tyComposeExpression(itr, ctx, CaseColumn.class, v, "when"::equals); 
 					}
 					return null;
 				}); //column or criteria resource
@@ -213,23 +213,23 @@ public final class EntryEvaluators {
 	}
 
 	static Query composeQuery(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) { 
-		return composeExpression(itr, ctx, Query.class, dr, SELECT_PARAM::equals);	
+		return tyComposeExpression(itr, ctx, Query.class, dr, SELECT_PARAM::equals);	
 	}
 	
 	static Partition composePartition(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
-		return composeExpression(itr, ctx, Partition.class, dr, PARTITION_OPR::equals);
+		return tyComposeExpression(itr, ctx, Partition.class, dr, PARTITION_OPR::equals);
 	}
 	
 	static Group composeGroup(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
-		return composeExpression(itr, ctx, Group.class, dr, "group"::equals);
+		return tyComposeExpression(itr, ctx, Group.class, dr, "group"::equals);
 	}
 	
 	static JoinGroup composeJoin(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
-		var v = composeExpression(itr, ctx, Join.class, dr, s-> s.matches("(inner|left|right|full|cross)Join"));
+		var v = tyComposeExpression(itr, ctx, Join.class, dr, s-> s.matches("(inner|left|right|full|cross)Join"));
 		return nonNull(v) ? new JoinGroup(v) : null;
 	}
 
-	static <T> T composeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetCatalogue dr, java.util.function.Predicate<String> filter) {
+	static <T> T tyComposeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetCatalogue dr, java.util.function.Predicate<String> filter) {
 		if(itr.hasNext() && filter.test(itr.peekNext().getValue())) {
 			try {
 				return chainComposerExpression(itr, ctx.withView(dr), type);
@@ -252,8 +252,8 @@ public final class EntryEvaluators {
 				if(nonNull(res)) {
 					return res;
 				}
-				itr.resetToMark();
 			}
+			itr.resetToMark();
 		}
 		var res = lookupViewResource(ctx.getDefaultDataset(), type, itr, ctx);
 		return isNull(res) && nonNull(composer) ? composer.apply(ctx.getDefaultDataset(), itr) : res;

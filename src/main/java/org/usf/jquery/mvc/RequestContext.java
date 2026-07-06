@@ -122,12 +122,11 @@ public final class RequestContext {
 		});
 	}
 	
-	
 	public <T> T invokeResource(ResourceInvoker<T> invok, Entry... args) {
 		return invok.invoke(evaluate(args, invok.getParameters()));
 	}
 	
-	public Object[] evaluate(Entry[] args, Class<?>[] params) {
+	Object[] evaluate(Entry[] args, Class<?>[] params) {
 		var nArgs = nonNull(args) ? args.length : 0;
 		if(params.length == 1 && params[0].isArray()) {
 			var type = params[0].getComponentType();
