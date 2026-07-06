@@ -15,7 +15,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public final class MvcRequest {
 	
-	private final StoreCatalogue store;
+	private final StoreCatalog store;
 	private final QueryComposer composer;
 	private final ResultSetViewer viewer;
 

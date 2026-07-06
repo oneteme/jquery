@@ -80,7 +80,7 @@ public interface Store {
 					}
 					else {
 						var cnv = (TypeConverter<Object>)registry.getConverter(arg.value().getClass());
-						var val = nonNull(cnv) ? cnv.convert(arg.value(), arg.type()) : arg.value(); //TODO trace
+						var val = nonNull(cnv) ? cnv.convert(arg.value(), arg.type()) : arg.value(); 
 						ps.setObject(i+1, val, arg.type().getValue());
 					}
 				}						

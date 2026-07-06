@@ -18,7 +18,7 @@ import org.usf.jquery.core.Predicate;
  *
  */
 @Bind("sample") //bind this class to "sample" database
-interface StoreSample extends StoreCatalogue {
+interface StoreSample extends StoreCatalog {
 	
 	@Expose(identity="v1") //export view_1 as resource name v1, if id is empty, method name will be used as resource name
 	@Bind("view_1") //bind this method to "view_1" view of "sample" database

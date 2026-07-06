@@ -7,7 +7,7 @@ import org.usf.jquery.core.View;
  * @author u$f
  *
  */
-public interface DatasetCatalogue extends Catalogue {
+public interface DatasetCatalog extends Catalog {
 	
 	View getView();
 	

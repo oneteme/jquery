@@ -19,10 +19,10 @@ import lombok.experimental.Delegate;
  *
  */
 @RequiredArgsConstructor(access = lombok.AccessLevel.PRIVATE)
-public final class RestrictedStore implements StoreCatalogue {
+public final class RestrictedStore implements StoreCatalog {
 
-	@Delegate(types = StoreCatalogue.class)
-	private final StoreCatalogue store;
+	@Delegate(types = StoreCatalog.class)
+	private final StoreCatalog store;
 	private final int maxCols;
 	private final int maxRows;
 	private final boolean aggregateOnly;
@@ -32,7 +32,7 @@ public final class RestrictedStore implements StoreCatalogue {
 	@Override
 	public RequestContext createContext(String defaultDataset) {
 		if(!excludeResources.contains(defaultDataset)) {
-			return StoreCatalogue.super.createContext(defaultDataset); //because of @Delegate, this will call the store.createContext(defaultDataset)
+			return StoreCatalog.super.createContext(defaultDataset); //because of @Delegate, this will call the store.createContext(defaultDataset)
 		}
 		throw new IllegalAccessError("Dataset " + defaultDataset + " is not accessible or does not exist");
 	}
@@ -46,7 +46,7 @@ public final class RestrictedStore implements StoreCatalogue {
 	}
 	
 	@Override
-	public <T> ResourceInvoker<T> lookup(Catalogue sub, String resource, Class<T> type) {
+	public <T> ResourceInvoker<T> lookup(Catalog sub, String resource, Class<T> type) {
 		if(!excludeResources.contains(resource)) {
 			return store.lookup(sub, resource, type); //not sure !
 		}
@@ -80,7 +80,7 @@ public final class RestrictedStore implements StoreCatalogue {
 		return store.execute(query, maxRows > 0 ? resultSetLimiter(mapper, maxRows) : mapper);
 	}
 	
-	public static StoreCatalogue restrict(StoreCatalogue store, int maxCols, int maxRows, boolean aggregationOnly, Set<String> excludeResources, Set<String> excludeDialects) {
+	public static StoreCatalog restrict(StoreCatalog store, int maxCols, int maxRows, boolean aggregationOnly, Set<String> excludeResources, Set<String> excludeDialects) {
 		if(isEmpty(excludeResources) && isEmpty(excludeDialects) && maxCols <= 0 && maxRows <= 0) {
 			return store;
 		}

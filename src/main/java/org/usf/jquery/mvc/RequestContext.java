@@ -53,15 +53,15 @@ public final class RequestContext {
 			BIGINT, DOUBLE, DATE, TIMESTAMP, TIME, 
 			TIMESTAMP_WITH_TIMEZONE, BOOLEAN, VARCHAR };
 
-	@Getter private final DatasetCatalogue defaultDataset;
-	@Getter private final StoreCatalogue store; 
+	@Getter private final DatasetCatalog defaultDataset;
+	@Getter private final StoreCatalog store; 
 	private final TypeRegistry registry;
 
-	private final Map<String, DatasetCatalogue> declaredViews;
+	private final Map<String, DatasetCatalog> declaredViews;
 	private final Map<String, Column> declaredColumns;
 	//strict mode !? resolve order, groupBy, ..
 	
-	public RequestContext(StoreCatalogue store, DatasetCatalogue defaultDataset, TypeRegistry registry) {
+	public RequestContext(StoreCatalog store, DatasetCatalog defaultDataset, TypeRegistry registry) {
 		this(defaultDataset, store, registry, new HashMap<>(), new HashMap<>());
 	}
 	
@@ -69,10 +69,10 @@ public final class RequestContext {
 		return store.dialect();
 	}
 	
-	public DatasetCatalogue lookupView(String name, boolean allowParametred, Entry... args) { 
+	public DatasetCatalog lookupView(String name, boolean allowParametred, Entry... args) { 
 		return declaredViews.compute(name, (k,v)->{
 			if(isNull(v)) {
-				var inv = store.lookup(name, DatasetCatalogue.class);
+				var inv = store.lookup(name, DatasetCatalog.class);
 				if(nonNull(inv)) {
 					if(allowParametred || isEmpty(inv.getParameters())) {
 						v = invokeResource(inv, args);
@@ -86,7 +86,7 @@ public final class RequestContext {
 		});
 	}
 	
-	public <T> T lookupResource(String name, DatasetCatalogue view, Class<T> type, Entry... args) {
+	public <T> T lookupResource(String name, DatasetCatalog view, Class<T> type, Entry... args) {
 		var res = store.lookup(view, name, type);
 		return nonNull(res) ? invokeResource(res, args) : null;
 	}
@@ -104,7 +104,7 @@ public final class RequestContext {
 		return null;
 	}
 	
-	void declareView(String name, DatasetCatalogue view) {
+	void declareView(String name, DatasetCatalog view) {
 		declaredViews.compute(name, (k,v)->{
 			if(isNull(v)) {
 				return view;
@@ -241,12 +241,12 @@ public final class RequestContext {
 	}
 
 	//inherit common properties, but not declared views and columns
-	public RequestContext subContext(DatasetCatalogue dataset) {
+	public RequestContext subContext(DatasetCatalog dataset) {
 		return new RequestContext(dataset, store, registry, new HashMap<>(), new HashMap<>());
 	}
 	
 	//inherit declared views and columns, but with different default view
-	public RequestContext withView(DatasetCatalogue dataset) { 
+	public RequestContext withView(DatasetCatalog dataset) { 
 		if(dataset == defaultDataset) {
 			return this;
 		}

@@ -50,18 +50,18 @@ public final class StoreProxy extends ResourceProxy {
 		return "StoreProx {"+name+"}";
 	}
 
-	static <T extends StoreCatalogue> T createStore(Class<T> clazz, DataSource ds) {
+	static <T extends StoreCatalog> T createStore(Class<T> clazz, DataSource ds) {
 		return createStore(clazz, ds, storeDialect(ds));
 	}
 	
 	@SuppressWarnings("unchecked")
-	static <T extends StoreCatalogue> T createStore(Class<T> clazz, DataSource ds, Dialect dialect) {
+	static <T extends StoreCatalog> T createStore(Class<T> clazz, DataSource ds, Dialect dialect) {
 		if(clazz.isInterface()) {
 			var name = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
-			var map = discoverExposedMethods(clazz, StoreCatalogue.class, (m,b)-> DatasetCatalogue.class.isAssignableFrom(m.getReturnType()));
+			var map = discoverExposedMethods(clazz, StoreCatalog.class, (m,b)-> DatasetCatalog.class.isAssignableFrom(m.getReturnType()));
 			Map<Method, Object> cache = map.values().stream()
 					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
-					.parallel().collect(toMap(identity(), m-> createDataset((Class<? extends DatasetCatalogue>) m.getReturnType(), m.getAnnotation(Bind.class), name, ds)));
+					.parallel().collect(toMap(identity(), m-> createDataset((Class<? extends DatasetCatalog>) m.getReturnType(), m.getAnnotation(Bind.class), name, ds)));
 			cache.put(getMethod("name", clazz), name);
 			cache.put(getMethod("dataSource", clazz), ds);
 			cache.put(getMethod("dialect", clazz), dialect);

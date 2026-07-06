@@ -12,10 +12,10 @@ import org.usf.jquery.core.Store;
  * @author u$f
  *
  */
-public interface StoreCatalogue extends Store, Catalogue {
+public interface StoreCatalog extends Store, Catalog {
 
 	default RequestContext createContext(String defaultDataset) {
-		var v = lookup(defaultDataset, DatasetCatalogue.class);
+		var v = lookup(defaultDataset, DatasetCatalog.class);
 		if(nonNull(v) && v.isAccessible()) {
 			return new RequestContext(this, v.invoke(), typeRegistry());
 		}
@@ -30,7 +30,7 @@ public interface StoreCatalogue extends Store, Catalogue {
 		return new ViewRegistry();
 	}
 	
-	default <T> ResourceInvoker<T> lookup(Catalogue sub, String resource, Class<T> type) {
+	default <T> ResourceInvoker<T> lookup(Catalog sub, String resource, Class<T> type) {
 		return nonNull(sub) ? sub.lookup(resource, type) : null;
 	}
 	

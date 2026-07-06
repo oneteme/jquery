@@ -155,7 +155,7 @@ public final class EntryEvaluators {
 		throw new NoSuchResourceException("no such query column : " + itr.peekNext().getValue());
 	}
 	
-	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetCatalogue rsc, RequestContext ctx) {
+	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetCatalog rsc, RequestContext ctx) {
 		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
 		var view = rsc.getView(); 
 		if(SELECT_PARAM.equals(entry.getValue())) {
@@ -214,24 +214,24 @@ public final class EntryEvaluators {
 		return null;
 	}
 
-	static Query composeQuery(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) { 
+	static Query composeQuery(EntryIterator itr, DatasetCatalog dr, RequestContext ctx) { 
 		return tyComposeExpression(itr, ctx, Query.class, dr, SELECT_PARAM::equals);	
 	}
 	
-	static Partition composePartition(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
+	static Partition composePartition(EntryIterator itr, DatasetCatalog dr, RequestContext ctx) {
 		return tyComposeExpression(itr, ctx, Partition.class, dr, PARTITION_OPR::equals);
 	}
 	
-	static Group composeGroup(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
+	static Group composeGroup(EntryIterator itr, DatasetCatalog dr, RequestContext ctx) {
 		return tyComposeExpression(itr, ctx, Group.class, dr, "group"::equals);
 	}
 	
-	static JoinGroup composeJoin(EntryIterator itr, DatasetCatalogue dr, RequestContext ctx) {
+	static JoinGroup composeJoin(EntryIterator itr, DatasetCatalog dr, RequestContext ctx) {
 		var v = tyComposeExpression(itr, ctx, Join.class, dr, s-> s.matches("(inner|left|right|full|cross)Join"));
 		return nonNull(v) ? new JoinGroup(v) : null;
 	}
 
-	static <T> T tyComposeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetCatalogue dr, java.util.function.Predicate<String> filter) {
+	static <T> T tyComposeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetCatalog dr, java.util.function.Predicate<String> filter) {
 		if(itr.hasNext() && filter.test(itr.peekNext().getValue())) {
 			try {
 				return chainComposerExpression(itr, ctx.withView(dr), type);
@@ -243,7 +243,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 	
-	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetCatalogue, EntryIterator, T> composer) {
+	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetCatalog, EntryIterator, T> composer) {
 		if(itr.hasNext()) { //view name == resource name
 			var view = lookupView(itr.mark(), ctx, false); //parameterized views are not allowed in resource lookup
 			if(nonNull(view)) {
@@ -261,7 +261,7 @@ public final class EntryEvaluators {
 		return isNull(res) && nonNull(composer) ? composer.apply(ctx.getDefaultDataset(), itr) : res;
 	}
 	
-	static DatasetCatalogue lookupView(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
+	static DatasetCatalog lookupView(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
 			var view  = ctx.lookupView(entry.getValue(), allowParameterized, entry.getArgs());
@@ -273,7 +273,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 
-	static <T> T lookupViewResource(DatasetCatalogue view, Class<T> type, EntryIterator itr, RequestContext ctx) {
+	static <T> T lookupViewResource(DatasetCatalog view, Class<T> type, EntryIterator itr, RequestContext ctx) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
 			var res = ctx.lookupResource(entry.getValue(), view, type, entry.getArgs());

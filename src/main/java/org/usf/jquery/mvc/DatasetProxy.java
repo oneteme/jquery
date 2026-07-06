@@ -111,14 +111,14 @@ final class DatasetProxy extends ResourceProxy {
 		return "DatasetProxy {"+view+"}";
 	}
 
-	static <T extends DatasetCatalogue> T createDataset(Class<T> type, Bind bind, String store, DataSource ds) {
+	static <T extends DatasetCatalog> T createDataset(Class<T> type, Bind bind, String store, DataSource ds) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
 			case REF-> new Table(bind.value(), store);
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
-			var map = discoverExposedMethods(type, DatasetCatalogue.class, DatasetProxy::acceptBind);
+			var map = discoverExposedMethods(type, DatasetCatalog.class, DatasetProxy::acceptBind);
 			var cols = map.values().stream()
 			.filter(m-> isAbstract(m.getModifiers()) && m.getAnnotation(Bind.class).type() == REF) //only binded object
 			.map(m-> m.getAnnotation(Bind.class).value()).collect(toSet());

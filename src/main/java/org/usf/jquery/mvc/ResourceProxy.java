@@ -35,7 +35,7 @@ import lombok.extern.slf4j.Slf4j;
 @Getter
 public abstract class ResourceProxy implements InvocationHandler {
 
-	private static final Method LOOKUP_METHOD = getMethod("lookup", Catalogue.class, String.class, Class.class);
+	private static final Method LOOKUP_METHOD = getMethod("lookup", Catalog.class, String.class, Class.class);
 
 	final Map<String, Method> exposedMethods;
 	final Map<Method, Object> resourcesCache;

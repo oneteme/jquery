@@ -376,9 +376,4 @@ public final class QueryComposer implements Composer<Query> {
 	public String toString() {
 		return compose(NO_STORE).toString();
 	}
-
-	@Deprecated
-	public boolean isAggregation() {
-		return false;
-	}
 }

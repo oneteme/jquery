@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public final class QueryResource implements DatasetCatalogue {
+public final class QueryResource implements DatasetCatalog {
 
 	@NonNull private final Query query;
 

@@ -20,7 +20,7 @@ public @interface QueryTemplate {
 	String dataset();
 	
 	/** The database or schema identity. */
-	Class<? extends StoreCatalogue> store() default StoreCatalogue.class; 
+	Class<? extends StoreCatalog> store() default StoreCatalog.class; 
 
 	String[] cte() default {}; // selected columns
 	

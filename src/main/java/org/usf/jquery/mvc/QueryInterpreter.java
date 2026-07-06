@@ -32,7 +32,7 @@ import lombok.NonNull;
  */
 public interface QueryInterpreter {
 	
-	default MvcRequest parseQuery(StoreCatalogue store, String dataset, @NonNull Map<String, String[]> parameterMap) {
+	default MvcRequest parseQuery(StoreCatalog store, String dataset, @NonNull Map<String, String[]> parameterMap) {
 		var ctx = store.createContext(dataset);
 		var query = new QueryComposer();
 		var view = parseViewer(parameterMap, VIEW_PARAM, ctx); //TD accept alias for download
