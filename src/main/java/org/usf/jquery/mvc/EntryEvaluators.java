@@ -199,7 +199,9 @@ public final class EntryEvaluators {
 					if("count".equals(entry.getValue())) {
 						itr.advance();
 						var def = ctx.getDialect().count();
-						return def.invoke(entry.hasArgs() ? ctx.resolveArgs(entry.getArgs(), null, def) : allColumns(v.getView()));
+						return entry.hasArgs() 
+								? def.invoke(ctx.resolveArgs(entry.getArgs(), null, def))
+								: def.invoke(allColumns(v.getView()));
 					}
 					if("when".equals(entry.getValue())) { //view.when
 						return tyComposeExpression(itr, ctx, CaseColumn.class, v, "when"::equals); 
