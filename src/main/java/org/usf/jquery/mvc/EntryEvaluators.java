@@ -39,6 +39,22 @@ import lombok.NoArgsConstructor;
 public final class EntryEvaluators {
 	
 	public static View evaluateView(Entry entry, RequestContext ctx) {
+		var view = evalView(entry, ctx, v-> true);
+		if(nonNull(view)) {
+			return view;
+		}
+		throw new NoSuchResourceException("no such view : " + entry);
+	}
+	
+	public static View evaluateQuery(Entry entry, RequestContext ctx) {
+		var view = evalView(entry, ctx, QueryResource.class::isInstance);
+		if(nonNull(view)) {
+			return view;
+		}
+		throw new NoSuchResourceException("no such query : " + entry);
+	}
+
+	static View evalView(Entry entry, RequestContext ctx, java.util.function.Predicate<DatasetCatalog> acceptView) {
 		var itr = entry.iterator();
 		var dts = lookupDataset(itr, ctx, true);
 		var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
@@ -50,7 +66,7 @@ public final class EntryEvaluators {
 			}
 			return qry;
 		}
-		if(nonNull(dts)) { //view only
+		if(nonNull(dts) && acceptView.test(dts)) {
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
@@ -58,32 +74,9 @@ public final class EntryEvaluators {
 			}
 			return dts.getView();
 		}
-		throw new NoSuchResourceException("no such view : " + entry);
+		return null;
 	}
 	
-	public static View evaluateQuery(Entry entry, RequestContext ctx) {
-		var itr = entry.iterator();
-		var dts = lookupDataset(itr, ctx, true);
-		var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
-		if(nonNull(qry)) {
-			assertLastEntry(itr, true);
-			var tag = itr.get().getTag();
-			if(nonNull(tag)) {
-				ctx.declareView(tag, new QueryResource(qry));
-			}
-			return qry;
-		}
-		if(dts instanceof QueryResource qr) { //view only
-			assertLastEntry(itr, true);
-			var tag = itr.get().getTag();
-			if(nonNull(tag)) {
-				ctx.declareView(tag, qr);
-			}
-			return qr.getView();
-		}
-		throw new NoSuchResourceException("no such query : " + entry);
-	}
-
 	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
 		var col = evalColumn(itr, ctx);
@@ -159,8 +152,8 @@ public final class EntryEvaluators {
 	
 	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetCatalog rsc, RequestContext ctx) {
 		if(itr.hasNext()) {
-			var view = composeQuery(itr, rsc, ctx);
-			if(view instanceof Query query) {
+			var query = composeQuery(itr, rsc, ctx);
+			if(nonNull(query)) {
 				return query.asColumn();
 			}
 		}
