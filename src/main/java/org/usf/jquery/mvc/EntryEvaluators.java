@@ -24,7 +24,6 @@ import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.Query;
-import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.View;
 
@@ -39,22 +38,22 @@ import lombok.NoArgsConstructor;
 public final class EntryEvaluators {
 	
 	public static View evaluateView(Entry entry, RequestContext ctx) {
-		var view = evalView(entry, ctx, v-> true);
+		var view = evalView(entry, ctx, false);
 		if(nonNull(view)) {
 			return view;
 		}
 		throw new NoSuchResourceException("no such view : " + entry);
 	}
 	
-	public static View evaluateQuery(Entry entry, RequestContext ctx) {
-		var view = evalView(entry, ctx, QueryResource.class::isInstance);
+	public static Query evaluateQuery(Entry entry, RequestContext ctx) {
+		var view = evalView(entry, ctx, true);
 		if(nonNull(view)) {
-			return view;
+			return (Query) view;
 		}
 		throw new NoSuchResourceException("no such query : " + entry);
 	}
 
-	static View evalView(Entry entry, RequestContext ctx, java.util.function.Predicate<DatasetCatalog> acceptView) {
+	static View evalView(Entry entry, RequestContext ctx, boolean queryOnly) {
 		var itr = entry.iterator();
 		var dts = lookupDataset(itr, ctx, true);
 		var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
@@ -66,7 +65,7 @@ public final class EntryEvaluators {
 			}
 			return qry;
 		}
-		if(nonNull(dts) && acceptView.test(dts)) {
+		if(nonNull(dts) && (!queryOnly || dts instanceof QueryResource) ) {
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
