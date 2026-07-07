@@ -47,7 +47,7 @@ public final class StoreProxy extends ResourceProxy {
 	
 	@Override
 	public String toString() {
-		return "StoreProx {"+name+"}";
+		return "StoreProxy {"+name+"}";
 	}
 
 	static <T extends StoreCatalog> T createStore(Class<T> clazz, DataSource ds) {

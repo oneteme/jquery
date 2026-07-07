@@ -31,7 +31,7 @@ public interface StoreCatalog extends Store, Catalog {
 	}
 	
 	default <T> ResourceInvoker<T> lookup(Catalog sub, String resource, Class<T> type) {
-		return nonNull(sub) ? sub.lookup(resource, type) : null;
+		return nonNull(sub) ? sub.lookup(resource, type) : null; 
 	}
 	
 	default <T> ResourceInvoker<T> lookupDialect(String resource, Class<T> type) {

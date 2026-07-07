@@ -41,6 +41,11 @@ public class ViewColumn implements Column {
 	}
 	
 	@Override
+	public String getTag() {
+		return tag;
+	}
+	
+	@Override
 	public String toString() {
 		return QueryPart.toSQL(this);
 	}

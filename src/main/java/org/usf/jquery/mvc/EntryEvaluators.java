@@ -2,7 +2,6 @@ package org.usf.jquery.mvc;
 
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Objects.requireNonNull;
 import static org.usf.jquery.core.Column.allColumns;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.mvc.Parameters.PARTITION_OPR;
@@ -25,6 +24,7 @@ import org.usf.jquery.core.OrderType;
 import org.usf.jquery.core.Partition;
 import org.usf.jquery.core.Predicate;
 import org.usf.jquery.core.Query;
+import org.usf.jquery.core.QueryComposer;
 import org.usf.jquery.core.SingleQueryColumn;
 import org.usf.jquery.core.View;
 
@@ -40,9 +40,9 @@ public final class EntryEvaluators {
 	
 	public static View evaluateView(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var view = lookupView(itr, ctx, true);
+		var dts = lookupDataset(itr, ctx, true);
 		if(itr.hasNext()) {
-			var qry = composeQuery(itr, nonNull(view) ? view : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+			var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
 			if(nonNull(qry)) {
 				assertLastEntry(itr, true);
 				var tag = itr.get().getTag();
@@ -51,34 +51,31 @@ public final class EntryEvaluators {
 				}
 				return qry;
 			}
-			throw new EntrySyntaxException("unexpected entry : " + itr.peekNext().getValue());
-		}
-		if(nonNull(view)) { //view only
-			assertLastEntry(itr, true);
-			var tag = itr.get().getTag();
-			if(nonNull(tag)) {
-				ctx.declareView(tag, view);
+			if(nonNull(dts)) { //view only
+				assertLastEntry(itr, true);
+				var tag = itr.get().getTag();
+				if(nonNull(tag)) {
+					ctx.declareView(tag, dts);
+				}
+				return dts.getView();
 			}
-			return view.getView();
 		}
 		throw new NoSuchResourceException("no such view : " + entry);
 	}
 	
 	public static View evaluateQuery(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var view = lookupView(itr, ctx, true);
-		if(itr.hasNext()) {
-			var qry = composeQuery(itr, nonNull(view) ? view : ctx.getDefaultDataset(), ctx); //fast check if query matches 
-			if(nonNull(qry)) {
-				assertLastEntry(itr, true);
-				var tag = itr.get().getTag();
-				if(nonNull(tag)) {
-					ctx.declareView(tag, new QueryResource(qry));
-				}
-				return qry;
+		var dts = lookupDataset(itr, ctx, true);
+		var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+		if(nonNull(qry)) {
+			assertLastEntry(itr, true);
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareView(tag, new QueryResource(qry));
 			}
-			throw new EntrySyntaxException("unexpected entry : " + itr.peekNext().getValue());
+			return qry;
 		}
+		itr.reset(); //go back to the first entry and try to evaluate as view
 		throw new NoSuchResourceException("no such query : " + entry);
 	}
 
@@ -90,7 +87,7 @@ public final class EntryEvaluators {
 			var tag = itr.get().getTag();
 			return nonNull(tag) ? col.as(tag) : col;
 		}
-		throw new NoSuchResourceException("no such column : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such column : " + entry);
 	}
 	
 	public static Criteria evaluateCriteria(Entry entry, RequestContext ctx, Entry... outerArgs) {
@@ -102,7 +99,7 @@ public final class EntryEvaluators {
 		}
 		throw nonNull(col) 
 			? new EntryParseException(col + " cannot be used as filter resource")
-			: new NoSuchResourceException("no such criteria : " + itr.peekNext().getValue());
+			: new NoSuchResourceException("no such criteria : " + entry);
 	}
 	
 	public static Order evaluateOrder(Entry entry, RequestContext ctx) {
@@ -112,7 +109,7 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, false);
 			return ord;
 		}
-		throw new NoSuchResourceException("no such order : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such order : " + entry);
 	}
 
 	public static JoinGroup evaluateJoin(Entry entry, RequestContext ctx) {
@@ -122,7 +119,7 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, false);
 			return join;
 		}
-		throw new NoSuchResourceException("no such join : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such join : " + entry);
 	}
 	
 	public static Partition evaluatePartition(Entry entry, RequestContext ctx) {
@@ -132,17 +129,17 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, false);
 			return prt;
 		}
-		throw new NoSuchResourceException("no such partition : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such partition : " + entry);
 	}
 	
 	public static Group evaluateGroup(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
-		var prt = lookupResource(itr, Group.class, ctx, (v,e)-> composeGroup(e, v, ctx));
-		if(nonNull(prt)) {
+		var grp = lookupResource(itr, Group.class, ctx, (v,e)-> composeGroup(e, v, ctx));
+		if(nonNull(grp)) {
 			assertLastEntry(itr, false);
-			return prt;
+			return grp;
 		}
-		throw new NoSuchResourceException("no such within group : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such within group : " + entry);
 	}
 
 	public static SingleQueryColumn evaluateQueryColumn(Entry entry, RequestContext ctx) {
@@ -152,17 +149,15 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, false);
 			return col;
 		}
-		throw new NoSuchResourceException("no such query column : " + itr.peekNext().getValue());
+		throw new NoSuchResourceException("no such query column : " + entry);
 	}
 	
 	static SingleQueryColumn evalColumnQuery(EntryIterator itr, DatasetCatalog rsc, RequestContext ctx) {
-		var entry = requireNonNull(itr.peekNext(), "no entry to evaluate as view resource");
-		var view = rsc.getView(); 
-		if(SELECT_PARAM.equals(entry.getValue())) {
-			view = composeQuery(itr, rsc, ctx);
-		}
-		if(view instanceof Query query) {
-			return query.asColumn();
+		if(itr.hasNext()) {
+			var view = composeQuery(itr, rsc, ctx);
+			if(view instanceof Query query) {
+				return query.asColumn();
+			}
 		}
 		return null;
 	}
@@ -214,27 +209,27 @@ public final class EntryEvaluators {
 		return null;
 	}
 
-	static Query composeQuery(EntryIterator itr, DatasetCatalog dr, RequestContext ctx) { 
-		return tyComposeExpression(itr, ctx, Query.class, dr, SELECT_PARAM::equals);	
+	static Query composeQuery(EntryIterator itr, DatasetCatalog dc, RequestContext ctx) { 
+		return tyComposeExpression(itr, ctx, Query.class, dc, SELECT_PARAM::equals);	
 	}
 	
-	static Partition composePartition(EntryIterator itr, DatasetCatalog dr, RequestContext ctx) {
-		return tyComposeExpression(itr, ctx, Partition.class, dr, PARTITION_OPR::equals);
+	static Partition composePartition(EntryIterator itr, DatasetCatalog dc, RequestContext ctx) {
+		return tyComposeExpression(itr, ctx, Partition.class, dc, PARTITION_OPR::equals);
 	}
 	
-	static Group composeGroup(EntryIterator itr, DatasetCatalog dr, RequestContext ctx) {
-		return tyComposeExpression(itr, ctx, Group.class, dr, "group"::equals);
+	static Group composeGroup(EntryIterator itr, DatasetCatalog dc, RequestContext ctx) {
+		return tyComposeExpression(itr, ctx, Group.class, dc, "group"::equals);
 	}
 	
-	static JoinGroup composeJoin(EntryIterator itr, DatasetCatalog dr, RequestContext ctx) {
-		var v = tyComposeExpression(itr, ctx, Join.class, dr, s-> s.matches("(inner|left|right|full|cross)Join"));
+	static JoinGroup composeJoin(EntryIterator itr, DatasetCatalog dc, RequestContext ctx) {
+		var v = tyComposeExpression(itr, ctx, Join.class, dc, s-> s.matches("(inner|left|right|full|cross)Join"));
 		return nonNull(v) ? new JoinGroup(v) : null;
 	}
 
-	static <T> T tyComposeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetCatalog dr, java.util.function.Predicate<String> filter) {
+	static <T> T tyComposeExpression(EntryIterator itr, RequestContext ctx, Class<T> type, DatasetCatalog dc, java.util.function.Predicate<String> filter) {
 		if(itr.hasNext() && filter.test(itr.peekNext().getValue())) {
 			try {
-				return chainComposerExpression(itr, ctx.withView(dr), type);
+				return chainComposerExpression(itr, ctx.withView(dc), type);
 			}
 			catch (Exception e) {
 				throw new EntryParseException("cannot parse '%s' arguments ".formatted(type.getSimpleName()), e);
@@ -245,9 +240,9 @@ public final class EntryEvaluators {
 	
 	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetCatalog, EntryIterator, T> composer) {
 		if(itr.hasNext()) { //view name == resource name
-			var view = lookupView(itr.mark(), ctx, false); //parameterized views are not allowed in resource lookup
+			var view = lookupDataset(itr.mark(), ctx, false); //parameterized views are not allowed in resource lookup
 			if(nonNull(view)) {
-				var res = lookupViewResource(view, type, itr, ctx);
+				var res = lookupViewResource(itr, type, view, ctx);
 				if(isNull(res) && nonNull(composer)){
 					res = composer.apply(view, itr);
 				}
@@ -257,11 +252,11 @@ public final class EntryEvaluators {
 			}
 			itr.resetToMark();
 		}
-		var res = lookupViewResource(ctx.getDefaultDataset(), type, itr, ctx);
+		var res = lookupViewResource(itr, type, ctx.getDefaultDataset(), ctx);
 		return isNull(res) && nonNull(composer) ? composer.apply(ctx.getDefaultDataset(), itr) : res;
 	}
 	
-	static DatasetCatalog lookupView(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
+	static DatasetCatalog lookupDataset(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
 			var view  = ctx.lookupView(entry.getValue(), allowParameterized, entry.getArgs());
@@ -273,7 +268,7 @@ public final class EntryEvaluators {
 		return null;
 	}
 
-	static <T> T lookupViewResource(DatasetCatalog view, Class<T> type, EntryIterator itr, RequestContext ctx) {
+	static <T> T lookupViewResource(EntryIterator itr, Class<T> type, DatasetCatalog view, RequestContext ctx) {
 		if(itr.hasNext()) {
 			var entry = itr.peekNext();
 			var res = ctx.lookupResource(entry.getValue(), view, type, entry.getArgs());
