@@ -31,6 +31,10 @@ import lombok.extern.slf4j.Slf4j;
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public final class SqlBuilder {
 
+	public static final String DOT = ".";
+	public static final String SPACE = " ";
+	public static final String SCOMA  = "," + SPACE;
+
 	private final String prefix;
 	@Getter
 	private final Store store;
@@ -42,10 +46,6 @@ public final class SqlBuilder {
 	private final Map<View, Query> overViews;
 	@Setter
 	private boolean useReference;
-
-	public static final String DOT = ".";
-	public static final String SPACE = " ";
-	public static final String SCOMA  = "," + SPACE;
 
 	public boolean isCte(View view) {
 		return ctes.containsKey(view) || overViews.containsKey(view);
@@ -69,7 +69,7 @@ public final class SqlBuilder {
 	}
 
 	public SqlBuilder appendSpace() {
-		return append(SqlBuilder.SPACE);
+		return append(SPACE);
 	}
 
 	public SqlBuilder appendAs() {

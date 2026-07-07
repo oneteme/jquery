@@ -56,7 +56,7 @@ public interface Composers {
 	}
 	
 	default ComposerDefinition<CaseColumnComposer> when(CaseColumnComposer composer) { 
-		return new ComposerDefinition<>("when", CASE, 
+		return new ComposerDefinition<>("when", CASE,
 				args-> composer.when((Criteria)args[0], args[1]), 
 				required(FILTER), required());
 	}

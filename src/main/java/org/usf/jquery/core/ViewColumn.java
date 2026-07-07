@@ -3,7 +3,6 @@ package org.usf.jquery.core;
 import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.SqlBuilder.DOT;
 
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 
 /**
@@ -11,7 +10,6 @@ import lombok.RequiredArgsConstructor;
  * @author u$f
  *
  */
-@Getter
 @RequiredArgsConstructor
 public class ViewColumn implements Column {
 
@@ -35,6 +33,11 @@ public class ViewColumn implements Column {
 			builder.appendViewAlias(view, DOT);
 		}
 		builder.append(name);
+	}
+	
+	@Override
+	public JDBCType getType() {
+		return type;
 	}
 	
 	@Override

@@ -2,8 +2,8 @@ package org.usf.jquery.core;
 
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Utils.joinArray;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -73,6 +73,8 @@ public final class Parameter {
 	}
 	
 	public static String toString(JavaType[] types) {
-		return isEmpty(types) ? "<ANY>" : joinArray("|", types);
+		return isEmpty(types) 
+				? "<ANY>" 
+				: stream(types).map(Object::toString).collect(joining("|"));
 	}
 }
