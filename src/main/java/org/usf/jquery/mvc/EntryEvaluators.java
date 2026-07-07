@@ -41,24 +41,22 @@ public final class EntryEvaluators {
 	public static View evaluateView(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
 		var dts = lookupDataset(itr, ctx, true);
-		if(itr.hasNext()) {
-			var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
-			if(nonNull(qry)) {
-				assertLastEntry(itr, true);
-				var tag = itr.get().getTag();
-				if(nonNull(tag)) {
-					ctx.declareView(tag, new QueryResource(qry));
-				}
-				return qry;
+		var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+		if(nonNull(qry)) {
+			assertLastEntry(itr, true);
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareView(tag, new QueryResource(qry));
 			}
-			if(nonNull(dts)) { //view only
-				assertLastEntry(itr, true);
-				var tag = itr.get().getTag();
-				if(nonNull(tag)) {
-					ctx.declareView(tag, dts);
-				}
-				return dts.getView();
+			return qry;
+		}
+		if(nonNull(dts)) { //view only
+			assertLastEntry(itr, true);
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareView(tag, dts);
 			}
+			return dts.getView();
 		}
 		throw new NoSuchResourceException("no such view : " + entry);
 	}
@@ -75,7 +73,14 @@ public final class EntryEvaluators {
 			}
 			return qry;
 		}
-		itr.reset(); //go back to the first entry and try to evaluate as view
+		if(dts instanceof QueryResource qr) { //view only
+			assertLastEntry(itr, true);
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareView(tag, qr);
+			}
+			return qr.getView();
+		}
 		throw new NoSuchResourceException("no such query : " + entry);
 	}
 
