@@ -68,7 +68,7 @@ public final class TypeRegistry {
 		if(isNull(p)) {
 			p = DEF_PARSERS.get(clazz);
 		}
-		if(isNull(p)  && Enum.class.isAssignableFrom(clazz)) {
+		if(isNull(p) && Enum.class.isAssignableFrom(clazz)) {
 			p = v-> Enum.valueOf(clazz.asSubclass(Enum.class), v);
 		}
 		return (ValueParser<T>) p;

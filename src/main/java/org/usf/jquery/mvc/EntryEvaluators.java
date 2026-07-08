@@ -38,24 +38,22 @@ import lombok.NoArgsConstructor;
 public final class EntryEvaluators {
 	
 	public static View evaluateView(Entry entry, RequestContext ctx) {
-		var view = evalView(entry, ctx, false);
-		if(nonNull(view)) {
-			return view;
+		var itr = entry.iterator();
+		var dts = lookupDataset(itr, ctx, true);
+		if(nonNull(dts)) {
+			assertLastEntry(itr, true);
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareView(tag, dts);
+			}
+			return dts.getView();
 		}
 		throw new NoSuchResourceException("no such view : " + entry);
 	}
 	
 	public static Query evaluateQuery(Entry entry, RequestContext ctx) {
-		var view = evalView(entry, ctx, true);
-		if(nonNull(view)) {
-			return (Query) view;
-		}
-		throw new NoSuchResourceException("no such query : " + entry);
-	}
-
-	static View evalView(Entry entry, RequestContext ctx, boolean queryOnly) {
 		var itr = entry.iterator();
-		var dts = lookupDataset(itr, ctx, true);
+		var dts = lookupDataset(itr, ctx, true); //prefixed query with view name
 		var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
 		if(nonNull(qry)) {
 			assertLastEntry(itr, true);
@@ -65,15 +63,7 @@ public final class EntryEvaluators {
 			}
 			return qry;
 		}
-		if(nonNull(dts) && (!queryOnly || dts instanceof QueryResource) ) {
-			assertLastEntry(itr, true);
-			var tag = itr.get().getTag();
-			if(nonNull(tag)) {
-				ctx.declareView(tag, dts);
-			}
-			return dts.getView();
-		}
-		return null;
+		throw new NoSuchResourceException("no such query : " + entry);
 	}
 	
 	public static Column evaluateColumn(Entry entry, RequestContext ctx) {
@@ -179,11 +169,9 @@ public final class EntryEvaluators {
 
 	static Column evalColumn(EntryIterator itr, RequestContext ctx, Entry... outArgs) {
 		if(itr.hasNext()) {
-			var res = ctx.lookupDeclaredColumn(itr.peekNext().getValue());
-			Column col = null;
-			if(res.isPresent()) {
+			Column col = ctx.lookupDeclaredColumn(itr.peekNext().getValue());
+			if(nonNull(col)) {
 				itr.advance();
-				col = res.get();
 			}
 			else {
 				col = lookupResource(itr, Column.class, ctx, (v, e)-> { //column | criteria
@@ -195,10 +183,7 @@ public final class EntryEvaluators {
 								? def.invoke(ctx.resolveArgs(entry.getArgs(), null, def))
 								: def.invoke(allColumns(v.getView()));
 					}
-					if("when".equals(entry.getValue())) { //view.when
-						return tyComposeExpression(itr, ctx, CaseColumn.class, v, "when"::equals); 
-					}
-					return null;
+					return tyComposeExpression(itr, ctx, CaseColumn.class, v, "when"::equals);
 				}); //column or criteria resource
 			}
 			return chainExpression(itr, col, ctx, outArgs);
@@ -236,7 +221,7 @@ public final class EntryEvaluators {
 	}
 	
 	static <T> T lookupResource(EntryIterator itr, Class<T> type, RequestContext ctx, BiFunction<DatasetCatalog, EntryIterator, T> composer) {
-		if(itr.hasNext()) { //view name == resource name
+		if(itr.hasNext()) {
 			var view = lookupDataset(itr.mark(), ctx, false); //parameterized views are not allowed in resource lookup
 			if(nonNull(view)) {
 				var res = lookupViewResource(itr, type, view, ctx);
@@ -246,7 +231,7 @@ public final class EntryEvaluators {
 				if(nonNull(res)) {
 					return res;
 				}
-			}
+			} //sometimes view name is also a resource name, so we need to reset the iterator to the marked position
 			itr.resetToMark();
 		}
 		var res = lookupViewResource(itr, type, ctx.getDefaultDataset(), ctx);

@@ -14,6 +14,7 @@ import static org.usf.jquery.mvc.Parameters.LIMIT_PARAM;
 import static org.usf.jquery.mvc.Parameters.OFFSET_PARAM;
 import static org.usf.jquery.mvc.Parameters.ORDER_PARAM;
 import static org.usf.jquery.mvc.Parameters.SELECT_PARAM;
+import static org.usf.jquery.mvc.Parameters.UNION_PARAM;
 import static org.usf.jquery.mvc.Parameters.VIEW_PARAM;
 
 import java.util.Map;
@@ -44,7 +45,7 @@ public interface QueryInterpreter {
 		parseParam(parameterMap, DISTINCT_PARAM, ctx.getDialect().distinct(query), ctx);
 		parseParam(parameterMap, LIMIT_PARAM, ctx.getDialect().limit(query), ctx);
 		parseParam(parameterMap, OFFSET_PARAM, ctx.getDialect().offset(query), ctx);
-//		parseParam(parameterMap, UNION_PARAM, ctx.getDialect().union(query), ctx);
+		parseParam(parameterMap, UNION_PARAM, ctx.getDialect().union(query), ctx);
 		//TD parse group, from, union
 		parseFilters(parameterMap, ctx.getDialect().criteria(query), ctx);
 		return new MvcRequest(store, query, view);
@@ -60,7 +61,7 @@ public interface QueryInterpreter {
 				}
 				throw new IllegalArgumentException("unknown view: " + params[0]);
 			}
-			throw new IllegalArgumentException("Parameter '%s' can only have one value".formatted(param));
+			throw new IllegalArgumentException("parameter '%s' can only have one value".formatted(param));
 		}
 		throw new IllegalArgumentException("require '%s' parameter".formatted(param));
 	}
@@ -72,7 +73,7 @@ public interface QueryInterpreter {
 				def.invoke(ctx.resolveArgs(parse(params).toArray(Entry[]::new), null, def));
 			}
 			catch (Exception e) {
-				throw new IllegalArgumentException("Invalid value for parameter: " + param, e);
+				throw new IllegalArgumentException("invalid value for parameter: " + param, e);
 			}
 		}
 	}

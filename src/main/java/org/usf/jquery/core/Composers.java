@@ -61,6 +61,7 @@ public interface Composers {
 				required(FILTER), required());
 	}
 	
+	//cannot use 'else' as method name because of java keyword
 	default ComposerDefinition<CaseColumn> orElse(CaseColumnComposer composer) { 
 	    return new ComposerDefinition<>("orElse", CASE, 
 	    		args -> composer.orElse(args[0]), 
@@ -149,7 +150,8 @@ public interface Composers {
 	default ComposerDefinition<QueryComposer> join(QueryComposer composer){
 		return new ComposerDefinition<>("join", QUERY, 
 				args-> {
-					for(var jc : (JoinGroup[]) args) {
+					var joins = (JoinGroup[]) args;
+					for(var jc : joins) {
 						composer.joins(jc.getJoins());
 					}
 					return composer;

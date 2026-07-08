@@ -3,7 +3,6 @@ package org.usf.jquery.mvc;
 import static java.lang.reflect.Array.newInstance;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
-import static java.util.Optional.ofNullable;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 import static org.usf.jquery.core.JDBCType.DATE;
@@ -22,7 +21,6 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.stream.Stream;
 
 import org.usf.jquery.core.Column;
@@ -86,13 +84,13 @@ public final class RequestContext {
 		});
 	}
 	
-	public <T> T lookupResource(String name, DatasetCatalog view, Class<T> type, Entry... args) {
+	public <T> T lookupResource(String name, Catalog view, Class<T> type, Entry... args) {
 		var res = store.lookup(view, name, type);
 		return nonNull(res) ? invokeResource(res, args) : null;
 	}
 	
-	public Optional<Column> lookupDeclaredColumn(String name) {
-		return ofNullable(declaredColumns.get(name));
+	public Column lookupDeclaredColumn(String name) {
+		return declaredColumns.get(name);
 	}
 	
 	public Object lookupDialect(String name, Class<? extends Definition> type, Object composer, Entry... args) {
@@ -109,7 +107,7 @@ public final class RequestContext {
 			if(isNull(v)) {
 				return view;
 			}
-			throw new IllegalArgumentException("a view with name '" + name + "' already exists in context");
+			throw new IllegalArgumentException("view '%s' already declared".formatted(name));
 		});
 	}
 	
@@ -118,7 +116,7 @@ public final class RequestContext {
 			if(isNull(v)) {
 				return column;
 			}
-			throw new IllegalArgumentException("a column with name '" + name + "' already exists in context");
+			throw new IllegalArgumentException("column '%s' already declared".formatted(name));
 		});
 	}
 	
