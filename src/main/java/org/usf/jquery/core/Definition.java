@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.lang.String.format;
 import static org.usf.jquery.core.Signature.compile;
 
 import java.util.Arrays;
@@ -29,7 +28,7 @@ public abstract class Definition<R> {
 		try {
 			signature.match(args);
 		} catch(SignatureMismatchException e) {
-			throw new InvocationException(format("cannot invoke %s with arguments %s", this, Arrays.toString(args)), e);
+			throw new InvocationException("cannot invoke %s with arguments %s".formatted(this, Arrays.toString(args)), e);
 		}
 		var type = returnType.apply(args);
 		return internalInvoke(type, args);

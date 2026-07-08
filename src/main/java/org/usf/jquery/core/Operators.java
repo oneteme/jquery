@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static org.usf.jquery.core.JDBCType.BIGINT;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
@@ -367,7 +366,7 @@ public interface Operators {
 
 	public static OperatorDefinition operator(TypeResolver type, String name, String symbol, Parameter... parameters) {
 		if(isNull(parameters) || parameters.length != 2 || !parameters[0].isRequired() || !parameters[1].isRequired()) {
-			throw new IllegalArgumentException(format("'%s(%s)' must have exactly two required parameters", name, symbol));
+			throw new IllegalArgumentException("'%s(%s)' must have exactly two required parameters".formatted(name, symbol));
 		}
 		return new OperatorDefinition(name, type, OPERATOR,
 				(builder,args)-> builder.append("(").appendParameter(args[0]).append(symbol).appendParameter(args[1]).append(")"),
@@ -376,7 +375,7 @@ public interface Operators {
 	
 	public static OperatorDefinition singleArgOperator(TypeResolver type, String name, String symbol, boolean prefix, Parameter... parameters) {
 		if(isEmpty(parameters) || !parameters[0].isRequired()) {
-			throw new IllegalArgumentException(format("'%s(%s)' must have at least one required parameter", name, symbol));
+			throw new IllegalArgumentException("'%s(%s)' must have at least one required parameter".formatted(name, symbol));
 		}
 		return new OperatorDefinition(name, type, OPERATOR, prefix
 				? (builder,args)-> builder.append(symbol).appendParameter(args[0])
@@ -404,7 +403,7 @@ public interface Operators {
 	
 	public static OperatorDefinition extract(TypeResolver type, String field, Parameter... parameters) {
 		if(isEmpty(parameters) || !parameters[0].isRequired()) {
-			throw new IllegalArgumentException(format("'extract(%s)' must have at least one required parameter", field));
+			throw new IllegalArgumentException("'extract(%s)' must have at least one required parameter".formatted(field));
 		}
 		return new OperatorDefinition(field, type, EXTRACT,
 				(builder,args)-> builder.append("EXTRACT").append("(").append(field).append(" FROM ").appendParameter(args[0]).append(")"),
@@ -413,7 +412,7 @@ public interface Operators {
 
 	public static OperatorDefinition cast(TypeResolver type, String target, Parameter... parameters) {
 		if(isEmpty(parameters) || !parameters[0].isRequired()) {
-			throw new IllegalArgumentException(format("'cast(%s)' must have at least one required parameter", target));
+			throw new IllegalArgumentException("'cast(%s)' must have at least one required parameter".formatted(target));
 		}
 		return new OperatorDefinition(target, type, CAST,
 				(builder,args)-> {
@@ -441,7 +440,7 @@ public interface Operators {
 
 	public static OperatorDefinition scope(TypeResolver resolver, String name, Parameter... parameters) {
 		if(isEmpty(parameters) || !parameters[0].isRequired()) {
-			throw new IllegalArgumentException(format("'%s' must have at least one required parameter", name));
+			throw new IllegalArgumentException("'%s' must have at least one required parameter".formatted(name));
 		}
 		return new OperatorDefinition(name, resolver, SCOPE, 
 				(builder,args)-> builder.appendParameter(args[0]).appendSpace()

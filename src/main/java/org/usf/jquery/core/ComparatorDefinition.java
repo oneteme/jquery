@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.lang.String.format;
 import static org.usf.jquery.core.JDBCType.BOOLEAN;
 
 import lombok.Getter;
@@ -27,9 +26,8 @@ public final class ComparatorDefinition extends Definition<Criteria> {
 	@Override
 	protected Criteria internalInvoke(JavaType type, Object... args) {
 		if(type == BOOLEAN) {
-			return new SimpleCriteria(args[0], 
-					new SimplePredicate(comparator, args, 1)); // no type
+			return new SimpleCriteria(args[0], new SimplePredicate(comparator, args, 1)); // no type
 		}
-		throw new IllegalStateException(format("comparator '%s' cannot be applied to type %s", this, type));
+		throw new IllegalStateException("comparator '%s' cannot be applied to type %s".formatted(this, type));
 	}
 }

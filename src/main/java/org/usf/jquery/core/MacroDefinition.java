@@ -1,7 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.lang.String.format;
-
 import java.util.function.Function;
 
 /**
@@ -24,6 +22,6 @@ public class MacroDefinition extends Definition<Column> {
 		if(type.accept(col)) {
 			return col;
 		}
-		throw new IllegalStateException(format("macro '%s' cannot be applied to type %s", getName(), type));
+		throw new IllegalStateException("macro '%s' cannot be applied to type %s".formatted(getName(), type));
 	}
 }

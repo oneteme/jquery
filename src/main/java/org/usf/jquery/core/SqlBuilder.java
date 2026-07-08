@@ -174,7 +174,7 @@ public final class SqlBuilder {
 	}
 
 	public SqlQuery build() {
-		return new SqlQuery(store, sql.toString(), isParameterized() ? unmodifiableList(args) : null);
+		return new SqlQuery(sql.toString(), isParameterized() ? unmodifiableList(args) : null);
 	}
 
 	@Override

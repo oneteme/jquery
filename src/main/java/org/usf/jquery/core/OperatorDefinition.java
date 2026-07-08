@@ -1,6 +1,5 @@
 package org.usf.jquery.core;
 
-import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
@@ -28,6 +27,6 @@ public final class OperatorDefinition extends Definition<Column> {
 			var arr = nonNull(args) ? toList(args) : emptyList();
 			return new OperationColumn(getName(), kind, operator, arr, (JDBCType)type);
 		}
-		throw new IllegalStateException(format("operator '%s' cannot be applied to type %s", this, type));
+		throw new IllegalStateException("operator '%s' cannot be applied to type %s".formatted(this, type));
 	}
 }

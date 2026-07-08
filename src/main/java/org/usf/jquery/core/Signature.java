@@ -1,7 +1,6 @@
 package org.usf.jquery.core;
 
 import static java.lang.Math.min;
-import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 import static java.util.stream.Collectors.joining;
@@ -74,7 +73,7 @@ public final class Signature {
 	
 	int checkArgsCount(int nArgs) {
 		if(nArgs < minArgs || (nArgs > parameters.length && !isVarags())) {
-			throw new SignatureMismatchException(format("expected %d%s arguments, but was %d", minArgs, isVarags() ? "+" : "", nArgs));
+			throw new SignatureMismatchException("expected %d%s arguments, but was %d".formatted(minArgs, isVarags() ? "+" : "", nArgs));
 		}
 		return nArgs;
 	}
@@ -105,7 +104,7 @@ public final class Signature {
 	public static SignatureMismatchException badArgumentTypeException(Object obj, JavaType[] types) {
 		var exp = Parameter.toString(types);
 		var arg = obj instanceof Typed t ? t.getType() : JDBCType.typeOf(obj).orElse(null);
-		return new SignatureMismatchException(format("expected argument of type %s, but was %s [%s]", exp, obj, arg));
+		return new SignatureMismatchException("expected argument of type %s, but was %s [%s]".formatted(exp, obj, arg));
 	}
 	
 	public static Signature arrayOf(JavaType type) {

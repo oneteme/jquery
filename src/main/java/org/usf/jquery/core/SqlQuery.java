@@ -9,7 +9,7 @@ import lombok.NonNull;
  * @author u$f
  *
  */
-public final record SqlQuery (Store store, @NonNull String sql, List<TypedArg> args){
+public final record SqlQuery (@NonNull String sql, List<TypedArg> args){
 
 	@Override
 	public String toString() {

@@ -11,5 +11,4 @@ public final class ComposeException extends RuntimeException {
 	public ComposeException(String message) {
 		super(message);
 	}
-
 }

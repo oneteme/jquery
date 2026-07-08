@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Utils.toList;
+import static java.util.Collections.singleton;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -19,7 +19,7 @@ public final class ColumnProxy implements Column {
 	
 	@Override
 	public int prepare(QueryAnalyzer manifest) {
-		return manifest.analyzeNested(toList(column), this);
+		return manifest.analyzeNested(singleton(column), this);
 	}
 
 	@Override
