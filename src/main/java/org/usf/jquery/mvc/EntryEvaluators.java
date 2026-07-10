@@ -53,7 +53,7 @@ public final class EntryEvaluators {
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
-				dts = dts.fork();
+				dts = dts.mirror(); //replicate catalog with a new tag
 				ctx.declareView(tag, dts);
 			}
 			return dts.getView();
@@ -73,7 +73,7 @@ public final class EntryEvaluators {
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
 				if(nonNull(dts) && dts.getView()==qry) {
-					qry = qry.mirror(); 
+					qry = qry.mirror(); //replicate catalog with a new tag
 				}
 				ctx.declareView(tag, new QueryCatalog(qry));
 			}

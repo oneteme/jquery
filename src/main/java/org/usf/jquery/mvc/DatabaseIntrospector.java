@@ -9,6 +9,7 @@ import static org.usf.jquery.core.JDBCType.fromDataType;
 import static org.usf.jquery.core.Provider.DEFAULT;
 import static org.usf.jquery.core.Provider.parseName;
 import static org.usf.jquery.core.Stores.getCurrentDialect;
+import static org.usf.jquery.core.Validation.requireLegalVariable;
 import static org.usf.jquery.mvc.DatasetType.TABLE;
 import static org.usf.jquery.mvc.DatasetType.VIEW;
 
@@ -26,6 +27,7 @@ import org.usf.jquery.core.Dialect;
 import org.usf.jquery.core.H2Dialect;
 import org.usf.jquery.core.Provider;
 import org.usf.jquery.core.TeradataDialect;
+import org.usf.jquery.core.Validation;
 
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
@@ -134,7 +136,7 @@ public final class DatabaseIntrospector {
 		var map = new HashMap<String, ColumnMetadata>();
 		var name = isNull(schema) || schema.isEmpty() ? table : schema + '.' + table;
 		try (var ps = cnx.createStatement(); 
-				var rs = ps.executeQuery("SELECT * FROM " + name + " WHERE 1=0")) { //fetch metadata only
+			var rs = ps.executeQuery("SELECT * FROM " + name + " WHERE 1=0")) { //fetch metadata only
 			var meta = rs.getMetaData();
 			for(int i=1; i<=meta.getColumnCount(); i++) {
 				name = meta.getColumnName(i);
