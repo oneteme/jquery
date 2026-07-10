@@ -23,8 +23,10 @@ public interface View extends QueryPart {
 		build(builder);
 	}
 	
-	default View fork() { //eg. for self join
+	/**return a new instance of the same view, but not the same reference **/
+	default View mirror() {
 		return new View() {
+			
 			@Override
 			public void build(SqlBuilder builder) {
 				View.this.build(builder);				

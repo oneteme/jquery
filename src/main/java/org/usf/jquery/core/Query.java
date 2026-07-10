@@ -192,7 +192,7 @@ public class Query implements View {
 	}
 	
 	@Override
-	public Query fork() {
+	public Query mirror() {
 		var qry = new Query(store);
 		qry.setCtes(ctes);
 		qry.setSelects(selects);

@@ -43,7 +43,7 @@ public final class QueryCatalog implements DatasetCatalog {
 	
 	@Override
 	public QueryCatalog fork() {
-		return new QueryCatalog(query.fork());
+		return new QueryCatalog(query.mirror());
 	}
 	
 }

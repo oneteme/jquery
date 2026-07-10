@@ -83,12 +83,12 @@ final class DatasetProxy extends ResourceProxy {
 		if(Order.class.isAssignableFrom(rt)) {
 			throw new UnsupportedOperationException("not implemented");
 		}
-		if(DatasetCatalog.class.isAssignableFrom(rt) && "fork".equals(method.getName())) {
-			var v = view.fork();
+		if(DatasetCatalog.class.isAssignableFrom(rt) && "mirror".equals(method.getName())) {
+			var mv = view.mirror();
 			var map = new HashMap<>(getResourcesCache());
-			map.put(getMethod("getView", type), v);
+			map.put(getMethod("getView", type), mv); //override
 			return rt.cast(newProxyInstance(getClass().getClassLoader(), new Class<?>[]{type}, 
-					new DatasetProxy(v, type, getExposedMethods(), unmodifiableMap(map), metadata)));
+					new DatasetProxy(mv, type, getExposedMethods(), unmodifiableMap(map), metadata)));
 		}
 		throw new IllegalStateException("unsupported method type " + method);
 	}

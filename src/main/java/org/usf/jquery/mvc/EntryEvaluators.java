@@ -73,7 +73,7 @@ public final class EntryEvaluators {
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
 				if(nonNull(dts) && dts.getView()==qry) {
-					qry = qry.fork(); 
+					qry = qry.mirror(); 
 				}
 				ctx.declareView(tag, new QueryCatalog(qry));
 			}
