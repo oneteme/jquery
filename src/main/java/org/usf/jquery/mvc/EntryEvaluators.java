@@ -191,13 +191,15 @@ public final class EntryEvaluators {
 			}
 			else {
 				col = lookupResource(itr, Column.class, ctx, (v, e)-> { //column | criteria
-					var entry = e.peekNext();
-					if("count".equals(entry.getValue())) {
-						itr.advance();
-						var def = ctx.getDialect().count();
-						return entry.hasArgs() 
-								? def.invoke(ctx.resolveArgs(entry.getArgs(), null, def))
-								: def.invoke(allColumns(v.getView()));
+					if(e.hasNext()) {
+						var entry = e.peekNext();
+						if("count".equals(entry.getValue())) {
+							itr.advance();
+							var def = ctx.getDialect().count();
+							return entry.hasArgs() 
+									? def.invoke(ctx.resolveArgs(entry.getArgs(), null, def))
+									: def.invoke(allColumns(v.getView()));
+						}
 					}
 					return tyComposeExpression(itr, ctx, CaseColumn.class, v, "when"::equals);
 				}); //column or criteria resource
@@ -249,9 +251,10 @@ public final class EntryEvaluators {
 				}
 			} //sometimes view name is also a resource name, so we need to reset the iterator to the marked position
 			itr.resetToMark();
+			var res = lookupViewResource(itr, type, ctx.getDefaultDataset(), ctx);
+			return isNull(res) && nonNull(composer) ? composer.apply(ctx.getDefaultDataset(), itr) : res;
 		}
-		var res = lookupViewResource(itr, type, ctx.getDefaultDataset(), ctx);
-		return isNull(res) && nonNull(composer) ? composer.apply(ctx.getDefaultDataset(), itr) : res;
+		return null;
 	}
 	
 	static DatasetCatalog lookupDataset(EntryIterator itr, RequestContext ctx, boolean allowParameterized) {
