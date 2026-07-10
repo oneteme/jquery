@@ -42,7 +42,7 @@ public final class OperationColumn implements Column {
 			if(analyzer.getStage() == CRITERIA) { //dialect.support window filter !?
 				var col = new OperationColumn(name, kind, operator, args, type).as(name + '_' + hashCode());
 				var sub = new QueryComposer().columns(Column.allColumns(), col).compose(analyzer.getStore());
-				this.overColumn = sub.column(col.getTag(), col.getType());
+				this.overColumn = Column.column(col.getTag(), sub, col.getType());
 				analyzer.cte(sub, true);
 				return overColumn.prepare(analyzer);
 			}

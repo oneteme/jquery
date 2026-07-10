@@ -23,15 +23,17 @@ public interface View extends QueryPart {
 		build(builder);
 	}
 	
-	default ViewColumn column(String name) {
-		return new ViewColumn(name, this, null, null);
-	}
-
-	default ViewColumn column(String name, JDBCType type) {
-		return new ViewColumn(name, this, type, null);
-	}
-	
-	default ViewColumn column(String name, JDBCType type, String tag) {
-		return new ViewColumn(name, this, type, tag);
+	default View fork() { //eg. for self join
+		return new View() {
+			@Override
+			public void build(SqlBuilder builder) {
+				View.this.build(builder);				
+			}
+			
+			@Override
+			public int prepare(QueryAnalyzer analyzer) {
+				return View.this.prepare(analyzer);
+			}
+		};
 	}
 }

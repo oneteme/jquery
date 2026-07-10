@@ -11,4 +11,6 @@ public interface DatasetCatalog extends Catalog {
 	
 	View getView();
 	
+	DatasetCatalog fork();
+	
 }

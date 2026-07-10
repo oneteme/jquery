@@ -18,7 +18,7 @@ import lombok.RequiredArgsConstructor;
  */
 @Getter
 @RequiredArgsConstructor
-public final class QueryResource implements DatasetCatalog {
+public final class QueryCatalog implements DatasetCatalog {
 
 	@NonNull private final Query query;
 
@@ -34,10 +34,16 @@ public final class QueryResource implements DatasetCatalog {
 			return query.getSelects().stream()
 					.filter(c-> id.equals(c.getTag()))
 					.findFirst().map(Column.class::cast)
-					.map(c-> query.column(query.getStore().dialect().suroundColumnAlias(id), c.getType(), id)) //proxy ?
+					.map(c-> Column.column(query.getStore().dialect().suroundColumnAlias(id), query, c.getType(), id)) //proxy ?
 					.map(v-> ofObject(true, (T)v, type)) //no arguments
 					.orElse(null);
 		}
 		return null;
 	}
+	
+	@Override
+	public QueryCatalog fork() {
+		return new QueryCatalog(query.fork());
+	}
+	
 }

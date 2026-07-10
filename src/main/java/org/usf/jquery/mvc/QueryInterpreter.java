@@ -38,8 +38,8 @@ public interface QueryInterpreter {
 		var query = new QueryComposer();
 		var view = parseViewer(parameterMap, VIEW_PARAM, ctx); //TD accept alias for download
 		parseParam(parameterMap, CTE_PARAM, ctx.getDialect().cte(query), ctx);
-		parseParam(parameterMap, SELECT_PARAM, ctx.getDialect().select(query), ctx);
 		parseParam(parameterMap, JOIN_PARAM, ctx.getDialect().join(query), ctx);
+		parseParam(parameterMap, SELECT_PARAM, ctx.getDialect().select(query), ctx);
 		parseParam(parameterMap, GROUP_PARAM, ctx.getDialect().group(query), ctx);
 		parseParam(parameterMap, ORDER_PARAM, ctx.getDialect().order(query), ctx);
 		parseParam(parameterMap, DISTINCT_PARAM, ctx.getDialect().distinct(query), ctx);

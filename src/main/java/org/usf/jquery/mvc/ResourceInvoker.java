@@ -41,7 +41,7 @@ public final class ResourceInvoker<T> {
 			try {
 				return (T) mth.invoke(origin, arr);
 			}
-			catch (IllegalAccessException | InvocationTargetException e) {
+			catch (Exception e) {
 				throw new InvocationException(e);
 			}
 		});

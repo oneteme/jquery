@@ -66,8 +66,14 @@ public final class QueryAnalyzer {
 	}
 	
 	public QueryAnalyzer from(View view) {
-		if(nonNull(froms) && (isNull(joins) || joins.stream()
-				.noneMatch(j-> j.getView() == view || overViews.get(j.getView()) == view))) {
+		if(nonNull(froms)) {
+			if(nonNull(joins)) {
+				for(var j : joins) {
+					if(j.getView() == view || overViews.get(j.getView()) == view) {
+						return this;
+					}
+				}
+			}
 			froms.add(view);
 		}
 		return this;

@@ -192,6 +192,26 @@ public class Query implements View {
 	}
 	
 	@Override
+	public Query fork() {
+		var qry = new Query(store);
+		qry.setCtes(ctes);
+		qry.setSelects(selects);
+		qry.setFroms(froms);
+		qry.setWheres(wheres);
+		qry.setJoins(joins);
+		qry.setGroups(groups);
+		qry.setHavings(havings);
+		qry.setOrders(orders);
+		qry.setUnions(unions);
+		qry.setDistinct(distinct);
+		qry.setAggregation(aggregation);
+		qry.setOverView(overView);
+		qry.setLimit(limit);
+		qry.setOffset(offset);
+		return qry;
+	}
+	
+	@Override
 	public String toString() {
 		return QueryPart.toSQL(this); 
 	}

@@ -2,6 +2,7 @@ package org.usf.jquery.mvc;
 
 import static java.lang.reflect.Modifier.isAbstract;
 import static java.lang.reflect.Proxy.newProxyInstance;
+import static java.util.Collections.unmodifiableMap;
 import static java.util.Objects.hash;
 import static java.util.Objects.nonNull;
 import static java.util.Objects.requireNonNull;
@@ -14,6 +15,7 @@ import static org.usf.jquery.mvc.DatabaseIntrospector.datasetMetadata;
 import static org.usf.jquery.mvc.MethodUtils.getMethod;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -35,11 +37,13 @@ import org.usf.jquery.core.ViewColumn;
 final class DatasetProxy extends ResourceProxy {
 
 	private final View view;
+	private final Class<?> type;
 	private final DatasetMetadata metadata;
 	
-	DatasetProxy(View view, Map<String, Method> exposedMethods, Map<Method, Object> resourcesCache, DatasetMetadata metadata) {
+	DatasetProxy(View view, Class<?> type, Map<String, Method> exposedMethods, Map<Method, Object> resourcesCache, DatasetMetadata metadata) {
 		super(exposedMethods, resourcesCache);
 		this.view = view;
+		this.type = type;
 		this.metadata = metadata;
 	}
 
@@ -61,23 +65,30 @@ final class DatasetProxy extends ResourceProxy {
 	
 	@Override
 	Object invokeAbstractMethod(Object proxy, Method method, Object[] args) {
-		var type = method.getReturnType();
-		if(Column.class.isAssignableFrom(type)) {
+		var rt = method.getReturnType();
+		if(Column.class.isAssignableFrom(rt)) {
 			var bind = requireNonNull(method.getAnnotation(Bind.class), 
 					()-> "abstract method " + method + " must be annotated with @Bind");
 			return buildColumn(method, bind, args);
 		}
-		if(Criteria.class.isAssignableFrom(type)) { //filter first (extends Column)
+		if(Criteria.class.isAssignableFrom(rt)) { //filter first (extends Column)
 			throw new UnsupportedOperationException("not implemented");
 		}
-		if(JoinGroup.class.isAssignableFrom(type)) {
+		if(JoinGroup.class.isAssignableFrom(rt)) {
 			throw new UnsupportedOperationException("not implemented");
 		}
-		if(Partition.class.isAssignableFrom(type)) {
+		if(Partition.class.isAssignableFrom(rt)) {
 			throw new UnsupportedOperationException("not implemented");
 		}
-		if(Order.class.isAssignableFrom(type)) {
+		if(Order.class.isAssignableFrom(rt)) {
 			throw new UnsupportedOperationException("not implemented");
+		}
+		if(DatasetCatalog.class.isAssignableFrom(rt) && "fork".equals(method.getName())) {
+			var v = view.fork();
+			var map = new HashMap<>(getResourcesCache());
+			map.put(getMethod("getView", type), v);
+			return rt.cast(newProxyInstance(getClass().getClassLoader(), new Class<?>[]{type}, 
+					new DatasetProxy(v, type, getExposedMethods(), unmodifiableMap(map), metadata)));
 		}
 		throw new IllegalStateException("unsupported method type " + method);
 	}
@@ -124,7 +135,7 @@ final class DatasetProxy extends ResourceProxy {
 			.map(m-> m.getAnnotation(Bind.class).value()).collect(toSet());
 			var meta = datasetMetadata(store, view.getName(), cols, ds);
 			return type.cast(newProxyInstance(DatasetProxy.class.getClassLoader(), new Class<?>[]{type}, 
-					new DatasetProxy(view, map, Map.of(getMethod("getView", type), view), meta)));
+					new DatasetProxy(view, type, map, Map.of(getMethod("getView", type), view), meta)));
 		}
 		throw new ResourceMappingException("view must be an interface : " + type);
 	}

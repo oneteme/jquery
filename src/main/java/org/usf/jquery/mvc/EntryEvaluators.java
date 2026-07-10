@@ -40,10 +40,20 @@ public final class EntryEvaluators {
 	public static View evaluateView(Entry entry, RequestContext ctx) {
 		var itr = entry.iterator();
 		var dts = lookupDataset(itr, ctx, true);
+		var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+		if(nonNull(qry)) {
+			assertLastEntry(itr, true);
+			var tag = itr.get().getTag();
+			if(nonNull(tag)) {
+				ctx.declareView(tag, new QueryCatalog(qry));
+			}
+			return qry;
+		}
 		if(nonNull(dts)) {
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
+				dts = dts.fork();
 				ctx.declareView(tag, dts);
 			}
 			return dts.getView();
@@ -55,11 +65,17 @@ public final class EntryEvaluators {
 		var itr = entry.iterator();
 		var dts = lookupDataset(itr, ctx, true); //prefixed query with view name
 		var qry = composeQuery(itr, nonNull(dts) ? dts : ctx.getDefaultDataset(), ctx); //fast check if query matches 
+		if(isNull(qry) && dts instanceof QueryCatalog qc) {
+			qry = qc.getQuery();
+		}
 		if(nonNull(qry)) {
 			assertLastEntry(itr, true);
 			var tag = itr.get().getTag();
 			if(nonNull(tag)) {
-				ctx.declareView(tag, new QueryResource(qry));
+				if(nonNull(dts) && dts.getView()==qry) {
+					qry = qry.fork(); 
+				}
+				ctx.declareView(tag, new QueryCatalog(qry));
 			}
 			return qry;
 		}
