@@ -19,6 +19,7 @@ import static org.usf.jquery.mvc.Parameters.SELECT_PARAM;
 import static org.usf.jquery.mvc.Parameters.UNION_PARAM;
 import static org.usf.jquery.mvc.Parameters.VIEW_PARAM;
 import static org.usf.jquery.mvc.QueryExtension.Modifier.MERGE;
+import static org.usf.jquery.mvc.QueryExtension.Modifier.REJECT;
 import static org.usf.jquery.mvc.QueryExtension.Modifier.REPLACE;
 import static org.usf.jquery.mvc.RestrictedStore.restrict;
 import static org.usf.jquery.mvc.StoreManager.getInstance;
@@ -73,7 +74,7 @@ public class QueryInterpreter {
 			mergeParameters(tmp, method.getAnnotation(QueryExtension.class), map);
 			var viewer = parseViewer(secStore, VIEW_PARAM, parameterMap); //TD accept alias for download
 			var composer = parseQuery(secStore, tmp.dataset(), map);
-			return new MvcRequest(store, composer, viewer);
+			return new MvcRequest(secStore, composer, viewer);
 		}
 		throw new IllegalStateException("");
 	}
@@ -164,25 +165,25 @@ public class QueryInterpreter {
 	static void resolveParameterValues(String key, Modifier modifier, Map<String, String[]> parameters, String[] values) {
 		var arr = parameters.get(key); 
 		if(modifier == MERGE) {
-			if(nonNull(arr) && !isEmpty(values)) {
+			if(nonNull(arr) && values.length > 0) {
 				arr = concat(stream(values), stream(arr)).toArray(String[]::new);
 			}
-			else if(!isEmpty(values)) {
+			else if(values.length > 0) {
 				arr = values;
 			}
 		}
 		else if(modifier == REPLACE) {
-			if(isNull(arr) && !isEmpty(values)) {
+			if(isNull(arr) && values.length > 0) {
 				arr = values;
 			}
 		}
-		else if(isNull(arr)) {
-			if(!isEmpty(values)) {
-				arr = values;
+		else if(modifier == REJECT)  { // REJECT 
+			if(nonNull(arr)) {
+				throw new IllegalArgumentException("parameter '" + key + "' is already defined and cannot be overridden");
 			}
 		}
-		else { // REJECT 
-			throw new IllegalArgumentException("parameter '" + key + "' is already defined and cannot be overridden");
+		else {
+			throw new UnsupportedOperationException("unsupported modifier " + modifier);
 		}
 		if(nonNull(arr)) {
 			parameters.put(key, arr);
@@ -203,6 +204,7 @@ public class QueryInterpreter {
 		}
 	}
 
+	@Deprecated(forRemoval = true, since = "5.0.0")
 	private static void resolveParameterCompatibility(Map<String, String[]> modifiableMap) {
 		Map.of("column", SELECT_PARAM).entrySet().forEach(e-> {
 			var args = modifiableMap.remove(e.getKey());

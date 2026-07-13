@@ -13,13 +13,20 @@ import org.usf.jquery.core.Store;
  *
  */
 public interface StoreCatalog extends Store, Catalog {
-
+	
 	default RequestContext createContext(String defaultDataset) {
 		var v = lookup(defaultDataset, DatasetCatalog.class);
 		if(nonNull(v) && v.isAccessible()) {
 			return new RequestContext(this, v.invoke(), typeRegistry());
 		}
 		throw new IllegalAccessError("Dataset '" + defaultDataset + "' is not accessible or does not exist");
+	}
+	
+	default <T extends StoreCatalog> T unwrap(Class<T> type) {
+		if(type.isInstance(this)) {
+			return type.cast(this);
+		}
+		throw new ClassCastException("Cannot cast " + this.getClass().getName() + " to " + type.getName());
 	}
 	
 	default TypeRegistry typeRegistry() {

@@ -30,6 +30,13 @@ public final class RestrictedStore implements StoreCatalog {
 	private final Set<String> excludeDialects;
 	
 	@Override
+	public <T extends StoreCatalog> T unwrap(Class<T> type) {
+		return type.isInstance(store) 
+				? type.cast(store)
+				: StoreCatalog.super.unwrap(type);
+	}
+	
+	@Override
 	public RequestContext createContext(String defaultDataset) {
 		if(!excludeResources.contains(defaultDataset)) {
 			return StoreCatalog.super.createContext(defaultDataset); //because of @Delegate, this will call the store.createContext(defaultDataset)
