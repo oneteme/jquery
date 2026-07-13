@@ -1,7 +1,5 @@
 package org.usf.jquery.mvc;
 
-import java.util.Set;
-
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -30,11 +28,4 @@ public final class Parameters {
 	public static final String CRITERIA_OPR = "criteria";
 	public static final String PARTITION_OPR = "partition";
 
-	//useful for resource validation and to prevent reserved word usage in query parameters
-	public static Set<String> reservedWords() {
-		return Set.of(
-				VIEW_PARAM, DISTINCT_PARAM, JOIN_PARAM, ORDER_PARAM, LIMIT_PARAM, OFFSET_PARAM,
-				SELECT_PARAM, CRITERIA_OPR, PARTITION_OPR);
-	}
-	
 }

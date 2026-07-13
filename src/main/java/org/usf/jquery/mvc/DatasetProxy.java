@@ -122,20 +122,22 @@ final class DatasetProxy extends ResourceProxy {
 		return "DatasetProxy {"+view+"}";
 	}
 
-	static <T extends DatasetCatalog> T createDataset(Class<T> type, Bind bind, String store, DataSource ds) {
+	static <S extends StoreCatalog, T extends DatasetCatalog<S>> T createDataset(Class<T> type, Bind bind, S store, DataSource ds) {
 		if(type.isInterface()) {
 			var view = switch(bind.type()) {
-			case REF-> new Table(bind.value(), store);
+			case REF-> new Table(bind.value(), store.name());
 			//case REQ-> evalView(parseEntry(bind.value()), null)
 			default -> throw new UnsupportedOperationException("not implemented " + bind.type());
 			};
 			var map = discoverExposedMethods(type, DatasetCatalog.class, DatasetProxy::acceptBind);
 			var cols = map.values().stream()
-			.filter(m-> isAbstract(m.getModifiers()) && m.getAnnotation(Bind.class).type() == REF) //only binded object
-			.map(m-> m.getAnnotation(Bind.class).value()).collect(toSet());
-			var meta = datasetMetadata(store, view.getName(), cols, ds);
-			return type.cast(newProxyInstance(DatasetProxy.class.getClassLoader(), new Class<?>[]{type}, 
-					new DatasetProxy(view, type, map, Map.of(getMethod("getView", type), view), meta)));
+				.filter(m-> isAbstract(m.getModifiers()) && m.getAnnotation(Bind.class).type() == REF) //only binded object
+				.map(m-> m.getAnnotation(Bind.class).value())
+				.collect(toSet());
+			var meta = datasetMetadata(store.name(), view.getName(), cols, ds);
+			var cache = Map.of(getMethod("getView", type), view, getMethod("getStore", type), store);
+			var proxy = new DatasetProxy(view, type, map, cache, meta);
+			return type.cast(newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, proxy));
 		}
 		throw new ResourceMappingException("view must be an interface : " + type);
 	}

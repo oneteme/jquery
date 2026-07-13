@@ -64,6 +64,10 @@ public class PartitionComposer implements Composer<Partition> {
 		return orders;
 	}
 	
+	public Partition compose() {
+		return compose(null);
+	}
+	
 	@Override
 	public Partition compose(Store store) {
 		return new Partition(

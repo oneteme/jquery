@@ -108,7 +108,7 @@ public abstract class ResourceProxy implements InvocationHandler {
 			}
 			return false;
 		}).collect(toMap(ResourceProxy::validateExpose, identity(), (m1, m2) -> {
-			throw new ResourceMappingException("duplicate resource identifier: " + m1.getName() + " vs " + m2.getName());
+			throw new ResourceMappingException("duplicate resource identifier: " + m1 + " vs " + m2);
 		}));
 	}
 	

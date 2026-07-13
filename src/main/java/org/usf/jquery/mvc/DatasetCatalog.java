@@ -7,10 +7,12 @@ import org.usf.jquery.core.View;
  * @author u$f
  *
  */
-public interface DatasetCatalog extends Catalog {
+public interface DatasetCatalog<T extends StoreCatalog> extends Catalog {
+	
+	T getStore();
 	
 	View getView();
 	
-	DatasetCatalog mirror();
+	DatasetCatalog<T> mirror();
 	
 }

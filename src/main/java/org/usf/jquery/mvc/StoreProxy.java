@@ -10,6 +10,7 @@ import static org.usf.jquery.mvc.DatasetProxy.createDataset;
 import static org.usf.jquery.mvc.MethodUtils.getMethod;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.Map;
 
 import javax.sql.DataSource;
@@ -55,19 +56,22 @@ public final class StoreProxy extends ResourceProxy {
 	}
 	
 	@SuppressWarnings("unchecked")
-	static <T extends StoreCatalog> T createStore(Class<T> clazz, DataSource ds, Dialect dialect) {
-		if(clazz.isInterface()) {
-			var name = clazz.isAnnotationPresent(Bind.class) ? scanBind(clazz).value() : null;
-			var map = discoverExposedMethods(clazz, StoreCatalog.class, (m,b)-> DatasetCatalog.class.isAssignableFrom(m.getReturnType()));
-			Map<Method, Object> cache = map.values().stream()
-					.filter(m-> isAbstract(m.getModifiers())) //only abstract method can be binded to sub handler
-					.parallel().collect(toMap(identity(), m-> createDataset((Class<? extends DatasetCatalog>) m.getReturnType(), m.getAnnotation(Bind.class), name, ds)));
-			cache.put(getMethod("name", clazz), name);
-			cache.put(getMethod("dataSource", clazz), ds);
-			cache.put(getMethod("dialect", clazz), dialect);
-			var store = new StoreProxy(name, map, cache);
-			return clazz.cast(newProxyInstance(StoreProxy.class.getClassLoader(), new Class<?>[]{clazz}, store));
+	static <T extends StoreCatalog> T createStore(Class<T> type, DataSource ds, Dialect dialect) {
+		if(type.isInterface()) {
+			var name = type.isAnnotationPresent(Bind.class) ? scanBind(type).value() : null;
+			var map = discoverExposedMethods(type, StoreCatalog.class, (m,b)-> DatasetCatalog.class.isAssignableFrom(m.getReturnType()));
+			Map<Method, Object> cache = new HashMap<Method, Object>();
+			var proxy = new StoreProxy(name, map, cache);
+			var store = type.cast(newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, proxy));
+			cache.put(getMethod("name", type), name);
+			cache.put(getMethod("dataSource", type), ds);
+			cache.put(getMethod("dialect", type), dialect);
+			cache.putAll(map.values().stream()
+					.filter(m-> isAbstract(m.getModifiers()) && m.getParameterCount() == 0) //only abstract (not parameterized) method can be binded to sub handler
+					.parallel()
+					.collect(toMap(identity(), m-> createDataset((Class<? extends DatasetCatalog<T>>) m.getReturnType(), m.getAnnotation(Bind.class), store, ds))));
+			return store;
 		}
-		throw new ResourceMappingException("schema must be an interface : " + clazz);
+		throw new ResourceMappingException("schema must be an interface : " + type);
 	}
 }

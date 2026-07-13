@@ -25,7 +25,12 @@ public final class QueryCatalog implements DatasetCatalog {
 	@Override
 	public View getView() {
 		return query;
-	}	
+	}
+	
+	@Override
+	public StoreCatalog getStore() {
+		return null;
+	}
 	
 	@Override
 	@SuppressWarnings("unchecked")
