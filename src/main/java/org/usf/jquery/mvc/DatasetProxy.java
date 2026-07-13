@@ -86,7 +86,7 @@ final class DatasetProxy extends ResourceProxy {
 		if(DatasetCatalog.class.isAssignableFrom(rt) && "mirror".equals(method.getName())) {
 			var mv = view.mirror();
 			var map = new HashMap<>(getResourcesCache());
-			map.put(getMethod("getView", type), mv); //override
+			map.put(getMethod("getView", type), mv); //override view
 			return rt.cast(newProxyInstance(getClass().getClassLoader(), new Class<?>[]{type}, 
 					new DatasetProxy(mv, type, getExposedMethods(), unmodifiableMap(map), metadata)));
 		}

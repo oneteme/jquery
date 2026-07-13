@@ -19,7 +19,7 @@ public interface StoreCatalog extends Store, Catalog {
 		if(nonNull(v) && v.isAccessible()) {
 			return new RequestContext(this, v.invoke(), typeRegistry());
 		}
-		throw new IllegalAccessError("Dataset " + defaultDataset + " is not accessible or does not exist");
+		throw new IllegalAccessError("Dataset '" + defaultDataset + "' is not accessible or does not exist");
 	}
 	
 	default TypeRegistry typeRegistry() {

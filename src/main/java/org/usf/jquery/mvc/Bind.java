@@ -22,7 +22,7 @@ public @interface Bind {
 	
 	BindType type() default BindType.REF;
 	
-	//scope !?
+	//scope : request / singleton
 	
 	enum BindType {
 		REF, //bind to physical resource reference 

@@ -18,14 +18,12 @@ import javax.sql.DataSource;
 import org.usf.jquery.core.Dialect;
 
 import lombok.Getter;
-import lombok.extern.slf4j.Slf4j;
 
 /**
  * 
  * @author u$f
  *
  */
-@Slf4j
 @Getter
 public final class StoreProxy extends ResourceProxy {
 	
@@ -60,7 +58,7 @@ public final class StoreProxy extends ResourceProxy {
 		if(type.isInterface()) {
 			var name = type.isAnnotationPresent(Bind.class) ? scanBind(type).value() : null;
 			var map = discoverExposedMethods(type, StoreCatalog.class, (m,b)-> DatasetCatalog.class.isAssignableFrom(m.getReturnType()));
-			Map<Method, Object> cache = new HashMap<Method, Object>();
+			var cache = new HashMap<Method, Object>();
 			var proxy = new StoreProxy(name, map, cache);
 			var store = type.cast(newProxyInstance(type.getClassLoader(), new Class<?>[]{type}, proxy));
 			cache.put(getMethod("name", type), name);

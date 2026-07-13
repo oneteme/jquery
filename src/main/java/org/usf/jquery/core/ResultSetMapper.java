@@ -19,7 +19,7 @@ public interface ResultSetMapper<T> {
 		} catch (SQLException e) {
             throw new DataMappingException("Error extracting data from ResultSet", e);
         } catch (Exception e) {
-            throw new DataMappingException("Unexpected error during row mapping", e);
+            throw new DataMappingException("Unexpected error during result mapping", e);
         }
 	}
 	

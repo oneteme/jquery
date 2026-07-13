@@ -9,7 +9,6 @@ import static org.usf.jquery.core.Stores.setCurrentDialect;
 import static org.usf.jquery.core.Utils.isEmpty;
 
 import java.sql.SQLException;
-import java.util.List;
 import java.util.function.Consumer;
 
 import javax.sql.DataSource;
@@ -23,7 +22,7 @@ import org.slf4j.Logger;
  */
 public interface Store {
 
-	static final Logger log = getLogger(QueryExecutor.class);
+	static final Logger log = getLogger(Store.class);
 
 	String name();
 
@@ -98,8 +97,4 @@ public interface Store {
 			throw new QueryExecutionException("error executing query: " + sqlQuery.sql() + " with args: " + (nonNull(args) ? args.toString() : "[]"), e);
 		}
 	}
-	
-	public static List<Object> values(List<TypedArg> arr) {
-		return nonNull(arr) ? arr.stream().map(TypedArg::value).toList() : null;
-	} 
 }
