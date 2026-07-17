@@ -183,7 +183,7 @@ public class QueryInterpreter {
 			}
 		}
 		else {
-			throw new UnsupportedOperationException("unsupported modifier " + modifier);
+			throw new UnsupportedOperationException("unsupported modifier: " + modifier);
 		}
 		if(nonNull(arr)) {
 			parameters.put(key, arr);

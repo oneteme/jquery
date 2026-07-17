@@ -50,6 +50,10 @@ public class CaseColumnComposer implements Composer<CaseColumn> {
 	private Collection<WhenCase> getCases(){
 		return cases;
 	}
+	
+	public CaseColumn compose() {
+		return compose(null);
+	}
 		
 	@Override
 	public CaseColumn compose(Store store) {

@@ -47,6 +47,10 @@ public class JoinComposer implements Composer<Join> {
 		}
 		return criterias;
 	}
+
+	public Join compose() {
+		return compose(null);
+	}
 	
 	@Override
 	public Join compose(Store store) {

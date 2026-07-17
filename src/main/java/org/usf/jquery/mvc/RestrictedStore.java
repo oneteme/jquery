@@ -29,12 +29,6 @@ public final class RestrictedStore implements StoreCatalog {
 	private final Set<String> excludeResources;
 	private final Set<String> excludeDialects;
 	
-	@Override
-	public <T extends StoreCatalog> T unwrap(Class<T> type) {
-		return type.isInstance(store) 
-				? type.cast(store)
-				: StoreCatalog.super.unwrap(type);
-	}
 	
 	@Override
 	public RequestContext createContext(String defaultDataset) {
@@ -85,6 +79,11 @@ public final class RestrictedStore implements StoreCatalog {
 			throw new ResourceAccessException("Query is not an aggregation query");
 		}
 		return store.execute(query, maxRows > 0 ? resultSetLimiter(mapper, maxRows) : mapper);
+	}
+
+	@Override
+	public <T extends StoreCatalog> T unwrap(Class<T> type) {
+		return store.unwrap(type);
 	}
 	
 	public static StoreCatalog restrict(StoreCatalog store, int maxCols, int maxRows, boolean aggregationOnly, Set<String> excludeResources, Set<String> excludeDialects) {

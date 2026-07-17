@@ -36,6 +36,10 @@ public final class GroupComposer implements Composer<Group> {
 		return orders;
 	}
 	
+	public Group compose() {
+		return compose(null);
+	}
+	
 	@Override
 	public Group compose(Store store) {
 		return new Group(unmodifiableCollection(orders));
