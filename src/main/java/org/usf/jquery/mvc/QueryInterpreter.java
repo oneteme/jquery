@@ -72,7 +72,7 @@ public class QueryInterpreter {
 			}
 			resolveParameterCompatibility(map);
 			mergeParameters(tmp, method.getAnnotation(QueryExtension.class), map);
-			var viewer = parseViewer(secStore, VIEW_PARAM, parameterMap); //TD accept alias for download
+			var viewer = parseViewer(secStore, VIEW_PARAM, map); //TD accept alias for download
 			var composer = parseQuery(secStore, tmp.dataset(), map);
 			return new MvcRequest(secStore, composer, viewer);
 		}
