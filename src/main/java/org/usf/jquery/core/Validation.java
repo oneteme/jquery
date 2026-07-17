@@ -1,10 +1,8 @@
 package org.usf.jquery.core;
 
-import static java.lang.String.format;
 import static java.util.Objects.isNull;
 import static java.util.Objects.nonNull;
 
-import java.util.Collection;
 import java.util.function.Supplier;
 
 import lombok.AccessLevel;
@@ -23,23 +21,18 @@ public final class Validation {
 		return s;
 	}
 
-	public static <T> Collection<T> requireNonEmpty(Collection<T> c, String name){
-		illegalArgumentIf(isNull(c) || c.isEmpty(), ()-> name + " is empty");
-		return c;
-	}
-
 	public static <T> T[] requireNoArgs(T[] args, Supplier<String> name) {
-		illegalArgumentIf(nonNull(args) && args.length > 0, ()-> format("'%s' takes no arguments", name.get()));
+		illegalArgumentIf(nonNull(args) && args.length > 0, ()-> "'%s' takes no arguments".formatted(name.get()));
 		return args;
 	}
 
 	public static <T> T[] requireNArgs(int n, T[] args, Supplier<String> name) {
-		illegalArgumentIf(isNull(args) || args.length != n, ()-> format("'%s' takes %d arguments", name.get(), n));
+		illegalArgumentIf(isNull(args) || args.length != n, ()-> "'%s' takes %d arguments".formatted(name.get(), n));
 		return args;
 	}
 
 	public static <T> T[] requireAtLeastNArgs(int n, T[] args, Supplier<String> name) {
-		illegalArgumentIf(isNull(args) || args.length < n, ()-> format("'%s' takes at least %d arguments", name.get(), n));
+		illegalArgumentIf(isNull(args) || args.length < n, ()-> "'%s' takes at least %d arguments".formatted(name.get(), n));
 		return args;
 	}
 

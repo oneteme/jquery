@@ -1,6 +1,6 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.SqlStringBuilder.space;
+import static org.usf.jquery.core.SqlBuilder.SPACE;
 
 /**
  * 
@@ -12,7 +12,7 @@ public enum LogicalOperator {
 	AND, OR;
 	
 	public String sql() {
-		return space(name());
+		return SPACE+name()+SPACE;
 	}
 	
 	public <T extends Chainable<T>> T combine(T o1, T o2) {

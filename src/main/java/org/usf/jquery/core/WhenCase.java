@@ -4,8 +4,6 @@ import static java.util.Objects.nonNull;
 import static org.usf.jquery.core.JDBCType.typeOf;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.function.Consumer;
-
 import org.usf.jquery.core.JavaType.Typed;
 
 import lombok.RequiredArgsConstructor;
@@ -16,32 +14,33 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor
-final class WhenCase implements DBObject, Typed {
+final class WhenCase implements QueryPart, Typed {
 	
-	private final DBFilter filter; //optional
-	private final Object value; //then|else
+	private final Criteria criteria; //optional
+	private final Object result; //then|else
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		return DBObject.tryComposeNested(query, groupKeys, filter, value);
+	public int prepare(QueryAnalyzer analyzer) {
+		var v = analyzer.tryAnalyzeNested(result);
+		return nonNull(criteria) ? Math.max(v, criteria.prepare(analyzer)) : v;
 	}
 	
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, WhenCase.class::getSimpleName);
-		(nonNull(filter) 
-				? query.append("WHEN ").append(filter).append(" THEN ") 
-				: query.append("ELSE "))
-		.appendParameter(value);
+		(nonNull(criteria) 
+				? builder.append("WHEN ").append(criteria).append(" THEN ") 
+				: builder.append("ELSE "))
+		.appendParameter(result);
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return typeOf(value).orElse(null);
+		return typeOf(result).orElse(null);
 	}
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

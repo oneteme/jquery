@@ -1,53 +1,52 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.SqlStringBuilder.DOT;
+import static org.usf.jquery.core.SqlBuilder.DOT;
 
-import java.util.function.Consumer;
-
-import lombok.Getter;
 import lombok.RequiredArgsConstructor;
-import lombok.With;
 
 /**
  * 
  * @author u$f
  *
  */
-@Getter
 @RequiredArgsConstructor
-public class ViewColumn implements NamedColumn{
+public class ViewColumn implements Column {
 
 	private final String name;
-	private final DBView view; //optional
+	private final View view; //optional
 	private final JDBCType type; //optional
 	private final String tag;  //optional
-	@With
-	private final Adjuster<String> adjuster; //column name adjuster
 
-	public ViewColumn(String name, DBView view, JDBCType type, String tag) {
-		this(name, view, type, tag, null);
+	@Override
+	public int prepare(QueryAnalyzer analyzer) {
+		if(nonNull(view)) {
+			analyzer.from(view);
+		}
+		analyzer.groupBy(this);
+		return DIMENSION;
 	}
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
+	public void build(SqlBuilder builder) {
 		if(nonNull(view)) {
-			query.declare(view);
+			builder.appendViewAlias(view, DOT);
 		}
-		groupKeys.accept(this);
-		return 0;
+		builder.append(name);
 	}
 	
 	@Override
-	public void build(QueryBuilder query) {
-		if(nonNull(view)) {
-			query.appendViewAlias(view, DOT);
-		}
-		query.append(nonNull(adjuster) ? adjuster.build(query, name) : name);
+	public JDBCType getType() {
+		return type;
+	}
+	
+	@Override
+	public String getTag() {
+		return tag;
 	}
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

@@ -1,0 +1,31 @@
+package org.usf.jquery.mvc;
+
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+
+/**
+ * 
+ * @author u$f
+ * 
+ */
+@Slf4j
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public final class Parameters {
+
+	//parameters
+	public static final String VIEW_PARAM = "view";
+	public static final String CTE_PARAM = "cte";
+	public static final String GROUP_PARAM = "group";
+	public static final String DISTINCT_PARAM = "distinct";
+	public static final String JOIN_PARAM = "join";
+	public static final String ORDER_PARAM = "order";
+	public static final String LIMIT_PARAM = "limit";
+	public static final String OFFSET_PARAM = "offset";
+	public static final String UNION_PARAM = "union";
+	//query parameter
+	public static final String SELECT_PARAM = "select";
+	public static final String CRITERIA_OPR = "criteria";
+	public static final String PARTITION_OPR = "partition";
+
+}

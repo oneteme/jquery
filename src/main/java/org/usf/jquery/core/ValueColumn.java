@@ -1,35 +1,31 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
-
-import java.util.function.Consumer;
-
-import lombok.RequiredArgsConstructor;
-
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor(access = lombok.AccessLevel.PACKAGE)
-public class ValueColumn implements DBColumn {
+public class ValueColumn implements Column {
 	
 	private final Object value;
 	private final JDBCType type;
-	private final Adjuster<Object> adjuster; //value adjuster
-
+	
 	public ValueColumn(Object value, JDBCType type) {
-		this(value, type, null);
+		if(value == null || value instanceof QueryPart) {
+			throw new IllegalArgumentException("ValueColumn only accepts non null scalar value");
+		}
+		this.value = value;
+		this.type = type;
 	}
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		return -1;
+	public int prepare(QueryAnalyzer manifest) {
+		return SCALAR;
 	}
 	
 	@Override
-	public void build(QueryBuilder query) {
-		query.appendParameter(nonNull(adjuster) ? adjuster.build(query, value) : value);
+	public void build(SqlBuilder builder) {
+		builder.appendParameter(value);
 	}
 	
 	@Override
@@ -39,6 +35,6 @@ public class ValueColumn implements DBColumn {
 
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

@@ -1,7 +1,8 @@
 package org.usf.jquery.core;
 
-import static java.util.Arrays.stream;
+import static java.util.Collections.emptySet;
 import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
 import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 
@@ -10,144 +11,146 @@ import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
 import java.sql.Types;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
+import java.time.OffsetTime;
+import java.time.ZonedDateTime;
+import java.time.temporal.Temporal;
 import java.util.Optional;
-import java.util.function.Predicate;
-
-import lombok.RequiredArgsConstructor;
+import java.util.Set;
 
 /**
- * 
- * <a href="https://docs.oracle.com/cd/E19830-01/819-4721/beajw/index.html">Supported Data Types</a>
  * 
  * @author u$f
  * 
  */
-@RequiredArgsConstructor
-public enum JDBCType implements JavaType {
+public enum JDBCType implements JavaType, TypeResolver {
+	
+	BOOLEAN(Types.BOOLEAN, Boolean.class),
+	BIT(Types.BIT, Boolean.class),
 
-	BOOLEAN(Types.BOOLEAN, Boolean.class, JDBCType::isBoolean),
-	BIT(Types.BIT, Boolean.class, JDBCType::isBoolean),
-	TINYINT(Types.TINYINT, Byte.class, Number.class),
-	SMALLINT(Types.SMALLINT, Short.class, Number.class),
-	INTEGER(Types.INTEGER, Integer.class, Number.class),
-	BIGINT(Types.BIGINT, Long.class, Number.class),
-	REAL(Types.REAL, Float.class, Number.class),
-	FLOAT(Types.FLOAT, Double.class, Number.class),
-	DOUBLE(Types.DOUBLE, Double.class, Number.class),
-	NUMERIC(Types.NUMERIC, BigDecimal.class, Number.class),
-	DECIMAL(Types.DECIMAL, BigDecimal.class, Number.class),
-	CHAR(Types.CHAR, String.class, JDBCType::isString),
-	VARCHAR(Types.VARCHAR, String.class, JDBCType::isString),
-	NVARCHAR(Types.NVARCHAR, String.class, JDBCType::isString),
-	LONGNVARCHAR(Types.LONGNVARCHAR, String.class, JDBCType::isString),
-	DATE(Types.DATE, Date.class),
-	TIME(Types.TIME, Time.class),
-	TIMESTAMP(Types.TIMESTAMP, Timestamp.class),
-	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class),
+	TINYINT(Types.TINYINT, Byte.class),
+	SMALLINT(Types.SMALLINT, Short.class),
+	INTEGER(Types.INTEGER, Integer.class),
+	BIGINT(Types.BIGINT, Long.class),
+	REAL(Types.REAL, Float.class),
+	FLOAT(Types.FLOAT, Double.class),
+	DOUBLE(Types.DOUBLE, Double.class),
+	NUMERIC(Types.NUMERIC, BigDecimal.class),
+	DECIMAL(Types.DECIMAL, BigDecimal.class),
+
+	CHAR(Types.CHAR, String.class),
+	VARCHAR(Types.VARCHAR, String.class),
+	NVARCHAR(Types.NVARCHAR, String.class),
+	LONGNVARCHAR(Types.LONGNVARCHAR, String.class),
+
+	DATE(Types.DATE, Date.class, java.util.Date.class, LocalDate.class),
+	TIME(Types.TIME, Time.class, LocalTime.class, OffsetTime.class),
+	TIMESTAMP(Types.TIMESTAMP, Timestamp.class, 
+			LocalDateTime.class, OffsetDateTime.class, ZonedDateTime.class, Instant.class),
+	TIMESTAMP_WITH_TIMEZONE(Types.TIMESTAMP_WITH_TIMEZONE, Timestamp.class, 
+			LocalDateTime.class, OffsetDateTime.class, ZonedDateTime.class, Instant.class),
+	//check new types
+	UUID(Types.OTHER, java.util.UUID.class),
+	JSON(Types.OTHER, String.class),
+	CLOB(Types.CLOB, String.class),
+	BLOB(Types.BLOB, byte[].class),
+	BINARY(Types.BINARY, byte[].class),
+	//BLOB, CLOB, BINARY, JSON, ...
 	OTHER(Types.OTHER, Object.class) { //readonly
 		@Override
 		public boolean accept(Object o) {
 			return false;
 		}
 	};
+	
+	private static final JDBCType[] NUMBERS = {TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL};
+	private static final JDBCType[] TEMPORALS = {DATE, TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE};
 
 	private final int value;
 	private final Class<?> type;
-	private final Predicate<Class<?>> typeMatcher;
-	private final Predicate<Object> valueMatcher;
+	private final boolean isNumber;
+	private final Set<Class<?>> accepts;
 
-	private <T> JDBCType(int value, Class<T> type) {
-		this(value, type, type);
+	private JDBCType(int value, Class<?> type, Class<?>... accepts) {
+		this.value = value;
+		this.type = type;
+		this.isNumber = Number.class.isAssignableFrom(type);
+		this.accepts = nonNull(accepts) ? Set.of(accepts) : emptySet();
 	}
-	
-	private <T> JDBCType(int value, Class<T> type, Class<? super T> supr) { //same parent
-		this(value, type, supr::isAssignableFrom, supr::isInstance);
-	}
-	
-	private JDBCType(int value, Class<?> type, Predicate<Object> valueMatcher) {
-		this(value, type, type::isAssignableFrom, valueMatcher);
-	}
-	
-	public Class<?> getCorrespondingClass() {
-		return type;
-	}
-	
+
 	public int getValue() {
 		return value;
 	}
-	
+
+	@Override
+	public Class<?> getCorrespondingClass() {
+		return type;
+	}
+
 	@Override
 	public boolean accept(Object o) {
 		if(o instanceof Typed v) {
 			var t = v.getType();
-			return t == this || isNull(t) || typeMatcher.test(t.type);
+			return t == this || isNull(t) || accept(t.type);
 		}
-		return isNull(o) || valueMatcher.test(o);
+		return isNull(o) || accept(o.getClass());
 	}
-	
-	private static boolean isBoolean(Object o) {
-		return o.getClass() == Boolean.class 
-				|| o.equals(0) || o.equals(1) 
-				|| (o.getClass() == String.class && o.toString().matches("[yYnN]"));
+
+	public boolean accept(Class<?> c) {
+		return type == c || (isNumber ? Number.class.isAssignableFrom(c) : accepts.contains(c));
 	}
-	
-	private static boolean isString(Object o) {
-		return o.getClass() == Character.class 
-				|| o.getClass() == String.class;
-	}
-	
+
 	public static Optional<JDBCType> typeOf(Object o) {
-		if(o instanceof Typed t) {
-			return ofNullable(t.getType());
-		}
-		if(o instanceof String || o instanceof Character) {
-			return Optional.of(VARCHAR);
-		}
-		if(o instanceof Number) {
-			return typeOfNumber(o);
-		}
-		if(o instanceof Timestamp) {
-			return Optional.of(TIMESTAMP);
-		}
-		if(o instanceof Time) {
-			return Optional.of(TIME);
-		}
-		if(o instanceof Date) {
-			return Optional.of(DATE);
-		}
-		if(o instanceof Boolean) {
-			return Optional.of(BOOLEAN);
+		if(nonNull(o)) {
+			if(o instanceof Typed t) {
+				return ofNullable(t.getType());
+			}
+			if(o instanceof Number) {
+				return typeOf(o, NUMBERS);
+			}
+			if(o.getClass() == String.class) {
+				return Optional.of(VARCHAR); //JSON, CLOB, .. ?
+			}
+			if(o instanceof java.util.Date || o instanceof Temporal) {
+				return typeOf(o, TEMPORALS);
+			}
+			if(o.getClass() == Boolean.class) {
+				return Optional.of(BIT);
+			}
+			if(o.getClass() == java.util.UUID.class) {
+				return Optional.of(UUID);
+			}
 		}
 		return empty();
 	}
 	
-	public static Optional<JDBCType> typeOfNumber(Object o) {
+	
+	static Optional<JDBCType> typeOf(Object o, JDBCType... types) {
 		var c = o.getClass();
-		if(c == Integer.class) {
-			return Optional.of(INTEGER);
-		}
-		if(c == Long.class) {
-			return Optional.of(BIGINT);
-		}
-		if(c == Double.class) {
-			return Optional.of(DOUBLE);
-		}
-		if(c == BigDecimal.class) {
-			return Optional.of(DECIMAL);
-		}
-		if(c == Float.class) {
-			return Optional.of(REAL);
-		}
-		if(c == Short.class) {
-			return Optional.of(SMALLINT);
-		}
-		if(c == Byte.class) {
-			return Optional.of(TINYINT);
+		for(var t : types) {
+			if(c == t.type || t.accepts.contains(c)) {
+				return Optional.of(t);
+			}
 		}
 		return empty();
 	}
-	
+
 	public static Optional<JDBCType> fromDataType(int value) {
-		return stream(values()).filter(t-> t.value == value).findAny();
+		var arr = values();
+		for(var v : arr) {
+			if(v.value == value) {
+				return Optional.of(v);
+			}
+		}
+		return empty();
+	}
+
+	@Override
+	public JDBCType apply(Object[] t) {
+		return this;
 	}
 }

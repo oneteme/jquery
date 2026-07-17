@@ -1,20 +1,20 @@
 package org.usf.jquery.core;
 
 import static java.lang.System.currentTimeMillis;
-import static java.util.Objects.isNull;
-import static org.usf.jquery.core.TypedArg.values;
+import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.LogicalOperator.AND;
+import static org.usf.jquery.core.SqlBuilder.SCOMA;
+import static org.usf.jquery.core.SqlBuilder.SPACE;
+import static org.usf.jquery.core.SqlBuilder.create;
 import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.List;
+import java.util.Collection;
+import java.util.Map;
 
-import javax.sql.DataSource;
-
+import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import lombok.Setter;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -24,53 +24,195 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Getter
-@RequiredArgsConstructor
-public final class Query {
+@Setter(value = AccessLevel.PACKAGE)
+@RequiredArgsConstructor(access = AccessLevel.PACKAGE)
+public class Query implements View {
+
+	@Getter
+	private final Store store;
 	
-	@NonNull
-	private final String sql;
-	private final TypedArg[] args;
+	private Collection<Query> ctes;
+	private Collection<Column> selects;
+	private Collection<Column> groups;
+	private Collection<Criteria> wheres; 
+	private Collection<Criteria> havings;
+	private Collection<Join> joins; 
+	private Collection<Order> orders;
+	private Collection<View> froms; //preserve order
+	private Collection<Union> unions;
+	private boolean distinct;
+	private boolean aggregation;
+	private int limit = -1;
+	private int offset = -1;
+	private Map<View, Query> overView;
 	
-	public List<DynamicModel> execute(DataSource ds) throws SQLException {
-		return execute(ds, new KeyValueMapper());
-	}
-	
-	public <T> T execute(DataSource ds, ResultSetMapper<T> mapper) throws SQLException {
-		try(var cn = ds.getConnection()){
-			return execute(cn, mapper);
-		}
-	}
-	
-	public <T> T execute(Connection cn, ResultSetMapper<T> mapper) throws SQLException {
-		log.debug("preparing statement : {}", sql);
-		try(var ps = cn.prepareStatement(sql)){
-			if(!isEmpty(args)) {
-				log.debug("using arguments : {}", Arrays.toString(values(args)));
-				for(var i=0; i<args.length; i++) {
-					if(isNull(args[i].value())) {
-						ps.setNull(i+1, args[i].type());
-					}
-					else {
-						ps.setObject(i+1, args[i].value(), args[i].type());
-					}
-				}						
+	@Override
+	public int prepare(QueryAnalyzer manifest) {
+		if(!isEmpty(ctes)) { // subQuery
+			for(var c : ctes) {
+				manifest.cte(c);
 			}
-	        log.trace("executing SQL query...");
-	        var bg = currentTimeMillis();
-			try(var rs = ps.executeQuery()){
-		        log.trace("query executed in {} ms", currentTimeMillis() - bg);
-		        try {
-		        	return mapper.map(rs);
-		        }
-				catch(SQLException e) {
-					throw new MappingException("error mapping results for query: " + sql, e);
+		}
+		return SCALAR;
+	}
+
+	@Override
+	public void build(SqlBuilder builder) {
+		var c = builder.lastChar();
+		var suround = c != 0 && c != '(' ;
+		builder.append(suround, '(');
+		buildClauses(builder.subQuery(this));
+		builder.append(suround, ')');
+	}
+
+	public SqlQuery build() {
+		return buildQuery(true);
+	}
+	
+	public SqlQuery buildQuery(boolean parameterized) {
+		log.trace("building query...");
+		var bg = currentTimeMillis();
+		var builder = create(this, parameterized);
+		if(!isEmpty(ctes)) {
+			builder.append("WITH ")
+			.appendEach(SCOMA, ctes, v-> builder.appendViewAlias(v).appendAs().append('(').append(v).append(')')) 
+			.appendSpace();
+		}
+		buildClauses(builder);
+		log.trace("query built in {} ms", currentTimeMillis() - bg);
+		return builder.build();
+	}
+	
+	private void buildClauses(SqlBuilder builder) {
+		select(builder);
+		from(builder);
+		join(builder);
+    	where(builder);
+    	builder.setUseReference(store.dialect().supportAliasReference());
+    	groupBy(builder);
+    	having(builder);
+    	orderBy(builder);
+    	pagination(builder);
+    	union(builder);
+	}
+
+	void select(SqlBuilder builder){
+		builder.append("SELECT");
+		if(distinct) {
+			builder.append(" DISTINCT");
+		}
+    	if(limit > -1 && store.dialect().supportTopClause()){
+    		builder.append(" TOP ").append(limit);
+    	}
+    	var map = builder.getColumns();
+    	builder.append(SPACE).appendEach(SCOMA, map.entrySet(), o-> {
+    		builder.append(o.getKey());
+    		if(nonNull(o.getValue())) { //e.g AsteriskColumn
+    			builder.appendAs().append(store.dialect().suroundColumnAlias(o.getValue()));
+    		}
+    	});
+	}
+	
+	void from(SqlBuilder builder) {
+		if(!isEmpty(froms)) {
+			builder.append(" FROM ").appendEach(SCOMA, froms, v-> {
+				if(!builder.isCte(v)) {
+					builder.append(v).appendSpace();
 				}
+				builder.appendViewAlias(v);
+			});
+		}
+	}
+	
+	void join(SqlBuilder builder) {
+		if(!isEmpty(joins)) {
+			builder.appendSpace().appendEach(SPACE, joins);
+		}
+	}
+
+	void where(SqlBuilder builder){
+		if(!isEmpty(wheres)) {
+    		builder.append(" WHERE ").appendEach(AND.sql(), wheres);
+		}
+	}
+	
+	void groupBy(SqlBuilder builder){
+		if(!isEmpty(groups)) {
+			builder.append(" GROUP BY ").appendEach(SCOMA, groups);
+		}
+	}
+
+	void having(SqlBuilder builder){
+		if(!isEmpty(havings)) {
+    		builder.append(" HAVING ").appendEach(AND.sql(), havings);
+		}
+	}
+	
+	void orderBy(SqlBuilder builder) {
+    	if(!isEmpty(orders)) {
+    		builder.append(" ORDER BY ").appendEach(SCOMA, orders);
+    	}
+	}
+	
+	void pagination(SqlBuilder builder) {
+		if(limit > -1) {
+			if(store.dialect().supportLimitClause()) {
+				builder.append(" LIMIT ").append(limit);
+			}
+			else if(store.dialect().supportFetchClause()) {
+				builder.append(" FETCH NEXT ").append(limit).append(" ROWS ONLY");
+			}
+			else if(!store.dialect().supportTopClause()) {
+				throw new UnsupportedOperationException("limit="+limit);
 			}
 		}
+		if(offset > -1) {
+			if(store.dialect().supportOffsetClause()) {
+				builder.append(" OFFSET ").append(offset);
+			}
+			else {
+				throw new UnsupportedOperationException("offset="+limit);
+			}
+		}
+	}
+
+	void union(SqlBuilder builder) {
+    	if(!isEmpty(unions)) {
+    		builder.appendSpace().appendEach(SPACE, unions);
+    	}
+	}
+
+	public SingleQueryColumn asColumn(){ 
+		return new SingleQueryColumn(this); 
+	}
+	
+	public Union asUnion(boolean all) {
+		//TODO : check if it is a valid union query (e.g same number of columns, compatible types, etc)
+		return new Union(all, this);
+	}
+	
+	@Override
+	public Query mirror() {
+		var qry = new Query(store);
+		qry.setCtes(ctes);
+		qry.setSelects(selects);
+		qry.setFroms(froms);
+		qry.setWheres(wheres);
+		qry.setJoins(joins);
+		qry.setGroups(groups);
+		qry.setHavings(havings);
+		qry.setOrders(orders);
+		qry.setUnions(unions);
+		qry.setDistinct(distinct);
+		qry.setAggregation(aggregation);
+		qry.setOverView(overView);
+		qry.setLimit(limit);
+		qry.setOffset(offset);
+		return qry;
 	}
 	
 	@Override
 	public String toString() {
-		return sql;
+		return QueryPart.toSQL(this); 
 	}
 }

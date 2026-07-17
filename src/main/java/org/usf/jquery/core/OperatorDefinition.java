@@ -1,0 +1,32 @@
+package org.usf.jquery.core;
+
+import static java.util.Collections.emptyList;
+import static java.util.Objects.isNull;
+import static java.util.Objects.nonNull;
+import static org.usf.jquery.core.Utils.toList;
+
+/**
+ * 
+ * @author u$f
+ *
+ */
+public final class OperatorDefinition extends Definition<Column> {
+	
+	private final Invocable operator;
+	private final OperatorKind kind;
+	
+	public OperatorDefinition(String name, TypeResolver typeFn, OperatorKind kind, Invocable operator, Parameter... parameter) {
+		super(name, typeFn, parameter);
+		this.operator = operator;
+		this.kind = kind;
+	}
+
+	@Override
+	protected Column internalInvoke(JavaType type, Object... args) {
+		if(isNull(type) || type instanceof JDBCType) {
+			var arr = nonNull(args) ? toList(args) : emptyList();
+			return new OperationColumn(getName(), kind, operator, arr, (JDBCType)type);
+		}
+		throw new IllegalStateException("operator '%s' cannot be applied to type %s".formatted(this, type));
+	}
+}

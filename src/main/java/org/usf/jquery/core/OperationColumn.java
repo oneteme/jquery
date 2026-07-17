@@ -1,10 +1,13 @@
 package org.usf.jquery.core;
 
 import static java.util.Objects.nonNull;
-import static org.usf.jquery.core.Role.FILTER;
-import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
+import static org.usf.jquery.core.OperatorKind.AGGREGATE;
+import static org.usf.jquery.core.OperatorKind.WINDOW;
+import static org.usf.jquery.core.QueryAnalyzer.IGNORE_GROUPS;
+import static org.usf.jquery.core.QueryAnalyzer.Stage.CRITERIA;
+import static org.usf.jquery.core.Utils.isEmpty;
 
-import java.util.function.Consumer;
+import java.util.List;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -17,36 +20,44 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class OperationColumn implements DBColumn {
+public final class OperationColumn implements Column {
 
-	private final Operator operator;
-	private final Object[] args; //optional
+	private final String name;
+	private final OperatorKind kind;
+	private final Invocable operator;
+	private final List<Object> args; //optional
 	private final JDBCType type; //optional
-	private ViewColumn overColumn; 
+	private ViewColumn overColumn;
 
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		if(operator.is(AggregateFunction.class) || operator.is(WindowFunction.class)) {
-			DBObject.tryComposeNested(query, c-> {}, args); //declare views only
-			return 1;
-		}
-		if(operator.is("OVER")) {
-			if(query.getRole() == FILTER) {
-				overColumn = replaceNestedView(query);
-				return overColumn.compose(query, groupKeys);
+	public int prepare(QueryAnalyzer analyzer) {
+		if(kind == AGGREGATE || kind == WINDOW) {
+			var res = MEASURE;
+			if(!isEmpty(args) && analyzer.with(IGNORE_GROUPS).tryAnalyzeNested(args) == MEASURE) {
+				res++; //nested measure
 			}
-			return resolveOverColumns(query, groupKeys);
+			return res;
 		}
-		return DBObject.tryComposeNested(query, groupKeys, this, args);
+		if("OVER".equals(name)) {
+			if(analyzer.getStage() == CRITERIA) { //dialect.support window filter !?
+				var col = new OperationColumn(name, kind, operator, args, type).as(name + '_' + hashCode());
+				var sub = new QueryComposer().columns(Column.allColumns(), col).compose(analyzer.getStore());
+				this.overColumn = Column.column(analyzer.getStore().dialect().suroundColumnAlias(col.getTag()), sub, col.getType());
+				analyzer.cte(sub, true);
+				return overColumn.prepare(analyzer);
+			}
+			return resolveOverColumns(analyzer);
+		}
+		return analyzer.tryAnalyzeNested(args, this);
 	}
 
 	@Override
-	public void build(QueryBuilder query) {
+	public void build(SqlBuilder builder) {
 		if(nonNull(overColumn)) {
-			query.append(overColumn); //no args
+			builder.append(overColumn); //no args
 		}
 		else {
-			operator.build(query, args);
+			operator.build(builder, args.toArray());
 		}
 	}
 	
@@ -55,27 +66,15 @@ public final class OperationColumn implements DBColumn {
 		return nonNull(overColumn) ? overColumn.getType() : type;
 	}
 	
-	private int resolveOverColumns(QueryComposer composer, Consumer<DBColumn> groupKeys) {
-		requireAtLeastNArgs(1, args, ()-> "over"); //partition
-		var lvl = DBObject.tryComposeNested(composer, groupKeys, args[0])-1; //nested aggregate function
-		return args.length == 1
+	private int resolveOverColumns(QueryAnalyzer analyzer) {
+		var lvl = analyzer.tryAnalyzeNested(args.get(0))-1; //nested aggregate function
+		return args.size() == 1
 				? lvl
-				: Math.max(lvl, DBObject.tryComposeNested(composer, groupKeys, args[1])); //partition
+				: Math.max(lvl, analyzer.tryAnalyzeNested(args.get(1))); //partition
 	}
 		
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
-	}
-	
-	ViewColumn replaceNestedView(QueryComposer query) {
-		var col = new OperationColumn(operator, args, type).as("over_" + hashCode());
-		var views = new QueryComposer().columns(col).getViews(); //scan column views
-		if(views.size() == 1) {
-			var view = views.iterator().next();
-			return query.subViewQuery(view, sub-> sub.columns(col))
-					.getSubView(view).column(col.getTag(), col.getType());
-		}
-		throw new UnsupportedOperationException("overview require only one view");
+		return QueryPart.toSQL(this);
 	}
 }

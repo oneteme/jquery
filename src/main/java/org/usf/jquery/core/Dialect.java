@@ -1,0 +1,120 @@
+package org.usf.jquery.core;
+
+import static org.usf.jquery.core.JDBCType.DATE;
+import static org.usf.jquery.core.JDBCType.INTEGER;
+import static org.usf.jquery.core.JDBCType.TIME;
+import static org.usf.jquery.core.JDBCType.TIMESTAMP;
+import static org.usf.jquery.core.JDBCType.TIMESTAMP_WITH_TIMEZONE;
+import static org.usf.jquery.core.JDBCType.VARCHAR;
+import static org.usf.jquery.core.Parameter.required;
+import static org.usf.jquery.core.Provider.DEFAULT;
+
+import lombok.Getter;
+import lombok.RequiredArgsConstructor;
+
+/**
+ * 
+ * @author u$f
+ * 
+ */
+@Getter
+@RequiredArgsConstructor
+public class Dialect implements Composers, Operators, Comparators {
+	
+	static final Dialect DEFAULT_DIALECT = new Dialect(DEFAULT);
+	
+	private final Provider provider;
+
+	public MacroDefinition semester() {//[1-2]
+		return new MacroDefinition("semester", INTEGER, 
+				args-> ceil().invoke(divide().invoke(month().invoke(args), 6.)),  
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	public MacroDefinition quarter() {//[1-4]
+		return new MacroDefinition("quarter", INTEGER, 
+				args-> ceil().invoke(divide().invoke(month().invoke(args), 3.)), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	public MacroDefinition yearSemester() {//YYYY-'S'S
+		var varchar = varchar();
+		return new MacroDefinition("yearSemester", VARCHAR,  
+				args-> concat().invoke(
+				varchar.invoke(year().invoke(args)),
+				"-S",
+				varchar.invoke(semester().invoke(args))), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	public MacroDefinition yearQuarter() {//YYYY-'Q'Q
+		var varchar = varchar();
+		return new MacroDefinition("yearQuarter", VARCHAR, 
+				args-> concat().invoke(
+				varchar.invoke(year().invoke(args)),
+				"-Q",
+				varchar.invoke(quarter().invoke(args))), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	public MacroDefinition yearWeek() {//YYYY-'W'WW
+		var varchar = varchar();
+		return new MacroDefinition("yearWeek", VARCHAR, 
+				args-> concat().invoke(
+				varchar.invoke(year().invoke(args[0])), 
+				"-W", 
+				lpad().invoke(varchar.invoke(doy().invoke(args[0])), 2, "0")), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	}
+	
+	public MacroDefinition yearMonth() {//YYYY-MM
+		return new MacroDefinition("yearMonth", VARCHAR, 
+				args-> left().invoke(varchar().invoke(args), 7), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE)); 
+	}
+	
+	public MacroDefinition monthDay() {//MM-DD
+		return new MacroDefinition("monthDay", VARCHAR, 
+				args-> substring().invoke(varchar().invoke(args[0]), 6, 5), 
+				required(DATE, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	}
+	
+	public MacroDefinition hourMinute() {//HH:MM
+		return new MacroDefinition("hourMinute", VARCHAR, 
+				args-> {
+					var time = JDBCType.typeOf(args[0])
+							.filter(t-> t == TIME)
+							.map(t-> args[0])
+							.orElseGet(()-> time().invoke(args[0]));
+					return left().invoke(varchar().invoke(time), 5);
+					}, required(TIME, TIMESTAMP, TIMESTAMP_WITH_TIMEZONE));
+	}
+	
+	public boolean supportAliasReference() {
+		return true; //groupBy, orderBy
+	}
+	
+	public boolean supportFetchClause() { //ORACLE
+		return false;
+	}
+	
+	public boolean supportTopClause() { //TERADATA & SQL SERVER
+		return false;
+	}
+	
+	public boolean supportLimitClause() { //PG & MYSQL
+		return true;
+	}
+	
+	public boolean supportOffsetClause() { //PG & MYSQL
+		return true;
+	}
+	
+	public boolean supportWilcardPrefix() {
+		return true;
+	}
+	
+	public String suroundColumnAlias(String alias) {
+		return '"'+alias+'"';
+	}
+}

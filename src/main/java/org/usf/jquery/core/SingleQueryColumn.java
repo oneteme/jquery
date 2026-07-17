@@ -1,9 +1,7 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.Validation.requireNArgs;
+import static java.util.Objects.isNull;
 import static org.usf.jquery.core.Validation.requireNoArgs;
-
-import java.util.function.Consumer;
 
 import org.usf.jquery.core.JavaType.Typed;
 
@@ -12,26 +10,28 @@ import org.usf.jquery.core.JavaType.Typed;
  * @author u$f
  *
  */
-public final class SingleQueryColumn implements DBObject, Typed {
+public final class SingleQueryColumn implements QueryPart, Typed {
 	
-	private final QueryView view;
+	private final Query view;
 	private final JDBCType type;
 
-	SingleQueryColumn(QueryView view) {
-		var cols = requireNArgs(1, view.getColumns(), SingleQueryColumn.class::getSimpleName);
+	SingleQueryColumn(Query view) {
+		if(isNull(view.getSelects()) || view.getSelects().size() != 1) {
+			throw new IllegalArgumentException("SingleQueryColumn only accepts query with exactly one select column");
+		}
 		this.view = view;
-		this.type = cols[0].getType();
+		this.type = view.getSelects().iterator().next().getType();
 	}
 
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, SingleQueryColumn.class::getSimpleName);
-		view.build(query);
+		view.build(builder);
 	}
 	
 	@Override
-	public int compose(QueryComposer composer, Consumer<DBColumn> groupKeys) {
-		return view.compose(composer, groupKeys);
+	public int prepare(QueryAnalyzer manifest) {
+		return view.prepare(manifest);
 	}
 	
 	@Override
@@ -41,6 +41,6 @@ public final class SingleQueryColumn implements DBObject, Typed {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

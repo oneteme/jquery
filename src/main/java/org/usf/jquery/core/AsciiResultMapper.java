@@ -2,7 +2,6 @@ package org.usf.jquery.core;
 
 import static java.lang.Math.max;
 import static java.lang.Math.min;
-import static java.lang.String.format;
 import static java.lang.System.currentTimeMillis;
 import static java.sql.Types.BIGINT;
 import static java.sql.Types.BIT;
@@ -66,10 +65,10 @@ public final class AsciiResultMapper implements ResultSetMapper<Void> {
 			}
 		}
 		var pattern = sb.toString();
-		var div = format(pattern, array(names.length, "")).replace("|", "+").replace(" ", "-"); 
+		var div = pattern.formatted(array(names.length, "")).replace("|", "+").replace(" ", "-"); 
 		try {
 			writer.writeLine(div);
-			writer.writeLine(format(pattern, (Object[])names));
+			writer.writeLine(pattern.formatted((Object[])names));
 			writer.writeLine(div);
 			var data = new Object[names.length];
 			while(rs.next()) {
@@ -82,12 +81,12 @@ public final class AsciiResultMapper implements ResultSetMapper<Void> {
 						}
 					}
 				}
-				writer.writeLine(format(pattern, data));
+				writer.writeLine(pattern.formatted(data));
                 rw++;
 			}
 			writer.writeLine(div);
 		} catch (IOException e) {
-            throw new MappingException("error writing results", e);
+            throw new DataMappingException("error writing results", e);
 		}
 		log.info("{} rows mapped in {} ms", rw, currentTimeMillis() - bg);
 		return null;
@@ -95,8 +94,8 @@ public final class AsciiResultMapper implements ResultSetMapper<Void> {
 	
 	private static boolean isNumer(int type) {
 		return switch (type) {
-		case BOOLEAN, BIT, TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL: yield true;
-		default: yield false;
+		case BOOLEAN, BIT, TINYINT, SMALLINT, INTEGER, BIGINT, REAL, FLOAT, DOUBLE, NUMERIC, DECIMAL-> true;
+		default-> false;
 		};
 	}
 	

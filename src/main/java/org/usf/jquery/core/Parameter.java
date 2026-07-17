@@ -2,8 +2,8 @@ package org.usf.jquery.core;
 
 import static java.util.Arrays.stream;
 import static java.util.Objects.nonNull;
+import static java.util.stream.Collectors.joining;
 import static org.usf.jquery.core.Utils.isEmpty;
-import static org.usf.jquery.core.Utils.joinArray;
 
 import lombok.AccessLevel;
 import lombok.Getter;
@@ -19,7 +19,7 @@ import lombok.RequiredArgsConstructor;
 public final class Parameter {
 	
 	private final JavaType[] types; //empty => accept all types
-	private final ArgTypeRef typeRef;
+	private final TypeResolver typeRef;
 	private final boolean required;
 	private final boolean varargs;
 
@@ -41,7 +41,7 @@ public final class Parameter {
 		if(nonNull(typeRef)) {
 			return typeRef.toString();
 		}
-		return isEmpty(types) ? "ANY" : joinArray("|", types);
+		return toString(types);
 	}
 	
 	public static Parameter required(JavaType... types) {
@@ -56,15 +56,25 @@ public final class Parameter {
 		return new Parameter(types, null, false, true);
 	}
 	
-	public static Parameter required(ArgTypeRef typeRef) {
+	public static Parameter required(TypeResolver typeRef) {
 		return new Parameter(null, typeRef, true, false);
 	}
 
-	public static Parameter optional(ArgTypeRef typeRef) {
+	public static Parameter optional(TypeResolver typeRef) {
 		return new Parameter(null, typeRef, false, false);
 	}
 	
-	public static Parameter varargs(ArgTypeRef typeRef) {
+	public static Parameter varargs(TypeResolver typeRef) {
 		return new Parameter(null, typeRef, false, true);
+	}
+	
+	public static boolean match(Object o, JavaType... types) {
+		return isEmpty(types) || stream(types).anyMatch(t-> t.accept(o));
+	}
+	
+	public static String toString(JavaType[] types) {
+		return isEmpty(types) 
+				? "<ANY>" 
+				: stream(types).map(Object::toString).collect(joining("|"));
 	}
 }

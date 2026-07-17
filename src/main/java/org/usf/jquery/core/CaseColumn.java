@@ -1,39 +1,41 @@
 package org.usf.jquery.core;
 
-import static org.usf.jquery.core.SqlStringBuilder.SPACE;
-import static org.usf.jquery.core.Validation.requireAtLeastNArgs;
+import static org.usf.jquery.core.SqlBuilder.SPACE;
+import static org.usf.jquery.core.Utils.isEmpty;
 
+import java.util.Collection;
 import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.stream.Stream;
 
 /**
  * 
  * @author u$f
  *
  */
-public final class CaseColumn implements DBColumn {
+public final class CaseColumn implements Column {
 
-	private final WhenCase[] whenCases;
-	
-	CaseColumn(WhenCase[] whenCases) {
-		this.whenCases = requireAtLeastNArgs(1, whenCases, CaseColumn.class::getSimpleName);
+	private final Collection<WhenCase> cases;
+
+	public CaseColumn(Collection<WhenCase> cases) {
+		if(isEmpty(cases)) {			
+			throw new ComposeException("CaseColumn requires at least one when case");
+		}
+		this.cases = cases;
 	}
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		return DBObject.composeNested(query, groupKeys, this, whenCases);
+	public int prepare(QueryAnalyzer analyzer) {
+		return analyzer.analyzeNested(cases, this);
 	}
 
 	@Override
-	public void build(QueryBuilder query) {
-		query.withValue() //append filters literally 
-		.append("CASE ").appendEach(SPACE, whenCases).append(" END");
+	public void build(SqlBuilder builder) {
+		builder.withValue()
+		.append("CASE ").appendEach(SPACE, cases).append(" END");
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return Stream.of(whenCases)
+		return cases.stream()
 				.map(WhenCase::getType)
 				.filter(Objects::nonNull) // should have same type
 				.findAny().orElse(null);
@@ -41,6 +43,6 @@ public final class CaseColumn implements DBColumn {
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

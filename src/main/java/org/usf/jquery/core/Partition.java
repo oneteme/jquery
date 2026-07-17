@@ -1,48 +1,50 @@
 package org.usf.jquery.core;
 
 import static java.lang.Math.max;
-import static org.usf.jquery.core.SqlStringBuilder.SCOMA;
 import static org.usf.jquery.core.Utils.isEmpty;
 import static org.usf.jquery.core.Validation.requireNoArgs;
 
-import java.util.function.Consumer;
-
-import lombok.RequiredArgsConstructor;
+import java.util.Collection;
 
 /**
  * 
  * @author u$f
  *
  */
-@RequiredArgsConstructor
-public final class Partition implements DBObject {
+public final class Partition implements QueryPart {
 
-	private final DBColumn[] columns;//optional
-	private final  DBOrder[] orders; //optional
+	private final Collection<Column> columns;//optional
+	private final Collection<Order>   orders; //optional
 	
-	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> groupKeys) {
-		return max(
-				DBObject.composeNested(query, groupKeys, columns), 
-				DBObject.composeNested(query, groupKeys, orders));
+	public Partition(Collection<Column> columns, Collection<Order> orders) {
+		if(isEmpty(columns) && isEmpty(orders)) {
+			throw new ComposeException("Partition requires at least one column or order");
+		}
+		this.columns = columns;
+		this.orders = orders;
 	}
 	
 	@Override
-	public void build(QueryBuilder query, Object... args) {
+	public int prepare(QueryAnalyzer manifest) {
+		return max(manifest.analyzeNested(columns), manifest.analyzeNested(orders));
+	}
+	
+	@Override
+	public void build(SqlBuilder builder, Object... args) {
 		requireNoArgs(args, Partition.class::getSimpleName);
 		if(!isEmpty(columns)) {
-			query.append("PARTITION BY ").appendEach(SCOMA, columns);
+			builder.append("PARTITION BY ").appendEach(SqlBuilder.SCOMA, columns);
 		}
 		if(!isEmpty(orders)) {
 			if(!isEmpty(columns)) {
-				query.appendSpace();
+				builder.appendSpace();
 			}
-			query.append("ORDER BY ").appendEach(SCOMA, orders);
+			builder.append("ORDER BY ").appendEach(SqlBuilder.SCOMA, orders);
 		}
 	}
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }

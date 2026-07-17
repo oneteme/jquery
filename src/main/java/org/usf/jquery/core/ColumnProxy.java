@@ -1,9 +1,6 @@
 package org.usf.jquery.core;
 
-import static java.util.Objects.nonNull;
-
-import java.util.Objects;
-import java.util.function.Consumer;
+import static java.util.Collections.singleton;
 
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
@@ -14,47 +11,34 @@ import lombok.RequiredArgsConstructor;
  *
  */
 @RequiredArgsConstructor(access = AccessLevel.PACKAGE)
-public final class ColumnProxy implements NamedColumn {
+public final class ColumnProxy implements Column {
 
-	//do not @Delegate
-	private final DBColumn column;
+	private final Column column;
 	private final JDBCType type; //optional
 	private final String tag; //optional
 	
 	@Override
-	public int compose(QueryComposer query, Consumer<DBColumn> cons) {
-		return column.compose(query, cons);
+	public int prepare(QueryAnalyzer manifest) {
+		return manifest.analyzeNested(singleton(column), this);
 	}
 
 	@Override
-	public void build(QueryBuilder query) {
-		query.append(column);
+	public void build(SqlBuilder builder) {
+		builder.append(column);
 	}
 	
 	@Override
 	public JDBCType getType() {
-		return nonNull(type) ? type : column.getType();
+		return type;
 	}
 
 	@Override
 	public String getTag() {
 		return tag;
 	}
-
-	@Override // do not delegate this
-	public ColumnProxy as(String name) { 
-		return NamedColumn.super.as(name);
-	}
-	
-	@Override
-	public ColumnProxy as(String name, JDBCType type) { // map
-		return Objects.equals(this.tag, name) && Objects.equals(this.type, type) 
-				? this 
-				: new ColumnProxy(column, type, name);
-	}
 	
 	@Override
 	public String toString() {
-		return DBObject.toSQL(this);
+		return QueryPart.toSQL(this);
 	}
 }
