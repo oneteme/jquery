@@ -181,6 +181,7 @@ public class QueryInterpreter {
 			if(nonNull(arr)) {
 				throw new IllegalArgumentException("parameter '" + key + "' is already defined and cannot be overridden");
 			}
+			arr = values;
 		}
 		else {
 			throw new UnsupportedOperationException("unsupported modifier: " + modifier);

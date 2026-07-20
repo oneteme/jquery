@@ -418,7 +418,7 @@ public interface Operators {
 				(builder,args)-> {
 					builder.append("CAST").append("(").appendParameter(args[0]).appendAs().append(target);
 					if(args.length > 1) { //varchar | decimal
-						builder.append("(").appendParameters(SqlBuilder.SCOMA, toList(args, 1)).append(")");
+						builder.append("(").appendParameters(SCOMA, toList(args, 1)).append(")");
 					}
 					builder.append(")");
 				}, 
@@ -444,7 +444,7 @@ public interface Operators {
 		}
 		return new OperatorDefinition(name, resolver, SCOPE, 
 				(builder,args)-> builder.appendParameter(args[0]).appendSpace()
-				.append(name).append("(").appendParameters(SqlBuilder.SCOMA, toList(args, 1)).append(")"), 
+				.append(name).append("(").appendParameters(SCOMA, toList(args, 1)).append(")"), 
 				parameters);
 	}
 }
